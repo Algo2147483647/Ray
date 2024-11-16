@@ -17,7 +17,7 @@ int main(int argc, char* argv[]) {
 
     // 加载脚本文件
     try {
-        loadSceneFromScript(scriptPath, objTree);
+        LoadSceneFromScript(scriptPath, objTree);
     }
     catch (const std::exception& e) {
         std::cerr << "Error loading script: " << e.what() << std::endl;

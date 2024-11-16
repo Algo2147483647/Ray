@@ -21,7 +21,7 @@ namespace RayTracing {
         std::array<ObjectNode*, 2> children;
 
         ObjectNode(Object* obj, ObjectNode* leftChild = nullptr, ObjectNode* rightChild = nullptr)
-            : obj(obj), children{ move(leftChild), move(rightChild) } {
+            : obj(obj), children{ leftChild, rightChild } {
             if (obj != nullptr) {
                 BuildComputeBoundingBox();
             }
@@ -29,7 +29,7 @@ namespace RayTracing {
 
         void BuildComputeBoundingBox() {
             boundbox = &Cuboid();
-            obj->shape->boundingBox(boundbox->pmax, boundbox->pmin);
+            obj->shape->BuildBoundingBox(boundbox->pmax, boundbox->pmin);
         }
     };
 
@@ -41,8 +41,8 @@ namespace RayTracing {
         Object& Add(Shape* shape, Material* material = nullptr) {
             objects.emplace_back();
             Object& obj = objects.back();
-            obj.shape = move(shape);
-            obj.material = move(material);
+            obj.shape = shape;
+            obj.material = material;
             return obj;
         }
 
@@ -51,7 +51,7 @@ namespace RayTracing {
             for (auto& obj : objects) {
                 objectNodes.push_back(&ObjectNode(&obj));
             }
-            Build(objectNodes, 0, static_cast<int>(objectNodes.size()) - 1, root);
+            Build(objectNodes, 0, objectNodes.size() - 1, root);
         }
 
         void Build(vector<ObjectNode*>& objectNodes, int l, int r, ObjectNode*& node) {
@@ -94,10 +94,10 @@ namespace RayTracing {
         float GetIntersection(const Vector3f& raySt, const Vector3f& ray, ObjectNode*& node, Object*& obj) const {
             if (node->obj != nullptr) {
                 obj = node->obj;
-                return obj->shape->intersect(raySt, ray);
+                return obj->shape->Intersect(raySt, ray);
             }
 
-            if (node->boundbox->intersect(raySt, ray) == FLT_MAX)
+            if (node->boundbox->Intersect(raySt, ray) == FLT_MAX)
                 return FLT_MAX;
 
             Object* ob_1, * ob_2;

@@ -10,56 +10,47 @@ using namespace Eigen;
 using namespace GeometricalOptics;
 
 namespace RayTracing {
-    struct Material {
-        // Material properties
+    struct Material {        
         Eigen::Vector3d color;           // Base color of the material
-        double reflectivity;             // Reflectivity coefficient [0, 1]
-        double transparency;             // Transparency coefficient [0, 1]
-        double refractiveIndex;          // Index of refraction for transparent materials
-        double diffuseCoefficient;       // Diffuse reflection coefficient
-        double specularCoefficient;      // Specular reflection coefficient
-        double shininess;                // Shininess factor for specular highlights
+        bool rediate = false;
+        float reflectivity = 0;             // Reflectivity coefficient [0, 1]
+        float refractivity = 0;             // Refractivity coefficient [0, 1]
+        float refractiveIndex = 1;          // Index of refraction for transparent materials
+        float diffuseLoss = 1;
+        float reflectLoss = 1;
+        float refractLoss = 1;
 
         // Constructor
-        Material(
-            const Eigen::Vector3d& col = Eigen::Vector3d(1.0, 1.0, 1.0),
-            double refl = 0.0,
-            double transp = 0.0,
-            double refractIdx = 1.0,
-            double diffCoeff = 1.0,
-            double specCoeff = 0.5,
-            double shiny = 32.0)
-            : color(col), reflectivity(refl), transparency(transp), refractiveIndex(refractIdx),
-            diffuseCoefficient(diffCoeff), specularCoefficient(specCoeff), shininess(shiny) {}
+        Material() { ; }
+        Material(Vector3f color) : color(color) { ; }
+
+        bool DielectricSurfacePropagation(Ray& ray, const Vector3f& norm) {
+            if (rediate) {
+                ray.color = color;
+                return true;
+            }
+
+            float randnum = distribution(generator);
+
+            if (randnum <= reflectivity) {
+                ray.direction = diffuseReflect(ray.direction, norm);
+                ray.color *= reflectLoss;
+            }
+            else if (randnum <= reflectivity + refractivity) {
+                ray.direction = reflect(ray.direction, norm);
+                ray.color *= refractLoss;
+            }
+            else {
+                float refractionIndex = (ray.refractivity == 1.0f) ? refractiveIndex : 1.0f / refractiveIndex;
+                ray.direction = refract(ray.direction, norm, refractionIndex);
+                ray.color *= 1.0f;
+                ray.refractivity = refractionIndex;
+            }
+
+            // Apply base color to the ray
+            ray.color = ray.color.cwiseProduct(color.cast<float>());
+            return false;
+        }
     };
-
-    void DielectricSurfacePropagation(Material& material, Ray& ray, const Vector3f& norm) {
-        float randnum = distribution(generator);
-
-        float diffuseProbability = 1.0f - material.reflectivity - material.transparency;
-        float reflectProbability = material.reflectivity;
-        float refractProbability = material.transparency;
-
-        if (randnum < diffuseProbability) {
-            // Diffuse reflection
-            ray.direction = diffuseReflect(ray.direction, norm);
-            ray.color *= material.diffuseCoefficient;
-        }
-        else if (randnum < diffuseProbability + reflectProbability) {
-            // Specular reflection
-            ray.direction = reflect(ray.direction, norm);
-            ray.color *= material.specularCoefficient;
-        }
-        else {
-            // Refraction
-            float refractionIndex = (ray.refractivity == 1.0f) ? material.refractiveIndex : 1.0f / material.refractiveIndex;
-            ray.direction = refract(ray.direction, norm, refractionIndex);
-            ray.color *= 1.0f; // Adjust the factor if needed based on your material's refractive properties
-            ray.refractivity = refractionIndex;
-        }
-
-        // Apply base color to the ray
-        ray.color = ray.color.cwiseProduct(material.color.cast<float>());
-    }
 }
 #endif

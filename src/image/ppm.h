@@ -5,7 +5,7 @@
 #include <fstream>
 #include <vector>
 #include <Eigen/Dense>
-#include "../image.h"
+#include "image.h"
 
 void PPMRead(const std::string& fileName, ImageRGB& image) {
     std::ifstream file(fileName, std::ios::binary);

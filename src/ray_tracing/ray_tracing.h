@@ -17,9 +17,9 @@ using namespace Eigen;
 namespace RayTracing {
     static int MaxRayLevel = 6;
     static int threadNum = 20;
-    static std::mutex _mutex;
+    static mutex _mutex;
 
-    inline Vector3f TraceRay(ObjectTree& objTree, Ray& ray, const int level) {
+    inline Vector3f TraceRay(ObjectTree& objTree, Ray& ray, int level) {
         if (level > MaxRayLevel) {
             return Vector3f(0, 0, 0);
         }
@@ -38,38 +38,39 @@ namespace RayTracing {
             normalVector *= -1;
         }
 
-        DielectricSurfacePropagation(*obj->material, ray, normalVector);
+        bool terminate = obj->material->DielectricSurfacePropagation(ray, normalVector);
+        if (terminate) {
+            return ray.color;
+        }
+
         return TraceRay(objTree, ray, level + 1);
     }
 
-    inline void TraceRayThread(const Camera& camera, const ObjectTree& objTree, std::vector<MatrixXf>& img, const std::vector<Ray>& rays, int start, int end) {
-        for (int idx = start; idx < end; ++idx) {
-            Ray ray = rays[idx];
+    inline void TraceRayThread(Camera& camera, ObjectTree& objTree, vector<MatrixXf>& img, vector<Ray>& rays) {
+        for (auto& ray : rays) {
             Vector3f color = TraceRay(objTree, ray, 0);
-
             pair<int, int> coordinates = camera.GetRayCoordinates(ray, img[0].cols(), img[0].rows());
 
-            std::unique_lock<std::mutex> lock(_mutex);
+            unique_lock<mutex> lock(_mutex);
             for (int c = 0; c < 3; ++c) {
                 img[c](coordinates.first, coordinates.second) += color[c];
             }
         }
     }
 
-    inline void TraceRay(const Camera& camera, const ObjectTree& objTree, std::vector<MatrixXf>& img, int sampleSt, int sampleEd) {
-        std::vector<Ray> rays = camera.GetRays(img[0].cols(), img[0].rows());
-        int raysPerThread = static_cast<int>(rays.size()) / threadNum;
+    inline void TraceRay(Camera& camera, ObjectTree& objTree, vector<MatrixXf>& img, int sampleSt = 0, int sampleEd = 1) {
+        vector<Ray> rays = camera.GetRays(img[0].cols(), img[0].rows());
+        int raysPerThread = rays.size() / threadNum;
 
         ThreadPool pool(threadNum);
-        std::vector<std::future<void>> futures;
+        vector<future<void>> futures;
 
         for (int sample = sampleSt; sample < sampleEd; ++sample) {
             for (int i = 0; i < threadNum; ++i) {
-                int startIdx = i * raysPerThread;
-                int endIdx = (i == threadNum - 1) ? static_cast<int>(rays.size()) : (i + 1) * raysPerThread;
-                futures.push_back(pool.enqueue([&, startIdx, endIdx] {
-                    TraceRayThread(camera, objTree, img, rays, startIdx, endIdx);
-                    }));
+                futures.push_back(pool.enqueue([&, i] {
+                    vector<Ray> raysTmp(rays.begin() + i * threadNum, rays.begin() + (i + 1) * threadNum);
+                    TraceRayThread(camera, objTree, img, raysTmp);
+                }));
             }
 
             for (auto& future : futures) {
@@ -78,7 +79,9 @@ namespace RayTracing {
         }
 
         for (int i = 0; i < 3; ++i) {
-            img[i] *= 1.0f / (sampleEd - sampleSt);
+            for (auto it = img[i].data(); it != img[i].data() + img[i].size(); ++it) {
+                *it *= 1.0f / (sampleEd - sampleSt);
+            }
         }
     }
 }

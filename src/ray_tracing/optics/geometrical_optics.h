@@ -10,8 +10,6 @@
 using namespace Eigen;
 using namespace std;
 
-
-
 namespace GeometricalOptics {
 	inline Vector3f reflect(const Vector3f& incidentRay, const Vector3f& normal) {
 		return (incidentRay - 2 * normal.dot(incidentRay) * normal).normalized();
