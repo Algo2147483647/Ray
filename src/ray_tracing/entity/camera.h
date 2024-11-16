@@ -1,6 +1,7 @@
 #ifndef RAY_TRACING_CAMERA_H
 #define RAY_TRACING_CAMERA_H
 
+#include <corecrt_math_defines.h>
 #include <Eigen/Dense>
 
 using namespace Eigen;

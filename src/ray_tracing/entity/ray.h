@@ -10,8 +10,10 @@ namespace RayTracing{
 		Vector3f origin;
 		Vector3f direction;
 		Vector3f color; // Color of the ray, which will be updated
+		float refractivity;
 	
-		Ray(Vector3f& origin, Vector3f& direct) : origin(origin), direct(direct), refractivity(1.0) {
+		Ray() { ; }
+		Ray(Vector3f& origin, Vector3f& direct) : origin(origin), direction(direct), refractivity(1.0) {
 			color = Vector3f::Ones();
 		}
 	};

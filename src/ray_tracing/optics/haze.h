@@ -1,7 +1,6 @@
 #ifndef GEOMETERICAL_OPTICS_H
 #define GEOMETERICAL_OPTICS_H
 
-#include <consts>
 #include <Eigen/Dense>
 #include <random>
 #include <corecrt_math_defines.h>

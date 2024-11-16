@@ -27,6 +27,7 @@ go.work.sum
 *.mock.go
 
 # IDE and editor directories and files
+.vs/
 .idea/
 .vscode/
 *.swp

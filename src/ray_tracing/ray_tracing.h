@@ -5,16 +5,15 @@
 #include <algorithm>
 #include <thread>
 #include <Eigen/Dense>
-#include "Object.h"
-#include "ThreadPool.h"
+#include "utils/image.h"
+#include "utils/thread_pool.h"
+#include "entity/object_tree.h"
+#include "entity/camera.h"
+#include "optics/geometrical_optics.h"
 
 using namespace Eigen;
 
-/*#############################################################################
-*
-*						光线追踪  Ray Tracing
-*
-##############################################################################*/
+
 
 namespace RayTracing {
 	static int maxRayLevel = 6;
@@ -23,17 +22,8 @@ namespace RayTracing {
 	static int threadNum = 20;
 	static bool is_debug = 0;
 
-	/******************************************************************************
-	*						追踪光线
-	*	[步骤]:
-			[1] 遍历三角形集合中的每一个三角形
-				[2]	判断光线和该三角形是否相交、光线走过距离、交点坐标、光线夹角
-				[3] 保留光线走过距离最近的三角形的相关数据
-			[4] 如果该光线等级小于设定的阈值等级
-				计算三角形反射方向，将反射光线为基准重新计算
-	&	[注]:distance > 1而不是> 0，是因为反射光线在接触面的精度内，来回碰自己....
-	******************************************************************************/
-	inline Vector3f& traceRay(const ObjectTree& objTree, Ray& ray, const int level) {
+
+	inline Vector3f& TraceRay(const ObjectTree& objTree, Ray& ray, const int level) {
 		if (level > maxRayLevel) {
 			return ray.color = Vector3f(0, 0, 0);
 		}
@@ -72,15 +62,15 @@ namespace RayTracing {
 	}
 
 	 
-	inline void traceRay_thread(const Camera& camera, const ObjectTree& objTree, vector<MatrixXf>& img, int xSt, int xEd, int ySt, int yEd) {
+	inline void TraceRayThread(const Camera& camera, const ObjectTree& objTree, vector<MatrixXf>& img, int xSt, int xEd, int ySt, int yEd) {
 
 		thread_local Vector3f sampleVec;
 		thread_local Ray ray;
 		
 		for (int y = ySt; y < yEd; y++) {
 			for (int x = xSt; x < xEd; x++) {
-				sampleVec = (x + dis(gen) - img[0].rows() / 2.0 - 0.5) * camera.ScreenXVec +
-					        (y + dis(gen) - img[0].cols() / 2.0 - 0.5) * camera.ScreenYVec;
+				sampleVec = (x + distribution(gen) - img[0].rows() / 2.0 - 0.5) * camera.ScreenXVec +
+					        (y + distribution(gen) - img[0].cols() / 2.0 - 0.5) * camera.ScreenYVec;
 				ray.origin =  camera.center + sampleVec;
 				ray.direct = (camera.direct + sampleVec).normalized();
 				ray.color = Vector3f::Ones();
@@ -96,7 +86,7 @@ namespace RayTracing {
 		}
 	}
 
-	inline void traceRay(const Camera& camera, const ObjectTree& objTree, vector<MatrixXf>& img, int sampleSt, int sampleEd) {
+	inline void TraceRay(const Camera& camera, const ObjectTree& objTree, vector<MatrixXf>& img, int sampleSt, int sampleEd) {
 		int threadSize = img[0].rows() / threadNum;
 		ThreadPool pool(threadNum);
 		vector<future<void>> futures;
@@ -104,7 +94,7 @@ namespace RayTracing {
 		for (int sample = sampleSt; sample < sampleEd; sample++) {
 			for (int i = 0; i < threadNum; i++) {
 				futures.push_back(pool.enqueue([&, i] {
-					traceRay_thread(camera, objTree, img, i * threadSize, (i + 1) * threadSize, 0, img[0].cols());
+					TraceRayThread(camera, objTree, img, i * threadSize, (i + 1) * threadSize, 0, img[0].cols());
 				}));
 			}
 		}

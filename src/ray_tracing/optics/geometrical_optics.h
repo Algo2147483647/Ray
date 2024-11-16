@@ -5,15 +5,15 @@
 #include <Eigen/Dense>
 #include <random>
 #include <corecrt_math_defines.h>
-#include "../consts.h"
+#include "../utils/consts.h"
 
 using namespace Eigen;
 using namespace std;
 
-namespace GeometricalOptics {
-	thread_local std::mt19937 generator(std::random_device{}()); 
-	thread_local std::uniform_real_distribution<> distribution(0, 1);
+thread_local std::mt19937 generator(std::random_device{}());
+thread_local std::uniform_real_distribution<> distribution(0, 1);
 
+namespace GeometricalOptics {
 	inline Vector3f reflect(const Vector3f& incidentRay, const Vector3f& normal) {
 		return (incidentRay - 2 * normal.dot(incidentRay) * normal).normalized();
 	}
