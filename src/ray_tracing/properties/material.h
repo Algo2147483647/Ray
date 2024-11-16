@@ -3,8 +3,8 @@
 
 #include <vector>
 #include <Eigen/Dense>
-#include "GeometricalOptics.h"
-#include "Ray.h"
+#include "../optics/geometrical_optics.h"
+#include "../entity/ray.h"
 
 using namespace Eigen;
 using namespace GeometricalOptics;
@@ -33,24 +33,33 @@ namespace RayTracing {
             diffuseCoefficient(diffCoeff), specularCoefficient(specCoeff), shininess(shiny) {}
     };
 
-	void DielectricSurfacePropagation(Material& material, Ray& ray, const Vector3f& norm) {
-		float randnum = GeometricalOptics::dis(gen);
+    void DielectricSurfacePropagation(Material& material, Ray& ray, const Vector3f& norm) {
+        float randnum = distribution(generator);
 
-		if (0 && randnum < diffuseReflectProbability) {
-			ray.direct = diffuseReflect(ray.direct, norm);
-			ray.color *= diffuseReflectLoss;
-		}
-		else if (1 || randnum < reflectProbability + diffuseReflectProbability) {
-			ray.direct = reflect(ray.direct, norm);
-			ray.color *= reflectLoss;
-		}
-		else {
-			ray.refractivity = (ray.refractivity == 1.0) ? refractivity[0] : 1.0 / refractivity[0];
-			ray.direct = refract(ray.direct, norm, ray.refractivity);
-			ray.color *= refractLoss;
-		}
+        float diffuseProbability = 1.0f - material.reflectivity - material.transparency;
+        float reflectProbability = material.reflectivity;
+        float refractProbability = material.transparency;
 
-		ray.color = ray.color.cwiseProduct(baseColor);
-	}
+        if (randnum < diffuseProbability) {
+            // Diffuse reflection
+            ray.direction = diffuseReflect(ray.direction, norm);
+            ray.color *= material.diffuseCoefficient;
+        }
+        else if (randnum < diffuseProbability + reflectProbability) {
+            // Specular reflection
+            ray.direction = reflect(ray.direction, norm);
+            ray.color *= material.specularCoefficient;
+        }
+        else {
+            // Refraction
+            float refractionIndex = (ray.refractivity == 1.0f) ? material.refractiveIndex : 1.0f / material.refractiveIndex;
+            ray.direction = refract(ray.direction, norm, refractionIndex);
+            ray.color *= 1.0f; // Adjust the factor if needed based on your material's refractive properties
+            ray.refractivity = refractionIndex;
+        }
+
+        // Apply base color to the ray
+        ray.color = ray.color.cwiseProduct(material.color.cast<float>());
+    }
 }
 #endif

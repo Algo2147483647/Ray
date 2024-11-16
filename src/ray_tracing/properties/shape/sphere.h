@@ -12,7 +12,11 @@ public:
     Sphere(Vector3f center, float R) : center(center), R(R) {; }
     Sphere(Vector3f center, float R, std::function<bool(Vector3f&)> engraving) : center(center), R(R), Shape(engraving){; }
 
-    float intersect(const Vector3f& raySt, const Vector3f& ray) override {
+    string GetName() {
+        return "Sphere";
+    }
+
+    float Intersect(const Vector3f& raySt, const Vector3f& ray) override {
         thread_local Vector3f rayStCenter;
         rayStCenter = raySt - center;
 
@@ -58,14 +62,9 @@ public:
         return res;
     }
 
-    void boundingBox(Vector3f& pmax, Vector3f& pmin) override {
+    void BuildBoundingBox(Vector3f& pmax, Vector3f& pmin) override {
         pmax = center + Vector3f(R, R, R);
         pmin = center - Vector3f(R, R, R);
-    }
-
-    void paint(Image& imgXY, Image& imgYZ) override {
-        Graphics::drawCircle(imgXY, center[0], center[1], R);
-        Graphics::drawCircle(imgYZ, center[1], center[2], R);
     }
 };
 

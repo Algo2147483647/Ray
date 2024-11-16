@@ -10,7 +10,11 @@ public:
     Cuboid() { ; }
     Cuboid(Vector3f pmin, Vector3f pmax) : pmin(pmin), pmax(pmax) { ; }
 
-    float intersect(const Vector3f& raySt, const Vector3f& ray) override {
+    string GetName() {
+        return "Cuboid";
+    }
+
+    float Intersect(const Vector3f& raySt, const Vector3f& ray) override {
         thread_local Vector3f tmin_t, tmax_t;
         tmin_t = (pmin - raySt).cwiseQuotient(ray);
         tmax_t = (pmax - raySt).cwiseQuotient(ray);
@@ -41,14 +45,9 @@ public:
         return res;
     }
 
-    void boundingBox(Vector3f& pmax, Vector3f& pmin) override {
+    void BuildBoundingBox(Vector3f& pmax, Vector3f& pmin) override {
         pmax = this->pmax;
         pmin = this->pmin;
-    }
-
-    void paint(Image& imgXY, Image& imgYZ) override {
-        Graphics::drawRectangle(imgXY, pmin[0], pmin[1], pmax[0], pmax[1]);
-        Graphics::drawRectangle(imgYZ, pmin[1], pmin[2], pmax[1], pmax[2]);
     }
 };
 
