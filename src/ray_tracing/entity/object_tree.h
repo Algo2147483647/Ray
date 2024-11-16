@@ -52,11 +52,11 @@ namespace RayTracing {
                 ObjectNode* node = new ObjectNode(&obj);
                 objectNodes.push_back(node);
             }
-            Build(objectNodes, 0, objectNodes.size() - 1, root);
+            Build(0, objectNodes.size() - 1, root);
             return *this;
         }
 
-        void Build(vector<ObjectNode*>& objectNodes, int l, int r, ObjectNode*& node) {
+        void Build(int l, int r, ObjectNode*& node) {
             if (l == r) {
                 node = objectNodes[l];
                 return;
@@ -84,17 +84,17 @@ namespace RayTracing {
             int dim = (dim_ratios[0] < dim_ratios[1]) ? 1 : 0;
             dim = (dim_ratios[dim] < dim_ratios[2]) ? 2 : dim;
 
-            sort(objectNodes.begin() + l, objectNodes.begin() + r + 1, [&dim](const ObjectNode*& a, const ObjectNode*& b) {
+            sort(objectNodes.begin() + l, objectNodes.begin() + r + 1, [&dim](ObjectNode*& a, ObjectNode*& b) {
                 if (a->boundbox->pmin[dim] != b->boundbox->pmin[dim])
                 return a->boundbox->pmin[dim] < b->boundbox->pmin[dim];
             return a->boundbox->pmax[dim] < b->boundbox->pmax[dim];
                 });
 
-            Build(objectNodes, l, (l + r) / 2, node->children[0]);
-            Build(objectNodes, (l + r) / 2 + 1, r, node->children[1]);
+            Build(l, (l + r) / 2, node->children[0]);
+            Build((l + r) / 2 + 1, r, node->children[1]);
         }
 
-        float GetIntersection(const Vector3f& raySt, const Vector3f& ray, ObjectNode*& node, Object*& obj) const {
+        float GetIntersection(Vector3f& raySt, Vector3f& ray, ObjectNode*& node, Object*& obj) {
             if (node->obj != nullptr) {
                 obj = node->obj;
                 return obj->shape->Intersect(raySt, ray);

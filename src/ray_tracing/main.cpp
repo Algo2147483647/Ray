@@ -30,8 +30,8 @@ int main(int argc, char* argv[]) {
     vector<MatrixXf> img(3, MatrixXf(800, 800));
 
     Camera camera;
-    camera.position = Vector3f(600, 1100, 600);
-    Vector3f lookAt = Vector3f(400, -100, -100);
+    camera.position = Vector3f(600.0f, 1100.0f, 600.0f);
+    Vector3f lookAt = Vector3f(400.0f, -100.0f, -100.0f);
     camera.SetLookAt(lookAt);
     
 

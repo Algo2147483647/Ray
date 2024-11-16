@@ -11,7 +11,7 @@ using namespace GeometricalOptics;
 
 namespace RayTracing {
     struct Material {        
-        Eigen::Vector3d color;           // Base color of the material
+        Vector3f color;           // Base color of the material
         bool rediate = false;
         float reflectivity = 0;             // Reflectivity coefficient [0, 1]
         float refractivity = 0;             // Refractivity coefficient [0, 1]

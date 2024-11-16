@@ -13,9 +13,9 @@ namespace RayTracing{
 		float refractivity;
 	
 		Ray() { ; }
-		Ray(Vector3f& origin, Vector3f& direct) : origin(origin), direction(direct), refractivity(1.0) {
-			color = Vector3f::Ones();
-		}
+		Ray(const Vector3f& origin, const Vector3f& direct)
+			: origin(origin), direction(direct), refractivity(1.0f), color(Vector3f::Ones()) { }
+
 	};
 }
 

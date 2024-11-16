@@ -19,7 +19,7 @@ public:
     Shape() { ; }
     Shape(std::function<bool(Vector3f&)> engraving) : engraving(engraving) { ; }
 
-    virtual string GetName();
+    virtual string GetName() = 0;
     virtual float Intersect(const Vector3f& raySt, const Vector3f& ray) = 0;
     virtual Vector3f& GetNormalVector(const Vector3f& intersect, Vector3f& res) = 0;
     virtual void BuildBoundingBox(Vector3f& pmax, Vector3f& pmin) = 0;
