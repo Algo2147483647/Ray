@@ -9,8 +9,8 @@ using namespace std;
 
 namespace RayTracing {
 	struct Object {
-		Shape* shape;
-		Material* material;
+		unique_ptr<Shape> shape;
+		unique_ptr<Material> material;
 	};
 }
 #endif
