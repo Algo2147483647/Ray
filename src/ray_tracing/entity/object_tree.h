@@ -17,10 +17,10 @@ namespace RayTracing {
 
     struct ObjectNode {
         Object* obj;
-        unique_ptr<Cuboid> boundbox;
-        std::array<unique_ptr<ObjectNode>, 2> children;
+        Cuboid* boundbox;
+        std::array<ObjectNode*, 2> children;
 
-        ObjectNode(Object* obj, unique_ptr<ObjectNode> leftChild = nullptr, unique_ptr<ObjectNode> rightChild = nullptr)
+        ObjectNode(Object* obj, ObjectNode* leftChild = nullptr, ObjectNode* rightChild = nullptr)
             : obj(obj), children{ move(leftChild), move(rightChild) } {
             if (obj != nullptr) {
                 BuildComputeBoundingBox();
@@ -28,17 +28,17 @@ namespace RayTracing {
         }
 
         void BuildComputeBoundingBox() {
-            boundbox = make_unique<Cuboid>();
+            boundbox = &Cuboid();
             obj->shape->boundingBox(boundbox->pmax, boundbox->pmin);
         }
     };
 
     struct ObjectTree {
-        unique_ptr<ObjectNode> root;
+        ObjectNode* root;
         vector<Object> objects;
-        vector<unique_ptr<ObjectNode>> objectNodes;
+        vector<ObjectNode*> objectNodes;
 
-        Object& Add(unique_ptr<Shape> shape, unique_ptr<Material> material = nullptr) {
+        Object& Add(Shape* shape, Material* material = nullptr) {
             objects.emplace_back();
             Object& obj = objects.back();
             obj.shape = move(shape);
@@ -49,18 +49,18 @@ namespace RayTracing {
         void Build() {
             objectNodes.clear();
             for (auto& obj : objects) {
-                objectNodes.push_back(make_unique<ObjectNode>(&obj));
+                objectNodes.push_back(&ObjectNode(&obj));
             }
             Build(objectNodes, 0, static_cast<int>(objectNodes.size()) - 1, root);
         }
 
-        void Build(vector<unique_ptr<ObjectNode>>& objectNodes, int l, int r, unique_ptr<ObjectNode>& node) {
+        void Build(vector<ObjectNode*>& objectNodes, int l, int r, ObjectNode*& node) {
             if (l == r) {
-                node = move(objectNodes[l]);
+                node = objectNodes[l];
                 return;
             }
 
-            node = make_unique<ObjectNode>(nullptr);
+            node = &ObjectNode(nullptr);
             Vector3f pmin = objectNodes[l]->boundbox->pmin;
             Vector3f pmax = objectNodes[l]->boundbox->pmax;
             Vector3f delta = Vector3f::Zero();
@@ -73,7 +73,7 @@ namespace RayTracing {
                 }
             }
 
-            node->boundbox = make_unique<Cuboid>();
+            node->boundbox =&Cuboid();
             node->boundbox->pmin = pmin;
             node->boundbox->pmax = pmax;
 
@@ -81,7 +81,7 @@ namespace RayTracing {
             int dim = (dim_ratios[0] < dim_ratios[1]) ? 1 : 0;
             dim = (dim_ratios[dim] < dim_ratios[2]) ? 2 : dim;
 
-            sort(objectNodes.begin() + l, objectNodes.begin() + r + 1, [&dim](const unique_ptr<ObjectNode>& a, const unique_ptr<ObjectNode>& b) {
+            sort(objectNodes.begin() + l, objectNodes.begin() + r + 1, [&dim](const ObjectNode*& a, const ObjectNode*& b) {
                 if (a->boundbox->pmin[dim] != b->boundbox->pmin[dim])
                 return a->boundbox->pmin[dim] < b->boundbox->pmin[dim];
             return a->boundbox->pmax[dim] < b->boundbox->pmax[dim];
@@ -91,7 +91,7 @@ namespace RayTracing {
             Build(objectNodes, (l + r) / 2 + 1, r, node->children[1]);
         }
 
-        float GetIntersection(const Vector3f& raySt, const Vector3f& ray, unique_ptr<ObjectNode>& node, Object*& obj) const {
+        float GetIntersection(const Vector3f& raySt, const Vector3f& ray, ObjectNode*& node, Object*& obj) const {
             if (node->obj != nullptr) {
                 obj = node->obj;
                 return obj->shape->intersect(raySt, ray);

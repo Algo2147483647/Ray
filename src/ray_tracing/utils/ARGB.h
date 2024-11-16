@@ -1,5 +1,5 @@
-#ifndef RGB_H
-#define RGB_H
+#ifndef ARGB_H
+#define ARGB_H
 
 #include <math.h>
 
