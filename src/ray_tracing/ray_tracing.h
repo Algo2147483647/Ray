@@ -6,7 +6,7 @@
 #include <thread>
 #include <mutex>
 #include <Eigen/Dense>
-#include "utils/image.h"
+#include "../image/image.h"
 #include "utils/thread_pool.h"
 #include "entity/object_tree.h"
 #include "entity/camera.h"
@@ -19,13 +19,13 @@ namespace RayTracing {
     static int threadNum = 20;
     static std::mutex _mutex;
 
-    inline Vector3f TraceRay(const ObjectTree& objTree, Ray& ray, const int level) {
+    inline Vector3f TraceRay(ObjectTree& objTree, Ray& ray, const int level) {
         if (level > MaxRayLevel) {
             return Vector3f(0, 0, 0);
         }
 
         Object* obj = nullptr;
-        float dis = objTree.seekIntersection(ray.origin, ray.direction, obj);
+        float dis = objTree.GetIntersection(ray.origin, ray.direction, objTree.root, obj);
         if (dis == FLT_MAX) {
             return Vector3f(0, 0, 0);
         }
