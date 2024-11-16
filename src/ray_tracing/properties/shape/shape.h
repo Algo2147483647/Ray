@@ -22,7 +22,7 @@ public:
 
     virtual string GetName();
     virtual float intersect(const Vector3f& raySt, const Vector3f& ray) = 0;  // Pure virtual function
-    virtual Vector3f& faceVector(const Vector3f& intersect, Vector3f& res) = 0;
+    virtual Vector3f& GetNormalVector(const Vector3f& intersect, Vector3f& res) = 0;
     virtual void boundingBox(Vector3f& pmax, Vector3f& pmin) = 0;
     virtual void paint(Image& imgXY, Image& imgYZ) = 0;
 };

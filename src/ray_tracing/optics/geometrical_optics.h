@@ -10,8 +10,7 @@
 using namespace Eigen;
 using namespace std;
 
-thread_local std::mt19937 generator(std::random_device{}());
-thread_local std::uniform_real_distribution<> distribution(0, 1);
+
 
 namespace GeometricalOptics {
 	inline Vector3f reflect(const Vector3f& incidentRay, const Vector3f& normal) {

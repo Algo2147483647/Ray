@@ -1,11 +1,13 @@
 #ifndef RAY_TRACING_CAMERA_H
 #define RAY_TRACING_CAMERA_H
 
+#include <vector>
 #include <corecrt_math_defines.h>
 #include <Eigen/Dense>
 #include "../utils/consts.h"
 
 using namespace Eigen;
+using namespace std;
 
 namespace RayTracing {
 
@@ -20,8 +22,8 @@ namespace RayTracing {
             float fov, float aspect)
             : position(pos), lookAt(look), up(upVec), fieldOfView(fov), aspectRatio(aspect) {}
 
-        std::vector<Ray> GetRays(int width, int height) const {
-            std::vector<Ray> rays;
+        vector<Ray> GetRays(int width, int height) const {
+            vector<Ray> rays;
             rays.reserve(width * height);
 
             Vector3f forward = (lookAt - position).normalized();
@@ -51,6 +53,27 @@ namespace RayTracing {
             }
 
             return rays;
+        }
+
+        pair<int, int> GetRayCoordinates(const Ray& ray, int width, int height) const {
+            Vector3f forward = (lookAt - position).normalized();
+            Vector3f right = forward.cross(up).normalized();
+            Vector3f cameraUp = right.cross(forward).normalized();
+
+            // Calculate the dimensions of the image plane
+            float imageHeight = 2 * tan(fieldOfView * 0.5 * M_PI / 180.0);
+            float imageWidth = imageHeight * aspectRatio;
+
+            // Reverse mapping from ray direction to pixel coordinates
+            Vector3f dir = ray.direction.normalized();
+            float u = dir.dot(right) / (imageWidth / 2);
+            float v = dir.dot(cameraUp) / (imageHeight / 2);
+
+            // Convert normalized device coordinates to pixel coordinates
+            int i = static_cast<int>((u + 1) / 2 * width);
+            int j = static_cast<int>((1 - v) / 2 * height);
+
+            return make_pair(i, j);
         }
 
     };

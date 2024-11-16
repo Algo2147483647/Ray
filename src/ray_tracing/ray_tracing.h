@@ -4,6 +4,7 @@
 #include <vector>
 #include <algorithm>
 #include <thread>
+#include <mutex>
 #include <Eigen/Dense>
 #include "utils/image.h"
 #include "utils/thread_pool.h"
@@ -13,101 +14,73 @@
 
 using namespace Eigen;
 
-
-
 namespace RayTracing {
-	static int maxRayLevel = 6;
-	static mutex _mutex;
-	static Image imgXY, imgYZ;
-	static int threadNum = 20;
-	static bool is_debug = 0;
+    static int MaxRayLevel = 6;
+    static int threadNum = 20;
+    static std::mutex _mutex;
 
+    inline Vector3f TraceRay(const ObjectTree& objTree, Ray& ray, const int level) {
+        if (level > MaxRayLevel) {
+            return Vector3f(0, 0, 0);
+        }
 
-	inline Vector3f& TraceRay(const ObjectTree& objTree, Ray& ray, const int level) {
-		if (level > maxRayLevel) {
-			return ray.color = Vector3f(0, 0, 0);
-		}
+        Object* obj = nullptr;
+        float dis = objTree.seekIntersection(ray.origin, ray.direction, obj);
+        if (dis == FLT_MAX) {
+            return Vector3f(0, 0, 0);
+        }
 
-		Object* obj;
-		float dis = objTree.seekIntersection(ray.origin, ray.direct, obj);
-		if (dis == FLT_MAX) {
-			return ray.color = Vector3f(0, 0, 0);
-		}
+        ray.origin += dis * ray.direction;
+        Vector3f normalVector;
 
-		if (is_debug && level == 2) {
-			thread_local Vector3f rayStNew;
-			rayStNew = ray.origin + dis * ray.direct;
-			unique_lock<mutex> lock(_mutex);
-			Graphics::drawLine(imgXY, rayStNew[0], rayStNew[1], ray.origin[0], ray.origin[1]);
-			Graphics::drawLine(imgYZ, rayStNew[1], rayStNew[2], ray.origin[1], ray.origin[2]);
-		}
+        obj->shape->GetNormalVector(ray.origin, normalVector);
+        if (normalVector.dot(ray.direction) > 0) {
+            normalVector *= -1;
+        }
 
-		if (obj->material->rediate) {
-			ray.color = ray.color.cwiseProduct(obj->material->baseColor);
-			return ray.color;
-		}
-		
-		ray.origin += dis * ray.direct;
-		thread_local Vector3f faceVec;
-		{
-			obj->shape->faceVector(ray.origin, faceVec);
-			if (faceVec.dot(ray.direct) > 0) {
-				faceVec *= -1;
-			}
-		}
-		
-		obj->material->dielectricSurfacePropagation(ray, faceVec);
-		traceRay(objTree, ray, level + 1);
-		return ray.color;
-	}
+        DielectricSurfacePropagation(*obj->material, ray, normalVector);
+        return TraceRay(objTree, ray, level + 1);
+    }
 
-	 
-	inline void TraceRayThread(const Camera& camera, const ObjectTree& objTree, vector<MatrixXf>& img, int xSt, int xEd, int ySt, int yEd) {
+    inline void TraceRayThread(const Camera& camera, const ObjectTree& objTree, std::vector<MatrixXf>& img, const std::vector<Ray>& rays, int start, int end) {
+        for (int idx = start; idx < end; ++idx) {
+            Ray ray = rays[idx];
+            Vector3f color = TraceRay(objTree, ray, 0);
 
-		thread_local Vector3f sampleVec;
-		thread_local Ray ray;
-		
-		for (int y = ySt; y < yEd; y++) {
-			for (int x = xSt; x < xEd; x++) {
-				sampleVec = (x + distribution(gen) - img[0].rows() / 2.0 - 0.5) * camera.ScreenXVec +
-					        (y + distribution(gen) - img[0].cols() / 2.0 - 0.5) * camera.ScreenYVec;
-				ray.origin =  camera.center + sampleVec;
-				ray.direct = (camera.direct + sampleVec).normalized();
-				ray.color = Vector3f::Ones();
+            pair<int, int> coordinates = camera.GetRayCoordinates(ray, img[0].cols(), img[0].rows());
 
-				traceRay(objTree, ray, 0);
+            std::unique_lock<std::mutex> lock(_mutex);
+            for (int c = 0; c < 3; ++c) {
+                img[c](coordinates.first, coordinates.second) += color[c];
+            }
+        }
+    }
 
-				{
-					unique_lock<mutex> lock(_mutex);
-					for (int c = 0; c < 3; c++) 
-						img[c](x, y) += ray.color[c];
-				}
-			}
-		}
-	}
+    inline void TraceRay(const Camera& camera, const ObjectTree& objTree, std::vector<MatrixXf>& img, int sampleSt, int sampleEd) {
+        std::vector<Ray> rays = camera.GetRays(img[0].cols(), img[0].rows());
+        int raysPerThread = static_cast<int>(rays.size()) / threadNum;
 
-	inline void TraceRay(const Camera& camera, const ObjectTree& objTree, vector<MatrixXf>& img, int sampleSt, int sampleEd) {
-		int threadSize = img[0].rows() / threadNum;
-		ThreadPool pool(threadNum);
-		vector<future<void>> futures;
-		
-		for (int sample = sampleSt; sample < sampleEd; sample++) {
-			for (int i = 0; i < threadNum; i++) {
-				futures.push_back(pool.enqueue([&, i] {
-					TraceRayThread(camera, objTree, img, i * threadSize, (i + 1) * threadSize, 0, img[0].cols());
-				}));
-			}
-		}
+        ThreadPool pool(threadNum);
+        std::vector<std::future<void>> futures;
 
-		// Wait for all tasks to complete
-		for (auto& future : futures) {
-			future.wait();
-		}
+        for (int sample = sampleSt; sample < sampleEd; ++sample) {
+            for (int i = 0; i < threadNum; ++i) {
+                int startIdx = i * raysPerThread;
+                int endIdx = (i == threadNum - 1) ? static_cast<int>(rays.size()) : (i + 1) * raysPerThread;
+                futures.push_back(pool.enqueue([&, startIdx, endIdx] {
+                    TraceRayThread(camera, objTree, img, rays, startIdx, endIdx);
+                    }));
+            }
 
-		for(int i = 0; i < 3; i++) {
-			img[i] *= 1.0 / (sampleEd - sampleSt);
-		}
-	}
+            for (auto& future : futures) {
+                future.wait();
+            }
+        }
+
+        for (int i = 0; i < 3; ++i) {
+            img[i] *= 1.0f / (sampleEd - sampleSt);
+        }
+    }
 }
 
 #endif

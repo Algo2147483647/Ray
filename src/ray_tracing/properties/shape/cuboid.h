@@ -24,7 +24,7 @@ public:
         return tmin >= 0 ? tmin : tmax;
     }
 
-    Vector3f& faceVector(const Vector3f& intersect, Vector3f& res) override {
+    Vector3f& GetNormalVector(const Vector3f& intersect, Vector3f& res) override {
         if (fabs(intersect[0] - pmin[0]) < EPS)
             res = { -1, 0, 0 };
         else if (fabs(intersect[0] - pmax[0]) < EPS)

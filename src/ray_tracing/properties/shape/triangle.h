@@ -2,6 +2,7 @@
 #define RAY_TRACING_Shape_Triangle_h
 
 #include "shape.h"
+#include "../../utils/consts.h"
 
 class Triangle : public Shape {
 public:
@@ -27,7 +28,7 @@ public:
         }
 
         if (a < EPS)
-            return FLT_MAX;								//射线与三角面平行
+            return FLT_MAX; //射线与三角面平行
 
         // u & q & v
         float u = tmp.dot(p) / a;
@@ -42,11 +43,8 @@ public:
         return q.dot(edge[1]) / a;
     }
 
-    Vector3f& faceVector(const Vector3f& intersect, Vector3f& res) override {
-        res = (p2 - p1)
-              .cross(p3 - p1)
-              .normalized();
-        return res;
+    Vector3f& GetNormalVector(const Vector3f& intersect, Vector3f& res) override {
+        return res = (p2 - p1).cross(p3 - p1).normalized();
     }
 
     void boundingBox(Vector3f& pmax, Vector3f& pmin) override {
