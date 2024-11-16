@@ -52,7 +52,7 @@ public:
         return FLT_MAX;
     }
 
-    Vector3f& Get(const Vector3f& intersect, Vector3f& res) override {
+    Vector3f& GetNormalVector(const Vector3f& intersect, Vector3f& res) override {
         res = intersect - center;
         res.normalize();
         return res;

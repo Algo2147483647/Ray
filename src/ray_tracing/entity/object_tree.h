@@ -23,11 +23,11 @@ namespace RayTracing {
         ObjectNode(Object* obj, unique_ptr<ObjectNode> leftChild = nullptr, unique_ptr<ObjectNode> rightChild = nullptr)
             : obj(obj), children{ move(leftChild), move(rightChild) } {
             if (obj != nullptr) {
-                ComputeBoundingBox();
+                BuildComputeBoundingBox();
             }
         }
 
-        void ComputeBoundingBox() {
+        void BuildComputeBoundingBox() {
             boundbox = make_unique<Cuboid>();
             obj->shape->boundingBox(boundbox->pmax, boundbox->pmin);
         }
@@ -46,15 +46,15 @@ namespace RayTracing {
             return obj;
         }
 
-        void build() {
+        void Build() {
             objectNodes.clear();
             for (auto& obj : objects) {
                 objectNodes.push_back(make_unique<ObjectNode>(&obj));
             }
-            build(objectNodes, 0, static_cast<int>(objectNodes.size()) - 1, root);
+            Build(objectNodes, 0, static_cast<int>(objectNodes.size()) - 1, root);
         }
 
-        void build(vector<unique_ptr<ObjectNode>>& objectNodes, int l, int r, unique_ptr<ObjectNode>& node) {
+        void Build(vector<unique_ptr<ObjectNode>>& objectNodes, int l, int r, unique_ptr<ObjectNode>& node) {
             if (l == r) {
                 node = move(objectNodes[l]);
                 return;
@@ -87,8 +87,8 @@ namespace RayTracing {
             return a->boundbox->pmax[dim] < b->boundbox->pmax[dim];
                 });
 
-            build(objectNodes, l, (l + r) / 2, node->children[0]);
-            build(objectNodes, (l + r) / 2 + 1, r, node->children[1]);
+            Build(objectNodes, l, (l + r) / 2, node->children[0]);
+            Build(objectNodes, (l + r) / 2 + 1, r, node->children[1]);
         }
 
         float GetIntersection(const Vector3f& raySt, const Vector3f& ray, unique_ptr<ObjectNode>& node, Object*& obj) const {
