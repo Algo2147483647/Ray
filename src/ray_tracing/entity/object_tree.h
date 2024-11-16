@@ -28,7 +28,7 @@ namespace RayTracing {
         }
 
         void BuildComputeBoundingBox() {
-            boundbox = &Cuboid();
+            boundbox = new Cuboid();
             obj->shape->BuildBoundingBox(boundbox->pmax, boundbox->pmin);
         }
     };
@@ -46,12 +46,14 @@ namespace RayTracing {
             return obj;
         }
 
-        void Build() {
+        ObjectTree& Build() {
             objectNodes.clear();
             for (auto& obj : objects) {
-                objectNodes.push_back(&ObjectNode(&obj));
+                ObjectNode* node = new ObjectNode(&obj);
+                objectNodes.push_back(node);
             }
             Build(objectNodes, 0, objectNodes.size() - 1, root);
+            return *this;
         }
 
         void Build(vector<ObjectNode*>& objectNodes, int l, int r, ObjectNode*& node) {
@@ -60,7 +62,7 @@ namespace RayTracing {
                 return;
             }
 
-            node = &ObjectNode(nullptr);
+            node = new ObjectNode(nullptr);
             Vector3f pmin = objectNodes[l]->boundbox->pmin;
             Vector3f pmax = objectNodes[l]->boundbox->pmax;
             Vector3f delta = Vector3f::Zero();
@@ -73,7 +75,8 @@ namespace RayTracing {
                 }
             }
 
-            node->boundbox =&Cuboid();
+            Cuboid* boundbox = new Cuboid();
+            node->boundbox = boundbox;
             node->boundbox->pmin = pmin;
             node->boundbox->pmax = pmax;
 

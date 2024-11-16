@@ -35,27 +35,23 @@ namespace RayTracing {
                 string name;
                 float r, g, b, diffuse = 0, reflect = 0, refract = 0, refractivity = 1, radiate = 0;
                 iss >> name >> c >> r >> c >> g >> c >> b >> c;
+
+                auto* material = new Material({ r, g, b });
+                materials[name] = material;
+
                 string property;
                 while (iss >> property) {
                     if (property.find("Diffuse=") == 0)
-                        diffuse = stof(property.substr(8));
+                        material->diffuseLoss = stof(property.substr(8));
                     else if (property.find("Reflect=") == 0)
-                        reflect = stof(property.substr(8));
+                        material->reflectivity = stof(property.substr(8));
                     else if (property.find("Refract=") == 0)
-                        refract = stof(property.substr(8));
+                        material->refractivity = stof(property.substr(8));
                     else if (property.find("Refractivity=") == 0)
-                        refractivity = stof(property.substr(13));
+                        material->refractiveIndex = stof(property.substr(13));
                     else if (property.find("Radiate=") == 0)
-                        radiate = stof(property.substr(8));
+                        material->rediate = stof(property.substr(8));
                 }
-                auto* material = new Material({ r, g, b });
-                material->diffuseReflectProbability = diffuse;
-                material->reflectProbability = reflect;
-                material->refractProbability = refract;
-                material->refractivity[0] = refractivity;
-                material->rediate = radiate;
-                materials[name] = material;
-
             }
             else if (type == "Object") {
                 // Parse object
@@ -69,18 +65,24 @@ namespace RayTracing {
                     objTree.Add(new Cuboid(pos1, pos2), materials[materialName]);
                 }
                 else if (shape == "Sphere") {
-                    iss >> c >> pos1[0] >> c >> pos1[1] >> c >> pos1[2] >> c >> "Radius=" >> radius;
+                    iss >> c >> pos1[0] >> c >> pos1[1] >> c >> pos1[2] >> c;
+                    float radius = 0;
+                    string property;
+                    while (iss >> property) {
+                        if (property.find("Radius=") == 0) {
+                            radius = stof(property.substr(8));
+                        }
+                    }
                     objTree.Add(new Sphere(pos1, radius), materials[materialName]);
                 }
-
             }
             else if (type == "ObjectFile") {
                 // Parse external object file
-                string materialName, filePath;
-                Vector3f position;
-                float scale = 1;
-                iss >> materialName >> filePath >> c >> position[0] >> c >> position[1] >> c >> position[2] >> c >> "Scale=" >> scale;
-                objTree.Add(filePath, position, scale, materials[materialName]);
+                //string materialName, filePath;
+                //Vector3f position;
+                //float scale = 1;
+                //iss >> materialName >> filePath >> c >> position[0] >> c >> position[1] >> c >> position[2] >> c >> "Scale=" >> scale;
+                //objTree.Add(filePath, position, scale, materials[materialName]);
             }
         }
     file.close();

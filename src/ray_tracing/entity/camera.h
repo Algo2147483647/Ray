@@ -14,7 +14,7 @@ namespace RayTracing {
     struct Camera {
         Vector3f position;   // Camera position in the scene
         Vector3f direction;     // Point the camera is looking at
-        Vector3f up;         // Up vector to define the camera orientation
+        Vector3f up = Vector3f(0, 0, 1);         // Up vector to define the camera orientation
         float fieldOfView;   // Field of view in degrees
         float aspectRatio;   // Aspect ratio of the image (width / height)
 
