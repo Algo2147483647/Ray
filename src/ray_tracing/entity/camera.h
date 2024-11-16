@@ -3,6 +3,7 @@
 
 #include <corecrt_math_defines.h>
 #include <Eigen/Dense>
+#include "../utils/consts.h"
 
 using namespace Eigen;
 
@@ -14,41 +15,44 @@ namespace RayTracing {
         Vector3f up;         // Up vector to define the camera orientation
         float fieldOfView;   // Field of view in degrees
         float aspectRatio;   // Aspect ratio of the image (width / height)
-        float nearPlane;     // Distance to the near clipping plane
-        float farPlane;      // Distance to the far clipping plane
 
-        // Constructor
         Camera(const Vector3f& pos, const Vector3f& look, const Vector3f& upVec,
-            float fov, float aspect, float nearP = 0.1f, float farP = 1000.0f)
-            : position(pos), lookAt(look), up(upVec), fieldOfView(fov), aspectRatio(aspect),
-            nearPlane(nearP), farPlane(farP) {}
+            float fov, float aspect)
+            : position(pos), lookAt(look), up(upVec), fieldOfView(fov), aspectRatio(aspect) {}
 
-        // Method to calculate the view matrix
-        Matrix4f viewMatrix() const {
-            Vector3f zAxis = (position - lookAt).normalized(); // Forward
-            Vector3f xAxis = up.cross(zAxis).normalized();    // Right
-            Vector3f yAxis = zAxis.cross(xAxis);              // Up
+        std::vector<Ray> GetRays(int width, int height) const {
+            std::vector<Ray> rays;
+            rays.reserve(width * height);
 
-            Matrix4f view = Matrix4f::Identity();
-            view.block<3, 1>(0, 0) = xAxis;
-            view.block<3, 1>(0, 1) = yAxis;
-            view.block<3, 1>(0, 2) = zAxis;
-            view.block<3, 1>(0, 3) = -position;
+            Vector3f forward = (lookAt - position).normalized();
+            Vector3f right = forward.cross(up).normalized();
+            Vector3f cameraUp = right.cross(forward).normalized();
 
-            return view;
+            // Calculate the dimensions of the image plane
+            float imageHeight = 2 * tan(fieldOfView * 0.5 * M_PI / 180.0);
+            float imageWidth = imageHeight * aspectRatio;
+
+            // Loop through each pixel and generate rays
+            for (int j = 0; j < height; ++j) {
+                for (int i = 0; i < width; ++i) {
+                    // Add random offsets for Monte Carlo sampling
+                    float randX = distribution(generator);
+                    float randY = distribution(generator);
+
+                    // Calculate normalized device coordinates with randomness
+                    float u = (2 * ((i + randX) / width) - 1) * imageWidth / 2;
+                    float v = (1 - 2 * ((j + randY) / height)) * imageHeight / 2;
+
+
+                    // Calculate the ray direction
+                    Vector3f rayDirection = (forward + u * right + v * cameraUp).normalized();
+                    rays.emplace_back(position, rayDirection);
+                }
+            }
+
+            return rays;
         }
 
-        // Method to calculate the projection matrix
-        Matrix4f projectionMatrix() const {
-            float tanHalfFov = tan(fieldOfView * M_PI / 360.0f);
-            Matrix4f projection = Matrix4f::Zero();
-            projection(0, 0) = 1.0f / (aspectRatio * tanHalfFov);
-            projection(1, 1) = 1.0f / tanHalfFov;
-            projection(2, 2) = -(farPlane + nearPlane) / (farPlane - nearPlane);
-            projection(2, 3) = -2.0f * farPlane * nearPlane / (farPlane - nearPlane);
-            projection(3, 2) = -1.0f;
-            return projection;
-        }
     };
 }
 
