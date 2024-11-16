@@ -9,15 +9,16 @@
 using namespace Eigen;
 
 namespace GeometricalOptics {
-	inline float Haze(float I, float A, float dis, float beta) {
-		float t = exp(-beta * dis);
-		return I * t + A * (1 - t);
-	}
+    inline float computeHaze(float intensity, float ambientLight, float distance, float attenuationCoefficient) {
+        float transmissionFactor = exp(-attenuationCoefficient * distance);
+        return intensity * transmissionFactor + ambientLight * (1 - transmissionFactor);
+    }
 
-	inline Vector3f Haze(const Vector3f& I, const Vector3f& A, float dis, float beta) {
-		float t = exp(-beta * dis);
-		return t * I + (1 - t) * A;
-	}
+    inline Vector3f computeHaze(const Vector3f& intensity, const Vector3f& ambientLight, float distance, float attenuationCoefficient) {
+        float transmissionFactor = exp(-attenuationCoefficient * distance);
+        return transmissionFactor * intensity + (1 - transmissionFactor) * ambientLight;
+    }
+
 }
 
 #endif

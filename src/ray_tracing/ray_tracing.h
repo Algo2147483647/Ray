@@ -118,45 +118,6 @@ namespace RayTracing {
 			img[i] *= 1.0 / (sampleEd - sampleSt);
 		}
 	}
-
-	inline void debug(const Camera& camera, const ObjectTree& objTree) {
-		Graphics::PaintSize = 1;
-		imgXY = Image(3000, 3000);
-		imgYZ = Image(3000, 3000);
-		imgXY.setZero();
-		imgYZ.setZero();
-
-		Graphics::PaintColor = 0xFFFFFF;
-		for (auto& obj : objTree.ObjectSet) {
-			obj.shape->paint(imgXY, imgYZ);
-		}
-
-		{
-			Graphics::PaintColor = 0xFF0000;
-			Graphics::drawLine(imgXY, camera.center[0],  camera.center[1],
-				                      camera.center[0] + camera.direct[0],
-				                      camera.center[1] + camera.direct[1]);
-			Graphics::drawLine(imgYZ, camera.center[1],  camera.center[2],
-				                      camera.center[1] + camera.direct[1],
-				                      camera.center[2] + camera.direct[2]);
-
-			Graphics::PaintColor = 0x00FF00;
-			Graphics::drawLine(imgXY, camera.center[0],  camera.center[1],
-				                      camera.center[0] + camera.ScreenYVec[0] * 100, 
-				                      camera.center[1] + camera.ScreenYVec[1] * 100);
-
-			Graphics::PaintColor = 0x0000FF;
-			Graphics::drawLine(imgYZ, camera.center[1],  camera.center[2],
-				                      camera.center[1] + camera.ScreenXVec[1] * 100,
-				                      camera.center[2] + camera.ScreenXVec[2] * 100);
-
-			Graphics::PaintColor = 0xFFFF00;
-			Graphics::PaintSize = 0;
-		}
-
-		Graphics::ppmWrite("C:/Users/29753/Desktop/outXY.ppm", imgXY);
-		Graphics::ppmWrite("C:/Users/29753/Desktop/outYZ.ppm", imgYZ);
-	}
 }
 
 #endif
