@@ -1,5 +1,5 @@
-#ifndef IMAGE_H
-#define IMAGE_H
+#ifndef IMAGE_IMAGE_H
+#define IMAGE_IMAGE_H
 
 #include <Eigen/Dense>
 #include "ARGB.h"

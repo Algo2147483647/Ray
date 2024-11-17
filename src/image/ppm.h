@@ -1,11 +1,22 @@
-#ifndef PPM_H
-#define PPM_H
+#ifndef IMAGE_PPM_H
+#define IMAGE_PPM_H
 
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <Eigen/Dense>
 #include "image.h"
+
+/******************************************************************************
+*					.PPM 文件编码/解码
+*	[格式]:
+		[1] P() + 图片格式 + 宽高 + 最大像素值
+		[2] RGB像素数据
+*	[头格式]:
+		P1	Bitmap	ASCII			P4	Bitmap	Binary
+		P2	Graymap	ASCII			P5	Graymap	Binary
+		P3	Pixmap	ASCII			P6	Pixmap	Binary
+******************************************************************************/
 
 void PPMRead(const std::string& fileName, ImageRGB& image) {
     std::ifstream file(fileName, std::ios::binary);

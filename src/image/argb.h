@@ -1,5 +1,5 @@
-#ifndef ARGB_H
-#define ARGB_H
+#ifndef IMAGE_ARGB_H
+#define IMAGE_ARGB_H
 
 #include <math.h>
 
