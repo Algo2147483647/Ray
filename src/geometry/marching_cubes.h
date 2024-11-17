@@ -10,7 +10,7 @@ namespace Graphics {
 /*
  *    Marching Cubes 三维等高面绘制
  */
-static int MarchingCubes_TriTable[256][16] = {
+static int MarchingCubesTriTable[256][16] = {
 	{-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},
 	{0, 8, 3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},
 	{0, 1, 9,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1},
@@ -317,11 +317,11 @@ inline vector<vector<double>>& MarchingCubes(
 		}
 
 		for (int j = 0; j < 15; j += 3) {
-			if (MarchingCubes_TriTable[cubeindex][j] == -1) 
+			if (MarchingCubesTriTable[cubeindex][j] == -1)
 				break;
 
 			for (int k = 0; k < 3; k++) {
-				int e = MarchingCubes_TriTable[cubeindex][j + k]; 
+				int e = MarchingCubesTriTable[cubeindex][j + k];
 				double a = (0.0 - val[edge[e][0]]) / (val[edge[e][1]] - val[edge[e][0]]),
 					dx = ( vertex[edge[e][0]] & 0b1  )       * (1 - a) + 
 						 ( vertex[edge[e][1]] & 0b1  )       * a,
@@ -376,11 +376,11 @@ inline void MarchingCubes(
 		}
 
 		for (int j = 0; j < 15; j += 3) {
-			if (MarchingCubes_TriTable[cubeindex][j] == -1) 
+			if (MarchingCubesTriTable[cubeindex][j] == -1)
 				break;
 
 			for (int k = 0; k < 3; k++) {
-				int e = MarchingCubes_TriTable[cubeindex][j + k]; 
+				int e = MarchingCubesTriTable[cubeindex][j + k];
 				double a = (0.0 - val[edge[e][0]]) / (val[edge[e][1]] - val[edge[e][0]]),
 					dx = ( vertex[edge[e][0]] & 0b1  )       * (1 - a) + 
 						 ( vertex[edge[e][1]] & 0b1  )       * a,

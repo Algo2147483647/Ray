@@ -4,15 +4,12 @@
 #include <vector>
 #include <cmath>
 #include <functional>
-#include <Eigen/Dense>
+#include "struct.h"
 
 using namespace std;
 using namespace Eigen;
 
 namespace Graphics {
-
-typedef Vector3f Point;   // x, y, z
-typedef vector<double> triangle;   // x, y, z
 
 inline bool isEar(Point& a, Point& b, Point& c, vector<Point>& polygon) {
     static std::function<double(Point&, Point&, Point&)> crossProduct =

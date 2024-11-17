@@ -65,7 +65,7 @@ public:
         return res;
     }
 
-    void GetBoundingBox(Vector3f& pmax, Vector3f& pmin) override {
+    void GetBoundingBox(Vector3f& pmax, Vector3f& pmin) {
         // Optionally compute bounding box for the polynomial shape
         pmin = Vector3f(-FLT_MAX, -FLT_MAX, -FLT_MAX);
         pmax = Vector3f(FLT_MAX, FLT_MAX, FLT_MAX);

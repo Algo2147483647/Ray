@@ -16,13 +16,8 @@ namespace Modeling {
         return res;
     }
 
-	/****************************************************************
-				球面均匀点分布
-	*	[Referance]:
-			[1] Thanks and copyright for https://github.com/SebLague/Boids
-	****************************************************************/
 	inline vector<Point>& getSphereFibonacciPoint(vector<Point>& res, int n) {
-		double angleIncrement = M_PI * 2 * (1 + sqrt(5)) / 2;	// 黄金分割点
+		double angleIncrement = M_PI * 2 * (1 + sqrt(5)) / 2;	// 锟狡斤拷指锟斤拷
 
 		for (int i = 0; i < n; i++) {
 			double t = (double)i / n;

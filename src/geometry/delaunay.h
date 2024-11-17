@@ -3,110 +3,101 @@
 
 #include <algorithm>
 #include <vector>
+#include <cmath>
 
 using namespace std;
 
 namespace Geometry {
-	typedef vector<float> Point;
 
-	vector<Point> Delaunay(vector<Point>& points) {
-		vector<Point> triAns, triTemp, edgeBuffer;
-		sort(points.begin(), points.end(), [](Point& a, Point& b) {				// 将点按坐标x从小到大排序
-			return a[0] != b[0] ? a[0] < b[0] : a[1] < b[1];
-			});
+    using Point = vector<float>;
 
-		//[2]
-		Point maxPoint(points[0]),
-			  minPoint(points[0]);
-		for (int i = 1; i < points.size(); i++) {
-			maxPoint = (points[i][0] > maxPoint[0] || (points[i][0] == maxPoint[0] && points[i][1] > maxPoint[1])) ? points[i] : maxPoint;
-			minPoint = (points[i][0] < minPoint[0] || (points[i][0] == minPoint[0] && points[i][1] < minPoint[1])) ? points[i] : minPoint;
-		}
-		Point supertriangle(2, 3);
-		Point length = maxPoint - minPoint;
-		supertriangle(0, 0) = minPoint[0] - length[0] - 2;    
-		supertriangle(0, 1) = maxPoint[0] + length[0] + 2;   
-		supertriangle(0, 2) = (maxPoint[0] + minPoint[0]) / 2; 
-		supertriangle(1, 0) = minPoint[1] - 2;
-		supertriangle(1, 1) = minPoint[1] - 2;
-		supertriangle(1, 2) = maxPoint[1] + length[1] + 2;
-		triTemp.push_back(supertriangle);
-		//[3]
-		for (int i = 0; i < points.size(); i++) {
-			edgeBuffer.clear();
+    // Utility function to calculate the determinant of a 3x3 matrix
+    float determinant(const Point& a, const Point& b, const Point& c) {
+        return a[0] * (b[1] * c[2] - b[2] * c[1]) -
+            a[1] * (b[0] * c[2] - b[2] * c[0]) +
+            a[2] * (b[0] * c[1] - b[1] * c[0]);
+    }
 
-			for (int j = 0; j < triTemp.size(); j++) {
+    // Function to calculate the circumcenter of a triangle given by points a, b, and c
+    void circumcenter(const Point& a, const Point& b, const Point& c, Point& center, float& radius) {
+        float d = 2 * determinant(a, b, c);
+        float ax = a[0], ay = a[1];
+        float bx = b[0], by = b[1];
+        float cx = c[0], cy = c[1];
 
-				Point center, triEdge[3], temp;
-				for (int k = 0; k < 3; k++)
-					getCol(triTemp[j], k, triEdge[k]);
-				double R;
-				ThreePoints2Circle(triEdge, center, R);
-				double distance = (sub(temp, point[i], center)).norm();
+        float A = ax * ax + ay * ay;
+        float B = bx * bx + by * by;
+        float C = cx * cx + cy * cy;
 
-				if (point[i][0] > center[0] + R) {
-					triAns.push_back(triTemp[j]);
-					triTemp.erase(triTemp.begin() + j--);
-				}
+        center[0] = (A * (by - cy) + B * (cy - ay) + C * (ay - by)) / d;
+        center[1] = (A * (cx - bx) + B * (ax - cx) + C * (bx - ax)) / d;
+        radius = sqrt((center[0] - ax) * (center[0] - ax) + (center[1] - ay) * (center[1] - ay));
+    }
 
-				else if (distance < R) {
-					Point edge(2, 2), p1, p2;
-					for (int k = 0; k < 3; k++) {
-						getCol(triTemp[j], k, p1);
-						getCol(triTemp[j], k + 1) % 3, p2);
-						if (p1[0] < p2[0] || (p1[0] == p2[0] && p1[1] < p2[1])) {
-							setCol(edge, 0, p1);
-							setCol(edge, 1, p2);
-						}
-						else {
-							setCol(edge, 0, p2);
-							setCol(edge, 1, p1);
-						}
-						edgeBuffer.push_back(edge);
-					}
-					triTemp.erase(triTemp.begin() + j--);
-				}
-			}
+    vector<Point> Delaunay(vector<Point>& points) {
+        vector<Point> triAns, triTemp, edgeBuffer;
 
-			sort(edgeBuffer.begin(), edgeBuffer.end(), [](Point a, Point b) {
-				if (a(0, 0) < b(0, 0) || (a(0, 0) == b(0, 0) && a(1, 0) < b(1, 0)))return true;
-			if (a(0, 1) < b(0, 1) || (a(0, 1) == b(0, 1) && a(1, 1) < b(1, 1)))return true;
-			return false;
-				});
-			for (int j = 0; j < edgeBuffer.size() - 1; j++) {
-				bool flag = 0;
-				while (j + 1 < edgeBuffer.size() && edgeBuffer[j] == edgeBuffer[j + 1]) {
-					edgeBuffer.erase(edgeBuffer.begin() + j + 1); flag = 1;
-				}
-				if (flag) { edgeBuffer.erase(edgeBuffer.begin() + j); j--; }
-			}
-			//[3.4] 
-			for (int j = 0; j < edgeBuffer.size(); j++) {
-				Point t(2, 3), temp;
-				t.setCol(0, edgeBuffer[j].getCol(0, temp));
-				t.setCol(1, edgeBuffer[j].getCol(1, temp));
-				t.setCol(2, point[i]);
-				triTemp.push_back(t);
-			}
-		}
-		//[4]
-		for (int i = 0; i < triTemp.size(); i++) triAns.push_back(triTemp[i]);
-		for (int i = 0; i < triAns.size(); i++) {
-			Point t;
-			for (int j = 0; j < 3; j++) {
-				triAns[i].getCol(j, t);
-				if (t[0]< minPoint[0] || t[1] < minPoint[1] || t[0] > maxPoint[0] || t[1] > maxPoint[1]) {
-					triAns.erase(triAns.begin() + i--); break;
-				}
-			}
-		}
-		// [Output]
-		TrianglesNum = triAns.size();
-		Point* Triangles = (Point*)calloc(TrianglesNum, sizeof(Point));
-		for (int i = 0; i < TrianglesNum; i++) Triangles[i] = triAns[i];
-		return Triangles;
-	}
+        sort(points.begin(), points.end(), [](const Point& a, const Point& b) {
+            return a[0] != b[0] ? a[0] < b[0] : a[1] < b[1];
+            });
 
+        // [2] Find min and max points
+        Point maxPoint = points[0], minPoint = points[0];
+        for (const auto& point : points) {
+            if (point[0] > maxPoint[0] || (point[0] == maxPoint[0] && point[1] > maxPoint[1])) {
+                maxPoint = point;
+            }
+            if (point[0] < minPoint[0] || (point[0] == minPoint[0] && point[1] < minPoint[1])) {
+                minPoint = point;
+            }
+        }
+
+        // [3] Create supertriangle
+        Point supertriangle = { minPoint[0] - 1.0f, minPoint[1] - 1.0f, maxPoint[0] + 1.0f, maxPoint[1] + 1.0f };
+        triTemp.push_back(supertriangle);
+
+        // [4] Main loop for triangulation
+        for (const auto& p : points) {
+            edgeBuffer.clear();
+
+            // Remove triangles whose circumcircle contains the point
+            for (auto it = triTemp.begin(); it != triTemp.end();) {
+                Point center(2);
+                float radius;
+                circumcenter((*it), (*it) + 2, (*it) + 4, center, radius);
+
+                if ((p[0] - center[0]) * (p[0] - center[0]) + (p[1] - center[1]) * (p[1] - center[1]) < radius * radius) {
+                    edgeBuffer.push_back({ (*it)[0], (*it)[1], (*it)[2], (*it)[3] });
+                    edgeBuffer.push_back({ (*it)[2], (*it)[3], (*it)[4], (*it)[5] });
+                    edgeBuffer.push_back({ (*it)[4], (*it)[5], (*it)[0], (*it)[1] });
+                    it = triTemp.erase(it);
+                }
+                else {
+                    ++it;
+                }
+            }
+
+            // Sort and remove duplicate edges
+            sort(edgeBuffer.begin(), edgeBuffer.end());
+            edgeBuffer.erase(unique(edgeBuffer.begin(), edgeBuffer.end()), edgeBuffer.end());
+
+            // Create new triangles
+            for (const auto& edge : edgeBuffer) {
+                triTemp.push_back({ edge[0], edge[1], edge[2], edge[3], p[0], p[1] });
+            }
+        }
+
+        // [5] Remove triangles that share vertices with supertriangle
+        for (const auto& tri : triTemp) {
+            if (find(supertriangle.begin(), supertriangle.end(), tri[0]) == supertriangle.end() &&
+                find(supertriangle.begin(), supertriangle.end(), tri[2]) == supertriangle.end() &&
+                find(supertriangle.begin(), supertriangle.end(), tri[4]) == supertriangle.end()) {
+                triAns.push_back(tri);
+            }
+        }
+
+        return triAns;
+    }
 
 }
-#endif
+#endif // COMPUTATIONAL_GEOMETRY_DELAUNAY_H
