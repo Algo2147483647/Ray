@@ -1,9 +1,10 @@
 package object
 
 import (
-	"gonum.org/v1/gonum/spatial/r3"
+	"gonum.org/v1/gonum/mat"
 	"math"
 	"sort"
+	"src-golang/model/object/shape_library"
 )
 
 // ObjectTree 管理场景中的物体层次结构
@@ -11,6 +12,31 @@ type ObjectTree struct {
 	Root        *ObjectNode
 	Objects     []Object
 	ObjectNodes []*ObjectNode
+}
+
+// 向量操作工具函数
+func vecMin(a, b *mat.VecDense) *mat.VecDense {
+	return mat.NewVecDense(3, []float64{
+		math.Min(a.AtVec(0), b.AtVec(0)),
+		math.Min(a.AtVec(1), b.AtVec(1)),
+		math.Min(a.AtVec(2), b.AtVec(2)),
+	})
+}
+
+func vecMax(a, b *mat.VecDense) *mat.VecDense {
+	return mat.NewVecDense(3, []float64{
+		math.Max(a.AtVec(0), b.AtVec(0)),
+		math.Max(a.AtVec(1), b.AtVec(1)),
+		math.Max(a.AtVec(2), b.AtVec(2)),
+	})
+}
+
+func vecSub(a, b *mat.VecDense) *mat.VecDense {
+	return mat.NewVecDense(3, []float64{
+		a.AtVec(0) - b.AtVec(0),
+		a.AtVec(1) - b.AtVec(1),
+		a.AtVec(2) - b.AtVec(2),
+	})
 }
 
 // Add 添加新物体到场景
@@ -43,51 +69,46 @@ func (t *ObjectTree) build(l, r int, node **ObjectNode) {
 	*node = NewObjectNode(nil, nil, nil)
 	pmin := t.ObjectNodes[l].BoundBox.Pmin
 	pmax := t.ObjectNodes[l].BoundBox.Pmax
-	delta := r3.Vec{}
+	delta := mat.NewVecDense(3, []float64{0, 0, 0})
 
 	for i := l + 1; i <= r; i++ {
 		box := t.ObjectNodes[i].BoundBox
-		pmin = r3.Vec{
-			X: math.Min(pmin.X, box.Pmin.X),
-			Y: math.Min(pmin.Y, box.Pmin.Y),
-			Z: math.Min(pmin.Z, box.Pmin.Z),
-		}
-		pmax = r3.Vec{
-			X: math.Max(pmax.X, box.Pmax.X),
-			Y: math.Max(pmax.Y, box.Pmax.Y),
-			Z: math.Max(pmax.Z, box.Pmax.Z),
-		}
-		boxDelta := r3.Sub(box.Pmax, box.Pmin)
-		delta = r3.Vec{
-			X: math.Max(delta.X, boxDelta.X),
-			Y: math.Max(delta.Y, boxDelta.Y),
-			Z: math.Max(delta.Z, boxDelta.Z),
+		pmin = vecMin(pmin, box.Pmin)
+		pmax = vecMax(pmax, box.Pmax)
+		boxDelta := vecSub(box.Pmax, box.Pmin)
+
+		// 计算最大维度差
+		for d := 0; d < 3; d++ {
+			if boxDelta.AtVec(d) > delta.AtVec(d) {
+				delta.SetVec(d, boxDelta.AtVec(d))
+			}
 		}
 	}
 
-	(*node).BoundBox = &Cuboid{Pmin: pmin, Pmax: pmax}
-	size := r3.Sub(pmax, pmin)
-	dimRatios := r3.Vec{
-		X: delta.X / size.X,
-		Y: delta.Y / size.Y,
-		Z: delta.Z / size.Z,
+	(*node).BoundBox = &shape_library.Cuboid{Pmin: pmin, Pmax: pmax}
+	size := vecSub(pmax, pmin)
+	dimRatios := make([]float64, 3)
+	for d := 0; d < 3; d++ {
+		dimRatios[d] = delta.AtVec(d) / size.AtVec(d)
 	}
 
+	// 选择最大扩展维度
 	dim := 0
-	if dimRatios.Y > dimRatios.X {
+	if dimRatios[1] > dimRatios[0] {
 		dim = 1
 	}
-	if dimRatios.Z > dimRatios.X && dimRatios.Z > dimRatios.Y {
+	if dimRatios[2] > dimRatios[0] && dimRatios[2] > dimRatios[1] {
 		dim = 2
 	}
 
+	// 按选定维度排序
 	sort.Slice(t.ObjectNodes[l:r+1], func(i, j int) bool {
 		a := t.ObjectNodes[l+i].BoundBox.Pmin
 		b := t.ObjectNodes[l+j].BoundBox.Pmin
-		if a.Get(dim) != b.Get(dim) {
-			return a.Get(dim) < b.Get(dim)
+		if a.AtVec(dim) != b.AtVec(dim) {
+			return a.AtVec(dim) < b.AtVec(dim)
 		}
-		return t.ObjectNodes[l+i].BoundBox.Pmax.Get(dim) < t.ObjectNodes[l+j].BoundBox.Pmax.Get(dim)
+		return t.ObjectNodes[l+i].BoundBox.Pmax.AtVec(dim) < t.ObjectNodes[l+j].BoundBox.Pmax.AtVec(dim)
 	})
 
 	mid := (l + r) / 2
@@ -96,7 +117,7 @@ func (t *ObjectTree) build(l, r int, node **ObjectNode) {
 }
 
 // GetIntersection 查找光线与物体的交点
-func (t *ObjectTree) GetIntersection(raySt, rayDir r3.Vec, node *ObjectNode) (float64, *Object) {
+func (t *ObjectTree) GetIntersection(raySt, rayDir *mat.VecDense, node *ObjectNode) (float64, *Object) {
 	if node == nil {
 		return math.MaxFloat64, nil
 	}

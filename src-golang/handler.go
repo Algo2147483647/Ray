@@ -20,11 +20,19 @@ type Handler struct {
 	imgout     *image.RGBA
 }
 
-func NewHandler(scriptPath string) *Handler {
+func NewHandler() *Handler {
 	return &Handler{
-		ScriptPath: scriptPath,
-		imgout:     image.NewRGBA(image.Rect(0, 0, 800, 800)),
+		imgout: image.NewRGBA(image.Rect(0, 0, 800, 800)),
 	}
+}
+
+func (h *Handler) SetScriptPath(scriptPath string) *Handler {
+	if h.err != nil {
+		return h
+	}
+
+	h.ScriptPath = scriptPath
+	return h
 }
 
 func (h *Handler) PreCheck() *Handler {

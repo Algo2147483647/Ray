@@ -3,6 +3,7 @@ package ray_tracing
 import (
 	"bufio"
 	"fmt"
+	"gonum.org/v1/gonum/mat"
 	"gonum.org/v1/gonum/spatial/r3"
 	"math"
 	"math/rand"
@@ -23,15 +24,15 @@ var (
 )
 
 // TraceRay 递归追踪光线
-func TraceRay(objTree *object.ObjectTree, ray *model.Ray, level int) r3.Vec {
+func TraceRay(objTree *object.ObjectTree, ray *model.Ray, level int) *mat.VecDense {
 	if level > MaxRayLevel {
-		return r3.Vec{} // 黑色
+		return &mat.VecDense{} // 黑色
 	}
 
 	// 查找最近交点
 	dis, obj := objTree.GetIntersection(ray.Origin, ray.Direction, objTree.Root)
 	if dis >= math.MaxFloat64 {
-		return r3.Vec{} // 无交点
+		return &mat.VecDense{} // 无交点
 	}
 
 	// 移动光线到交点
@@ -95,50 +96,6 @@ func TraceScene(camera *model.Camera, objTree *object.ObjectTree, img *Image, sa
 	img.Scale(1.0 / float64(samples))
 }
 
-// Image 表示渲染图像
-type Image struct {
-	R, G, B       [][]float64 // 红绿蓝通道
-	Width, Height int
-}
-
-// NewImage 创建新图像
-func NewImage(width, height int) *Image {
-	img := &Image{
-		Width:  width,
-		Height: height,
-		R:      make([][]float64, height),
-		G:      make([][]float64, height),
-		B:      make([][]float64, height),
-	}
-
-	for y := 0; y < height; y++ {
-		img.R[y] = make([]float64, width)
-		img.G[y] = make([]float64, width)
-		img.B[y] = make([]float64, width)
-	}
-	return img
-}
-
-// AddColor 添加颜色到像素
-func (img *Image) AddColor(x, y int, color r3.Vec) {
-	if x >= 0 && x < img.Width && y >= 0 && y < img.Height {
-		img.R[y][x] += color.X
-		img.G[y][x] += color.Y
-		img.B[y][x] += color.Z
-	}
-}
-
-// Scale 缩放图像
-func (img *Image) Scale(factor float64) {
-	for y := 0; y < img.Height; y++ {
-		for x := 0; x < img.Width; x++ {
-			img.R[y][x] *= factor
-			img.G[y][x] *= factor
-			img.B[y][x] *= factor
-		}
-	}
-}
-
 // LoadSceneFromScript 从脚本加载场景
 func LoadSceneFromScript(filepath string, objTree *object.ObjectTree) error {
 	file, err := os.Open(filepath)
@@ -178,7 +135,7 @@ func LoadSceneFromScript(filepath string, objTree *object.ObjectTree) error {
 			r, _ := strconv.ParseFloat(colorParts[0], 64)
 			g, _ := strconv.ParseFloat(colorParts[1], 64)
 			b, _ := strconv.ParseFloat(colorParts[2], 64)
-			material := object.NewMaterial(r3.Vec{X: r, Y: g, Z: b})
+			material := object.NewMaterial(&mat.VecDense{X: r, Y: g, Z: b})
 
 			// 解析材质属性
 			for _, prop := range parts[3:] {
@@ -242,7 +199,7 @@ func LoadSceneFromScript(filepath string, objTree *object.ObjectTree) error {
 						radius, _ = strconv.ParseFloat(prop[7:], 64)
 					}
 				}
-				objTree.Add(NewSphere(center, radius), material)
+				objTree.Add(shape_library.NewSphere(center, radius), material)
 			}
 		}
 	}
@@ -250,108 +207,13 @@ func LoadSceneFromScript(filepath string, objTree *object.ObjectTree) error {
 }
 
 // parseVec 解析向量字符串
-func parseVec(s string) r3.Vec {
+func parseVec(s string) *mat.VecDense {
 	parts := strings.Split(s, ",")
 	if len(parts) != 3 {
-		return r3.Vec{}
+		return &mat.VecDense{}
 	}
 	x, _ := strconv.ParseFloat(parts[0], 64)
 	y, _ := strconv.ParseFloat(parts[1], 64)
 	z, _ := strconv.ParseFloat(parts[2], 64)
-	return r3.Vec{X: x, Y: y, Z: z}
-}
-
-// Cuboid 表示长方体
-type Cuboid struct {
-	Min, Max r3.Vec
-}
-
-func (c *Cuboid) Name() string { return "Cuboid" }
-
-func (c *Cuboid) Intersect(rayStart, rayDir r3.Vec) float64 {
-	return c.Intersect(rayStart, rayDir) // 使用之前定义的包围盒相交算法
-}
-
-func (c *Cuboid) NormalVector(point r3.Vec) r3.Vec {
-	// 计算最接近的面
-	distances := []float64{
-		math.Abs(point.X - c.Min.X),
-		math.Abs(point.X - c.Max.X),
-		math.Abs(point.Y - c.Min.Y),
-		math.Abs(point.Y - c.Max.Y),
-		math.Abs(point.Z - c.Min.Z),
-		math.Abs(point.Z - c.Max.Z),
-	}
-
-	minDist := math.MaxFloat64
-	normal := r3.Vec{}
-	for i, d := range distances {
-		if d < minDist {
-			minDist = d
-			switch i {
-			case 0:
-				normal = r3.Vec{-1, 0, 0}
-			case 1:
-				normal = r3.Vec{1, 0, 0}
-			case 2:
-				normal = r3.Vec{0, -1, 0}
-			case 3:
-				normal = r3.Vec{0, 1, 0}
-			case 4:
-				normal = r3.Vec{0, 0, -1}
-			case 5:
-				normal = r3.Vec{0, 0, 1}
-			}
-		}
-	}
-	return normal
-}
-
-func (c *Cuboid) BoundingBox() (pmax, pmin r3.Vec) {
-	return c.Max, c.Min
-}
-
-// Sphere 表示球体
-type Sphere struct {
-	Center r3.Vec
-	Radius float64
-}
-
-func NewSphere(center r3.Vec, radius float64) *Sphere {
-	return &Sphere{Center: center, Radius: radius}
-}
-
-func (s *Sphere) Name() string { return "Sphere" }
-
-func (s *Sphere) Intersect(rayStart, rayDir r3.Vec) float64 {
-	oc := r3.Sub(rayStart, s.Center)
-	a := r3.Dot(rayDir, rayDir)
-	b := 2 * r3.Dot(oc, rayDir)
-	c := r3.Dot(oc, oc) - s.Radius*s.Radius
-	discriminant := b*b - 4*a*c
-
-	if discriminant < 0 {
-		return math.MaxFloat64
-	}
-
-	sqrtD := math.Sqrt(discriminant)
-	t1 := (-b - sqrtD) / (2 * a)
-	t2 := (-b + sqrtD) / (2 * a)
-
-	if t1 > 0 {
-		return t1
-	}
-	if t2 > 0 {
-		return t2
-	}
-	return math.MaxFloat64
-}
-
-func (s *Sphere) NormalVector(point r3.Vec) r3.Vec {
-	return r3.Unit(r3.Sub(point, s.Center))
-}
-
-func (s *Sphere) BoundingBox() (pmax, pmin r3.Vec) {
-	r := r3.Vec{s.Radius, s.Radius, s.Radius}
-	return r3.Add(s.Center, r), r3.Sub(s.Center, r)
+	return &mat.VecDense{X: x, Y: y, Z: z}
 }

@@ -6,16 +6,16 @@ import (
 )
 
 func main() {
-	defaultFile := "C:/Algo/Projects/Ray/src-golang/test.json"
-	scriptPath := defaultFile
+	scriptPath := "C:/Algo/Projects/Ray/src-golang/test.json"
 
 	if len(os.Args) > 1 {
 		scriptPath = os.Args[1]
 	} else {
-		fmt.Printf("Using default script: %s\n", defaultFile)
+		fmt.Printf("Using default script: %s\n", scriptPath)
 	}
 
-	h := NewHandler(scriptPath).
+	h := NewHandler().
+		SetScriptPath(scriptPath).
 		PreCheck().
 		LoadScript().
 		BuildCamera().
@@ -29,11 +29,4 @@ func main() {
 	}
 
 	fmt.Println("Ray tracing completed successfully")
-}
-
-func min(a, b float32) float32 {
-	if a < b {
-		return a
-	}
-	return b
 }
