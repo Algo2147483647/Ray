@@ -9,6 +9,8 @@
 /bin/
 /build/
 /out/
+*/build/
+*/out/
 *.test
 
 # Vendor directories (optional if using Go modules)
