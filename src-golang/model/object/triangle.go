@@ -1,10 +1,9 @@
-package shape_library
+package object
 
 import (
 	"gonum.org/v1/gonum/mat"
 	"math"
 	"src-golang/math_lib"
-	"src-golang/model/object"
 	"sync"
 )
 
@@ -26,7 +25,7 @@ var (
 )
 
 type Triangle struct {
-	object.BaseShape
+	BaseShape
 
 	P1, P2, P3 *mat.VecDense
 	Engraving  func(*mat.VecDense) bool

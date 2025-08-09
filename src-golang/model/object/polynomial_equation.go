@@ -1,16 +1,14 @@
-package shape_library
+package object
 
 import (
+	"gonum.org/v1/gonum/mat"
 	"math"
 	"src-golang/math_lib"
-	"src-golang/model/object"
-
-	"gonum.org/v1/gonum/mat"
 )
 
 // PolynomialEquation 表示多项式方程定义的曲面
 type PolynomialEquation struct {
-	object.BaseShape
+	BaseShape
 
 	Coeffs [4]float64 // 系数 [a, b, c, d] (a*x² + b*y² + c*z² = d)
 }

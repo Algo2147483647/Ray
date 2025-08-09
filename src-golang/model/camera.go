@@ -18,7 +18,9 @@ type Camera struct {
 // NewCamera 创建新相机
 func NewCamera() *Camera {
 	return &Camera{
-		Up: mat.NewVecDense(3, []float64{0, 0, 1}), // 默认Z轴向上
+		Position:  mat.NewVecDense(3, []float64{0, 0, 0}),
+		Direction: mat.NewVecDense(3, []float64{1, 0, 0}),
+		Up:        mat.NewVecDense(3, []float64{0, 0, 1}),
 	}
 }
 

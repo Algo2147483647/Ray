@@ -4,13 +4,11 @@ import (
 	"bufio"
 	"fmt"
 	"gonum.org/v1/gonum/mat"
-	"gonum.org/v1/gonum/spatial/r3"
 	"math"
 	"math/rand"
 	"os"
 	"src-golang/model"
 	"src-golang/model/object"
-	"src-golang/model/object/shape_library"
 	"strconv"
 	"strings"
 	"sync"
@@ -26,22 +24,27 @@ var (
 // TraceRay 递归追踪光线
 func TraceRay(objTree *object.ObjectTree, ray *model.Ray, level int) *mat.VecDense {
 	if level > MaxRayLevel {
-		return &mat.VecDense{} // 黑色
+		return mat.NewVecDense(3, nil) // 返回黑色 (0,0,0)
 	}
 
 	// 查找最近交点
 	dis, obj := objTree.GetIntersection(ray.Origin, ray.Direction, objTree.Root)
 	if dis >= math.MaxFloat64 {
-		return &mat.VecDense{} // 无交点
+		return mat.NewVecDense(3, nil) // 无交点，返回黑色
 	}
 
-	// 移动光线到交点
-	ray.Origin = r3.Add(ray.Origin, r3.Scale(dis, ray.Direction))
+	// 移动光线到交点: origin = origin + dis * direction
+	newOrigin := new(mat.VecDense)
+	newOrigin.ScaleVec(dis, ray.Direction)
+	newOrigin.AddVec(ray.Origin, newOrigin)
+	ray.Origin = newOrigin
 
 	// 计算法向量
 	normal := obj.Shape.NormalVector(ray.Origin)
-	if r3.Dot(normal, ray.Direction) > 0 {
-		normal = r3.Scale(-1, normal) // 确保法线朝向光源
+
+	// 确保法线朝向光源: 如果法线方向与光线方向夹角大于90度则翻转
+	if mat.Dot(normal, ray.Direction) > 0 {
+		normal.ScaleVec(-1, normal)
 	}
 
 	// 处理材质交互
@@ -55,29 +58,35 @@ func TraceRay(objTree *object.ObjectTree, ray *model.Ray, level int) *mat.VecDen
 }
 
 // TraceRayThread 线程安全的光线追踪
-func TraceRayThread(camera *model.Camera, objTree *object.ObjectTree, img *Image, rays []*model.Ray, wg *sync.WaitGroup) {
+func TraceRayThread(camera *model.Camera, objTree *object.ObjectTree, img [3]*mat.Dense, rays []*model.Ray, wg *sync.WaitGroup) {
 	defer wg.Done()
-
+	rows, cols := img[0].Dims()
 	for _, ray := range rays {
 		color := TraceRay(objTree, ray, 0)
-		x, y := camera.GetRayCoordinates(ray, img.Width, img.Height)
+		x, y := camera.GetRayCoordinates(ray, rows, cols)
 
 		// 线程安全地更新图像
 		globalMutex.Lock()
-		img.AddColor(x, y, color)
+		for i, _ := range img {
+			img[i].Set(x, y, color.AtVec(i))
+		}
 		globalMutex.Unlock()
 	}
 }
 
 // TraceScene 追踪整个场景
-func TraceScene(camera *model.Camera, objTree *object.ObjectTree, img *Image, samples int) {
-	raysPerThread := (img.Width * img.Height) / ThreadNum
+func TraceScene(camera *model.Camera, objTree *object.ObjectTree, img [3]*mat.Dense, samples int) {
+	// 计算每线程处理的光线数
+	rows, cols := img[0].Dims()
+	totalPixels := rows * cols
+	raysPerThread := totalPixels / ThreadNum
 
 	var wg sync.WaitGroup
 	wg.Add(ThreadNum)
 
 	for sample := 0; sample < samples; sample++ {
-		rays := camera.GetRays(img.Width, img.Height, rand.New(rand.NewSource(0)))
+		// 生成所有光线
+		rays := camera.GetRays(rows, cols, rand.New(rand.NewSource(0)))
 
 		for i := 0; i < ThreadNum; i++ {
 			start := i * raysPerThread
@@ -92,8 +101,9 @@ func TraceScene(camera *model.Camera, objTree *object.ObjectTree, img *Image, sa
 		wg.Wait()
 	}
 
-	// 平均采样结果
-	img.Scale(1.0 / float64(samples))
+	for i := range img {
+		img[i].Scale(1.0/float64(samples), img[i])
+	}
 }
 
 // LoadSceneFromScript 从脚本加载场景
@@ -135,7 +145,7 @@ func LoadSceneFromScript(filepath string, objTree *object.ObjectTree) error {
 			r, _ := strconv.ParseFloat(colorParts[0], 64)
 			g, _ := strconv.ParseFloat(colorParts[1], 64)
 			b, _ := strconv.ParseFloat(colorParts[2], 64)
-			material := object.NewMaterial(&mat.VecDense{X: r, Y: g, Z: b})
+			material := object.NewMaterial(mat.NewVecDense(3, []float64{r, g, b}))
 
 			// 解析材质属性
 			for _, prop := range parts[3:] {
@@ -183,7 +193,7 @@ func LoadSceneFromScript(filepath string, objTree *object.ObjectTree) error {
 				p2Str := strings.Trim(parts[4], "{}")
 				p1 := parseVec(p1Str)
 				p2 := parseVec(p2Str)
-				objTree.Add(shape_library.NewCuboid(p1, p2), material)
+				objTree.Add(object.NewCuboid(p1, p2), material)
 
 			case "Sphere":
 				// 格式: Sphere {x,y,z} Radius=value
@@ -199,7 +209,7 @@ func LoadSceneFromScript(filepath string, objTree *object.ObjectTree) error {
 						radius, _ = strconv.ParseFloat(prop[7:], 64)
 					}
 				}
-				objTree.Add(shape_library.NewSphere(center, radius), material)
+				objTree.Add(object.NewSphere(center, radius), material)
 			}
 		}
 	}
@@ -215,5 +225,5 @@ func parseVec(s string) *mat.VecDense {
 	x, _ := strconv.ParseFloat(parts[0], 64)
 	y, _ := strconv.ParseFloat(parts[1], 64)
 	z, _ := strconv.ParseFloat(parts[2], 64)
-	return &mat.VecDense{X: x, Y: y, Z: z}
+	return mat.NewVecDense(3, []float64{x, y, z})
 }

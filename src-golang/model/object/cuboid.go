@@ -1,15 +1,14 @@
-package shape_library
+package object
 
 import (
 	"gonum.org/v1/gonum/mat"
 	"math"
 	"src-golang/math_lib"
-	"src-golang/model/object"
 )
 
 type Cuboid struct {
-	object.BaseShape
-	
+	BaseShape
+
 	Pmin *mat.VecDense // 最小点
 	Pmax *mat.VecDense // 最大点
 }

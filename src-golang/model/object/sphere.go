@@ -1,14 +1,13 @@
-package shape_library
+package object
 
 import (
 	"gonum.org/v1/gonum/mat"
 	"math"
 	"src-golang/math_lib"
-	"src-golang/model/object"
 )
 
 type Sphere struct {
-	object.BaseShape
+	BaseShape
 
 	center    *mat.VecDense
 	R         float64

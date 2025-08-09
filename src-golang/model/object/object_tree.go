@@ -4,7 +4,6 @@ import (
 	"gonum.org/v1/gonum/mat"
 	"math"
 	"sort"
-	"src-golang/model/object/shape_library"
 )
 
 // ObjectTree 管理场景中的物体层次结构
@@ -85,7 +84,7 @@ func (t *ObjectTree) build(l, r int, node **ObjectNode) {
 		}
 	}
 
-	(*node).BoundBox = &shape_library.Cuboid{Pmin: pmin, Pmax: pmax}
+	(*node).BoundBox = &Cuboid{Pmin: pmin, Pmax: pmax}
 	size := vecSub(pmax, pmin)
 	dimRatios := make([]float64, 3)
 	for d := 0; d < 3; d++ {

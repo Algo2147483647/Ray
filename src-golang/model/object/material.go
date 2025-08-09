@@ -42,7 +42,7 @@ func (m *Material) DielectricSurfacePropagation(ray *model.Ray, norm *mat.VecDen
 	switch {
 	case randNum <= m.Reflectivity:
 		// 漫反射
-		ray.Direction = math_lib.DiffuseReflect(ray.Direction, norm)
+		ray.Direction = math_lib.DiffuseReflect(ray.Direction, norm, rand.New(rand.NewSource(0)))
 		ray.Color.ScaleVec(m.ReflectLoss, ray.Color)
 
 	case randNum <= m.Reflectivity+m.Refractivity:

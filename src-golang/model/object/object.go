@@ -1,7 +1,5 @@
 package object
 
-import "src-golang/model/object/shape_library"
-
 // Object 表示场景中的物体
 type Object struct {
 	Shape    Shape     // 几何形状
@@ -10,9 +8,9 @@ type Object struct {
 
 // ObjectNode 表示对象树中的节点
 type ObjectNode struct {
-	Obj      *Object               // 关联的物体
-	BoundBox *shape_library.Cuboid // 包围盒
-	Children [2]*ObjectNode        // 子节点
+	Obj      *Object        // 关联的物体
+	BoundBox *Cuboid        // 包围盒
+	Children [2]*ObjectNode // 子节点
 }
 
 // NewObjectNode 创建新节点
@@ -30,7 +28,7 @@ func NewObjectNode(obj *Object, left, right *ObjectNode) *ObjectNode {
 
 // BuildComputeBoundingBox 构建包围盒
 func (n *ObjectNode) BuildComputeBoundingBox() {
-	n.BoundBox = &shape_library.Cuboid{}
+	n.BoundBox = &Cuboid{}
 	pmax, pmin := n.Obj.Shape.BoundingBox()
 	n.BoundBox.Pmax = pmax
 	n.BoundBox.Pmin = pmin
