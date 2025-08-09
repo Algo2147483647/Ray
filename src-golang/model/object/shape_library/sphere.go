@@ -52,7 +52,7 @@ func (s *Sphere) Intersect(raySt, ray *mat.VecDense) float64 {
 			// 计算交点并归一化
 			intersection.AddScaledVec(raySt, root1, ray)
 			intersection.SubVec(intersection, s.center)
-			math_lib.normalize(intersection)
+			math_lib.Normalize(intersection)
 
 			if s.engraving(intersection) {
 				return root1
@@ -63,7 +63,7 @@ func (s *Sphere) Intersect(raySt, ray *mat.VecDense) float64 {
 			// 计算交点并归一化
 			intersection.AddScaledVec(raySt, root2, ray)
 			intersection.SubVec(intersection, s.center)
-			math_lib.normalize(intersection)
+			math_lib.Normalize(intersection)
 
 			if s.engraving(intersection) {
 				return root2
@@ -89,7 +89,7 @@ func (s *Sphere) Intersect(raySt, ray *mat.VecDense) float64 {
 func (s *Sphere) GetNormalVector(intersect *mat.VecDense) *mat.VecDense {
 	res := mat.NewVecDense(3, nil)
 	res.SubVec(intersect, s.center)
-	math_lib.normalize(res)
+	math_lib.Normalize(res)
 	return res
 }
 

@@ -1,77 +1,124 @@
 package shape_library
 
+import (
+	"gonum.org/v1/gonum/mat"
+	"math"
+	"src-golang/math_lib"
+	"src-golang/model/object"
+	"sync"
+)
+
+// 全局临时向量池
+var (
+	edgePool = sync.Pool{
+		New: func() interface{} {
+			return [2]*mat.VecDense{
+				mat.NewVecDense(3, nil),
+				mat.NewVecDense(3, nil),
+			}
+		},
+	}
+	tmpPool = sync.Pool{
+		New: func() interface{} {
+			return mat.NewVecDense(3, nil)
+		},
+	}
+)
+
 type Triangle struct {
-	P1, P2, P3 r3.Vec
-	Engraving  func(r3.Vec) bool
+	object.BaseShape
+
+	P1, P2, P3 *mat.VecDense
+	Engraving  func(*mat.VecDense) bool
 }
 
 func (t *Triangle) GetName() string {
 	return "Triangle"
 }
 
-func (t *Triangle) Intersect(raySt, rayDir r3.Vec) float64 {
+func (t *Triangle) Intersect(raySt, rayDir *mat.VecDense) float64 {
 	// 从线程池获取资源
-	edges := edgePool.Get().([2]r3.Vec)
-	tmp := tmpPool.Get().(r3.Vec)
+	edges := edgePool.Get().([2]*mat.VecDense)
+	tmp := tmpPool.Get().(*mat.VecDense)
 	defer func() {
 		edgePool.Put(edges)
 		tmpPool.Put(tmp)
 	}()
 
-	// 计算三角形边向量
-	edges[0] = t.P2.Sub(t.P1)
-	edges[1] = t.P3.Sub(t.P1)
+	// 计算三角形边向量 (E1 = P2-P1, E2 = P3-P1)
+	edges[0].SubVec(t.P2, t.P1) // E1 = P2 - P1
+	edges[1].SubVec(t.P3, t.P1) // E2 = P3 - P1
 
-	// 计算法向量和行列式
-	p := rayDir.Cross(edges[1])
-	a := edges[0].Dot(p)
+	// 计算法向量和行列式 (P = D × E2)
+	p := math_lib.Cross(rayDir, edges[1])
+	a := mat.Dot(edges[0], p) // a = E1·P
 
 	// 处理背面剔除
 	if a > 0 {
-		tmp = raySt.Sub(t.P1)
+		tmp.SubVec(raySt, t.P1) // T = O - P1
 	} else {
-		tmp = t.P1.Sub(raySt)
+		tmp.SubVec(t.P1, raySt) // T = P1 - O
 		a = -a
 	}
 
 	// 检查平行
-	if a < EPS {
+	if a < math_lib.EPS {
 		return math.MaxFloat64
 	}
 
 	// 计算重心坐标 u
-	u := tmp.Dot(p) / a
+	u := mat.Dot(tmp, p) / a
 	if u < 0 || u > 1 {
 		return math.MaxFloat64
 	}
 
+	// 计算 Q = T × E1
+	q := math_lib.Cross(tmp, edges[0])
+
 	// 计算重心坐标 v
-	q := tmp.Cross(edges[0])
-	v := q.Dot(rayDir) / a
+	v := mat.Dot(rayDir, q) / a
 	if v < 0 || u+v > 1 {
 		return math.MaxFloat64
 	}
 
 	// 计算交点参数 t
-	return q.Dot(edges[1]) / a
+	return mat.Dot(edges[1], q) / a
 }
 
-func (t *Triangle) GetNormalVector(intersect r3.Vec) r3.Vec {
-	edge1 := t.P2.Sub(t.P1)
-	edge2 := t.P3.Sub(t.P1)
-	return edge1.Cross(edge2).Normalize()
+func (t *Triangle) GetNormalVector(intersect *mat.VecDense) *mat.VecDense {
+	edge1 := mat.NewVecDense(3, nil)
+	edge2 := mat.NewVecDense(3, nil)
+
+	edge1.SubVec(t.P2, t.P1)
+	edge2.SubVec(t.P3, t.P1)
+	normal := math_lib.Cross(edge1, edge2)
+
+	// 归一化法向量
+	norm := mat.Norm(normal, 2)
+	if norm > 0 {
+		normal.ScaleVec(1/norm, normal)
+	}
+	return normal
 }
 
-func (t *Triangle) BuildBoundingBox() (r3.Vec, r3.Vec) {
-	pmin := r3.Vec{
-		X: min(t.P1.X, min(t.P2.X, t.P3.X)),
-		Y: min(t.P1.Y, min(t.P2.Y, t.P3.Y)),
-		Z: min(t.P1.Z, min(t.P2.Z, t.P3.Z)),
+func (t *Triangle) BuildBoundingBox() (min, max *mat.VecDense) {
+	minData := make([]float64, 3)
+	maxData := make([]float64, 3)
+
+	for i := 0; i < 3; i++ {
+		vals := []float64{t.P1.AtVec(i), t.P2.AtVec(i), t.P3.AtVec(i)}
+		minVal, maxVal := vals[0], vals[0]
+		for _, v := range vals[1:] {
+			if v < minVal {
+				minVal = v
+			}
+			if v > maxVal {
+				maxVal = v
+			}
+		}
+		minData[i] = minVal
+		maxData[i] = maxVal
 	}
-	pmax := r3.Vec{
-		X: max(t.P1.X, max(t.P2.X, t.P3.X)),
-		Y: max(t.P1.Y, max(t.P2.Y, t.P3.Y)),
-		Z: max(t.P1.Z, max(t.P2.Z, t.P3.Z)),
-	}
-	return pmax, pmin
+
+	return mat.NewVecDense(3, minData), mat.NewVecDense(3, maxData)
 }

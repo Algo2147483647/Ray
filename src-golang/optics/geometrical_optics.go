@@ -1,18 +1,15 @@
 package optics
 
 import (
+	"gonum.org/v1/gonum/mat"
 	"math"
 	"math/rand"
 
 	"gonum.org/v1/gonum/spatial/r3"
 )
 
-const (
-	EPS = 1e-6 // 微小量，用于浮点数比较
-)
-
 // Reflect 计算光线的反射方向
-func Reflect(incidentRay, normal r3.Vec) r3.Vec {
+func Reflect(incidentRay, normal *mat.VecDense) *mat.VecDense {
 	// 归一化法向量
 	n := r3.Unit(normal)
 	// 计算反射方向: I - 2*(N·I)*N
@@ -21,7 +18,7 @@ func Reflect(incidentRay, normal r3.Vec) r3.Vec {
 }
 
 // Refract 计算光线的折射方向
-func Refract(incidentRay, normal r3.Vec, refractionIndexRatio float64) r3.Vec {
+func Refract(incidentRay, normal *mat.VecDense, refractionIndexRatio float64) *mat.VecDense {
 	// 归一化入射光线和法向量
 	I := r3.Unit(incidentRay)
 	N := r3.Unit(normal)
@@ -44,15 +41,15 @@ func Refract(incidentRay, normal r3.Vec, refractionIndexRatio float64) r3.Vec {
 }
 
 // DiffuseReflect 计算漫反射方向
-func DiffuseReflect(incidentRay, normal r3.Vec, rng *rand.Rand) r3.Vec {
+func DiffuseReflect(incidentRay, normal *mat.VecDense, rng *rand.Rand) *mat.VecDense {
 	// 生成随机角度和半径
 	randomAngle := 2 * math.Pi * rng.Float64()
 	randomRadius := rng.Float64()
 
 	// 创建切向量
-	tangent := r3.Vec{X: 0, Y: 1} // 默认Y轴
+	tangent := *mat.VecDense{X: 0, Y: 1} // 默认Y轴
 	if math.Abs(normal.X) <= EPS {
-		tangent = r3.Vec{X: 1, Y: 0} // 如果法线接近X轴，则使用X轴
+		tangent = *mat.VecDense{X: 1, Y: 0} // 如果法线接近X轴，则使用X轴
 	}
 
 	// 计算正交基
@@ -77,7 +74,7 @@ func ComputeHaze(intensity, ambientLight, distance, attenuationCoefficient float
 }
 
 // ComputeHazeColor 计算彩色光的雾效
-func ComputeHazeColor(intensity, ambientLight r3.Vec, distance, attenuationCoefficient float64) r3.Vec {
+func ComputeHazeColor(intensity, ambientLight *mat.VecDense, distance, attenuationCoefficient float64) *mat.VecDense {
 	transmissionFactor := math.Exp(-attenuationCoefficient * distance)
 	return r3.Add(
 		r3.Scale(transmissionFactor, intensity),
