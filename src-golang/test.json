@@ -1,0 +1,83 @@
+{
+    "materials": [
+        {
+            "key": "Paper",
+            "color": [1, 1, 1],
+            "diffuse": 1,
+            "reflect": 0,
+            "refractivity":0
+        },
+        {
+            "key": "Glass",
+            "color": [1, 1, 1],
+            "diffuse": 0,
+            "reflect": 1,
+            "refractivity":1.7
+        },
+        {
+            "key": "Metal",
+            "color": [1, 1, 0],
+            "diffuse": 0.5,
+            "reflect": 0.5,
+            "refractivity": 0
+        },
+        {
+            "key": "Light",
+            "color": [10, 10, 10],
+            "radiate": 1
+        }
+    ],
+    "objects": [
+        {
+            "key": "world boundary",
+            "shape": "cuboid",
+            "position": [0, 0, 0],
+            "size": [2000, 2000, 2000],
+            "material": "Paper"
+        },
+        {
+            "key": "1",
+            "shape": "cuboid",
+            "position": [850, 1320, 0],
+            "size": [1150, 1350, 300],
+            "material": "Glass"
+        },
+        {
+            "key": "2",
+            "shape": "cuboid",
+            "position": [850, 900, 0],
+            "size": [1150, 930, 300],
+            "material": "Glass"
+        },
+        {
+            "key": "3",
+            "shape": "cuboid",
+            "position": [850, 900, 0],
+            "size": [1150, 930, 300],
+            "material": "Glass"
+        },
+        {
+            "key": "4",
+            "shape": "sphere",
+            "position": [1000, 1000, 1600],
+            "radius": 400,
+            "material": "Light"
+        },
+        {
+            "key": "5",
+            "shape": "stl",
+            "file_path": "C:/Algo/projects/graphics/assets/teapot.stl",
+            "position": [1000, 1000, 330],
+            "scale": 10,
+            "material": "Glass"
+        },
+        {
+            "key": "6",
+            "shape": "stl",
+            "file_path": "C:/Algo/projects/graphics/assets/Venus.stl",
+            "position": [1100, 600, 0],
+            "scale": 3.2,
+            "material": "Metal"
+        }
+    ]
+}

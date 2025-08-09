@@ -1,25 +1,39 @@
 package main
 
 import (
-  "fmt"
+	"fmt"
+	"os"
 )
 
-//TIP To run your code, right-click the code and select <b>Run</b>. Alternatively, click
-// the <icon src="AllIcons.Actions.Execute"/> icon in the gutter and select the <b>Run</b> menu item from here.
-
 func main() {
-  //TIP Press <shortcut actionId="ShowIntentionActions"/> when your caret is at the underlined or highlighted text
-  // to see how GoLand suggests fixing it.
-  s := "gopher"
-  fmt.Println("Hello and welcome, %s!", s)
+	defaultFile := "C:/Algo/Projects/Ray/src-golang/test.json"
+	scriptPath := defaultFile
 
-  for i := 1; i <= 5; i++ {
-	//TIP You can try debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-	// for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>. To start your debugging session, 
-	// right-click your code in the editor and select the <b>Debug</b> option. 
-	fmt.Println("i =", 100/i)
-  }
+	if len(os.Args) > 1 {
+		scriptPath = os.Args[1]
+	} else {
+		fmt.Printf("Using default script: %s\n", defaultFile)
+	}
+
+	h := NewHandler(scriptPath).
+		PreCheck().
+		LoadScript().
+		BuildCamera().
+		Render().
+		BuildResult().
+		SaveResult()
+
+	if h.err != nil {
+		fmt.Printf("Error: %v\n", h.err)
+		os.Exit(1)
+	}
+
+	fmt.Println("Ray tracing completed successfully")
 }
 
-//TIP See GoLand help at <a href="https://www.jetbrains.com/help/go/">jetbrains.com/help/go/</a>.
-// Also, you can try interactive lessons for GoLand by selecting 'Help | Learn IDE Features' from the main menu.
+func min(a, b float32) float32 {
+	if a < b {
+		return a
+	}
+	return b
+}
