@@ -90,7 +90,7 @@ func (h *Handler) BuildCamera() *Handler {
 		AspectRatio: 1,
 		FieldOfView: 90,
 	}
-	camera.GenerateRaysSVG()
+	// camera.GenerateRaysSVG()
 	h.Scene.Cameras = append(h.Scene.Cameras, camera)
 
 	return h
