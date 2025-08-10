@@ -4,12 +4,12 @@ import (
 	"gonum.org/v1/gonum/mat"
 	"math"
 	"math/rand"
-	"src-golang/model"
 	"src-golang/model/object"
+	"src-golang/model/ray"
 )
 
 // TraceRay 迭代式光线追踪 (替代递归)
-func TraceRay(objTree *object.ObjectTree, ray *model.Ray) *mat.VecDense {
+func TraceRay(objTree *object.ObjectTree, ray *ray.Ray) *mat.VecDense {
 	var (
 		color  = mat.NewVecDense(3, []float64{1, 1, 1}) // 初始颜色为白色
 		weight = mat.NewVecDense(3, []float64{1, 1, 1}) // 累积权重

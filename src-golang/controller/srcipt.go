@@ -111,7 +111,7 @@ func LoadSceneFromScript(script *Script, objTree *object.ObjectTree) error {
 		})
 
 		switch objDef.Shape {
-		case "Cuboid":
+		case "cuboid":
 			if len(objDef.Size) < 3 {
 				continue
 			}
@@ -126,15 +126,21 @@ func LoadSceneFromScript(script *Script, objTree *object.ObjectTree) error {
 			p2 := mat.NewVecDense(3, nil)
 			p2.AddVec(position, size)
 
-			objTree.Add(object.NewCuboid(position, p2), material)
+			objTree.AddObject(&object.Object{
+				Shape:    object.NewCuboid(position, p2),
+				Material: material,
+			})
 
-		case "Sphere":
+		case "sphere":
 			radius := float64(objDef.Size[0])
 			if radius == 0 {
 				radius = 1.0 // 默认半径
 			}
 
-			objTree.Add(object.NewSphere(position, radius), material)
+			objTree.AddObject(&object.Object{
+				Shape:    object.NewSphere(position, radius),
+				Material: material,
+			})
 
 		case "Plane":
 			// 平面需要法线方向，这里使用位置向量作为法线
@@ -170,6 +176,6 @@ func LoadSceneFromScript(script *Script, objTree *object.ObjectTree) error {
 			//t.Add(NewCylinder(position, axis, height, radius), material)
 		}
 	}
-
+	objTree.Build()
 	return nil
 }

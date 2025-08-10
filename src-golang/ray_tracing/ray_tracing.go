@@ -5,6 +5,7 @@ import (
 	"gonum.org/v1/gonum/mat"
 	"src-golang/model"
 	"src-golang/model/object"
+	"src-golang/model/ray"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -20,7 +21,7 @@ var (
 func TracePixel(camera *model.Camera, objTree *object.ObjectTree, row, col, samples int) *mat.VecDense {
 	color := mat.NewVecDense(3, nil)
 	for s := 0; s < samples; s++ {
-		ray := RayPool.Get().(*model.Ray)
+		ray := RayPool.Get().(*ray.Ray)
 		defer RayPool.Put(ray)
 
 		camera.GenerateRay(ray, row, col)
@@ -32,7 +33,7 @@ func TracePixel(camera *model.Camera, objTree *object.ObjectTree, row, col, samp
 }
 
 // TraceScene 追踪整个场景（添加进度条）
-func TraceScene(camera *model.Camera, objTree *object.ObjectTree, img [3]*mat.Dense, samples int) {
+func TraceScene(scene *model.Scene, img [3]*mat.Dense, samples int) {
 	rows, cols := img[0].Dims()
 	totalPixels := rows * cols
 	var wg sync.WaitGroup
@@ -78,7 +79,7 @@ func TraceScene(camera *model.Camera, objTree *object.ObjectTree, img [3]*mat.De
 			defer wg.Done()
 			for pixel := range taskChan {
 				r, c := pixel[0], pixel[1]
-				color := TracePixel(camera, objTree, r, c, samples)
+				color := TracePixel(scene.Cameras[0], scene.ObjectTree, r, c, samples)
 
 				for ch := 0; ch < 3; ch++ {
 					img[ch].Set(r, c, color.AtVec(ch))

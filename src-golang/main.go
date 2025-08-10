@@ -16,7 +16,6 @@ func main() {
 
 	h := NewHandler().
 		SetScriptPath(scriptPath).
-		PreCheck().
 		LoadScript().
 		BuildCamera().
 		Render().

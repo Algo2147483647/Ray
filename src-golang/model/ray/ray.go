@@ -1,4 +1,4 @@
-package model
+package ray
 
 import (
 	"gonum.org/v1/gonum/mat"

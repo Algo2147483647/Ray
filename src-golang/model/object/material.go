@@ -4,7 +4,7 @@ import (
 	"gonum.org/v1/gonum/mat"
 	"math/rand"
 	"src-golang/math_lib"
-	"src-golang/model"
+	"src-golang/model/ray"
 )
 
 // Material 表示物体的材质属性
@@ -30,7 +30,7 @@ func NewMaterial(color *mat.VecDense) *Material {
 }
 
 // DielectricSurfacePropagation 处理光线在介质表面的传播
-func (m *Material) DielectricSurfacePropagation(ray *model.Ray, norm *mat.VecDense, rng *rand.Rand) bool {
+func (m *Material) DielectricSurfacePropagation(ray *ray.Ray, norm *mat.VecDense, rng *rand.Rand) bool {
 	if m.Radiation {
 		ray.Color = m.Color
 		return true

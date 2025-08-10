@@ -2,16 +2,10 @@ package math_lib
 
 import (
 	"gonum.org/v1/gonum/mat"
-	"math/rand"
-	"time"
 )
 
 const (
 	EPS = 1e-6 // 微小量，用于浮点数比较
-)
-
-var (
-	Rnd = rand.New(rand.NewSource(time.Now().UnixNano()))
 )
 
 func Normalize(v *mat.VecDense) *mat.VecDense {

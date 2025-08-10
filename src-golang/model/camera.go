@@ -5,6 +5,7 @@ import (
 	"math"
 	"math/rand"
 	"src-golang/math_lib"
+	"src-golang/model/ray"
 )
 
 // Camera 表示场景中的相机
@@ -40,7 +41,7 @@ func (c *Camera) SetLookAt(lookAt *mat.VecDense) *Camera {
 	return c
 }
 
-func (c *Camera) GenerateRay(ray *Ray, row, col int) *Ray {
+func (c *Camera) GenerateRay(ray *ray.Ray, row, col int) *ray.Ray {
 	// 计算相机坐标系基向量
 	forward := new(mat.VecDense)
 	forward.SubVec(c.Direction, c.Position)
@@ -89,8 +90,8 @@ func (c *Camera) GenerateRay(ray *Ray, row, col int) *Ray {
 }
 
 // GenerateRays 生成像素光线
-func (c *Camera) GenerateRays(width, height int) []*Ray {
-	rays := make([]*Ray, 0, width*height)
+func (c *Camera) GenerateRays(width, height int) []*ray.Ray {
+	rays := make([]*ray.Ray, 0, width*height)
 
 	// 计算右向量: 方向 × 上向量, 实际上向量: 右向量 × 方向
 	right := math_lib.Normalize(math_lib.Cross(c.Direction, c.Up))
@@ -110,8 +111,8 @@ func (c *Camera) GenerateRays(width, height int) []*Ray {
 	for j := 0; j < height; j++ {
 		for i := 0; i < width; i++ {
 			// 添加随机偏移(抗锯齿)
-			randX := math_lib.Rnd.Float64()
-			randY := math_lib.Rnd.Float64()
+			randX := rand.Float64()
+			randY := rand.Float64()
 
 			// 计算标准化设备坐标
 			u := (2*((float64(i)+randX)/float64(width)) - 1) * imageWidth / 2
@@ -128,7 +129,7 @@ func (c *Camera) GenerateRays(width, height int) []*Ray {
 			rayDir.AddScaledVec(rayDir, dirScale, c.Direction)
 			rayDir = math_lib.Normalize(rayDir)
 
-			rays = append(rays, &Ray{
+			rays = append(rays, &ray.Ray{
 				Origin:    c.Position,
 				Direction: rayDir,
 			})
@@ -138,7 +139,7 @@ func (c *Camera) GenerateRays(width, height int) []*Ray {
 }
 
 // GetRayCoordinates 获取光线对应的像素坐标
-func (c *Camera) GetRayCoordinates(ray *Ray, width, height int) (int, int) {
+func (c *Camera) GetRayCoordinates(ray *ray.Ray, width, height int) (int, int) {
 	// 计算右向量和上向量
 	right := math_lib.Normalize(math_lib.Cross(c.Direction, c.Up))
 	cameraUp := math_lib.Normalize(math_lib.Cross(right, c.Direction))

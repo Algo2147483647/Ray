@@ -5,10 +5,10 @@ import (
 	"gonum.org/v1/gonum/mat"
 	"image"
 	"image/color"
+	"image/png"
 	"os"
 	"src-golang/controller"
 	"src-golang/model"
-	"src-golang/model/object"
 	"src-golang/ray_tracing"
 	"time"
 )
@@ -16,8 +16,7 @@ import (
 type Handler struct {
 	err        error
 	ScriptPath string
-	objTree    object.ObjectTree
-	Camera     *model.Camera
+	Scene      *model.Scene
 	img        [3]*mat.Dense
 	imgout     *image.RGBA
 	Width      int
@@ -29,6 +28,7 @@ func NewHandler() *Handler {
 	Height := 800
 
 	h := &Handler{
+		Scene:  model.NewScene(),
 		Width:  Width,
 		Height: Height,
 		imgout: image.NewRGBA(image.Rect(0, 0, Width, Height)),
@@ -66,7 +66,7 @@ func (h *Handler) LoadScript() *Handler {
 	}
 
 	fmt.Printf("Loading scene from: %s\n", h.ScriptPath)
-	err := controller.LoadSceneFromScript(controller.ReadScriptFile(h.ScriptPath), &h.objTree)
+	err := controller.LoadSceneFromScript(controller.ReadScriptFile(h.ScriptPath), h.Scene.ObjectTree)
 	if err != nil {
 		h.err = err
 		return h
@@ -80,7 +80,7 @@ func (h *Handler) BuildCamera() *Handler {
 		return h
 	}
 
-	h.Camera = &model.Camera{
+	camera := &model.Camera{
 		Position:  mat.NewVecDense(3, []float64{0.0, 0.0, 0.0}),
 		Direction: mat.NewVecDense(3, []float64{4.0, -1.0, -1.0}),
 		Up:        mat.NewVecDense(3, []float64{0, 0, 1}),
@@ -88,6 +88,8 @@ func (h *Handler) BuildCamera() *Handler {
 		Height:    h.Height,
 		Aspect:    1,
 	}
+
+	h.Scene.Cameras = append(h.Scene.Cameras, camera)
 
 	return h
 }
@@ -100,7 +102,7 @@ func (h *Handler) Render() *Handler {
 	fmt.Println("Starting rendering...")
 	start := time.Now()
 
-	ray_tracing.TraceScene(h.Camera, &h.objTree, h.img, 100)
+	ray_tracing.TraceScene(h.Scene, h.img, 100)
 
 	elapsed := time.Since(start)
 	fmt.Printf("Rendering completed in %v\n", elapsed)
@@ -129,7 +131,7 @@ func (h *Handler) SaveResult() *Handler {
 		return h
 	}
 
-	const outputPath = "output.ppm"
+	const outputPath = "output.png" // 修改文件扩展名
 	fmt.Printf("Saving result to: %s\n", outputPath)
 
 	file, err := os.Create(outputPath)
@@ -139,15 +141,10 @@ func (h *Handler) SaveResult() *Handler {
 	}
 	defer file.Close()
 
-	// 写入PPM文件头
-	fmt.Fprintf(file, "P6\n800 800\n255\n")
-
-	// 写入像素数据
-	for y := 0; y < 800; y++ {
-		for x := 0; x < 800; x++ {
-			r, g, b, _ := h.imgout.At(x, y).RGBA()
-			file.Write([]byte{uint8(r), uint8(g), uint8(b)})
-		}
+	// 使用 PNG 编码器直接写入整个图像
+	err = png.Encode(file, h.imgout)
+	if err != nil {
+		h.err = err
 	}
 	return h
 }

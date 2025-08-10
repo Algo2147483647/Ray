@@ -6,10 +6,30 @@ import (
 	"sort"
 )
 
+// ObjectNode 表示对象树中的节点
+type ObjectNode struct {
+	Obj      *Object        // 关联的物体
+	BoundBox *Cuboid        // 包围盒
+	Children [2]*ObjectNode // 子节点
+}
+
+// NewObjectNode 创建新节点
+func NewObjectNode(obj *Object, left, right *ObjectNode) *ObjectNode {
+	node := &ObjectNode{
+		Obj:      obj,
+		Children: [2]*ObjectNode{left, right},
+	}
+
+	if obj != nil {
+		node.BoundBox = NewCuboid(obj.Shape.BuildBoundingBox())
+	}
+	return node
+}
+
 // ObjectTree 管理场景中的物体层次结构
 type ObjectTree struct {
 	Root        *ObjectNode
-	Objects     []Object
+	Objects     []*Object
 	ObjectNodes []*ObjectNode
 }
 
@@ -39,21 +59,20 @@ func vecSub(a, b *mat.VecDense) *mat.VecDense {
 }
 
 // Add 添加新物体到场景
-func (t *ObjectTree) Add(shape Shape, material *Material) *Object {
-	t.Objects = append(t.Objects, Object{
-		Shape:    shape,
-		Material: material,
-	})
-	return &t.Objects[len(t.Objects)-1]
+func (t *ObjectTree) AddObject(object *Object) *Object {
+	t.Objects = append(t.Objects, object)
+	return t.Objects[len(t.Objects)-1]
 }
 
 // Build 构建对象树
 func (t *ObjectTree) Build() *ObjectTree {
-	t.ObjectNodes = nil
+	// Build Leaf Nodes
+	t.ObjectNodes = []*ObjectNode{}
 	for i := range t.Objects {
-		node := NewObjectNode(&t.Objects[i], nil, nil)
+		node := NewObjectNode(t.Objects[i], nil, nil)
 		t.ObjectNodes = append(t.ObjectNodes, node)
 	}
+
 	t.build(0, len(t.ObjectNodes)-1, &t.Root)
 	return t
 }
@@ -74,7 +93,8 @@ func (t *ObjectTree) build(l, r int, node **ObjectNode) {
 		box := t.ObjectNodes[i].BoundBox
 		pmin = vecMin(pmin, box.Pmin)
 		pmax = vecMax(pmax, box.Pmax)
-		boxDelta := vecSub(box.Pmax, box.Pmin)
+		boxDelta := mat.NewVecDense(3, nil)
+		boxDelta.SubVec(box.Pmax, box.Pmin)
 
 		// 计算最大维度差
 		for d := 0; d < 3; d++ {
