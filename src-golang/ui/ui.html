@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D场景几何体编辑器</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #2c3e50);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.8;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 1200px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: rgba(30, 30, 50, 0.8);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .panel-title {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #4facfe;
+        }
+
+        .btn {
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(79, 172, 254, 0.6);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        textarea {
+            width: 100%;
+            height: 300px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+            color: white;
+            font-family: monospace;
+            font-size: 14px;
+            resize: vertical;
+            margin-bottom: 20px;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 2px rgba(79, 172, 254, 0.3);
+        }
+
+        #scene-container {
+            width: 100%;
+            height: 500px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #scene-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .scene-info {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th {
+            background: rgba(79, 172, 254, 0.3);
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+
+        tr:nth-child(even) {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        tr:hover {
+            background: rgba(79, 172, 254, 0.2);
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .shape-icon {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            background: rgba(79, 172, 254, 0.3);
+            border-radius: 4px;
+            margin-right: 10px;
+            text-align: center;
+            line-height: 24px;
+        }
+
+        input {
+            width: 80px;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            color: white;
+            text-align: center;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #4facfe;
+        }
+
+        .update-btn {
+            background: rgba(79, 172, 254, 0.3);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .update-btn:hover {
+            background: rgba(79, 172, 254, 0.5);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #4facfe;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 0.9rem;
+            opacity: 0.7;
+            margin-top: 20px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>3D场景几何体编辑器</h1>
+        <p class="subtitle">输入JSON配置来定义几何体场景，实时编辑参数并预览3D效果。支持立方体(cuboid)和球体(sphere)两种几何形状。</p>
+    </header>
+
+    <div class="content">
+        <div class="panel">
+            <div class="panel-header">
+                <h2 class="panel-title">JSON配置</h2>
+            </div>
+            <textarea id="json-input">{
+    "materials": [
+        {
+            "key": "Paper",
+            "color": [1, 1, 1],
+            "diffuse": 1,
+            "reflect": 0,
+            "refractivity":0
+        },
+        {
+            "key": "Glass",
+            "color": [1, 1, 1],
+            "diffuse": 0,
+            "reflect": 1,
+            "refractivity":1.7
+        },
+        {
+            "key": "Metal",
+            "color": [1, 1, 0],
+            "diffuse": 0.5,
+            "reflect": 0.5,
+            "refractivity": 0
+        },
+        {
+            "key": "Light",
+            "color": [10, 10, 10],
+            "radiate": 1
+        }
+    ],
+    "objects": [
+        {
+            "key": "world boundary",
+            "shape": "cuboid",
+            "position": [0, 0, 0],
+            "size": [2000, 2000, 2000],
+            "material": "Paper"
+        },
+        {
+            "key": "Glass Tower 1",
+            "shape": "cuboid",
+            "position": [850, 1320, 0],
+            "size": [1150, 1350, 300],
+            "material": "Glass"
+        },
+        {
+            "key": "Glass Tower 2",
+            "shape": "cuboid",
+            "position": [850, 900, 0],
+            "size": [1150, 930, 300],
+            "material": "Glass"
+        },
+        {
+            "key": "Glass Tower 3",
+            "shape": "cuboid",
+            "position": [850, 900, 0],
+            "size": [1150, 930, 300],
+            "material": "Glass"
+        },
+        {
+            "key": "Light Source",
+            "shape": "sphere",
+            "position": [1000, 1000, 1600],
+            "radius": 400,
+            "material": "Light"
+        }
+    ]
+}</textarea>
+
+            <div class="controls">
+                <button id="confirm-btn" class="btn">确认并生成场景</button>
+                <button id="reset-btn" class="btn btn-secondary">重置配置</button>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">
+                <h2 class="panel-title">3D场景预览</h2>
+                <div class="scene-info">使用鼠标拖拽旋转场景，滚轮缩放</div>
+            </div>
+            <div id="scene-container">
+                <canvas id="scene-canvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header">
+            <h2 class="panel-title">几何体参数列表</h2>
+        </div>
+        <div id="objects-table"></div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="cuboid-count">0</div>
+                <div class="stat-label">立方体</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="sphere-count">0</div>
+                <div class="stat-label">球体</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="total-count">0</div>
+                <div class="stat-label">几何体总数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="light-count">0</div>
+                <div class="stat-label">光源</div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>3D场景几何体编辑器 &copy; 2023 | 使用Three.js构建</p>
+    </footer>
+</div>
+
+<script>
+    // 全局变量
+    let sceneData = null;
+    let scene = null;
+    let camera = null;
+    let renderer = null;
+    let controls = null;
+    const objects = [];
+
+    // DOM元素
+    const jsonInput = document.getElementById('json-input');
+    const confirmBtn = document.getElementById('confirm-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    const objectsTable = document.getElementById('objects-table');
+    const cuboidCount = document.getElementById('cuboid-count');
+    const sphereCount = document.getElementById('sphere-count');
+    const totalCount = document.getElementById('total-count');
+    const lightCount = document.getElementById('light-count');
+
+    // 初始化Three.js场景
+    function initScene() {
+        // 创建场景
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a0a1a);
+
+        // 创建相机
+        camera = new THREE.PerspectiveCamera(75,
+            document.getElementById('scene-container').clientWidth /
+            document.getElementById('scene-container').clientHeight,
+            0.1, 10000);
+        camera.position.set(0, 0, 3000);
+
+        // 创建渲染器
+        renderer = new THREE.WebGLRenderer({
+            canvas: document.getElementById('scene-canvas'),
+            antialias: true
+        });
+        renderer.setSize(
+            document.getElementById('scene-container').clientWidth,
+            document.getElementById('scene-container').clientHeight
+        );
+
+        // 添加轨道控制器
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // 添加环境光
+        const ambientLight = new THREE.AmbientLight(0x404040, 1.5);
+        scene.add(ambientLight);
+
+        // 添加方向光
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight.position.set(1, 1, 1);
+        scene.add(directionalLight);
+
+        // 添加坐标轴辅助
+        const axesHelper = new THREE.AxesHelper(1000);
+        scene.add(axesHelper);
+
+        // 开始动画循环
+        animate();
+    }
+
+    // 动画循环
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+    }
+
+    // 解析JSON并渲染场景
+    function parseAndRender() {
+        try {
+            // 解析JSON
+            sceneData = JSON.parse(jsonInput.value);
+
+            // 清除之前的物体
+            objects.forEach(obj => scene.remove(obj));
+            objects.length = 0;
+
+            // 创建几何体
+            let cuboids = 0;
+            let spheres = 0;
+            let lights = 0;
+
+            sceneData.objects.forEach(obj => {
+                let geometry, material, mesh;
+
+                // 根据材质类型设置颜色
+                let color = 0xffffff;
+                if (obj.material === 'Glass') color = 0x66ccff;
+                if (obj.material === 'Metal') color = 0xffcc00;
+                if (obj.material === 'Light') {
+                    color = 0xffff00;
+                    lights++;
+                }
+
+                // 创建材质
+                material = new THREE.MeshPhongMaterial({
+                    color: color,
+                    transparent: true,
+                    opacity: 0.85,
+                    wireframe: obj.key === 'world boundary'
+                });
+
+                // 创建几何体
+                if (obj.shape === 'cuboid') {
+                    geometry = new THREE.BoxGeometry(obj.size[0], obj.size[1], obj.size[2]);
+                    cuboids++;
+                } else if (obj.shape === 'sphere') {
+                    geometry = new THREE.SphereGeometry(obj.radius, 32, 32);
+                    spheres++;
+                }
+
+                // 创建网格
+                if (geometry) {
+                    mesh = new THREE.Mesh(geometry, material);
+                    mesh.position.set(obj.position[0], obj.position[1], obj.position[2]);
+                    scene.add(mesh);
+                    objects.push(mesh);
+                }
+            });
+
+            // 更新统计
+            cuboidCount.textContent = cuboids;
+            sphereCount.textContent = spheres;
+            totalCount.textContent = cuboids + spheres;
+            lightCount.textContent = lights;
+
+            // 生成参数表格
+            generateObjectsTable();
+
+        } catch (e) {
+            alert('JSON解析错误: ' + e.message);
+            console.error(e);
+        }
+    }
+
+    // 生成几何体参数表格
+    function generateObjectsTable() {
+        let tableHTML = `
+            <table>
+                <thead>
+                    <tr>
+                        <th>Key</th>
+                        <th>Shape</th>
+                        <th>Position (X, Y, Z)</th>
+                        <th>Size / Radius</th>
+                        <th>Material</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+            `;
+
+        sceneData.objects.forEach((obj, index) => {
+            tableHTML += `
+                <tr>
+                    <td>${obj.key}</td>
+                    <td>
+                        <span class="shape-icon">${obj.shape === 'cuboid' ? '◼' : '●'}</span>
+                        ${obj.shape}
+                    </td>
+                    <td>
+                        <input type="number" id="pos-x-${index}" value="${obj.position[0]}" min="-2000" max="2000">
+                        <input type="number" id="pos-y-${index}" value="${obj.position[1]}" min="-2000" max="2000">
+                        <input type="number" id="pos-z-${index}" value="${obj.position[2]}" min="-2000" max="2000">
+                    </td>
+                    <td>
+                `;
+
+            if (obj.shape === 'cuboid') {
+                tableHTML += `
+                        <input type="number" id="size-w-${index}" value="${obj.size[0]}" min="1" max="2000">
+                        <input type="number" id="size-h-${index}" value="${obj.size[1]}" min="1" max="2000">
+                        <input type="number" id="size-d-${index}" value="${obj.size[2]}" min="1" max="2000">
+                    `;
+            } else {
+                tableHTML += `
+                        <input type="number" id="radius-${index}" value="${obj.radius}" min="1" max="1000">
+                    `;
+            }
+
+            tableHTML += `
+                    </td>
+                    <td>${obj.material}</td>
+                    <td>
+                        <button class="update-btn" data-index="${index}">更新</button>
+                    </td>
+                </tr>
+                `;
+        });
+
+        tableHTML += `
+                </tbody>
+            </table>
+            `;
+
+        objectsTable.innerHTML = tableHTML;
+
+        // 添加更新按钮事件监听
+        document.querySelectorAll('.update-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const index = this.getAttribute('data-index');
+                updateObject(index);
+            });
+        });
+    }
+
+    // 更新几何体参数
+    function updateObject(index) {
+        // 获取输入值
+        const posX = parseFloat(document.getElementById(`pos-x-${index}`).value) || 0;
+        const posY = parseFloat(document.getElementById(`pos-y-${index}`).value) || 0;
+        const posZ = parseFloat(document.getElementById(`pos-z-${index}`).value) || 0;
+
+        // 更新位置
+        sceneData.objects[index].position = [posX, posY, posZ];
+
+        // 更新尺寸
+        if (sceneData.objects[index].shape === 'cuboid') {
+            const sizeW = parseFloat(document.getElementById(`size-w-${index}`).value) || 100;
+            const sizeH = parseFloat(document.getElementById(`size-h-${index}`).value) || 100;
+            const sizeD = parseFloat(document.getElementById(`size-d-${index}`).value) || 100;
+            sceneData.objects[index].size = [sizeW, sizeH, sizeD];
+        } else {
+            const radius = parseFloat(document.getElementById(`radius-${index}`).value) || 100;
+            sceneData.objects[index].radius = radius;
+        }
+
+        // 更新JSON输入框
+        jsonInput.value = JSON.stringify(sceneData, null, 2);
+
+        // 重新渲染场景
+        parseAndRender();
+    }
+
+    // 重置配置
+    function resetConfig() {
+        jsonInput.value = `{
+    "materials": [
+        {
+            "key": "Paper",
+            "color": [1, 1, 1],
+            "diffuse": 1,
+            "reflect": 0,
+            "refractivity":0
+        },
+        {
+            "key": "Glass",
+            "color": [1, 1, 1],
+            "diffuse": 0,
+            "reflect": 1,
+            "refractivity":1.7
+        },
+        {
+            "key": "Metal",
+            "color": [1, 1, 0],
+            "diffuse": 0.5,
+            "reflect": 0.5,
+            "refractivity": 0
+        },
+        {
+            "key": "Light",
+            "color": [10, 10, 10],
+            "radiate": 1
+        }
+    ],
+    "objects": [
+        {
+            "key": "world boundary",
+            "shape": "cuboid",
+            "position": [0, 0, 0],
+            "size": [2000, 2000, 2000],
+            "material": "Paper"
+        },
+        {
+            "key": "Glass Tower 1",
+            "shape": "cuboid",
+            "position": [850, 1320, 0],
+            "size": [1150, 1350, 300],
+            "material": "Glass"
+        },
+        {
+            "key": "Glass Tower 2",
+            "shape": "cuboid",
+            "position": [850, 900, 0],
+            "size": [1150, 930, 300],
+            "material": "Glass"
+        },
+        {
+            "key": "Glass Tower 3",
+            "shape": "cuboid",
+            "position": [850, 900, 0],
+            "size": [1150, 930, 300],
+            "material": "Glass"
+        },
+        {
+            "key": "Light Source",
+            "shape": "sphere",
+            "position": [1000, 1000, 1600],
+            "radius": 400,
+            "material": "Light"
+        }
+    ]
+}`;
+        parseAndRender();
+    }
+
+    // 窗口大小调整时更新渲染器
+    window.addEventListener('resize', function() {
+        camera.aspect = document.getElementById('scene-container').clientWidth /
+            document.getElementById('scene-container').clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(
+            document.getElementById('scene-container').clientWidth,
+            document.getElementById('scene-container').clientHeight
+        );
+    });
+
+    // 初始化
+    window.addEventListener('load', function() {
+        initScene();
+        parseAndRender();
+
+        // 添加事件监听
+        confirmBtn.addEventListener('click', parseAndRender);
+        resetBtn.addEventListener('click', resetConfig);
+    });
+</script>
+</body>
+</html>

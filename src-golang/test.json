@@ -1,0 +1,121 @@
+{
+    "materials": [
+        {
+            "id": "Paper",
+            "color": [
+                1,
+                1,
+                1
+            ],
+            "diffuse": 1,
+            "reflect": 0,
+            "refractivity": 0
+        },
+        {
+            "id": "Glass",
+            "color": [
+                1,
+                1,
+                1
+            ],
+            "diffuse": 0,
+            "reflect": 1,
+            "refractivity": 1.7
+        },
+        {
+            "id": "Metal",
+            "color": [
+                1,
+                1,
+                0
+            ],
+            "diffuse": 0.5,
+            "reflect": 0.5,
+            "refractivity": 0
+        },
+        {
+            "id": "Light",
+            "color": [
+                10,
+                10,
+                10
+            ],
+            "radiate": 1
+        }
+    ],
+    "objects": [
+        {
+            "id": "world boundary",
+            "shape": "cuboid",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "size": [
+                3000,
+                3000,
+                3000
+            ],
+            "material_id": "Light"
+        },
+        {
+            "id": "Glass Tower 1",
+            "shape": "cuboid",
+            "position": [
+                850,
+                20,
+                500
+            ],
+            "size": [
+                1150,
+                1350,
+                300
+            ],
+            "material_id": "Glass"
+        },
+        {
+            "id": "Glass Tower 2",
+            "shape": "cuboid",
+            "position": [
+                50,
+                900,
+                0
+            ],
+            "size": [
+                1150,
+                930,
+                300
+            ],
+            "material_id": "Glass"
+        },
+        {
+            "id": "Glass Tower 3",
+            "shape": "cuboid",
+            "position": [
+                -50,
+                0,
+                0
+            ],
+            "size": [
+                1150,
+                930,
+                300
+            ],
+            "material_id": "Glass"
+        },
+        {
+            "id": "Light Source",
+            "shape": "sphere",
+            "position": [
+                0,
+                0,
+                0
+            ],
+            "size": [
+                400
+            ],
+            "material_id": "Light"
+        }
+    ]
+}
