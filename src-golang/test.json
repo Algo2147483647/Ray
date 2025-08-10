@@ -45,75 +45,15 @@
     ],
     "objects": [
         {
-            "id": "world boundary",
-            "shape": "cuboid",
-            "position": [
-                0,
-                0,
-                0
-            ],
-            "size": [
-                3000,
-                3000,
-                3000
-            ],
-            "material_id": "Light"
-        },
-        {
-            "id": "Glass Tower 1",
-            "shape": "cuboid",
-            "position": [
-                850,
-                20,
-                500
-            ],
-            "size": [
-                1150,
-                1350,
-                300
-            ],
-            "material_id": "Glass"
-        },
-        {
-            "id": "Glass Tower 2",
-            "shape": "cuboid",
-            "position": [
-                50,
-                900,
-                0
-            ],
-            "size": [
-                1150,
-                930,
-                300
-            ],
-            "material_id": "Glass"
-        },
-        {
-            "id": "Glass Tower 3",
-            "shape": "cuboid",
-            "position": [
-                -50,
-                0,
-                0
-            ],
-            "size": [
-                1150,
-                930,
-                300
-            ],
-            "material_id": "Glass"
-        },
-        {
             "id": "Light Source",
             "shape": "sphere",
             "position": [
-                0,
+                200,
                 0,
                 0
             ],
             "size": [
-                400
+                10
             ],
             "material_id": "Light"
         }

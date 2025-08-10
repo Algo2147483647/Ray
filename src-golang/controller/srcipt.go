@@ -120,9 +120,9 @@ func ParseMaterials(script *Script) map[string]*object.Material {
 
 	for _, matDef := range script.Materials {
 		// 将颜色从 [0-255] 转换为 [0.0-1.0]
-		r := float64(matDef.Color[0]) / 255.0
-		g := float64(matDef.Color[1]) / 255.0
-		b := float64(matDef.Color[2]) / 255.0
+		r := float64(matDef.Color[0])
+		g := float64(matDef.Color[1])
+		b := float64(matDef.Color[2])
 
 		material := object.NewMaterial(mat.NewVecDense(3, []float64{r, g, b}))
 

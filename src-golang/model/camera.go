@@ -50,9 +50,8 @@ func (c *Camera) GenerateRay(Ray *ray.Ray, row, col int) *ray.Ray {
 
 	// 归一化方向向量（确保计算基础正确）
 	dir := math_lib.Normalize(c.Direction)
-	// 计算右向量和上向量
-	right := math_lib.Normalize(math_lib.Cross(dir, c.Up))
-	cameraUp := math_lib.Normalize(math_lib.Cross(right, dir))
+	up := math_lib.Normalize(c.Up)
+	right := math_lib.Normalize(math_lib.Cross(dir, up)) // 计算右向量和上向量
 
 	// 计算成像平面尺寸
 	fovRad := c.FieldOfView * math.Pi / 180
@@ -62,63 +61,28 @@ func (c *Camera) GenerateRay(Ray *ray.Ray, row, col int) *ray.Ray {
 	// 添加随机偏移（抗锯齿）
 	randX := rand.Float64()
 	randY := rand.Float64()
-	// 计算成像平面坐标（修正冗余缩放）
-	u := 2*(float64(row)+randX)/float64(c.Width) - 1  // [-1, 1]
+	u := 2*(float64(row)+randX)/float64(c.Width) - 1  // 计算成像平面坐标（修正冗余缩放） [-1, 1]
 	v := 1 - 2*(float64(col)+randY)/float64(c.Height) // [-1, 1]（翻转Y轴）
 	u *= halfWidth
 	v *= halfHeight
 
-	if c.Ortho { // 正交相机：起点在成像平面
+	if true { // 正交相机：起点在成像平面
 		Ray.Origin = mat.NewVecDense(3, nil)
 		Ray.Origin.AddScaledVec(c.Position, u, right)
-		Ray.Origin.AddScaledVec(Ray.Origin, v, cameraUp)
+		Ray.Origin.AddScaledVec(Ray.Origin, v, up)
 		Ray.Direction = dir // 方向固定为观察方向
 	} else { // 透视相机：起点为相机位置
 		Ray.Origin = c.Position
 		rayDir := mat.NewVecDense(3, nil) // 方向 = 成像平面点 - 原点（即 u*right + v*cameraUp + 前向）
 		rayDir.AddScaledVec(rayDir, u, right)
-		rayDir.AddScaledVec(rayDir, v, cameraUp)
+		rayDir.AddScaledVec(rayDir, v, up)
 		rayDir.AddScaledVec(rayDir, 1, dir) // dir已归一化
 		Ray.Direction = math_lib.Normalize(rayDir)
 	}
 	return Ray
 }
 
-// GetRayCoordinates 获取光线对应的像素坐标
-func (c *Camera) GetRayCoordinates(ray *ray.Ray, width, height int) (int, int) {
-	// 计算右向量和上向量
-	right := math_lib.Normalize(math_lib.Cross(c.Direction, c.Up))
-	cameraUp := math_lib.Normalize(math_lib.Cross(right, c.Direction))
-
-	// 计算成像平面尺寸
-	fovRad := c.FieldOfView * math.Pi / 180
-	imageHeight := 2 * math.Tan(fovRad/2)
-	imageWidth := imageHeight * c.AspectRatio
-
-	// 投影光线方向到成像平面
-	dir := ray.Direction
-	u := mat.Dot(dir, right) * (2 / imageWidth)
-	v := mat.Dot(dir, cameraUp) * (2 / imageHeight)
-
-	// 转换为像素坐标
-	x := int((u + 1) * 0.5 * float64(width))
-	y := int((1 - (v+1)*0.5) * float64(height))
-
-	// 确保坐标在有效范围内
-	if x < 0 {
-		x = 0
-	} else if x >= width {
-		x = width - 1
-	}
-	if y < 0 {
-		y = 0
-	} else if y >= height {
-		y = height - 1
-	}
-	return x, y
-}
-
-func (c *Camera) GenerateRaysSVG() string {
+func (c *Camera) DebugGenerateRaysSVG() string {
 	const (
 		svgWidth  = 1000  // SVG画布宽度
 		svgHeight = 1000  // SVG画布高度

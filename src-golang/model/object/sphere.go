@@ -32,8 +32,6 @@ func (s *Sphere) Intersect(raySt, ray *mat.VecDense) float64 {
 	A := mat.Dot(ray, ray)
 	B := 2 * mat.Dot(ray, rayStCenter)
 	C := mat.Dot(rayStCenter, rayStCenter) - s.R*s.R
-
-	// 计算判别式
 	Delta := B*B - 4*A*C
 	if Delta < 0 {
 		return math.MaxFloat64 // 无交点
@@ -76,10 +74,8 @@ func (s *Sphere) Intersect(raySt, ray *mat.VecDense) float64 {
 	switch {
 	case root1 > 0 && root2 > 0:
 		return math.Min(root1, root2)
-	case root1 > 0:
-		return root1
-	case root2 > 0:
-		return root2
+	case root1 > 0 || root2 > 0:
+		return math.Max(root1, root2)
 	default:
 		return math.MaxFloat64
 	}

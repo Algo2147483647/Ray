@@ -26,10 +26,10 @@ func TraceRay(objTree *object.ObjectTree, ray *ray.Ray, level int) *mat.VecDense
 				"hit_object": hitObject,
 				"distance":   distance,
 			})
-		}
 
-		if level == 0 {
-			println(ray.DebugString())
+			if level == 0 && hitObject != "MISS" {
+				println(ray.DebugString())
+			}
 		}
 	}()
 
