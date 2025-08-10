@@ -124,13 +124,9 @@ func (t *ObjectTree) build(l, r int, node **ObjectNode) {
 func (t *ObjectTree) GetIntersection(raySt, rayDir *mat.VecDense, node *ObjectNode) (float64, *Object) {
 	if node == nil {
 		return math.MaxFloat64, nil
-	}
-
-	if node.Obj != nil {
+	} else if node.Obj != nil {
 		return node.Obj.Shape.Intersect(raySt, rayDir), node.Obj
-	}
-
-	if node.BoundBox.Intersect(raySt, rayDir) >= math.MaxFloat64 {
+	} else if node.BoundBox.Intersect(raySt, rayDir) >= math.MaxFloat64 {
 		return math.MaxFloat64, nil
 	}
 

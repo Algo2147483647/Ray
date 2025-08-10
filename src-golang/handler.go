@@ -80,8 +80,8 @@ func (h *Handler) BuildCamera() *Handler {
 	}
 
 	h.Camera = &model.Camera{
-		Position:  mat.NewVecDense(3, []float64{600.0, 1100.0, 600.0}),
-		Direction: mat.NewVecDense(3, []float64{400.0, -100.0, -100.0}),
+		Position:  mat.NewVecDense(3, []float64{0.0, 0.0, 0.0}),
+		Direction: mat.NewVecDense(3, []float64{4.0, -1.0, -1.0}),
 		Up:        mat.NewVecDense(3, []float64{0, 0, 1}),
 		Width:     h.Width,
 		Height:    h.Height,

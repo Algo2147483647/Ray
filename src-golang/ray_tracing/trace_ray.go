@@ -10,12 +10,12 @@ import (
 
 // TraceRay 迭代式光线追踪 (替代递归)
 func TraceRay(objTree *object.ObjectTree, ray *model.Ray) *mat.VecDense {
-	color := mat.NewVecDense(3, []float64{1, 1, 1})  // 初始颜色为白色
-	weight := mat.NewVecDense(3, []float64{1, 1, 1}) // 累积权重
-
-	// 复用向量避免内存分配
-	temp := mat.NewVecDense(3, nil)
-	normal := mat.NewVecDense(3, nil)
+	var (
+		color  = mat.NewVecDense(3, []float64{1, 1, 1}) // 初始颜色为白色
+		weight = mat.NewVecDense(3, []float64{1, 1, 1}) // 累积权重
+		temp   = mat.NewVecDense(3, nil)                // 复用向量避免内存分配
+		normal = mat.NewVecDense(3, nil)
+	)
 
 	for level := 0; level <= MaxRayLevel; level++ {
 		// 查找最近交点
@@ -25,14 +25,10 @@ func TraceRay(objTree *object.ObjectTree, ray *model.Ray) *mat.VecDense {
 			break
 		}
 
-		// 计算新交点：origin = origin + dis * direction
+		// 计算新交点, 法向量：新交点 origin = origin + dis * direction, 确保法线朝向光源
 		temp.ScaleVec(dis, ray.Direction)
 		ray.Origin.AddVec(ray.Origin, temp)
-
-		// 计算法向量
 		normal = obj.Shape.NormalVector(ray.Origin)
-
-		// 确保法线朝向光源
 		if dot := mat.Dot(normal, ray.Direction); dot > 0 {
 			normal.ScaleVec(-1, normal)
 		}

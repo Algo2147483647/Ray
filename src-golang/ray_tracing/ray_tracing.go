@@ -9,29 +9,18 @@ import (
 
 // 全局配置
 var (
-	MaxRayLevel = 6  // 最大光线递归深度
-	ThreadNum   = 20 // 并发线程数
+	MaxRayLevel = 6   // 最大光线递归深度
+	ThreadNum   = 200 // 并发线程数
 )
 
-// RayPool 光线对象池
-var RayPool = sync.Pool{
-	New: func() interface{} {
-		return &model.Ray{
-			Origin:    mat.NewVecDense(3, nil),
-			Direction: mat.NewVecDense(3, nil),
-			Color:     mat.NewVecDense(3, nil),
-		}
-	},
-}
-
 // TracePixel 追踪单个像素
-func TracePixel(camera *model.Camera, objTree *object.ObjectTree, row, col, rows, cols, samples int) *mat.VecDense {
+func TracePixel(camera *model.Camera, objTree *object.ObjectTree, row, col, samples int) *mat.VecDense {
 	color := mat.NewVecDense(3, nil)
 	for s := 0; s < samples; s++ {
 		ray := RayPool.Get().(*model.Ray)
 		defer RayPool.Put(ray)
 
-		camera.GenerateRay(ray, row, col, rows, cols)
+		camera.GenerateRay(ray, row, col)
 		sampleColor := TraceRay(objTree, ray)
 		color.AddVec(color, sampleColor)
 	}
@@ -61,11 +50,10 @@ func TraceScene(camera *model.Camera, objTree *object.ObjectTree, img [3]*mat.De
 
 			for pixel := range taskChan {
 				r, c := pixel[0], pixel[1]
-				color := TracePixel(camera, objTree, r, c, rows, cols, samples)
+				color := TracePixel(camera, objTree, r, c, samples)
 
-				// 直接写入全局图像 (无锁写入，每个像素独立)
 				for ch := 0; ch < 3; ch++ {
-					img[ch].Set(r, c, color.AtVec(ch))
+					img[ch].Set(r, c, color.AtVec(ch)) // 直接写入全局图像 (无锁写入，每个像素独立)
 				}
 			}
 		}(int64(i))

@@ -3,6 +3,7 @@ package model
 import (
 	"gonum.org/v1/gonum/mat"
 	"math"
+	"math/rand"
 	"src-golang/math_lib"
 )
 
@@ -39,7 +40,7 @@ func (c *Camera) SetLookAt(lookAt *mat.VecDense) *Camera {
 	return c
 }
 
-func (c *Camera) GenerateRay(ray *Ray, row, col, rows, cols int) {
+func (c *Camera) GenerateRay(ray *Ray, row, col int) *Ray {
 	// 计算相机坐标系基向量
 	forward := new(mat.VecDense)
 	forward.SubVec(c.Direction, c.Position)
@@ -52,13 +53,8 @@ func (c *Camera) GenerateRay(ray *Ray, row, col, rows, cols int) {
 
 	// 抗锯齿：在像素内随机采样
 	var u, v float64
-	if math_lib.Rnd != nil {
-		u = (float64(col) + math_lib.Rnd.Float64()) / float64(cols)
-		v = (float64(row) + math_lib.Rnd.Float64()) / float64(rows)
-	} else {
-		u = (float64(col) + 0.5) / float64(cols)
-		v = (float64(row) + 0.5) / float64(rows)
-	}
+	u = (float64(col) + rand.Float64()) / float64(c.Height)
+	v = (float64(row) + rand.Float64()) / float64(c.Width)
 
 	// 将UV坐标映射到[-1,1]范围
 	u = 2*u - 1
@@ -89,10 +85,7 @@ func (c *Camera) GenerateRay(ray *Ray, row, col, rows, cols int) {
 		//ray.Direction.ScaleVec(1/mat.Norm(ray.Direction, 2), ray.Direction)
 	}
 
-	// 重置光线颜色
-	ray.Color.Reset()
-	ray.Color.AddScaledVec(ray.Color, 1, mat.NewVecDense(3, []float64{1, 1, 1}))
-
+	return ray
 }
 
 // GenerateRays 生成像素光线
