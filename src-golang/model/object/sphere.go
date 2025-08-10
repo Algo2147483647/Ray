@@ -99,5 +99,5 @@ func (s *Sphere) BuildBoundingBox() (pmax, pmin *mat.VecDense) {
 
 	pmax.AddVec(s.center, mat.NewVecDense(3, offset))
 	pmin.SubVec(s.center, mat.NewVecDense(3, offset))
-	return pmax, pmin
+	return pmin, pmax
 }

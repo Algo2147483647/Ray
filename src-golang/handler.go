@@ -66,7 +66,7 @@ func (h *Handler) LoadScript() *Handler {
 	}
 
 	fmt.Printf("Loading scene from: %s\n", h.ScriptPath)
-	err := controller.LoadSceneFromScript(controller.ReadScriptFile(h.ScriptPath), h.Scene.ObjectTree)
+	err := controller.LoadSceneFromScript(controller.ReadScriptFile(h.ScriptPath), h.Scene)
 	if err != nil {
 		h.err = err
 		return h

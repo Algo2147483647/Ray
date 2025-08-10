@@ -28,7 +28,7 @@ func TraceRay(objTree *object.ObjectTree, ray *ray.Ray) *mat.VecDense {
 		// 计算新交点, 法向量：新交点 origin = origin + dis * direction, 确保法线朝向光源
 		temp.ScaleVec(dis, ray.Direction)
 		ray.Origin.AddVec(ray.Origin, temp)
-		normal = obj.Shape.NormalVector(ray.Origin)
+		normal = obj.Shape.GetNormalVector(ray.Origin)
 		if dot := mat.Dot(normal, ray.Direction); dot > 0 {
 			normal.ScaleVec(-1, normal)
 		}

@@ -41,52 +41,45 @@ func (c *Camera) SetLookAt(lookAt *mat.VecDense) *Camera {
 	return c
 }
 
-func (c *Camera) GenerateRay(ray *ray.Ray, row, col int) *ray.Ray {
-	// 计算相机坐标系基向量
-	forward := new(mat.VecDense)
-	forward.SubVec(c.Direction, c.Position)
-	forward.ScaleVec(1/mat.Norm(forward, 2), forward)
-
-	right := math_lib.Cross(forward, c.Up)
-	right.ScaleVec(1/mat.Norm(right, 2), right)
-
-	up := math_lib.Cross(right, forward)
-
-	// 抗锯齿：在像素内随机采样
-	var u, v float64
-	u = (float64(col) + rand.Float64()) / float64(c.Height)
-	v = (float64(row) + rand.Float64()) / float64(c.Width)
-
-	// 将UV坐标映射到[-1,1]范围
-	u = 2*u - 1
-	v = 2*v - 1
-
-	if c.Ortho {
-		// 正交投影
-		ray.Origin.Reset()
-		ray.Origin.ScaleVec(u*float64(c.Width)/2, right)
-		temp := new(mat.VecDense)
-		temp.ScaleVec(v*float64(c.Width)/(2*c.Aspect), up)
-		ray.Origin.AddVec(ray.Origin, temp)
-		ray.Origin.AddVec(ray.Origin, c.Position)
-
-		ray.Direction.CopyVec(forward)
-	} else {
-		//// 透视投影
-		//tanFov := math.Tan(c.FOV * math.Pi / 360) // FOV/2 in radians
-		//ray.Origin.CopyVec(c.Position)
-		//
-		//// 计算光线方向
-		//ray.Direction.Reset()
-		//ray.Direction.ScaleVec(u*tanFov, right)
-		//temp := new(mat.VecDense)
-		//temp.ScaleVec(v*tanFov/c.Aspect, up)
-		//ray.Direction.AddVec(ray.Direction, temp)
-		//ray.Direction.AddVec(ray.Direction, forward)
-		//ray.Direction.ScaleVec(1/mat.Norm(ray.Direction, 2), ray.Direction)
+func (c *Camera) GenerateRay(Ray *ray.Ray, row, col int) *ray.Ray {
+	if Ray == nil {
+		Ray = &ray.Ray{}
 	}
 
-	return ray
+	// 计算右向量: 方向 × 上向量, 实际上向量: 右向量 × 方向
+	right := math_lib.Normalize(math_lib.Cross(c.Direction, c.Up))
+	cameraUp := math_lib.Normalize(math_lib.Cross(right, c.Direction))
+
+	// 计算成像平面尺寸
+	fovRad := c.FieldOfView * math.Pi / 180
+	imageHeight := 2 * math.Tan(fovRad/2)
+	imageWidth := imageHeight * c.AspectRatio
+
+	// 预计算方向分量
+	dirScale := 1.0
+	if c.Direction.Len() == 3 {
+		dirScale = 1 / mat.Norm(c.Direction, 2)
+	}
+
+	randX := rand.Float64() // 添加随机偏移(抗锯齿)
+	randY := rand.Float64()
+	u := (2*((float64(row)+randX)/float64(c.Width)) - 1) * imageWidth / 2 // 计算标准化设备坐标
+	v := 1 - 2*((float64(col)+randY)/float64(c.Height))*imageHeight/2
+	u *= imageWidth / 2 // 缩放坐标到成像平面
+	v *= imageHeight / 2
+
+	// 计算光线方向
+	rayDir := mat.NewVecDense(3, nil)
+	rayDir.AddScaledVec(rayDir, u, right)
+	rayDir.AddScaledVec(rayDir, v, cameraUp)
+	rayDir.AddScaledVec(rayDir, dirScale, c.Direction)
+	rayDir = math_lib.Normalize(rayDir)
+
+	Ray.Origin = c.Position
+	Ray.Direction = rayDir
+
+	// println(utils.FormatVec(Ray.Origin), utils.FormatVec(Ray.Direction))
+	return Ray
 }
 
 // GenerateRays 生成像素光线

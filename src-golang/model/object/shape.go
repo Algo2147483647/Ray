@@ -6,7 +6,7 @@ import "gonum.org/v1/gonum/mat"
 type Shape interface {
 	Name() string
 	Intersect(rayStart, rayDir *mat.VecDense) float64
-	NormalVector(intersect *mat.VecDense) *mat.VecDense
+	GetNormalVector(intersect *mat.VecDense) *mat.VecDense
 	BuildBoundingBox() (pmax, pmin *mat.VecDense)
 	SetEngraving(fn func(*mat.VecDense) bool)
 }
@@ -24,7 +24,7 @@ func (bs *BaseShape) Intersect(rayStart, rayDir *mat.VecDense) float64 {
 	return 0
 }
 
-func (bs *BaseShape) NormalVector(intersect *mat.VecDense) *mat.VecDense {
+func (bs *BaseShape) GetNormalVector(intersect *mat.VecDense) *mat.VecDense {
 	return &mat.VecDense{}
 }
 

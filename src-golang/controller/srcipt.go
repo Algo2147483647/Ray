@@ -6,6 +6,7 @@ import (
 	"gonum.org/v1/gonum/mat"
 	"io"
 	"os"
+	"src-golang/model"
 	"src-golang/model/object"
 )
 
@@ -67,11 +68,56 @@ func ReadScriptFile(filepath string) *Script {
 }
 
 // LoadSceneFromScript 从脚本加载场景
-func LoadSceneFromScript(script *Script, objTree *object.ObjectTree) error {
-	// 创建材质映射表
+func LoadSceneFromScript(script *Script, scene *model.Scene) error {
+	materials := ParseMaterials(script) // 解析材质映射表
+
+	// 解析物体
+	for _, objDef := range script.Objects {
+		position := mat.NewVecDense(3, objDef.Position)
+		material, exists := materials[objDef.MaterialID]
+		if !exists {
+			continue // 跳过未定义材质的物体
+		}
+
+		switch objDef.Shape {
+		case "cuboid":
+			if len(objDef.Size) < 3 {
+				continue
+			}
+
+			// 计算长方体对角点
+			size := mat.NewVecDense(3, objDef.Size)
+			pmax := mat.NewVecDense(3, nil)
+			pmax.AddVec(position, size)
+			pmin := mat.NewVecDense(3, nil)
+			pmin.SubVec(position, size)
+
+			scene.ObjectTree.AddObject(&object.Object{
+				Shape:    object.NewCuboid(pmin, pmax),
+				Material: material,
+			})
+
+		case "sphere":
+			if len(objDef.Size) < 1 {
+				continue
+			}
+
+			scene.ObjectTree.AddObject(&object.Object{
+				Shape:    object.NewSphere(position, float64(objDef.Size[0])),
+				Material: material,
+			})
+
+		case "plane":
+		case "cylinder":
+		}
+	}
+	scene.ObjectTree.Build()
+	return nil
+}
+
+func ParseMaterials(script *Script) map[string]*object.Material {
 	materials := make(map[string]*object.Material)
 
-	// 解析材质
 	for _, matDef := range script.Materials {
 		// 将颜色从 [0-255] 转换为 [0.0-1.0]
 		r := float64(matDef.Color[0]) / 255.0
@@ -97,85 +143,5 @@ func LoadSceneFromScript(script *Script, objTree *object.ObjectTree) error {
 		materials[matDef.ID] = material
 	}
 
-	// 解析物体
-	for _, objDef := range script.Objects {
-		material, exists := materials[objDef.MaterialID]
-		if !exists {
-			continue // 跳过未定义材质的物体
-		}
-
-		position := mat.NewVecDense(3, []float64{
-			float64(objDef.Position[0]),
-			float64(objDef.Position[1]),
-			float64(objDef.Position[2]),
-		})
-
-		switch objDef.Shape {
-		case "cuboid":
-			if len(objDef.Size) < 3 {
-				continue
-			}
-
-			// 计算长方体对角点
-			size := mat.NewVecDense(3, []float64{
-				float64(objDef.Size[0]),
-				float64(objDef.Size[1]),
-				float64(objDef.Size[2]),
-			})
-
-			p2 := mat.NewVecDense(3, nil)
-			p2.AddVec(position, size)
-
-			objTree.AddObject(&object.Object{
-				Shape:    object.NewCuboid(position, p2),
-				Material: material,
-			})
-
-		case "sphere":
-			radius := float64(objDef.Size[0])
-			if radius == 0 {
-				radius = 1.0 // 默认半径
-			}
-
-			objTree.AddObject(&object.Object{
-				Shape:    object.NewSphere(position, radius),
-				Material: material,
-			})
-
-		case "Plane":
-			// 平面需要法线方向，这里使用位置向量作为法线
-			//normal := position
-			//if normal.Norm() == 0 {
-			//	normal = mat.NewVecDense(3, []float64{0, 1, 0}) // 默认法线向上
-			//} else {
-			//	normal.ScaleVec(1/normal.Norm(), normal) // 归一化
-			//}
-
-			// XZH t.Add(NewPlane(position, normal), material)
-
-		case "Cylinder":
-			//height := float64(objDef.Size[0])
-			//radius := float64(objDef.Size[1])
-			//if height == 0 {
-			//	height = 1.0
-			//}
-			//if radius == 0 {
-			//	radius = 0.5
-			//}
-			//
-			//// 圆柱体方向，默认为Y轴
-			//axis := mat.NewVecDense(3, []float64{0, 1, 0})
-			//if len(objDef.Size) > 2 {
-			//	axis = mat.NewVecDense(3, []float64{
-			//		float64(objDef.Size[0]),
-			//		float64(objDef.Size[1]),
-			//		float64(objDef.Size[2]),
-			//	})
-			//}
-			//
-			//t.Add(NewCylinder(position, axis, height, radius), material)
-		}
-	}
-	objTree.Build()
-	return nil
+	return materials
 }
