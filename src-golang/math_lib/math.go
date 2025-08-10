@@ -1,17 +1,26 @@
 package math_lib
 
-import "gonum.org/v1/gonum/mat"
+import (
+	"gonum.org/v1/gonum/mat"
+	"math/rand"
+	"time"
+)
 
 const (
 	EPS = 1e-6 // 微小量，用于浮点数比较
 )
 
-func Normalize(v *mat.VecDense) {
+var (
+	Rnd = rand.New(rand.NewSource(time.Now().UnixNano()))
+)
+
+func Normalize(v *mat.VecDense) *mat.VecDense {
 	norm := mat.Norm(v, 2)
 	if norm == 0 {
-		return
+		return v
 	}
 	v.ScaleVec(1/norm, v)
+	return v
 }
 
 func Cross(u, v *mat.VecDense) *mat.VecDense {

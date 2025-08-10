@@ -30,7 +30,6 @@ func NewHandler() *Handler {
 	h := &Handler{
 		Width:  Width,
 		Height: Height,
-		Camera: model.NewCamera(),
 		imgout: image.NewRGBA(image.Rect(0, 0, Width, Height)),
 	}
 	for i, _ := range h.img {
@@ -65,8 +64,13 @@ func (h *Handler) LoadScript() *Handler {
 		return h
 	}
 
-	ray_tracing.LoadSceneFromScript(h.ScriptPath, &h.objTree)
 	fmt.Printf("Loading scene from: %s\n", h.ScriptPath)
+	err := h.objTree.LoadSceneFromScript(h.ScriptPath)
+	if err != nil {
+		h.err = err
+		return h
+	}
+
 	return h
 }
 
@@ -75,8 +79,14 @@ func (h *Handler) BuildCamera() *Handler {
 		return h
 	}
 
-	h.Camera.Position = mat.NewVecDense(3, []float64{600.0, 1100.0, 600.0})
-	h.Camera.Direction = mat.NewVecDense(3, []float64{400.0, -100.0, -100.0})
+	h.Camera = &model.Camera{
+		Position:  mat.NewVecDense(3, []float64{600.0, 1100.0, 600.0}),
+		Direction: mat.NewVecDense(3, []float64{400.0, -100.0, -100.0}),
+		Up:        mat.NewVecDense(3, []float64{0, 0, 1}),
+		Width:     h.Width,
+		Height:    h.Height,
+		Aspect:    1,
+	}
 
 	return h
 }
