@@ -104,7 +104,7 @@ func (h *Handler) Render() *Handler {
 	fmt.Println("Starting rendering...")
 	start := time.Now()
 
-	ray_tracing.TraceScene(h.Scene, h.img, 10)
+	ray_tracing.TraceScene(h.Scene, h.img, 100)
 
 	elapsed := time.Since(start)
 	fmt.Printf("Rendering completed in %v\n", elapsed)

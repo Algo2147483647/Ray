@@ -3,8 +3,8 @@
         {
             "id": "Paper",
             "color": [
-                1,
-                1,
+                0,
+                0.6,
                 1
             ],
             "diffuse": 1,
@@ -45,15 +45,75 @@
     ],
     "objects": [
         {
-            "id": "Light Source",
-            "shape": "sphere",
+            "id": "world boundary",
+            "shape": "cuboid",
             "position": [
-                200,
+                0,
                 0,
                 0
             ],
             "size": [
-                10
+                3000,
+                3000,
+                3000
+            ],
+            "material_id": "Paper"
+        },
+        {
+            "id": "Glass Tower 1",
+            "shape": "cuboid",
+            "position": [
+                850,
+                20,
+                500
+            ],
+            "size": [
+                1150,
+                1350,
+                300
+            ],
+            "material_id": "Glass"
+        },
+        {
+            "id": "Glass Tower 2",
+            "shape": "cuboid",
+            "position": [
+                50,
+                900,
+                0
+            ],
+            "size": [
+                1150,
+                930,
+                300
+            ],
+            "material_id": "Glass"
+        },
+        {
+            "id": "Glass Tower 3",
+            "shape": "cuboid",
+            "position": [
+                -50,
+                0,
+                0
+            ],
+            "size": [
+                1150,
+                930,
+                300
+            ],
+            "material_id": "Metal"
+        },
+        {
+            "id": "Light Source",
+            "shape": "sphere",
+            "position": [
+                400,
+                0,
+                0
+            ],
+            "size": [
+                200
             ],
             "material_id": "Light"
         }

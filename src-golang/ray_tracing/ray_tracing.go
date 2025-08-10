@@ -13,8 +13,8 @@ import (
 
 // 全局配置
 var (
-	MaxRayLevel = 2 // 最大光线递归深度
-	ThreadNum   = 1 // 并发线程数
+	MaxRayLevel = 2  // 最大光线递归深度
+	ThreadNum   = 25 // 并发线程数
 )
 
 // TracePixel 追踪单个像素
@@ -26,11 +26,11 @@ func TracePixel(camera *model.Camera, objTree *object.ObjectTree, row, col, samp
 
 		camera.GenerateRay(ray, row, col)
 		ray.Color = mat.NewVecDense(3, []float64{1, 1, 1})
-		if (row+col)%99999 == 1 {
-			ray.DebugSwitch = true
-		} else {
-			ray.DebugSwitch = false
-		}
+		//if (row+col)%99999 == 1 {
+		//	ray.DebugSwitch = true
+		//} else {
+		//	ray.DebugSwitch = false
+		//}
 
 		sampleColor := TraceRay(objTree, ray, 0)
 		color.AddVec(color, sampleColor)

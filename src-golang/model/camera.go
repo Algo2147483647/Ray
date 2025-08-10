@@ -62,23 +62,20 @@ func (c *Camera) GenerateRay(Ray *ray.Ray, row, col int) *ray.Ray {
 	randX := rand.Float64()
 	randY := rand.Float64()
 	u := 2*(float64(row)+randX)/float64(c.Width) - 1  // 计算成像平面坐标（修正冗余缩放） [-1, 1]
-	v := 1 - 2*(float64(col)+randY)/float64(c.Height) // [-1, 1]（翻转Y轴）
+	v := 2*(float64(col)+randY)/float64(c.Height) - 1 // [-1, 1]（翻转Y轴）
 	u *= halfWidth
-	v *= halfHeight
+	v *= -halfHeight
 
-	if true { // 正交相机：起点在成像平面
-		Ray.Origin = mat.NewVecDense(3, nil)
-		Ray.Origin.AddScaledVec(c.Position, u, right)
-		Ray.Origin.AddScaledVec(Ray.Origin, v, up)
-		Ray.Direction = dir // 方向固定为观察方向
-	} else { // 透视相机：起点为相机位置
-		Ray.Origin = c.Position
-		rayDir := mat.NewVecDense(3, nil) // 方向 = 成像平面点 - 原点（即 u*right + v*cameraUp + 前向）
-		rayDir.AddScaledVec(rayDir, u, right)
-		rayDir.AddScaledVec(rayDir, v, up)
-		rayDir.AddScaledVec(rayDir, 1, dir) // dir已归一化
-		Ray.Direction = math_lib.Normalize(rayDir)
-	}
+	Ray.Origin = mat.NewVecDense(3, nil)
+	Ray.Origin.AddScaledVec(c.Position, u, right)
+	Ray.Origin.AddScaledVec(Ray.Origin, v, up)
+
+	Ray.Direction = mat.NewVecDense(3, nil) // 方向 = 成像平面点 - 原点（即 u*right + v*cameraUp + 前向）
+	Ray.Direction.AddScaledVec(Ray.Direction, u, right)
+	Ray.Direction.AddScaledVec(Ray.Direction, v, up)
+	Ray.Direction.AddScaledVec(Ray.Direction, 1, dir) // dir已归一化
+	Ray.Direction = math_lib.Normalize(Ray.Direction)
+
 	return Ray
 }
 

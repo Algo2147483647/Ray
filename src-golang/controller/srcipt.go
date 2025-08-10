@@ -26,12 +26,12 @@ type ScriptCamera struct {
 }
 
 type ScriptMaterial struct {
-	ID           string  `json:"id"`
-	Color        []int   `json:"color"`
-	Diffuse      float64 `json:"diffuse,omitempty"`
-	Reflect      float64 `json:"reflect,omitempty"`
-	Refractivity float64 `json:"refractivity,omitempty"`
-	Radiate      int     `json:"radiate,omitempty"`
+	ID           string    `json:"id"`
+	Color        []float64 `json:"color"`
+	Diffuse      float64   `json:"diffuse,omitempty"`
+	Reflect      float64   `json:"reflect,omitempty"`
+	Refractivity float64   `json:"refractivity,omitempty"`
+	Radiate      int       `json:"radiate,omitempty"`
 }
 
 type ScriptObject struct {
@@ -119,7 +119,6 @@ func ParseMaterials(script *Script) map[string]*object.Material {
 	materials := make(map[string]*object.Material)
 
 	for _, matDef := range script.Materials {
-		// 将颜色从 [0-255] 转换为 [0.0-1.0]
 		r := float64(matDef.Color[0])
 		g := float64(matDef.Color[1])
 		b := float64(matDef.Color[2])
