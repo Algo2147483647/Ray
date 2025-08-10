@@ -6,6 +6,7 @@ import (
 	"image"
 	"image/color"
 	"os"
+	"src-golang/controller"
 	"src-golang/model"
 	"src-golang/model/object"
 	"src-golang/ray_tracing"
@@ -65,7 +66,7 @@ func (h *Handler) LoadScript() *Handler {
 	}
 
 	fmt.Printf("Loading scene from: %s\n", h.ScriptPath)
-	err := h.objTree.LoadSceneFromScript(h.ScriptPath)
+	err := h.objTree.LoadSceneFromScript(controller.ReadScriptFile(h.ScriptPath))
 	if err != nil {
 		h.err = err
 		return h

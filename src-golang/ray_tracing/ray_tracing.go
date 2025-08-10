@@ -1,10 +1,13 @@
 package ray_tracing
 
 import (
+	"fmt"
 	"gonum.org/v1/gonum/mat"
 	"src-golang/model"
 	"src-golang/model/object"
 	"sync"
+	"sync/atomic"
+	"time"
 )
 
 // 全局配置
@@ -28,11 +31,37 @@ func TracePixel(camera *model.Camera, objTree *object.ObjectTree, row, col, samp
 	return color
 }
 
-// TraceScene 追踪整个场景
+// TraceScene 追踪整个场景（添加进度条）
 func TraceScene(camera *model.Camera, objTree *object.ObjectTree, img [3]*mat.Dense, samples int) {
 	rows, cols := img[0].Dims()
+	totalPixels := rows * cols
 	var wg sync.WaitGroup
 	taskChan := make(chan [2]int, rows*cols)
+
+	// 原子进度计数器
+	var progress int64
+
+	// 启动进度显示goroutine
+	done := make(chan bool)
+	go func() {
+		startTime := time.Now()
+		for {
+			select {
+			case <-done:
+				elapsed := time.Since(startTime).Round(time.Second)
+				fmt.Printf("\rRendering complete! Pixels: %d/%d (100%%) Time: %v\n",
+					totalPixels, totalPixels, elapsed)
+				return
+			default:
+				current := atomic.LoadInt64(&progress)
+				percent := float64(current) / float64(totalPixels) * 100
+				elapsed := time.Since(startTime).Round(time.Second)
+				fmt.Printf("\rRendering: %d/%d pixels (%.2f%%) Time: %v",
+					current, totalPixels, percent, elapsed)
+				time.Sleep(100 * time.Millisecond)
+			}
+		}
+	}()
 
 	// 创建任务队列
 	for r := 0; r < rows; r++ {
@@ -47,16 +76,21 @@ func TraceScene(camera *model.Camera, objTree *object.ObjectTree, img [3]*mat.De
 		wg.Add(1)
 		go func(seed int64) {
 			defer wg.Done()
-
 			for pixel := range taskChan {
 				r, c := pixel[0], pixel[1]
 				color := TracePixel(camera, objTree, r, c, samples)
 
 				for ch := 0; ch < 3; ch++ {
-					img[ch].Set(r, c, color.AtVec(ch)) // 直接写入全局图像 (无锁写入，每个像素独立)
+					img[ch].Set(r, c, color.AtVec(ch))
 				}
+
+				// 原子更新进度
+				atomic.AddInt64(&progress, 1)
 			}
 		}(int64(i))
 	}
+
 	wg.Wait()
+	close(done)                        // 通知进度条关闭
+	time.Sleep(100 * time.Millisecond) // 确保最后进度信息被覆盖
 }
