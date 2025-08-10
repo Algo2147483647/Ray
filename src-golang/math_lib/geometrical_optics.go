@@ -1,10 +1,9 @@
 package math_lib
 
 import (
-	"math"
-	"math/rand"
-
 	"gonum.org/v1/gonum/mat"
+	"math"
+	"math/rand/v2"
 )
 
 // Reflect 计算光线的反射方向
@@ -49,7 +48,7 @@ func Refract(incidentRay, normal *mat.VecDense, eta float64) *mat.VecDense {
 }
 
 // DiffuseReflect 计算漫反射方向
-func DiffuseReflect(incidentRay, normal *mat.VecDense, rng *rand.Rand) *mat.VecDense {
+func DiffuseReflect(incidentRay, normal *mat.VecDense) *mat.VecDense {
 	// 创建正交基
 	N := normalizeVec(normal)
 	U := createOrthogonalBasis(N)
@@ -57,8 +56,8 @@ func DiffuseReflect(incidentRay, normal *mat.VecDense, rng *rand.Rand) *mat.VecD
 	V = normalizeVec(V)
 
 	// 生成随机角度和半径
-	phi := 2 * math.Pi * rng.Float64()
-	r := math.Sqrt(rng.Float64()) // 余弦加权采样
+	phi := 2 * math.Pi * rand.Float64()
+	r := math.Sqrt(rand.Float64()) // 余弦加权采样
 
 	// 计算偏移分量
 	uScale := scaleVec(U, r*math.Cos(phi))

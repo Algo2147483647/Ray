@@ -10,6 +10,7 @@ import (
 	"src-golang/controller"
 	"src-golang/model"
 	"src-golang/ray_tracing"
+	"src-golang/utils"
 	"time"
 )
 
@@ -81,14 +82,15 @@ func (h *Handler) BuildCamera() *Handler {
 	}
 
 	camera := &model.Camera{
-		Position:  mat.NewVecDense(3, []float64{0.0, 0.0, 0.0}),
-		Direction: mat.NewVecDense(3, []float64{4.0, -1.0, -1.0}),
-		Up:        mat.NewVecDense(3, []float64{0, 0, 1}),
-		Width:     h.Width,
-		Height:    h.Height,
-		Aspect:    1,
+		Position:    mat.NewVecDense(3, []float64{0.0, 0.0, 0.0}),
+		Direction:   mat.NewVecDense(3, []float64{1, 0, 0}),
+		Up:          mat.NewVecDense(3, []float64{0, 0, 1}),
+		Width:       h.Width,
+		Height:      h.Height,
+		AspectRatio: 1,
+		FieldOfView: 90,
 	}
-
+	camera.GenerateRaysSVG()
 	h.Scene.Cameras = append(h.Scene.Cameras, camera)
 
 	return h
@@ -102,7 +104,7 @@ func (h *Handler) Render() *Handler {
 	fmt.Println("Starting rendering...")
 	start := time.Now()
 
-	ray_tracing.TraceScene(h.Scene, h.img, 100)
+	ray_tracing.TraceScene(h.Scene, h.img, 10)
 
 	elapsed := time.Since(start)
 	fmt.Printf("Rendering completed in %v\n", elapsed)
@@ -123,6 +125,8 @@ func (h *Handler) BuildResult() *Handler {
 			h.imgout.Set(i, j, color.RGBA{r, g, b, 255})
 		}
 	}
+
+	utils.SaveMatricesToJSON(h.img, "result.json")
 	return h
 }
 

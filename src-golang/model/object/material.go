@@ -30,28 +30,25 @@ func NewMaterial(color *mat.VecDense) *Material {
 }
 
 // DielectricSurfacePropagation 处理光线在介质表面的传播
-func (m *Material) DielectricSurfacePropagation(ray *ray.Ray, norm *mat.VecDense, rng *rand.Rand) bool {
+func (m *Material) DielectricSurfacePropagation(ray *ray.Ray, norm *mat.VecDense) bool {
 	if m.Radiation {
 		ray.Color = m.Color
 		return true
 	}
 
-	randNum := rng.Float64()
+	randNum := rand.Float64()
 	dim := norm.Len() // 获取向量维度（应为3）
 
 	switch {
-	case randNum <= m.Reflectivity:
-		// 漫反射
-		ray.Direction = math_lib.DiffuseReflect(ray.Direction, norm, rand.New(rand.NewSource(0)))
+	case randNum <= m.Reflectivity: // 漫反射
+		ray.Direction = math_lib.DiffuseReflect(ray.Direction, norm)
 		ray.Color.ScaleVec(m.ReflectLoss, ray.Color)
 
-	case randNum <= m.Reflectivity+m.Refractivity:
-		// 镜面反射
+	case randNum <= m.Reflectivity+m.Refractivity: // 镜面反射
 		ray.Direction = math_lib.Reflect(ray.Direction, norm)
 		ray.Color.ScaleVec(m.RefractLoss, ray.Color)
 
-	default:
-		// 折射
+	default: // 折射
 		refractionIndex := m.RefractiveIndex
 		if ray.Refractivity == 1.0 {
 			refractionIndex = 1.0 / m.RefractiveIndex

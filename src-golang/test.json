@@ -108,9 +108,9 @@
             "id": "Light Source",
             "shape": "sphere",
             "position": [
-                1000,
-                1000,
-                1000
+                0,
+                0,
+                0
             ],
             "size": [
                 400

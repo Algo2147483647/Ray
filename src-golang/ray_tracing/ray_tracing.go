@@ -24,8 +24,9 @@ func TracePixel(camera *model.Camera, objTree *object.ObjectTree, row, col, samp
 		ray := RayPool.Get().(*ray.Ray)
 		defer RayPool.Put(ray)
 
+		ray.Color = mat.NewVecDense(3, []float64{1, 1, 1})
 		camera.GenerateRay(ray, row, col)
-		sampleColor := TraceRay(objTree, ray)
+		sampleColor := TraceRay(objTree, ray, 0)
 		color.AddVec(color, sampleColor)
 	}
 	color.ScaleVec(1.0/float64(samples), color)
