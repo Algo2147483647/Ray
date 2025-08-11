@@ -1,4 +1,4 @@
-package object
+package shape
 
 import (
 	"gonum.org/v1/gonum/mat"
@@ -8,10 +8,8 @@ import (
 
 type Sphere struct {
 	BaseShape
-
-	center    *mat.VecDense
-	R         float64
-	engraving func(*mat.VecDense) bool
+	center *mat.VecDense
+	R      float64
 }
 
 // NewSphere 构造函数
@@ -41,36 +39,6 @@ func (s *Sphere) Intersect(raySt, ray *mat.VecDense) float64 {
 	root1 := (-B - Delta) / (2 * A)
 	root2 := (-B + Delta) / (2 * A)
 
-	// 处理雕刻函数
-	if s.engraving != nil {
-		intersection := mat.NewVecDense(3, nil)
-
-		if root1 > 0 {
-			// 计算交点并归一化
-			intersection.AddScaledVec(raySt, root1, ray)
-			intersection.SubVec(intersection, s.center)
-			math_lib.Normalize(intersection)
-
-			if s.engraving(intersection) {
-				return root1
-			}
-		}
-
-		if root2 > 0 {
-			// 计算交点并归一化
-			intersection.AddScaledVec(raySt, root2, ray)
-			intersection.SubVec(intersection, s.center)
-			math_lib.Normalize(intersection)
-
-			if s.engraving(intersection) {
-				return root2
-			}
-		}
-
-		return math.MaxFloat64
-	}
-
-	// 无雕刻函数的情况
 	switch {
 	case root1 > 0 && root2 > 0:
 		return math.Min(root1, root2)
@@ -79,6 +47,34 @@ func (s *Sphere) Intersect(raySt, ray *mat.VecDense) float64 {
 	default:
 		return math.MaxFloat64
 	}
+	// 处理雕刻函数
+	//if s.engraving != nil {
+	//	intersection := mat.NewVecDense(3, nil)
+	//
+	//	if root1 > 0 {
+	//		// 计算交点并归一化
+	//		intersection.AddScaledVec(raySt, root1, ray)
+	//		intersection.SubVec(intersection, s.center)
+	//		math_lib.Normalize(intersection)
+	//
+	//		if s.engraving(intersection) {
+	//			return root1
+	//		}
+	//	}
+	//
+	//	if root2 > 0 {
+	//		// 计算交点并归一化
+	//		intersection.AddScaledVec(raySt, root2, ray)
+	//		intersection.SubVec(intersection, s.center)
+	//		math_lib.Normalize(intersection)
+	//
+	//		if s.engraving(intersection) {
+	//			return root2
+	//		}
+	//	}
+	//
+	//	return math.MaxFloat64
+	//}
 }
 
 func (s *Sphere) GetNormalVector(intersect *mat.VecDense) *mat.VecDense {

@@ -9,7 +9,7 @@ import (
 // Reflect 计算光线的反射方向
 func Reflect(incidentRay, normal *mat.VecDense) *mat.VecDense {
 	// 归一化法向量
-	n := normalizeVec(normal)
+	n := Normalize(normal)
 
 	// 计算点积: N·I
 	dot := dotProduct(n, incidentRay)
@@ -24,8 +24,8 @@ func Reflect(incidentRay, normal *mat.VecDense) *mat.VecDense {
 // Refract 计算光线的折射方向
 func Refract(incidentRay, normal *mat.VecDense, eta float64) *mat.VecDense {
 	// 归一化入射光线和法向量
-	I := normalizeVec(incidentRay)
-	N := normalizeVec(normal)
+	I := Normalize(incidentRay)
+	N := Normalize(normal)
 
 	// 计算入射角余弦
 	cosI := dotProduct(N, I)
@@ -50,10 +50,10 @@ func Refract(incidentRay, normal *mat.VecDense, eta float64) *mat.VecDense {
 // DiffuseReflect 计算漫反射方向
 func DiffuseReflect(incidentRay, normal *mat.VecDense) *mat.VecDense {
 	// 创建正交基
-	N := normalizeVec(normal)
+	N := Normalize(normal)
 	U := createOrthogonalBasis(N)
 	V := Cross(N, U)
-	V = normalizeVec(V)
+	V = Normalize(V)
 
 	// 生成随机角度和半径
 	phi := 2 * math.Pi * rand.Float64()
@@ -68,7 +68,7 @@ func DiffuseReflect(incidentRay, normal *mat.VecDense) *mat.VecDense {
 	direction := new(mat.VecDense)
 	direction.AddVec(uScale, vScale)
 	direction.AddVec(direction, nScale)
-	return normalizeVec(direction)
+	return Normalize(direction)
 }
 
 // ComputeHaze 计算单色光的雾效
@@ -93,15 +93,6 @@ func ComputeHazeColor(intensity, ambientLight *mat.VecDense, distance, attenuati
 	return result
 }
 
-// 辅助函数：向量归一化
-func normalizeVec(v *mat.VecDense) *mat.VecDense {
-	norm := mat.Norm(v, 2)
-	if norm == 0 {
-		return mat.VecDenseCopyOf(v)
-	}
-	return scaleVec(v, 1/norm)
-}
-
 // 辅助函数：向量缩放
 func scaleVec(v *mat.VecDense, s float64) *mat.VecDense {
 	result := new(mat.VecDense)
@@ -124,5 +115,5 @@ func createOrthogonalBasis(normal *mat.VecDense) *mat.VecDense {
 
 	// 计算叉积得到正交向量
 	u := Cross(normal, ref)
-	return normalizeVec(u)
+	return Normalize(u)
 }

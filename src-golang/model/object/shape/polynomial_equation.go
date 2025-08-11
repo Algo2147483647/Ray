@@ -1,4 +1,4 @@
-package object
+package shape
 
 import (
 	"gonum.org/v1/gonum/mat"
@@ -97,8 +97,8 @@ func (p *PolynomialEquation) GetNormalVector(intersect *mat.VecDense) *mat.VecDe
 }
 
 func (p *PolynomialEquation) BuildBoundingBox() (*mat.VecDense, *mat.VecDense) {
-	// 多项式曲面通常无界
-	maxVal := math.MaxFloat64 / 2 // 避免后续计算溢出
+
+	maxVal := math.MaxFloat64 / 2 // 多项式曲面通常无界, 避免后续计算溢出
 	minVec := mat.NewVecDense(3, []float64{-maxVal, -maxVal, -maxVal})
 	maxVec := mat.NewVecDense(3, []float64{maxVal, maxVal, maxVal})
 	return minVec, maxVec

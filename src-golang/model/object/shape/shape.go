@@ -1,4 +1,4 @@
-package object
+package shape
 
 import "gonum.org/v1/gonum/mat"
 

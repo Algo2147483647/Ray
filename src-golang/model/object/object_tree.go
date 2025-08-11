@@ -5,6 +5,7 @@ import (
 	"gonum.org/v1/gonum/mat"
 	"math"
 	"sort"
+	"src-golang/model/object/shape"
 	"strings"
 )
 
@@ -104,7 +105,7 @@ func (t *ObjectTree) build(l, r int, node **ObjectNode) {
 
 	// 4. 创建内部节点并递归构建子树
 	*node = NewObjectNode(nil, nil, nil)
-	(*node).BoundBox = &Cuboid{Pmin: pmin, Pmax: pmax}
+	(*node).BoundBox = &shape.Cuboid{Pmin: pmin, Pmax: pmax}
 
 	mid := (l + r) / 2
 	t.build(l, mid, &(*node).Children[0])

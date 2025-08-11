@@ -8,6 +8,7 @@ import (
 	"os"
 	"src-golang/model"
 	"src-golang/model/object"
+	"src-golang/model/object/shape"
 )
 
 type Script struct {
@@ -93,7 +94,7 @@ func LoadSceneFromScript(script *Script, scene *model.Scene) error {
 			pmin.SubVec(position, size)
 
 			scene.ObjectTree.AddObject(&object.Object{
-				Shape:    object.NewCuboid(pmin, pmax),
+				Shape:    shape.NewCuboid(pmin, pmax),
 				Material: material,
 			})
 
@@ -103,7 +104,7 @@ func LoadSceneFromScript(script *Script, scene *model.Scene) error {
 			}
 
 			scene.ObjectTree.AddObject(&object.Object{
-				Shape:    object.NewSphere(position, float64(objDef.Size[0])),
+				Shape:    shape.NewSphere(position, float64(objDef.Size[0])),
 				Material: material,
 			})
 

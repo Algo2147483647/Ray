@@ -1,4 +1,4 @@
-package object
+package shape
 
 import (
 	"gonum.org/v1/gonum/mat"
@@ -26,9 +26,7 @@ var (
 
 type Triangle struct {
 	BaseShape
-
 	P1, P2, P3 *mat.VecDense
-	Engraving  func(*mat.VecDense) bool
 }
 
 func (t *Triangle) GetName() string {

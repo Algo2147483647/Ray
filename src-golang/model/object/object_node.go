@@ -2,6 +2,7 @@ package object
 
 import (
 	"fmt"
+	"src-golang/model/object/shape"
 	"src-golang/utils"
 	"strings"
 )
@@ -9,7 +10,7 @@ import (
 // ObjectNode 表示对象树中的节点
 type ObjectNode struct {
 	Obj      *Object        // 关联的物体
-	BoundBox *Cuboid        // 包围盒
+	BoundBox *shape.Cuboid  // 包围盒
 	Children [2]*ObjectNode // 子节点
 }
 
@@ -21,7 +22,7 @@ func NewObjectNode(obj *Object, left, right *ObjectNode) *ObjectNode {
 	}
 
 	if obj != nil {
-		node.BoundBox = NewCuboid(obj.Shape.BuildBoundingBox())
+		node.BoundBox = shape.NewCuboid(obj.Shape.BuildBoundingBox())
 	}
 	return node
 }

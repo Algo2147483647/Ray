@@ -1,121 +1,137 @@
 {
     "materials": [
         {
-            "id": "Paper",
-            "color": [
-                0,
-                0.6,
-                1
-            ],
-            "diffuse": 1,
-            "reflect": 0,
-            "refractivity": 0
-        },
-        {
             "id": "Glass",
-            "color": [
-                1,
-                1,
-                0
-            ],
-            "diffuse": 0,
-            "reflect": 1,
+            "color": [1.0, 1.0, 1.0],
+            "diffuse": 0.0,
+            "reflect": 0.0,
             "refractivity": 1.7
         },
         {
-            "id": "Metal",
-            "color": [
-                1,
-                1,
-                0
-            ],
+            "id": "YellowMetal",
+            "color": [1.0, 1.0, 0.0],
             "diffuse": 0.5,
             "reflect": 0.5,
-            "refractivity": 0
+            "refractivity": 0.0
         },
         {
-            "id": "Light",
-            "color": [
-                10,
-                10,
-                10
-            ],
+            "id": "WhiteDiffuse",
+            "color": [1.0, 1.0, 1.0],
+            "diffuse": 0.9,
+            "reflect": 0.1,
+            "refractivity": 0.0
+        },
+        {
+            "id": "LightSource",
+            "color": [10.0, 10.0, 10.0],
             "radiate": 1
+        },
+        {
+            "id": "RedDiffuse",
+            "color": [1.0, 0.0, 0.0],
+            "diffuse": 1.0,
+            "reflect": 0.0,
+            "refractivity": 0.0
+        },
+        {
+            "id": "WorldBoundary",
+            "color": [1.0, 1.0, 1.0],
+            "diffuse": 1.0,
+            "reflect": 0.0,
+            "refractivity": 0.0
         }
     ],
     "objects": [
         {
-            "id": "world boundary",
+            "id": "GlassTower1",
             "shape": "cuboid",
-            "position": [
-                0,
-                0,
-                0
-            ],
-            "size": [
-                3000,
-                3000,
-                3000
-            ],
-            "material_id": "Paper"
-        },
-        {
-            "id": "Glass Tower 1",
-            "shape": "cuboid",
-            "position": [
-                850,
-                20,
-                500
-            ],
-            "size": [
-                1150,
-                1350,
-                300
-            ],
+            "position": [1000, 1335, 150],
+            "size": [300, 30, 300],
             "material_id": "Glass"
         },
         {
-            "id": "Glass Tower 2",
+            "id": "GlassTower2",
             "shape": "cuboid",
-            "position": [
-                50,
-                900,
-                0
-            ],
-            "size": [
-                1150,
-                930,
-                300
-            ],
+            "position": [1000, 915, 150],
+            "size": [300, 30, 300],
             "material_id": "Glass"
         },
         {
-            "id": "Glass Tower 3",
+            "id": "GlassTower3",
             "shape": "cuboid",
-            "position": [
-                -50,
-                0,
-                0
-            ],
-            "size": [
-                1150,
-                930,
-                300
-            ],
-            "material_id": "Metal"
+            "position": [1000, 1125, 315],
+            "size": [300, 550, 30],
+            "material_id": "Glass"
         },
         {
-            "id": "Light Source",
+            "id": "TeapotProxy",
+            "shape": "cuboid",
+            "position": [1000, 1000, 330],
+            "size": [80, 80, 80],
+            "material_id": "Glass"
+        },
+        {
+            "id": "BunnyProxy",
+            "shape": "cuboid",
+            "position": [800, 1150, 0],
+            "size": [40, 40, 40],
+            "material_id": "Glass"
+        },
+        {
+            "id": "YellowColumn1",
+            "shape": "cuboid",
+            "position": [1000, 615, 200],
+            "size": [200, 30, 400],
+            "material_id": "YellowMetal"
+        },
+        {
+            "id": "YellowColumn2",
+            "shape": "cuboid",
+            "position": [1000, 815, 75],
+            "size": [200, 30, 150],
+            "material_id": "YellowMetal"
+        },
+        {
+            "id": "YellowConnector",
+            "shape": "cuboid",
+            "position": [1000, 715, 165],
+            "size": [200, 230, 30],
+            "material_id": "YellowMetal"
+        },
+        {
+            "id": "VenusProxy",
             "shape": "sphere",
-            "position": [
-                400,
-                0,
-                0
-            ],
-            "size": [
-                50
-            ],
-            "material_id": "Light"
+            "position": [1100, 600, 0],
+            "size": [80],
+            "material_id": "WhiteDiffuse"
+        },
+        {
+            "id": "MainLight",
+            "shape": "sphere",
+            "position": [500, -100, 100],
+            "size": [200],
+            "material_id": "LightSource"
+        },
+        {
+            "id": "GlassOrb",
+            "shape": "sphere",
+            "position": [1000, 1000, 900],
+            "size": [100],
+            "material_id": "Glass"
+        },
+        {
+            "id": "RedOrb",
+            "shape": "sphere",
+            "position": [1000, 1250, 400],
+            "size": [60],
+            "material_id": "RedDiffuse"
+        },
+        {
+            "id": "WorldBox",
+            "shape": "cuboid",
+            "position": [1000, 1000, 1000],
+            "size": [2000, 2000, 2000],
+            "material_id": "WorldBoundary"
         }
     ]
 }
