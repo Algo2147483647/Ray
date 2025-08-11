@@ -30,15 +30,18 @@ func MatrixToSlice(m *mat.Dense) [][]float64 {
 
 // 将三个矩阵保存到 JSON 文件
 func SaveMatricesToJSON(matrices [3]*mat.Dense, filename string) error {
-	// 创建包含三个二维切片的结构
-	data := struct {
-		Matrix1 [][]float64 `json:"matrix1"`
-		Matrix2 [][]float64 `json:"matrix2"`
-		Matrix3 [][]float64 `json:"matrix3"`
-	}{
-		Matrix1: MatrixToSlice(matrices[0]),
-		Matrix2: MatrixToSlice(matrices[1]),
-		Matrix3: MatrixToSlice(matrices[2]),
+	rows, cols := matrices[0].Dims()
+	result := make([][][3]float64, rows)
+	for i := 0; i < rows; i++ {
+		result[i] = make([][3]float64, cols)
+
+		for j := 0; j < cols; j++ {
+			result[i][j] = [3]float64{
+				matrices[0].At(i, j),
+				matrices[1].At(i, j),
+				matrices[2].At(i, j),
+			}
+		}
 	}
 
 	// 创建并写入 JSON 文件
@@ -50,5 +53,5 @@ func SaveMatricesToJSON(matrices [3]*mat.Dense, filename string) error {
 
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ") // 可选：美化输出格式
-	return encoder.Encode(data)
+	return encoder.Encode(result)
 }

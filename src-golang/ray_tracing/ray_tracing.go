@@ -13,7 +13,7 @@ import (
 
 // 全局配置
 var (
-	MaxRayLevel = 2  // 最大光线递归深度
+	MaxRayLevel = 6  // 最大光线递归深度
 	ThreadNum   = 25 // 并发线程数
 )
 

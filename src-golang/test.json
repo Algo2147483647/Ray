@@ -16,7 +16,7 @@
             "color": [
                 1,
                 1,
-                1
+                0
             ],
             "diffuse": 0,
             "reflect": 1,
@@ -113,7 +113,7 @@
                 0
             ],
             "size": [
-                200
+                50
             ],
             "material_id": "Light"
         }
