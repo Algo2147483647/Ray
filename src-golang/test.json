@@ -108,7 +108,7 @@
         {
             "id": "MainLight",
             "shape": "sphere",
-            "position": [500, -100, 100],
+            "position": [1000, 1000, 1600],
             "size": [200],
             "material_id": "LightSource"
         },

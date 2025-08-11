@@ -82,13 +82,13 @@ func (h *Handler) BuildCamera() *Handler {
 	}
 
 	camera := &model.Camera{
-		Position:    mat.NewVecDense(3, []float64{0.0, 0.0, 0.0}),
-		Direction:   mat.NewVecDense(3, []float64{1, 0, 0}),
+		Position:    mat.NewVecDense(3, []float64{600, 1100, 600}),
+		Direction:   mat.NewVecDense(3, []float64{400, -100, -100}),
 		Up:          mat.NewVecDense(3, []float64{0, 0, 1}),
 		Width:       h.Width,
 		Height:      h.Height,
 		AspectRatio: 1,
-		FieldOfView: 90,
+		FieldOfView: 120,
 	}
 	// camera.DebugGenerateRaysSVG()
 	h.Scene.Cameras = append(h.Scene.Cameras, camera)
@@ -104,7 +104,7 @@ func (h *Handler) Render() *Handler {
 	fmt.Println("Starting rendering...")
 	start := time.Now()
 
-	ray_tracing.TraceScene(h.Scene, h.img, 200)
+	ray_tracing.TraceScene(h.Scene, h.img, 100)
 
 	elapsed := time.Since(start)
 	fmt.Printf("Rendering completed in %v\n", elapsed)

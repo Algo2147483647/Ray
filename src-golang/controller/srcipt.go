@@ -87,11 +87,12 @@ func LoadSceneFromScript(script *Script, scene *model.Scene) error {
 			}
 
 			// 计算长方体对角点
-			size := mat.NewVecDense(3, objDef.Size)
+			halfSize := mat.NewVecDense(3, objDef.Size)
+			halfSize.ScaleVec(0.5, halfSize)
 			pmax := mat.NewVecDense(3, nil)
-			pmax.AddVec(position, size)
+			pmax.AddVec(position, halfSize)
 			pmin := mat.NewVecDense(3, nil)
-			pmin.SubVec(position, size)
+			pmin.SubVec(position, halfSize)
 
 			scene.ObjectTree.AddObject(&object.Object{
 				Shape:    shape.NewCuboid(pmin, pmax),
