@@ -83,14 +83,14 @@ func (h *Handler) BuildCamera() *Handler {
 
 	camera := &model.Camera{
 		Position:    mat.NewVecDense(3, []float64{600, 1100, 600}),
-		Direction:   mat.NewVecDense(3, []float64{400, -100, -100}),
 		Up:          mat.NewVecDense(3, []float64{0, 0, 1}),
 		Width:       h.Width,
 		Height:      h.Height,
 		AspectRatio: 1,
 		FieldOfView: 120,
 	}
-	// camera.DebugGenerateRaysSVG()
+	camera.SetLookAt(mat.NewVecDense(3, []float64{400, -100, -100}))
+	camera.DebugGenerateRaysSVG()
 	h.Scene.Cameras = append(h.Scene.Cameras, camera)
 
 	return h

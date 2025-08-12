@@ -30,16 +30,9 @@ func NewCamera() *Camera {
 
 // SetLookAt 设置相机观察目标
 func (c *Camera) SetLookAt(lookAt *mat.VecDense) *Camera {
-	// 计算方向向量: 目标位置 - 相机位置
-	direction := mat.NewVecDense(3, nil)
-	direction.SubVec(lookAt, c.Position)
-
-	// 归一化方向向量
-	norm := mat.Norm(direction, 2)
-	if norm > 0 {
-		direction.ScaleVec(1/norm, direction)
-	}
-	c.Direction = direction
+	c.Direction = mat.NewVecDense(3, nil)
+	c.Direction.SubVec(lookAt, c.Position)
+	math_lib.Normalize(c.Direction)
 	return c
 }
 
@@ -47,34 +40,33 @@ func (c *Camera) GenerateRay(Ray *ray.Ray, row, col int) *ray.Ray {
 	if Ray == nil {
 		Ray = &ray.Ray{}
 	}
+	if Ray.Origin == nil {
+		Ray.Origin = mat.NewVecDense(3, nil)
+	}
+	if Ray.Direction == nil {
+		Ray.Direction = mat.NewVecDense(3, nil)
+	}
 
-	// 归一化方向向量（确保计算基础正确）
-	dir := math_lib.Normalize(c.Direction)
-	up := math_lib.Normalize(c.Up)
+	dir := c.Direction
+	up := c.Up
 	right := math_lib.Normalize(math_lib.Cross(dir, up)) // 计算右向量和上向量
 
-	// 计算成像平面尺寸
 	fovRad := c.FieldOfView * math.Pi / 180
 	halfHeight := math.Tan(fovRad / 2)
 	halfWidth := c.AspectRatio * halfHeight
 
-	// 添加随机偏移（抗锯齿）
-	randX := rand.Float64()
-	randY := rand.Float64()
-	u := 2*(float64(row)+randX)/float64(c.Width) - 1  // 计算成像平面坐标（修正冗余缩放） [-1, 1]
-	v := 2*(float64(col)+randY)/float64(c.Height) - 1 // [-1, 1]（翻转Y轴）
+	u := 2*(float64(row)+rand.Float64())/float64(c.Width) - 1  // [-1, 1]
+	v := 2*(float64(col)+rand.Float64())/float64(c.Height) - 1 // [-1, 1]
 	u *= halfWidth
-	v *= -halfHeight
+	v *= -halfHeight //（翻转Y轴）
 
-	Ray.Origin = mat.NewVecDense(3, nil)
-	Ray.Origin.AddScaledVec(c.Position, u, right)
-	Ray.Origin.AddScaledVec(Ray.Origin, v, up)
-
-	Ray.Direction = mat.NewVecDense(3, nil) // 方向 = 成像平面点 - 原点（即 u*right + v*cameraUp + 前向）
+	Ray.Color = mat.NewVecDense(3, []float64{1, 1, 1})
+	Ray.Origin.CloneFromVec(c.Position)
+	Ray.Direction.Zero()
 	Ray.Direction.AddScaledVec(Ray.Direction, u, right)
 	Ray.Direction.AddScaledVec(Ray.Direction, v, up)
 	Ray.Direction.AddScaledVec(Ray.Direction, 1, dir) // dir已归一化
-	Ray.Direction = math_lib.Normalize(Ray.Direction)
+	math_lib.Normalize(Ray.Direction)
 
 	return Ray
 }
@@ -92,9 +84,10 @@ func (c *Camera) DebugGenerateRaysSVG() string {
 	buf.WriteString(`<rect width="100%" height="100%" fill="black"/>`)
 
 	// 计算相机坐标系基向量
-	dir := math_lib.Normalize(c.Direction)
+	dir := c.Direction
+	up := c.Up
 	right := math_lib.Normalize(math_lib.Cross(dir, c.Up))
-	up := math_lib.Normalize(math_lib.Cross(right, dir))
+	zero := mat.NewVecDense(3, nil)
 	rayCount := 0
 	Ray := &ray.Ray{}
 
@@ -108,11 +101,11 @@ func (c *Camera) DebugGenerateRaysSVG() string {
 			// 计算终点位置 (起点 + 缩放后的方向)
 			c.GenerateRay(Ray, x, y)
 			end := mat.NewVecDense(3, nil)
-			end.AddVec(c.Position, Ray.Direction)
+			end.AddVec(zero, Ray.Direction)
 
 			// 转换到SVG坐标系 (简单正交投影)
-			startX := svgWidth/2 + 100*mat.Dot(c.Position, right)
-			startY := svgHeight/2 - 100*mat.Dot(c.Position, up)
+			startX := svgWidth/2 + 100*mat.Dot(zero, right)
+			startY := svgHeight/2 - 100*mat.Dot(zero, up)
 			endX := svgWidth/2 + 100*mat.Dot(end, right)
 			endY := svgHeight/2 - 100*mat.Dot(end, up)
 
