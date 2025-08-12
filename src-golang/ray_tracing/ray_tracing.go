@@ -13,8 +13,8 @@ import (
 
 // 全局配置
 var (
-	MaxRayLevel = 6 // 最大光线递归深度
-	ThreadNum   = 1 // 并发线程数
+	MaxRayLevel = 6  // 最大光线递归深度
+	ThreadNum   = 30 // 并发线程数
 )
 
 // TracePixel 追踪单个像素
