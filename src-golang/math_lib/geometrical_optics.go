@@ -8,67 +8,44 @@ import (
 
 // Reflect 计算光线的反射方向
 func Reflect(incidentRay, normal *mat.VecDense) *mat.VecDense {
-	// 归一化法向量
-	n := Normalize(normal)
-
-	// 计算点积: N·I
-	dot := dotProduct(n, incidentRay)
-
-	// 反射方向: I - 2*(N·I)*N
-	scale := scaleVec(n, 2*dot)
-	reflected := new(mat.VecDense)
-	reflected.SubVec(incidentRay, scale)
-	return reflected
+	scale := ScaleVec2(normal, 2*mat.Dot(normal, incidentRay))
+	incidentRay.SubVec(incidentRay, scale)
+	return Normalize(incidentRay)
 }
 
 // Refract 计算光线的折射方向
 func Refract(incidentRay, normal *mat.VecDense, eta float64) *mat.VecDense {
-	// 归一化入射光线和法向量
-	I := Normalize(incidentRay)
-	N := Normalize(normal)
-
-	// 计算入射角余弦
-	cosI := dotProduct(N, I)
-
-	// 计算 sin²θ_t
+	// refractionIndexRatio = refractive index of the incident medium / refractive index of the outgoing medium
+	cosI := mat.Dot(normal, incidentRay)
 	sin2T := eta * eta * (1.0 - cosI*cosI)
-
-	// 检查全反射
-	if sin2T > 1.0 {
-		return Reflect(I, N)
+	if sin2T > 1.0 { // Total internal reflection
+		return Reflect(incidentRay, normal)
 	}
 
-	// 计算折射方向: ηI + (ηcosθ_i - √(1-sin²θ_t))N
-	cosT := math.Sqrt(1.0 - sin2T)
-	term1 := scaleVec(I, eta)
-	term2 := scaleVec(N, eta*cosI-cosT)
-	refracted := new(mat.VecDense)
-	refracted.AddVec(term1, term2)
-	return refracted
+	incidentRay.AddVec(ScaleVec2(incidentRay, eta), ScaleVec2(normal, eta*cosI-math.Sqrt(1.0-sin2T)))
+	return Normalize(incidentRay)
 }
 
 // DiffuseReflect 计算漫反射方向
 func DiffuseReflect(incidentRay, normal *mat.VecDense) *mat.VecDense {
-	// 创建正交基
-	N := Normalize(normal)
-	U := createOrthogonalBasis(N)
-	V := Cross(N, U)
-	V = Normalize(V)
-
-	// 生成随机角度和半径
-	phi := 2 * math.Pi * rand.Float64()
+	angle := 2 * math.Pi * rand.Float64()
 	r := math.Sqrt(rand.Float64()) // 余弦加权采样
 
-	// 计算偏移分量
-	uScale := scaleVec(U, r*math.Cos(phi))
-	vScale := scaleVec(V, r*math.Sin(phi))
-	nScale := scaleVec(N, math.Sqrt(1-r*r))
+	// 选择切向量基底
+	var tangent, u, v, t *mat.VecDense
+	if math.Abs(normal.AtVec(0)) > EPS {
+		tangent = mat.NewVecDense(3, []float64{0, 1, 0}) // UnitY
+	} else {
+		tangent = mat.NewVecDense(3, []float64{1, 0, 0}) // UnitX
+	}
 
-	// 组合最终方向
-	direction := new(mat.VecDense)
-	direction.AddVec(uScale, vScale)
-	direction.AddVec(direction, nScale)
-	return Normalize(direction)
+	scale := math.Sqrt(r)
+	u.ScaleVec(math.Cos(angle)*scale, Normalize(Cross(tangent, normal)))
+	v.ScaleVec(math.Sin(angle)*scale, Normalize(Cross(normal, u)))
+	t.ScaleVec(math.Sqrt(1-r), normal)
+	incidentRay.AddVec(t, u)
+	incidentRay.AddVec(incidentRay, v)
+	return Normalize(incidentRay)
 }
 
 // ComputeHaze 计算单色光的雾效
@@ -82,10 +59,10 @@ func ComputeHazeColor(intensity, ambientLight *mat.VecDense, distance, attenuati
 	transmission := math.Exp(-attenuationCoefficient * distance)
 
 	// 计算传输光分量
-	transmitted := scaleVec(intensity, transmission)
+	transmitted := ScaleVec2(intensity, transmission)
 
 	// 计算环境光分量
-	ambient := scaleVec(ambientLight, 1-transmission)
+	ambient := ScaleVec2(ambientLight, 1-transmission)
 
 	// 组合结果
 	result := new(mat.VecDense)
@@ -93,27 +70,8 @@ func ComputeHazeColor(intensity, ambientLight *mat.VecDense, distance, attenuati
 	return result
 }
 
-// 辅助函数：向量缩放
-func scaleVec(v *mat.VecDense, s float64) *mat.VecDense {
+func ScaleVec2(v *mat.VecDense, s float64) *mat.VecDense {
 	result := new(mat.VecDense)
 	result.ScaleVec(s, v)
 	return result
-}
-
-// 辅助函数：点积计算
-func dotProduct(a, b *mat.VecDense) float64 {
-	return mat.Dot(a, b)
-}
-
-// 创建正交基向量
-func createOrthogonalBasis(normal *mat.VecDense) *mat.VecDense {
-	// 选择一个非平行向量
-	ref := mat.NewVecDense(3, []float64{1, 0, 0})
-	if math.Abs(mat.Dot(normal, ref)) > 0.9 {
-		ref = mat.NewVecDense(3, []float64{0, 1, 0})
-	}
-
-	// 计算叉积得到正交向量
-	u := Cross(normal, ref)
-	return Normalize(u)
 }

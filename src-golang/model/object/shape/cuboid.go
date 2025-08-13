@@ -41,7 +41,7 @@ func (c *Cuboid) Intersect(raySt, rayDir *mat.VecDense) float64 {
 		}
 
 		t0 = math.Max(t0, t0t)
-		t1 = math.Max(t1, t1t)
+		t1 = math.Min(t1, t1t)
 		if t0 > t1 || t1 < 0 {
 			return math.MaxFloat64
 		}
