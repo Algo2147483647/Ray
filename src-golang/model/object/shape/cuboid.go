@@ -20,75 +20,41 @@ func NewCuboid(Pmin, Pmax *mat.VecDense) *Cuboid {
 	}
 }
 
-// Intersect 计算光线与包围盒的交点
 func (c *Cuboid) Intersect(raySt, rayDir *mat.VecDense) float64 {
-	// 初始化相交区间
-	tmin := math.Inf(-1)
-	tmax := math.Inf(1)
+	t0 := -math.MaxFloat64
+	t1 := math.MaxFloat64
 
-	// 辅助函数：计算单个轴的相交区间
-	updateInterval := func(axis int) (float64, float64) {
-		origin := raySt.AtVec(axis)
-		direction := rayDir.AtVec(axis)
-		min := c.Pmin.AtVec(axis)
-		max := c.Pmax.AtVec(axis)
+	for dim := 0; dim < raySt.Len(); dim++ {
+		rayStDim := raySt.AtVec(dim)
+		rayDirDim := rayDir.AtVec(dim)
+		pminDim := c.Pmin.AtVec(dim)
+		pmaxDim := c.Pmax.AtVec(dim)
 
-		if math.Abs(direction) < math_lib.EPS {
-			// 光线平行于轴
-			if origin < min || origin > max {
-				return math.Inf(1), math.Inf(-1) // 无交点
-			}
-			return tmin, tmax // 保持原区间
+		if math.Abs(rayDirDim) < math_lib.EPS && (rayStDim < pminDim || rayStDim > pmaxDim) {
+			return math.MaxFloat64
 		}
 
-		invDir := 1.0 / direction
-		t1 := (min - origin) * invDir
-		t2 := (max - origin) * invDir
-
-		if t1 > t2 {
-			return t2, t1
+		t0t := (pminDim - rayStDim) / rayDirDim
+		t1t := (pmaxDim - rayStDim) / rayDirDim
+		if t0t > t1t {
+			t0t, t1t = t1t, t0t
 		}
-		return t1, t2
+
+		t0 = math.Max(t0, t0t)
+		t1 = math.Max(t1, t1t)
+		if t0 > t1 || t1 < 0 {
+			return math.MaxFloat64
+		}
 	}
 
-	// 处理X轴
-	tx1, tx2 := updateInterval(0)
-	tmin = math.Max(tmin, tx1)
-	tmax = math.Min(tmax, tx2)
-	if tmin > tmax {
-		return math.MaxFloat64
+	if t0 >= 0 {
+		return t0
 	}
-
-	// 处理Y轴
-	ty1, ty2 := updateInterval(1)
-	tmin = math.Max(tmin, ty1)
-	tmax = math.Min(tmax, ty2)
-	if tmin > tmax {
-		return math.MaxFloat64
-	}
-
-	// 处理Z轴
-	tz1, tz2 := updateInterval(2)
-	tmin = math.Max(tmin, tz1)
-	tmax = math.Min(tmax, tz2)
-	if tmin > tmax {
-		return math.MaxFloat64
-	}
-
-	// 检查有效交点
-	if tmax < 0 {
-		return math.MaxFloat64 // 交点在光线后方
-	}
-
-	if tmin > 0 {
-		return tmin // 最小正交点
-	}
-	return tmax // 光线起点在盒内
+	return t1
 }
 
 // GetNormalVector 计算交点的法向量
 func (c *Cuboid) GetNormalVector(intersect *mat.VecDense) *mat.VecDense {
-	// 计算各面距离
 	dists := make([]float64, 3)
 	for i := 0; i < 3; i++ {
 		d1 := math.Abs(intersect.AtVec(i) - c.Pmin.AtVec(i))
