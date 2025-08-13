@@ -34,7 +34,6 @@ func (t *Triangle) GetName() string {
 }
 
 func (t *Triangle) Intersect(raySt, rayDir *mat.VecDense) float64 {
-	// 从线程池获取资源
 	edges := edgePool.Get().([2]*mat.VecDense)
 	tmp := tmpPool.Get().(*mat.VecDense)
 	defer func() {
@@ -42,43 +41,29 @@ func (t *Triangle) Intersect(raySt, rayDir *mat.VecDense) float64 {
 		tmpPool.Put(tmp)
 	}()
 
-	// 计算三角形边向量 (E1 = P2-P1, E2 = P3-P1)
-	edges[0].SubVec(t.P2, t.P1) // E1 = P2 - P1
-	edges[1].SubVec(t.P3, t.P1) // E2 = P3 - P1
-
-	// 计算法向量和行列式 (P = D × E2)
-	p := math_lib.Cross(rayDir, edges[1])
-	a := mat.Dot(edges[0], p) // a = E1·P
-
-	// 处理背面剔除
-	if a > 0 {
+	edges[0].SubVec(t.P2, t.P1)           // E1 = P2 - P1
+	edges[1].SubVec(t.P3, t.P1)           // E2 = P3 - P1
+	p := math_lib.Cross(rayDir, edges[1]) // 计算法向量和行列式 (P = D × E2)
+	a := mat.Dot(edges[0], p)             // a = E1·P
+	if a > 0 {                            // 处理背面剔除
 		tmp.SubVec(raySt, t.P1) // T = O - P1
 	} else {
 		tmp.SubVec(t.P1, raySt) // T = P1 - O
 		a = -a
 	}
-
-	// 检查平行
-	if a < math_lib.EPS {
+	if a < math_lib.EPS { // 检查平行
 		return math.MaxFloat64
 	}
 
-	// 计算重心坐标 u
-	u := mat.Dot(tmp, p) / a
+	q := math_lib.Cross(tmp, edges[0]) // Q = T × E1
+	u := mat.Dot(tmp, p) / a           // 重心坐标 u
+	v := mat.Dot(rayDir, q) / a        // 重心坐标 v
 	if u < 0 || u > 1 {
 		return math.MaxFloat64
 	}
-
-	// 计算 Q = T × E1
-	q := math_lib.Cross(tmp, edges[0])
-
-	// 计算重心坐标 v
-	v := mat.Dot(rayDir, q) / a
 	if v < 0 || u+v > 1 {
 		return math.MaxFloat64
 	}
-
-	// 计算交点参数 t
 	return mat.Dot(edges[1], q) / a
 }
 

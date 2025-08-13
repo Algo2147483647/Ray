@@ -17,7 +17,7 @@ func (p *Plane) GetName() string {
 
 func (p *Plane) Intersect(raySt, rayDir *mat.VecDense) float64 {
 	t := p.A*rayDir.AtVec(0) + p.B*rayDir.AtVec(1) + p.C*rayDir.AtVec(2)
-	if t < 0 {
+	if math.Abs(t) < math_lib.EPS {
 		return math.MaxFloat64
 	}
 

@@ -22,15 +22,13 @@ func (s *Sphere) Name() string {
 }
 
 func (s *Sphere) Intersect(raySt, ray *mat.VecDense) float64 {
-	// 计算 raySt - center
 	rayStCenter := mat.NewVecDense(3, nil)
 	rayStCenter.SubVec(raySt, s.center)
 
 	// 计算系数
 	A := mat.Dot(ray, ray)
 	B := 2 * mat.Dot(ray, rayStCenter)
-	C := mat.Dot(rayStCenter, rayStCenter) - s.R*s.R
-	Delta := B*B - 4*A*C
+	Delta := B*B - 4*A*(mat.Dot(rayStCenter, rayStCenter)-s.R*s.R)
 	if Delta < 0 {
 		return math.MaxFloat64 // 无交点
 	}
@@ -47,49 +45,18 @@ func (s *Sphere) Intersect(raySt, ray *mat.VecDense) float64 {
 	default:
 		return math.MaxFloat64
 	}
-	// 处理雕刻函数
-	//if s.engraving != nil {
-	//	intersection := mat.NewVecDense(3, nil)
-	//
-	//	if root1 > 0 {
-	//		// 计算交点并归一化
-	//		intersection.AddScaledVec(raySt, root1, ray)
-	//		intersection.SubVec(intersection, s.center)
-	//		math_lib.Normalize(intersection)
-	//
-	//		if s.engraving(intersection) {
-	//			return root1
-	//		}
-	//	}
-	//
-	//	if root2 > 0 {
-	//		// 计算交点并归一化
-	//		intersection.AddScaledVec(raySt, root2, ray)
-	//		intersection.SubVec(intersection, s.center)
-	//		math_lib.Normalize(intersection)
-	//
-	//		if s.engraving(intersection) {
-	//			return root2
-	//		}
-	//	}
-	//
-	//	return math.MaxFloat64
-	//}
 }
 
 func (s *Sphere) GetNormalVector(intersect *mat.VecDense) *mat.VecDense {
 	res := mat.NewVecDense(3, nil)
-	res.SubVec(intersect, s.center)
-	math_lib.Normalize(res)
-	return res
+	return math_lib.Normalize(math_lib.SubVec(res, intersect, s.center))
 }
 
 func (s *Sphere) BuildBoundingBox() (pmax, pmin *mat.VecDense) {
-	offset := []float64{s.R, s.R, s.R}
+	offset := mat.NewVecDense(3, []float64{s.R, s.R, s.R})
 	pmax = mat.NewVecDense(3, nil)
 	pmin = mat.NewVecDense(3, nil)
-
-	pmax.AddVec(s.center, mat.NewVecDense(3, offset))
-	pmin.SubVec(s.center, mat.NewVecDense(3, offset))
+	pmax.AddVec(s.center, offset)
+	pmin.SubVec(s.center, offset)
 	return pmin, pmax
 }

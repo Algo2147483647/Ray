@@ -27,8 +27,7 @@ func DiffuseReflect(incidentRay, normal *mat.VecDense) *mat.VecDense {
 	angle := 2 * math.Pi * rand.Float64()
 	r := rand.Float64() // 余弦加权采样
 
-	// 选择切向量基底
-	var tangent *mat.VecDense
+	var tangent *mat.VecDense // 选择切向量基底
 	if math.Abs(normal.AtVec(0)) > EPS {
 		tangent = mat.NewVecDense(3, []float64{0, 1, 0}) // UnitY
 	} else {
