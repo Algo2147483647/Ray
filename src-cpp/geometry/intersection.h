@@ -20,6 +20,21 @@ namespace Intersect {
 *
 ##############################################################################*/
 
+//switch (ob->type) {
+//case PLANE:		faceVec = *(Mat<>*)ob->v[0]; break;
+//case CIRCLE:	faceVec = *(Mat<>*)ob->v[1]; break;
+//case TRIANGLE:	faceVec.cross_(
+//                       tmp.sub(*(Mat<>*)ob->v[1], *(Mat<>*)ob->v[0]),
+//                    RayTmp.sub(*(Mat<>*)ob->v[2], *(Mat<>*)ob->v[0])
+//                ).normalize(); break;
+//case PLANESHAPE:faceVec = *(Mat<>*)ob->v[1]; break;
+//case SPHERE:	faceVec.sub(RaySt, *(Mat<>*)ob->v[0]).normalize(); break;
+//case CUBOID:	if (fabs(RaySt[0] - (*(Mat<>*)ob->v[0])[0]) < EPS || fabs(RaySt[0] - (*(Mat<>*)ob->v[1])[0]) < EPS) faceVec = { 1, 0, 0 };
+//           else if (fabs(RaySt[1] - (*(Mat<>*)ob->v[0])[1]) < EPS || fabs(RaySt[1] - (*(Mat<>*)ob->v[1])[1]) < EPS) faceVec = { 0, 1, 0 };
+//           else if (fabs(RaySt[2] - (*(Mat<>*)ob->v[0])[2]) < EPS || fabs(RaySt[2] - (*(Mat<>*)ob->v[1])[2]) < EPS) faceVec = { 0, 0, 1 };
+//                break;
+//}
+
 // Line
 bool Segments(vector<double>& p1, vector<double>& p2, vector<double>& p3, vector<double>& p4);
 

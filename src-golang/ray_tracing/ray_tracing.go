@@ -3,6 +3,7 @@ package ray_tracing
 import (
 	"fmt"
 	"gonum.org/v1/gonum/mat"
+	"src-golang/math_lib"
 	"src-golang/model"
 	"src-golang/model/object"
 	"src-golang/model/ray"
@@ -30,8 +31,7 @@ func TracePixel(camera *model.Camera, objTree *object.ObjectTree, row, col, samp
 		sampleColor := TraceRay(objTree, ray, 0)
 		color.AddVec(color, sampleColor)
 	}
-	color.ScaleVec(1.0/float64(samples), color)
-	return color
+	return math_lib.ScaleVec(color, 1.0/float64(samples), color)
 }
 
 // TraceScene 追踪整个场景（添加进度条）
@@ -80,15 +80,12 @@ func TraceScene(scene *model.Scene, img [3]*mat.Dense, samples int) {
 		go func(seed int64) {
 			defer wg.Done()
 			for pixel := range taskChan {
-				r, c := pixel[0], pixel[1]
-				color := TracePixel(scene.Cameras[0], scene.ObjectTree, r, c, samples)
-
+				color := TracePixel(scene.Cameras[0], scene.ObjectTree, pixel[0], pixel[1], samples)
 				for ch := 0; ch < 3; ch++ {
-					img[ch].Set(r, c, color.AtVec(ch))
+					img[ch].Set(pixel[0], pixel[1], color.AtVec(ch))
 				}
 
-				// 原子更新进度
-				atomic.AddInt64(&progress, 1)
+				atomic.AddInt64(&progress, 1) // 原子更新进度
 			}
 		}(int64(i))
 	}
