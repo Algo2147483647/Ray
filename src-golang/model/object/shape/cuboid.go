@@ -55,36 +55,26 @@ func (c *Cuboid) Intersect(raySt, rayDir *mat.VecDense) float64 {
 
 // GetNormalVector 计算交点的法向量
 func (c *Cuboid) GetNormalVector(intersect *mat.VecDense) *mat.VecDense {
-	dists := make([]float64, 3)
-	for i := 0; i < 3; i++ {
-		d1 := math.Abs(intersect.AtVec(i) - c.Pmin.AtVec(i))
-		d2 := math.Abs(intersect.AtVec(i) - c.Pmax.AtVec(i))
-		dists[i] = math.Min(d1, d2)
-	}
+	ix := intersect.At(0, 0)
+	iy := intersect.At(1, 0)
+	iz := intersect.At(2, 0)
+	v0x := c.Pmin.At(0, 0)
+	v0y := c.Pmin.At(1, 0)
+	v0z := c.Pmin.At(2, 0)
+	v1x := c.Pmax.At(0, 0)
+	v1y := c.Pmax.At(1, 0)
+	v1z := c.Pmax.At(2, 0)
 
-	// 确定最近面
-	normal := mat.NewVecDense(3, nil)
 	switch {
-	case dists[0] < dists[1] && dists[0] < dists[2]:
-		if intersect.AtVec(0) < (c.Pmin.AtVec(0)+c.Pmax.AtVec(0))/2 {
-			normal.SetVec(0, -1)
-		} else {
-			normal.SetVec(0, 1)
-		}
-	case dists[1] < dists[2]:
-		if intersect.AtVec(1) < (c.Pmin.AtVec(1)+c.Pmax.AtVec(1))/2 {
-			normal.SetVec(1, -1)
-		} else {
-			normal.SetVec(1, 1)
-		}
+	case math.Abs(ix-v0x) < math_lib.EPS || math.Abs(ix-v1x) < math_lib.EPS:
+		return mat.NewVecDense(3, []float64{1, 0, 0})
+	case math.Abs(iy-v0y) < math_lib.EPS || math.Abs(iy-v1y) < math_lib.EPS:
+		return mat.NewVecDense(3, []float64{0, 1, 0})
+	case math.Abs(iz-v0z) < math_lib.EPS || math.Abs(iz-v1z) < math_lib.EPS:
+		return mat.NewVecDense(3, []float64{0, 0, 1})
 	default:
-		if intersect.AtVec(2) < (c.Pmin.AtVec(2)+c.Pmax.AtVec(2))/2 {
-			normal.SetVec(2, -1)
-		} else {
-			normal.SetVec(2, 1)
-		}
+		return mat.NewVecDense(3, []float64{0, 0, 1})
 	}
-	return normal
 }
 
 // BuildBoundingBox 返回包围盒边界
