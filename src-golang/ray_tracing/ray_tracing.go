@@ -6,7 +6,7 @@ import (
 	"src-golang/math_lib"
 	"src-golang/model"
 	"src-golang/model/object"
-	"src-golang/model/ray"
+	"src-golang/model/object/optics"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -19,19 +19,30 @@ var (
 )
 
 // TracePixel 追踪单个像素
-func TracePixel(camera *model.Camera, objTree *object.ObjectTree, row, col, samples int) *mat.VecDense {
+func TracePixel(camera *optics.Camera, objTree *object.ObjectTree, row, col, samples int) *mat.VecDense {
 	color := mat.NewVecDense(3, nil)
 	for s := 0; s < samples; s++ {
-		// build ray
-		ray := RayPool.Get().(*ray.Ray)
+		// new ray
+		ray := RayPool.Get().(*optics.Ray)
 		defer RayPool.Put(ray)
+
+		// build ray
 		camera.GenerateRay(ray, row, col)
+		DebugIsRecordRay(ray, row, col, s)
 
 		// trace ray
 		sampleColor := TraceRay(objTree, ray, 0)
 		color.AddVec(color, sampleColor)
 	}
 	return math_lib.ScaleVec(color, 1.0/float64(samples), color)
+}
+
+func DebugIsRecordRay(ray *optics.Ray, row, col, sample int) {
+	if row%40 == 1 && col%40 == 1 && sample == 0 {
+		ray.DebugSwitch = true
+	} else {
+		ray.DebugSwitch = false
+	}
 }
 
 // TraceScene 追踪整个场景（添加进度条）

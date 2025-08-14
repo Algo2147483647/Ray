@@ -1,10 +1,8 @@
 package utils
 
 import (
-	"encoding/json"
 	"fmt"
 	"gonum.org/v1/gonum/mat"
-	"os"
 )
 
 // FormatVec 格式化向量为可读字符串
@@ -26,32 +24,4 @@ func MatrixToSlice(m *mat.Dense) [][]float64 {
 		}
 	}
 	return result
-}
-
-// 将三个矩阵保存到 JSON 文件
-func SaveMatricesToJSON(matrices [3]*mat.Dense, filename string) error {
-	rows, cols := matrices[0].Dims()
-	result := make([][][3]float64, rows)
-	for i := 0; i < rows; i++ {
-		result[i] = make([][3]float64, cols)
-
-		for j := 0; j < cols; j++ {
-			result[i][j] = [3]float64{
-				matrices[0].At(i, j),
-				matrices[1].At(i, j),
-				matrices[2].At(i, j),
-			}
-		}
-	}
-
-	// 创建并写入 JSON 文件
-	file, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	encoder := json.NewEncoder(file)
-	encoder.SetIndent("", "  ") // 可选：美化输出格式
-	return encoder.Encode(result)
 }

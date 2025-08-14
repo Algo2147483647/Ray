@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"gonum.org/v1/gonum/mat"
 	"image"
@@ -9,8 +10,8 @@ import (
 	"os"
 	"src-golang/controller"
 	"src-golang/model"
+	"src-golang/model/object/optics"
 	"src-golang/ray_tracing"
-	"src-golang/utils"
 	"time"
 )
 
@@ -81,7 +82,7 @@ func (h *Handler) BuildCamera() *Handler {
 		return h
 	}
 
-	camera := &model.Camera{
+	camera := &optics.Camera{
 		Position:    mat.NewVecDense(3, []float64{400, 0, 0}),
 		Up:          mat.NewVecDense(3, []float64{0, 0, 1}),
 		Width:       h.Width,
@@ -125,7 +126,6 @@ func (h *Handler) BuildResult() *Handler {
 		}
 	}
 
-	utils.SaveMatricesToJSON(h.img, "result.json")
 	return h
 }
 
@@ -149,5 +149,52 @@ func (h *Handler) SaveResult() *Handler {
 	if err != nil {
 		h.err = err
 	}
+
+	// Debug Record
+	{
+		rows, cols := h.img[0].Dims()
+		result := make([][][3]float64, rows)
+		for i := 0; i < rows; i++ {
+			result[i] = make([][3]float64, cols)
+
+			for j := 0; j < cols; j++ {
+				result[i][j] = [3]float64{
+					h.img[0].At(i, j),
+					h.img[1].At(i, j),
+					h.img[2].At(i, j),
+				}
+			}
+		}
+
+		// 创建并写入 JSON 文件
+		file, err = os.Create("result.json")
+		if err != nil {
+			h.err = err
+			return h
+		}
+		defer file.Close()
+
+		encoder := json.NewEncoder(file)
+		encoder.SetIndent("", "  ")
+		err = encoder.Encode(result)
+		if err != nil {
+			h.err = err
+			return h
+		}
+	}
+
+	{
+		file, _ = os.Create("debug_traces.json")
+		defer file.Close()
+
+		encoder := json.NewEncoder(file)
+		encoder.SetIndent("", "  ")
+		err = encoder.Encode(optics.DebugRayTraces)
+		if err != nil {
+			h.err = err
+			return h
+		}
+	}
+
 	return h
 }

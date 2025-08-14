@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	EPS = 1e-6 // 微小量，用于浮点数比较
+	EPS = 1e-4 // 微小量，用于浮点数比较
 )
 
 func Normalize(v *mat.VecDense) *mat.VecDense {

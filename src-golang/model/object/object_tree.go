@@ -5,6 +5,7 @@ import (
 	"gonum.org/v1/gonum/mat"
 	"math"
 	"sort"
+	"src-golang/math_lib"
 	"src-golang/model/object/shape"
 	"strings"
 )
@@ -169,6 +170,13 @@ func (t *ObjectTree) GetIntersection(raySt, rayDir *mat.VecDense, node *ObjectNo
 
 	dis1, obj1 := t.GetIntersection(raySt, rayDir, node.Children[0])
 	dis2, obj2 := t.GetIntersection(raySt, rayDir, node.Children[1])
+
+	if dis1 < math_lib.EPS {
+		dis1 = math.MaxFloat64
+	}
+	if dis2 < math_lib.EPS {
+		dis2 = math.MaxFloat64
+	}
 
 	if dis1 < dis2 {
 		return dis1, obj1

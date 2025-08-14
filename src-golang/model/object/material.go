@@ -4,7 +4,7 @@ import (
 	"gonum.org/v1/gonum/mat"
 	"math/rand"
 	"src-golang/math_lib"
-	"src-golang/model/ray"
+	"src-golang/model/object/optics"
 )
 
 // Material 表示物体的材质属性
@@ -30,7 +30,7 @@ func NewMaterial(color *mat.VecDense) *Material {
 }
 
 // DielectricSurfacePropagation 处理光线在介质表面的传播
-func (m *Material) DielectricSurfacePropagation(ray *ray.Ray, norm *mat.VecDense) bool {
+func (m *Material) DielectricSurfacePropagation(ray *optics.Ray, norm *mat.VecDense) bool {
 	if m.Radiation {
 		for i := 0; i < norm.Len(); i++ {
 			ray.Color.SetVec(i, ray.Color.AtVec(i)*m.Color.AtVec(i))
@@ -57,8 +57,7 @@ func (m *Material) DielectricSurfacePropagation(ray *ray.Ray, norm *mat.VecDense
 		ray.Refractivity = refractionIndex
 	}
 
-	// 应用基础颜色（分量乘法）
-	for i := 0; i < norm.Len(); i++ {
+	for i := 0; i < norm.Len(); i++ { // 应用基础颜色（分量乘法）
 		ray.Color.SetVec(i, ray.Color.AtVec(i)*m.Color.AtVec(i))
 	}
 	return false

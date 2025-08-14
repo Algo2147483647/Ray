@@ -55,22 +55,17 @@ func (c *Cuboid) Intersect(raySt, rayDir *mat.VecDense) float64 {
 
 // GetNormalVector 计算交点的法向量
 func (c *Cuboid) GetNormalVector(intersect *mat.VecDense) *mat.VecDense {
-	ix := intersect.At(0, 0)
-	iy := intersect.At(1, 0)
-	iz := intersect.At(2, 0)
-	v0x := c.Pmin.At(0, 0)
-	v0y := c.Pmin.At(1, 0)
-	v0z := c.Pmin.At(2, 0)
-	v1x := c.Pmax.At(0, 0)
-	v1y := c.Pmax.At(1, 0)
-	v1z := c.Pmax.At(2, 0)
+	a := mat.NewVecDense(3, nil)
+	b := mat.NewVecDense(3, nil)
+	a.SubVec(intersect, c.Pmin)
+	b.SubVec(intersect, c.Pmax)
 
 	switch {
-	case math.Abs(ix-v0x) < math_lib.EPS || math.Abs(ix-v1x) < math_lib.EPS:
+	case math.Abs(a.AtVec(0)) < math_lib.EPS || math.Abs(b.AtVec(0)) < math_lib.EPS:
 		return mat.NewVecDense(3, []float64{1, 0, 0})
-	case math.Abs(iy-v0y) < math_lib.EPS || math.Abs(iy-v1y) < math_lib.EPS:
+	case math.Abs(a.AtVec(1)) < math_lib.EPS || math.Abs(b.AtVec(1)) < math_lib.EPS:
 		return mat.NewVecDense(3, []float64{0, 1, 0})
-	case math.Abs(iz-v0z) < math_lib.EPS || math.Abs(iz-v1z) < math_lib.EPS:
+	case math.Abs(a.AtVec(2)) < math_lib.EPS || math.Abs(b.AtVec(2)) < math_lib.EPS:
 		return mat.NewVecDense(3, []float64{0, 0, 1})
 	default:
 		return mat.NewVecDense(3, []float64{0, 0, 1})

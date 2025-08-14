@@ -2,14 +2,14 @@ package ray_tracing
 
 import (
 	"gonum.org/v1/gonum/mat"
-	"src-golang/model/ray"
+	"src-golang/model/object/optics"
 	"sync"
 )
 
 // RayPool 光线对象池
 var RayPool = sync.Pool{
 	New: func() interface{} {
-		return &ray.Ray{
+		return &optics.Ray{
 			Origin:    mat.NewVecDense(3, nil),
 			Direction: mat.NewVecDense(3, nil),
 			Color:     mat.NewVecDense(3, nil),

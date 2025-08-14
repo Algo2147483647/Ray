@@ -1,10 +1,13 @@
 package model
 
-import "src-golang/model/object"
+import (
+	"src-golang/model/object"
+	"src-golang/model/object/optics"
+)
 
 type Scene struct {
 	ObjectTree *object.ObjectTree `json:"object_tree"`
-	Cameras    []*Camera          `json:"cameras"`
+	Cameras    []*optics.Camera   `json:"cameras"`
 }
 
 func NewScene() *Scene {

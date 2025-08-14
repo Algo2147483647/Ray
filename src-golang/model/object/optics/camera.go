@@ -1,11 +1,10 @@
-package model
+package optics
 
 import (
 	"gonum.org/v1/gonum/mat"
 	"math"
 	"math/rand"
 	"src-golang/math_lib"
-	"src-golang/model/ray"
 )
 
 // Camera 表示场景中的相机
@@ -33,15 +32,15 @@ func (c *Camera) SetLookAt(lookAt *mat.VecDense) *Camera {
 	return c
 }
 
-func (c *Camera) GenerateRay(Ray *ray.Ray, row, col int) *ray.Ray {
-	if Ray == nil {
-		Ray = &ray.Ray{}
+func (c *Camera) GenerateRay(ray *Ray, row, col int) *Ray {
+	if ray == nil {
+		ray = &Ray{}
 	}
-	if Ray.Origin == nil {
-		Ray.Origin = mat.NewVecDense(3, nil)
+	if ray.Origin == nil {
+		ray.Origin = mat.NewVecDense(3, nil)
 	}
-	if Ray.Direction == nil {
-		Ray.Direction = mat.NewVecDense(3, nil)
+	if ray.Direction == nil {
+		ray.Direction = mat.NewVecDense(3, nil)
 	}
 
 	dir := c.Direction
@@ -57,12 +56,12 @@ func (c *Camera) GenerateRay(Ray *ray.Ray, row, col int) *ray.Ray {
 	u *= halfWidth
 	v *= -halfHeight //（翻转Y轴）
 
-	Ray.Color = mat.NewVecDense(3, []float64{1, 1, 1})
-	Ray.Origin.CloneFromVec(c.Position)
-	Ray.Direction.CloneFromVec(dir)
-	Ray.Direction.AddScaledVec(Ray.Direction, u, right)
-	Ray.Direction.AddScaledVec(Ray.Direction, v, up)
-	math_lib.Normalize(Ray.Direction)
+	ray.Color = mat.NewVecDense(3, []float64{1, 1, 1})
+	ray.Origin.CloneFromVec(c.Position)
+	ray.Direction.CloneFromVec(dir)
+	ray.Direction.AddScaledVec(ray.Direction, u, right)
+	ray.Direction.AddScaledVec(ray.Direction, v, up)
+	math_lib.Normalize(ray.Direction)
 
-	return Ray
+	return ray
 }
