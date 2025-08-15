@@ -6,11 +6,11 @@ import (
 	"src-golang/math_lib"
 )
 
-// PolynomialEquation 表示多项式方程定义的曲面
+// PolynomialEquation 表示多项式方程定义的曲面, 系数 [a, b, c, d] (a*x² + b*y² + c*z² = d)
 type PolynomialEquation struct {
 	BaseShape
 
-	Coeffs [4]float64 // 系数 [a, b, c, d] (a*x² + b*y² + c*z² = d)
+	Coeffs [4]float64 `json:"coeffs"`
 }
 
 func NewPolynomialEquation(a, b, c, d float64) *PolynomialEquation {
@@ -19,8 +19,8 @@ func NewPolynomialEquation(a, b, c, d float64) *PolynomialEquation {
 	}
 }
 
-func (p *PolynomialEquation) GetName() string {
-	return "PolynomialEquation"
+func (p *PolynomialEquation) Name() string {
+	return "Polynomial Equation"
 }
 
 func (p *PolynomialEquation) Intersect(raySt, rayDir *mat.VecDense) float64 {
@@ -94,12 +94,4 @@ func (p *PolynomialEquation) GetNormalVector(intersect *mat.VecDense) *mat.VecDe
 	}
 	grad.ScaleVec(1/length, grad)
 	return grad
-}
-
-func (p *PolynomialEquation) BuildBoundingBox() (*mat.VecDense, *mat.VecDense) {
-
-	maxVal := math.MaxFloat64 / 2 // 多项式曲面通常无界, 避免后续计算溢出
-	minVec := mat.NewVecDense(3, []float64{-maxVal, -maxVal, -maxVal})
-	maxVec := mat.NewVecDense(3, []float64{maxVal, maxVal, maxVal})
-	return minVec, maxVec
 }

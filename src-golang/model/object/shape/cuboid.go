@@ -9,8 +9,8 @@ import (
 type Cuboid struct {
 	BaseShape
 
-	Pmin *mat.VecDense // 最小点
-	Pmax *mat.VecDense // 最大点
+	Pmin *mat.VecDense `json:"pmin"`
+	Pmax *mat.VecDense `json:"pmax"`
 }
 
 func NewCuboid(Pmin, Pmax *mat.VecDense) *Cuboid {
@@ -18,6 +18,10 @@ func NewCuboid(Pmin, Pmax *mat.VecDense) *Cuboid {
 		Pmin: Pmin,
 		Pmax: Pmax,
 	}
+}
+
+func (c *Cuboid) Name() string {
+	return "Cuboid"
 }
 
 func (c *Cuboid) Intersect(raySt, rayDir *mat.VecDense) float64 {

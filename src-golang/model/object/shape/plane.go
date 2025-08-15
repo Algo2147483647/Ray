@@ -8,10 +8,13 @@ import (
 
 type Plane struct {
 	BaseShape
-	A, B, C, D float64
+	A float64 `json:"a"`
+	B float64 `json:"b"`
+	C float64 `json:"c"`
+	D float64 `json:"d"`
 }
 
-func (p *Plane) GetName() string {
+func (p *Plane) Name() string {
 	return "Plane"
 }
 
@@ -31,11 +34,4 @@ func (p *Plane) Intersect(raySt, rayDir *mat.VecDense) float64 {
 func (p *Plane) GetNormalVector(intersect *mat.VecDense) *mat.VecDense {
 	res := mat.NewVecDense(3, []float64{p.A, p.B, p.C})
 	return math_lib.Normalize(res)
-}
-
-func (p *Plane) BuildBoundingBox() (*mat.VecDense, *mat.VecDense) {
-	maxVal := math.MaxFloat64 / 2 // 避免后续计算溢出
-	minVec := mat.NewVecDense(3, []float64{-maxVal, -maxVal, -maxVal})
-	maxVec := mat.NewVecDense(3, []float64{maxVal, maxVal, maxVal})
-	return minVec, maxVec
 }

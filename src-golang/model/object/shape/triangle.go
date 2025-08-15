@@ -26,10 +26,20 @@ var (
 
 type Triangle struct {
 	BaseShape
-	P1, P2, P3 *mat.VecDense
+	P1 *mat.VecDense `json:"p1"`
+	P2 *mat.VecDense `json:"p2"`
+	P3 *mat.VecDense `json:"p3"`
 }
 
-func (t *Triangle) GetName() string {
+func NewTriangle(P1, P2, P3 *mat.VecDense) *Triangle {
+	return &Triangle{
+		P1: P1,
+		P2: P2,
+		P3: P3,
+	}
+}
+
+func (t *Triangle) Name() string {
 	return "Triangle"
 }
 

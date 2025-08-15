@@ -35,11 +35,20 @@
         },
         {
             "id": "WorldBoundary",
-            "color": [0.9, 0.9, 0.9],
-            "radiate": 1
+            "color": [1.0, 1.0, 1.0],
+            "diffuse": 0.5,
+            "reflect": 0.5,
+            "refractivity": 0.0
         }
     ],
     "objects": [
+        {
+            "id": "WorldBox",
+            "shape": "cuboid",
+            "position": [0, 0, 0],
+            "size": [3000, 3000, 3000],
+            "material_id": "WorldBoundary"
+        },
         {
             "id": "GlassTower1",
             "shape": "cuboid",
@@ -59,13 +68,6 @@
             "shape": "cuboid",
             "position": [1000, 125, -685],
             "size": [300, 550, 30],
-            "material_id": "Glass"
-        },
-        {
-            "id": "TeapotProxy",
-            "shape": "cuboid",
-            "position": [1000, 0, -670],
-            "size": [80, 80, 80],
             "material_id": "Glass"
         },
         {
@@ -100,36 +102,37 @@
             "id": "VenusProxy",
             "shape": "sphere",
             "position": [1100, -400, -1000],
-            "size": [80],
+            "r": 80,
             "material_id": "WhiteDiffuse"
         },
         {
             "id": "MainLight",
             "shape": "sphere",
             "position": [1000, 0, 1000],
-            "size": [200],
+            "r": 200,
+            "material_id": "LightSource"
+        },
+        {
+            "id": "MainLight",
+            "shape": "triangle",
+            "p1": [1000, 0, 1000],
+            "p2": [0, 1000, 0],
+            "p3": [1000, 0, -1000],
             "material_id": "LightSource"
         },
         {
             "id": "GlassOrb",
             "shape": "sphere",
             "position": [1000, 0, -100],
-            "size": [100],
+            "r": 100,
             "material_id": "Glass"
         },
         {
             "id": "RedOrb",
             "shape": "sphere",
             "position": [1000, 250, -600],
-            "size": [60],
+            "r": 60,
             "material_id": "RedDiffuse"
-        },
-        {
-            "id": "WorldBox",
-            "shape": "cuboid",
-            "position": [0, 0, 0],
-            "size": [3000, 3000, 3000],
-            "material_id": "WorldBoundary"
         }
     ]
 }

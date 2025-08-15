@@ -171,6 +171,7 @@ func (t *ObjectTree) GetIntersection(raySt, rayDir *mat.VecDense, node *ObjectNo
 	dis1, obj1 := t.GetIntersection(raySt, rayDir, node.Children[0])
 	dis2, obj2 := t.GetIntersection(raySt, rayDir, node.Children[1])
 
+	// Avoid the emitted light hitting oneself back and forth within the precision of the contact surface.
 	if dis1 < math_lib.EPS {
 		dis1 = math.MaxFloat64
 	}

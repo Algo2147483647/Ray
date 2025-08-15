@@ -8,8 +8,8 @@ import (
 
 type Sphere struct {
 	BaseShape
-	center *mat.VecDense
-	R      float64
+	center *mat.VecDense `json:"center"`
+	R      float64       `json:"r"`
 }
 
 // NewSphere 构造函数

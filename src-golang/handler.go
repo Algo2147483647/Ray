@@ -83,7 +83,7 @@ func (h *Handler) BuildCamera() *Handler {
 	}
 
 	camera := &optics.Camera{
-		Position:    mat.NewVecDense(3, []float64{400, 0, 0}),
+		Position:    mat.NewVecDense(3, []float64{200, 0, 0}),
 		Up:          mat.NewVecDense(3, []float64{0, 0, 1}),
 		Width:       h.Width,
 		Height:      h.Height,

@@ -3,18 +3,21 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/spf13/cast"
 	"gonum.org/v1/gonum/mat"
 	"io"
 	"os"
+	"src-golang/math_lib"
 	"src-golang/model"
 	"src-golang/model/object"
+	"src-golang/model/object/optics"
 	"src-golang/model/object/shape"
 )
 
 type Script struct {
-	Materials []ScriptMaterial `json:"materials"`
-	Objects   []ScriptObject   `json:"objects"`
-	Cameras   []ScriptCamera   `json:"camera"`
+	Materials []ScriptMaterial         `json:"materials"`
+	Objects   []map[string]interface{} `json:"objects"`
+	Cameras   []*optics.Camera         `json:"camera"`
 }
 
 type ScriptCamera struct {
@@ -33,14 +36,6 @@ type ScriptMaterial struct {
 	Reflect      float64   `json:"reflect,omitempty"`
 	Refractivity float64   `json:"refractivity,omitempty"`
 	Radiate      int       `json:"radiate,omitempty"`
-}
-
-type ScriptObject struct {
-	ID         string    `json:"id"`
-	Shape      string    `json:"shape"`
-	Position   []float64 `json:"position"`
-	Size       []float64 `json:"size,omitempty"`
-	MaterialID string    `json:"material_id"`
 }
 
 func ReadScriptFile(filepath string) *Script {
@@ -74,24 +69,22 @@ func LoadSceneFromScript(script *Script, scene *model.Scene) error {
 
 	// 解析物体
 	for _, objDef := range script.Objects {
-		position := mat.NewVecDense(3, objDef.Position)
-		material, exists := materials[objDef.MaterialID]
+		material, exists := materials[cast.ToString(objDef["material_id"])]
 		if !exists {
 			continue // 跳过未定义材质的物体
 		}
 
-		switch objDef.Shape {
+		switch objDef["shape"] {
 		case "cuboid":
-			if len(objDef.Size) < 3 {
+			if len(cast.ToIntSlice(objDef["size"])) < 3 {
 				continue
 			}
 
-			// 计算长方体对角点
-			halfSize := mat.NewVecDense(3, objDef.Size)
-			halfSize.ScaleVec(0.5, halfSize)
+			position := mat.NewVecDense(3, cast.ToFloat64Slice(objDef["position"]))
+			halfSize := math_lib.ScaleVec2(0.5, mat.NewVecDense(3, cast.ToFloat64Slice(objDef["size"])))
 			pmax := mat.NewVecDense(3, nil)
-			pmax.AddVec(position, halfSize)
 			pmin := mat.NewVecDense(3, nil)
+			pmax.AddVec(position, halfSize)
 			pmin.SubVec(position, halfSize)
 
 			scene.ObjectTree.AddObject(&object.Object{
@@ -100,12 +93,21 @@ func LoadSceneFromScript(script *Script, scene *model.Scene) error {
 			})
 
 		case "sphere":
-			if len(objDef.Size) < 1 {
-				continue
-			}
-
 			scene.ObjectTree.AddObject(&object.Object{
-				Shape:    shape.NewSphere(position, float64(objDef.Size[0])),
+				Shape: shape.NewSphere(
+					mat.NewVecDense(3, cast.ToFloat64Slice(objDef["position"])),
+					cast.ToFloat64(objDef["r"]),
+				),
+				Material: material,
+			})
+
+		case "triangle":
+			scene.ObjectTree.AddObject(&object.Object{
+				Shape: shape.NewTriangle(
+					mat.NewVecDense(3, cast.ToFloat64Slice(objDef["p1"])),
+					mat.NewVecDense(3, cast.ToFloat64Slice(objDef["p2"])),
+					mat.NewVecDense(3, cast.ToFloat64Slice(objDef["p3"])),
+				),
 				Material: material,
 			})
 
