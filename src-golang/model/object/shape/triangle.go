@@ -77,20 +77,12 @@ func (t *Triangle) Intersect(raySt, rayDir *mat.VecDense) float64 {
 	return mat.Dot(edges[1], q) / a
 }
 
-func (t *Triangle) GetNormalVector(intersect *mat.VecDense) *mat.VecDense {
+func (t *Triangle) GetNormalVector(_ *mat.VecDense) *mat.VecDense {
 	edge1 := mat.NewVecDense(3, nil)
 	edge2 := mat.NewVecDense(3, nil)
-
 	edge1.SubVec(t.P2, t.P1)
 	edge2.SubVec(t.P3, t.P1)
-	normal := math_lib.Cross(edge1, edge2)
-
-	// 归一化法向量
-	norm := mat.Norm(normal, 2)
-	if norm > 0 {
-		normal.ScaleVec(1/norm, normal)
-	}
-	return normal
+	return math_lib.Normalize(math_lib.Cross(edge1, edge2))
 }
 
 func (t *Triangle) BuildBoundingBox() (pmin, pmax *mat.VecDense) {

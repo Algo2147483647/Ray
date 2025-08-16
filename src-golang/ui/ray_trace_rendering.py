@@ -153,7 +153,7 @@ def plot_ray_paths(ray_data, scene_data=None):
             [origin[0], endpoint[0]],
             [origin[1], endpoint[1]],
             [origin[2], endpoint[2]],
-            color=color,
+            color=[max(c - 0.2, 0) for c in color],
             linewidth=0.5, alpha=0.7
         )
 
@@ -180,10 +180,15 @@ def plot_ray_paths(ray_data, scene_data=None):
     ax.set_ylabel('Y Axis', fontsize=12)
     ax.set_zlabel('Z Axis', fontsize=12)
     ax.set_title('3D Scene with Ray Paths', fontsize=16)
+
+    # 设置坐标轴比例为1:1:1
+    ax.set_box_aspect([1,1,1])
+
     ax.view_init(elev=30, azim=-45)
     ax.grid(True, alpha=0.2)
     plt.tight_layout()
     plt.show()
+
 
 
 # 主程序
