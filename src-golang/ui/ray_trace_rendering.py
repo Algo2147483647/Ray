@@ -154,20 +154,15 @@ def plot_ray_paths(ray_data, scene_data=None):
             [origin[1], endpoint[1]],
             [origin[2], endpoint[2]],
             color=color,
-            linewidth=0.5,
-            alpha=0.6
+            linewidth=0.5, alpha=0.7
         )
 
         # 标记起点（使用更深的颜色）
         start_color = [max(c - 0.2, 0) for c in color]  # 加深颜色
         ax.scatter(
             origin[0], origin[1], origin[2],
-            color=start_color, s=15, depthshade=False, alpha=0.7
+            color=start_color, s=10, depthshade=False, alpha=0.7
         )
-
-        # 每100条光线打印一次进度
-        if (i + 1) % 100 == 0:
-            print(f"已处理 {i + 1}/{len(ray_data)} 条光线")
 
     # 设置坐标轴范围
     if all_points:
@@ -185,18 +180,8 @@ def plot_ray_paths(ray_data, scene_data=None):
     ax.set_ylabel('Y Axis', fontsize=12)
     ax.set_zlabel('Z Axis', fontsize=12)
     ax.set_title('3D Scene with Ray Paths', fontsize=16)
-
-    # 设置初始视角
     ax.view_init(elev=30, azim=-45)
-
-    # 添加网格
     ax.grid(True, alpha=0.2)
-
-    print("绘图完成！使用鼠标旋转视图：")
-    print("- 左键拖动：旋转视角")
-    print("- 右键拖动：平移视图")
-    print("- 滚轮滚动：缩放视图")
-
     plt.tight_layout()
     plt.show()
 

@@ -38,7 +38,7 @@ func TracePixel(camera *optics.Camera, objTree *object.ObjectTree, row, col, sam
 }
 
 func DebugIsRecordRay(ray *optics.Ray, row, col, sample int) {
-	if row%40 == 1 && col%40 == 1 && sample == 0 {
+	if row%100 == 1 && col%100 == 1 && sample == 0 {
 		ray.DebugSwitch = true
 	} else {
 		ray.DebugSwitch = false

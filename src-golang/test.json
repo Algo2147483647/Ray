@@ -13,8 +13,20 @@
             "refractivity": 0.0
         },
         {
-            "id": "2",
+            "id": "yellow mirror",
             "color": [1.0, 1.0, 0],
+            "reflectivity": 1,
+            "refractivity": 0.0
+        },
+        {
+            "id": "wallpaper1",
+            "color": [0.65, 0.62, 1],
+            "reflectivity": 1,
+            "refractivity": 0.0
+        },
+        {
+            "id": "wallpaper2",
+            "color": [1, 0.68, 0.75],
             "reflectivity": 1,
             "refractivity": 0.0
         }
@@ -28,27 +40,43 @@
             "material_id": "WorldBoundary"
         },
         {
-            "id": "2",
+            "id": "sphere",
             "shape": "sphere",
             "position": [2, 0, 0],
             "r": 0.25,
-            "material_id": "2"
+            "material_id": "yellow mirror"
         },
         {
             "id": "MainLight",
             "shape": "triangle",
-            "p1": [2.5, 2.5, 2.45],
-            "p2": [2.5, -2.5, 2.45],
-            "p3": [-2.5, 2.5, 2.45],
+            "p1": [2.5, 2.5, 2.49],
+            "p2": [2.5, -2.5, 2.49],
+            "p3": [-2.5, 2.5, 2.49],
             "material_id": "LightSource"
         },
         {
             "id": "MainLight",
             "shape": "triangle",
-            "p1": [-2.5,-2.5, 2.45],
-            "p2": [-2.5, 2.5, 2.45],
-            "p3": [2.5, -2.5, 2.45],
+            "p1": [-2.5,-2.5, 2.49],
+            "p2": [-2.5, 2.5, 2.49],
+            "p3": [2.5, -2.5, 2.49],
             "material_id": "LightSource"
+        },
+        {
+            "id": "wallpaper",
+            "shape": "triangle",
+            "p1": [-2.5, 2.49,-2.5],
+            "p2": [-2.5, 2.49, 2.5],
+            "p3": [2.5, 2.49, -2.5],
+            "material_id": "wallpaper1"
+        },
+        {
+            "id": "wallpaper",
+            "shape": "triangle",
+            "p1": [-2.5, 2.49,-2.5],
+            "p2": [-2.5, 2.49, 2.5],
+            "p3": [2.5, 2.49, -2.5],
+            "material_id": "wallpaper1"
         }
     ]
 }
