@@ -19,24 +19,6 @@ type Script struct {
 	Cameras   []map[string]interface{} `json:"camera"`
 }
 
-type ScriptCamera struct {
-	ID        string    `json:"key"`
-	Position  []float64 `json:"position"`
-	Direction []float64 `json:"direction"`
-	Up        []float64 `json:"up"`
-	Width     int       `json:"width"`
-	Height    int       `json:"height"`
-}
-
-type ScriptMaterial struct {
-	ID           string    `json:"id"`
-	Color        []float64 `json:"color"`
-	Diffuse      float64   `json:"diffuse,omitempty"`
-	Reflect      float64   `json:"reflect,omitempty"`
-	Refractivity float64   `json:"refractivity,omitempty"`
-	Radiate      int       `json:"radiate,omitempty"`
-}
-
 func ReadScriptFile(filepath string) *Script {
 	file, err := os.Open(filepath)
 	if err != nil {

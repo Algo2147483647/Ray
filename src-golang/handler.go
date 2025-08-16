@@ -83,14 +83,14 @@ func (h *Handler) BuildCamera() *Handler {
 	}
 
 	camera := &optics.Camera{
-		Position:    mat.NewVecDense(3, []float64{0, 0, 0}),
+		Position:    mat.NewVecDense(3, []float64{0, 0.1, 0.5}),
 		Up:          mat.NewVecDense(3, []float64{0, 0, 1}),
 		Width:       h.Width,
 		Height:      h.Height,
 		AspectRatio: 1,
 		FieldOfView: 120,
 	}
-	camera.SetLookAt(mat.NewVecDense(3, []float64{100, 0, 0}))
+	camera.SetLookAt(mat.NewVecDense(3, []float64{1.5, 0, 0}))
 	h.Scene.Cameras = append(h.Scene.Cameras, camera)
 
 	return h

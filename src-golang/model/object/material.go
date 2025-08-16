@@ -42,7 +42,7 @@ func (m *Material) DielectricSurfacePropagation(ray *optics.Ray, norm *mat.VecDe
 	switch {
 	case randNum <= m.Reflectivity:
 		ray.Direction = math_lib.Reflect(ray.Direction, norm)
-		ray.Color.ScaleVec(m.RefractLoss, ray.Color)
+		ray.Color.ScaleVec(m.ReflectLoss, ray.Color)
 
 	case randNum <= m.Reflectivity+m.Refractivity:
 		refractionIndex := m.RefractiveIndex
@@ -50,11 +50,12 @@ func (m *Material) DielectricSurfacePropagation(ray *optics.Ray, norm *mat.VecDe
 			refractionIndex = 1.0 / m.RefractiveIndex
 		}
 		ray.Direction = math_lib.Refract(ray.Direction, norm, refractionIndex)
+		ray.Color.ScaleVec(m.RefractLoss, ray.Color)
 		ray.Refractivity = refractionIndex
 
 	default:
 		ray.Direction = math_lib.DiffuseReflect(ray.Direction, norm)
-		ray.Color.ScaleVec(m.ReflectLoss, ray.Color)
+		ray.Color.ScaleVec(m.DiffuseLoss, ray.Color)
 	}
 
 	for i := 0; i < norm.Len(); i++ { // 应用基础颜色（分量乘法）

@@ -8,9 +8,9 @@
         {
             "id": "WorldBoundary",
             "color": [1.0, 1.0, 1.0],
-            "diffuse_loss": 0.5,
-            "reflectivity": 0.5,
-            "refractivity": 0.0
+            "reflectivity": 0.0,
+            "refractivity": 0.0,
+            "diffuse_loss": 0.7
         },
         {
             "id": "yellow mirror",
@@ -22,13 +22,22 @@
             "id": "wallpaper1",
             "color": [0.65, 0.62, 1],
             "reflectivity": 0.0,
-            "refractivity": 0.0
+            "refractivity": 0.0,
+            "diffuse_loss": 0.7
         },
         {
             "id": "wallpaper2",
             "color": [1, 0.68, 0.75],
             "reflectivity": 0.0,
-            "refractivity": 0.0
+            "refractivity": 0.0,
+            "diffuse_loss": 0.7
+        },
+        {
+            "id": "glass",
+            "color": [1, 1, 1],
+            "reflectivity": 0.0,
+            "refractivity": 1.0,
+            "refractive_index": 1.7
         }
     ],
     "objects": [
@@ -42,8 +51,15 @@
         {
             "id": "sphere",
             "shape": "sphere",
-            "position": [2, 0, 0],
-            "r": 0.25,
+            "position": [1.5, 0, 0],
+            "r": 0.4,
+            "material_id": "glass"
+        },
+        {
+            "id": "glass",
+            "shape": "cuboid",
+            "position": [1.5, 0, 0],
+            "size": [0.4, 0.4, 0.4],
             "material_id": "yellow mirror"
         },
         {

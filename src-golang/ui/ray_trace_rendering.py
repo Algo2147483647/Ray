@@ -158,7 +158,7 @@ def plot_ray_paths(ray_data, scene_data=None):
         )
 
         # 标记起点（使用更深的颜色）
-        start_color = [max(c - 0.2, 0) for c in color]  # 加深颜色
+        start_color = [max(c, 0) for c in color]  # 加深颜色
         ax.scatter(
             origin[0], origin[1], origin[2],
             color=start_color, s=10, depthshade=False, alpha=0.7
