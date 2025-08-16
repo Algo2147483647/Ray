@@ -40,16 +40,13 @@ def draw_scene(ax, scene_data):
     # 绘制所有物体
     for obj in scene_data['objects']:
         shape = obj['shape']
-        position = np.array(obj['position'])
-        size = obj['size']
         obj_id = obj['id']
-
-        # 根据形状选择颜色
         color = shape_colors.get(shape, 'green')
 
         # 绘制长方体
         if shape == 'cuboid':
-            # 计算长方体的8个顶点
+            size = obj['size']
+            position = np.array(obj['position'])
             half_size = np.array(size) / 2
             x = position[0]
             y = position[1]
@@ -82,8 +79,8 @@ def draw_scene(ax, scene_data):
 
         # 绘制球体
         elif shape == 'sphere':
-            radius = size[0]
-
+            radius = obj['r']
+            position = np.array(obj['position'])
             # 在三个平面上绘制圆形来表示球体
             u = np.linspace(0, 2 * np.pi, 30)
             v = np.linspace(0, np.pi, 15)
