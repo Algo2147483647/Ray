@@ -38,9 +38,9 @@ func (s *Sphere) Intersect(raySt, ray *mat.VecDense) float64 {
 	root2 := (-B + Delta) / (2 * A)
 
 	switch {
-	case root1 > 0 && root2 > 0:
+	case root1 > math_lib.EPS && root2 > math_lib.EPS:
 		return math.Min(root1, root2)
-	case root1 > 0 || root2 > 0:
+	case root1 > math_lib.EPS || root2 > math_lib.EPS:
 		return math.Max(root1, root2)
 	default:
 		return math.MaxFloat64

@@ -8,10 +8,8 @@ import (
 
 type Plane struct {
 	BaseShape
-	A float64 `json:"a"`
-	B float64 `json:"b"`
-	C float64 `json:"c"`
-	D float64 `json:"d"`
+	A *mat.VecDense `json:"A"` // f(x) = a^T * x + b
+	B float64       `json:"b"`
 }
 
 func (p *Plane) Name() string {
@@ -19,19 +17,18 @@ func (p *Plane) Name() string {
 }
 
 func (p *Plane) Intersect(raySt, rayDir *mat.VecDense) float64 {
-	t := p.A*rayDir.AtVec(0) + p.B*rayDir.AtVec(1) + p.C*rayDir.AtVec(2)
+	t := mat.Dot(p.A, rayDir)
 	if math.Abs(t) < math_lib.EPS {
 		return math.MaxFloat64
 	}
 
-	d := -(p.A*raySt.AtVec(0) + p.B*raySt.AtVec(1) + p.C*raySt.AtVec(2) + p.D) / t
-	if d > 0 {
+	d := -(mat.Dot(p.A, raySt) + p.B) / t
+	if d > math_lib.EPS {
 		return d
 	}
 	return math.MaxFloat64
 }
 
 func (p *Plane) GetNormalVector(intersect *mat.VecDense) *mat.VecDense {
-	res := mat.NewVecDense(3, []float64{p.A, p.B, p.C})
-	return math_lib.Normalize(res)
+	return math_lib.Normalize(p.A)
 }

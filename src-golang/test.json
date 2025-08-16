@@ -37,7 +37,14 @@
             "color": [1, 1, 1],
             "reflectivity": 0.0,
             "refractivity": 1.0,
-            "refractive_index": 1.7
+            "refractive_index": 1.33
+        },
+        {
+            "id": "glass2",
+            "color": [1, 1, 1],
+            "reflectivity": 0.0,
+            "refractivity": 1.0,
+            "refractive_index": 0.4
         }
     ],
     "objects": [
@@ -51,15 +58,22 @@
         {
             "id": "sphere",
             "shape": "sphere",
-            "position": [1.5, 0, 0],
-            "r": 0.4,
+            "position": [1.5, 0, -1.25],
+            "r": 0.3,
             "material_id": "glass"
         },
         {
             "id": "glass",
-            "shape": "cuboid",
-            "position": [1.5, 0, 0],
-            "size": [0.4, 0.4, 0.4],
+            "shape": "sphere",
+            "position": [1.5, -1, -1.25],
+            "r": 0.3,
+            "material_id": "glass2"
+        },
+        {
+            "id": "glass",
+            "shape": "sphere",
+            "position": [1.5, 1, -1.25],
+            "r": 0.3,
             "material_id": "yellow mirror"
         },
         {
@@ -109,6 +123,27 @@
             "p2": [-2.5,-2.49, 2.5],
             "p3": [ 2.5,-2.49,-2.5],
             "material_id": "wallpaper2"
+        },
+        {
+            "id": "table",
+            "shape": "cuboid",
+            "position": [1.5, 0, -1.65],
+            "size": [1.2, 2.5, 0.1],
+            "material_id": "glass"
+        },
+        {
+            "id": "table",
+            "shape": "cuboid",
+            "position": [1.5, 1.2, -2.1],
+            "size": [1.2, 0.1, 0.8],
+            "material_id": "glass"
+        },
+        {
+            "id": "table",
+            "shape": "cuboid",
+            "position": [1.5, -1.2, -2.1],
+            "size": [1.2, 0.1, 0.8],
+            "material_id": "glass"
         }
     ]
 }
