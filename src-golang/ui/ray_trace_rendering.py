@@ -103,6 +103,19 @@ def draw_scene(ax, scene_data):
             x_yz = np.full_like(y_yz, position[0])
             ax.plot(x_yz, y_yz, z_yz, color=color, linewidth=1.5, alpha=0.7)
 
+        elif shape == 'triangle':
+            p1 = np.array(obj['p1'])
+            p2 = np.array(obj['p2'])
+            p3 = np.array(obj['p3'])
+
+            edges = [
+                [p1, p2],
+                [p2, p3],
+                [p3, p1]
+            ]
+            for edge in edges:
+                points = np.array(edge)
+                ax.plot(points[:, 0], points[:, 1], points[:, 2], color=color, linewidth=1.5, alpha=0.7)
     # 添加图例
     ax.legend(handles=legend_elements, loc='upper right')
     print("场景几何体绘制完成！")

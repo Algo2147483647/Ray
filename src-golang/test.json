@@ -2,7 +2,7 @@
     "materials": [
         {
             "id": "LightSource",
-            "color": [20.0, 20.0, 20.0],
+            "color": [3.0, 3.0, 3.0],
             "radiate": 1
         },
         {
@@ -11,6 +11,12 @@
             "diffuse_loss": 0.5,
             "reflectivity": 0.5,
             "refractivity": 0.0
+        },
+        {
+            "id": "2",
+            "color": [1.0, 1.0, 0],
+            "reflectivity": 1,
+            "refractivity": 0.0
         }
     ],
     "objects": [
@@ -18,14 +24,30 @@
             "id": "WorldBox",
             "shape": "cuboid",
             "position": [0, 0, 0],
-            "size": [3000, 3000, 3000],
+            "size": [5, 5, 5],
             "material_id": "WorldBoundary"
         },
         {
-            "id": "MainLight",
+            "id": "2",
             "shape": "sphere",
-            "position": [1000, 0, 1000],
-            "r": 200,
+            "position": [2, 0, 0],
+            "r": 0.25,
+            "material_id": "2"
+        },
+        {
+            "id": "MainLight",
+            "shape": "triangle",
+            "p1": [2.5, 2.5, 2.45],
+            "p2": [2.5, -2.5, 2.45],
+            "p3": [-2.5, 2.5, 2.45],
+            "material_id": "LightSource"
+        },
+        {
+            "id": "MainLight",
+            "shape": "triangle",
+            "p1": [-2.5,-2.5, 2.45],
+            "p2": [-2.5, 2.5, 2.45],
+            "p3": [2.5, -2.5, 2.45],
             "material_id": "LightSource"
         }
     ]
