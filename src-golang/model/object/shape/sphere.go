@@ -52,11 +52,11 @@ func (s *Sphere) GetNormalVector(intersect *mat.VecDense) *mat.VecDense {
 	return math_lib.Normalize(math_lib.SubVec(res, intersect, s.center))
 }
 
-func (s *Sphere) BuildBoundingBox() (pmax, pmin *mat.VecDense) {
+func (s *Sphere) BuildBoundingBox() (pmin, pmax *mat.VecDense) {
 	offset := mat.NewVecDense(3, []float64{s.R, s.R, s.R})
 	pmax = mat.NewVecDense(3, nil)
 	pmin = mat.NewVecDense(3, nil)
 	pmax.AddVec(s.center, offset)
 	pmin.SubVec(s.center, offset)
-	return pmin, pmax
+	return
 }

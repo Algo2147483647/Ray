@@ -3,22 +3,22 @@
         {
             "id": "Glass",
             "color": [1.0, 1.0, 1.0],
-            "diffuse": 0.0,
-            "reflect": 0.0,
+            "diffuse_loss": 0.0,
+            "reflectivity": 0.0,
             "refractivity": 1.7
         },
         {
             "id": "YellowMetal",
             "color": [1.0, 1.0, 0.0],
-            "diffuse": 0.5,
-            "reflect": 0.5,
+            "diffuse_loss": 0.5,
+            "reflectivity": 0.5,
             "refractivity": 0.0
         },
         {
             "id": "WhiteDiffuse",
             "color": [1.0, 1.0, 1.0],
-            "diffuse": 0.9,
-            "reflect": 0.1,
+            "diffuse_loss": 0.9,
+            "reflectivity": 0.1,
             "refractivity": 0.0
         },
         {
@@ -29,15 +29,15 @@
         {
             "id": "RedDiffuse",
             "color": [1.0, 0.0, 0.0],
-            "diffuse": 1.0,
-            "reflect": 0.0,
+            "diffuse_loss": 1.0,
+            "reflectivity": 0.0,
             "refractivity": 0.0
         },
         {
             "id": "WorldBoundary",
             "color": [1.0, 1.0, 1.0],
-            "diffuse": 0.5,
-            "reflect": 0.5,
+            "diffuse_loss": 0.5,
+            "reflectivity": 0.5,
             "refractivity": 0.0
         }
     ],

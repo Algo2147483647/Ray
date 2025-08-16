@@ -93,11 +93,11 @@ func (t *Triangle) GetNormalVector(intersect *mat.VecDense) *mat.VecDense {
 	return normal
 }
 
-func (t *Triangle) BuildBoundingBox() (min, max *mat.VecDense) {
-	minData := make([]float64, 3)
-	maxData := make([]float64, 3)
+func (t *Triangle) BuildBoundingBox() (pmin, pmax *mat.VecDense) {
+	pmin = mat.NewVecDense(3, make([]float64, 3))
+	pmax = mat.NewVecDense(3, make([]float64, 3))
 
-	for i := 0; i < 3; i++ {
+	for i := 0; i < t.P1.Len(); i++ {
 		vals := []float64{t.P1.AtVec(i), t.P2.AtVec(i), t.P3.AtVec(i)}
 		minVal, maxVal := vals[0], vals[0]
 		for _, v := range vals[1:] {
@@ -108,9 +108,9 @@ func (t *Triangle) BuildBoundingBox() (min, max *mat.VecDense) {
 				maxVal = v
 			}
 		}
-		minData[i] = minVal
-		maxData[i] = maxVal
+		pmin.SetVec(i, minVal)
+		pmax.SetVec(i, maxVal)
 	}
 
-	return mat.NewVecDense(3, minData), mat.NewVecDense(3, maxData)
+	return
 }

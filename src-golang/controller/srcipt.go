@@ -10,14 +10,13 @@ import (
 	"src-golang/math_lib"
 	"src-golang/model"
 	"src-golang/model/object"
-	"src-golang/model/object/optics"
 	"src-golang/model/object/shape"
 )
 
 type Script struct {
-	Materials []ScriptMaterial         `json:"materials"`
+	Materials []map[string]interface{} `json:"materials"`
 	Objects   []map[string]interface{} `json:"objects"`
-	Cameras   []*optics.Camera         `json:"camera"`
+	Cameras   []map[string]interface{} `json:"camera"`
 }
 
 type ScriptCamera struct {
@@ -67,55 +66,63 @@ func ReadScriptFile(filepath string) *Script {
 func LoadSceneFromScript(script *Script, scene *model.Scene) error {
 	materials := ParseMaterials(script) // 解析材质映射表
 
-	// 解析物体
-	for _, objDef := range script.Objects {
-		material, exists := materials[cast.ToString(objDef["material_id"])]
+	for _, item := range script.Objects { // 解析物体
+		material, exists := materials[cast.ToString(item["material_id"])]
 		if !exists {
 			continue // 跳过未定义材质的物体
 		}
 
-		switch objDef["shape"] {
-		case "cuboid":
-			if len(cast.ToIntSlice(objDef["size"])) < 3 {
-				continue
-			}
+		shape := ParseShape(item)
+		if shape == nil {
+			continue
+		}
 
+		scene.ObjectTree.AddObject(&object.Object{
+			Shape:    shape,
+			Material: material,
+		})
+	}
+
+	scene.ObjectTree.Build()
+	return nil
+}
+
+func ParseShape(objDef map[string]interface{}) shape.Shape {
+	switch objDef["shape"] {
+	case "cuboid":
+		if _, ok := objDef["position"]; ok {
 			position := mat.NewVecDense(3, cast.ToFloat64Slice(objDef["position"]))
 			halfSize := math_lib.ScaleVec2(0.5, mat.NewVecDense(3, cast.ToFloat64Slice(objDef["size"])))
 			pmax := mat.NewVecDense(3, nil)
 			pmin := mat.NewVecDense(3, nil)
 			pmax.AddVec(position, halfSize)
 			pmin.SubVec(position, halfSize)
-
-			scene.ObjectTree.AddObject(&object.Object{
-				Shape:    shape.NewCuboid(pmin, pmax),
-				Material: material,
-			})
-
-		case "sphere":
-			scene.ObjectTree.AddObject(&object.Object{
-				Shape: shape.NewSphere(
-					mat.NewVecDense(3, cast.ToFloat64Slice(objDef["position"])),
-					cast.ToFloat64(objDef["r"]),
-				),
-				Material: material,
-			})
-
-		case "triangle":
-			scene.ObjectTree.AddObject(&object.Object{
-				Shape: shape.NewTriangle(
-					mat.NewVecDense(3, cast.ToFloat64Slice(objDef["p1"])),
-					mat.NewVecDense(3, cast.ToFloat64Slice(objDef["p2"])),
-					mat.NewVecDense(3, cast.ToFloat64Slice(objDef["p3"])),
-				),
-				Material: material,
-			})
-
-		case "plane":
-		case "cylinder":
+			return shape.NewCuboid(pmin, pmax)
 		}
+
+		if _, ok := objDef["pmax"]; ok {
+			return shape.NewCuboid(
+				mat.NewVecDense(3, cast.ToFloat64Slice(objDef["pmin"])),
+				mat.NewVecDense(3, cast.ToFloat64Slice(objDef["pmax"])),
+			)
+		}
+
+	case "sphere":
+		return shape.NewSphere(
+			mat.NewVecDense(3, cast.ToFloat64Slice(objDef["position"])),
+			cast.ToFloat64(objDef["r"]),
+		)
+
+	case "triangle":
+		return shape.NewTriangle(
+			mat.NewVecDense(3, cast.ToFloat64Slice(objDef["p1"])),
+			mat.NewVecDense(3, cast.ToFloat64Slice(objDef["p2"])),
+			mat.NewVecDense(3, cast.ToFloat64Slice(objDef["p3"])),
+		)
+
+	case "plane":
+	case "cylinder":
 	}
-	scene.ObjectTree.Build()
 	return nil
 }
 
@@ -123,27 +130,30 @@ func ParseMaterials(script *Script) map[string]*object.Material {
 	materials := make(map[string]*object.Material)
 
 	for _, matDef := range script.Materials {
-		r := float64(matDef.Color[0])
-		g := float64(matDef.Color[1])
-		b := float64(matDef.Color[2])
+		material := object.NewMaterial(mat.NewVecDense(3, cast.ToFloat64Slice(matDef["color"])))
 
-		material := object.NewMaterial(mat.NewVecDense(3, []float64{r, g, b}))
-
-		// 设置材质属性
-		if matDef.Diffuse != 0 {
-			material.DiffuseLoss = matDef.Diffuse
+		if val, ok := matDef["radiate"]; ok {
+			material.Radiation = cast.ToBool(val)
 		}
-		if matDef.Reflect != 0 {
-			material.Reflectivity = matDef.Reflect
+		if val, ok := matDef["reflectivity"]; ok {
+			material.ReflectLoss = cast.ToFloat64(val)
 		}
-		if matDef.Refractivity != 0 {
-			material.Refractivity = matDef.Refractivity
+		if val, ok := matDef["refractivity"]; ok {
+			material.RefractLoss = cast.ToFloat64(val)
 		}
-		if matDef.Radiate != 0 {
-			material.Radiation = matDef.Radiate != 0
+		if val, ok := matDef["refractive_index"]; ok {
+			material.RefractiveIndex = cast.ToFloat64(val)
 		}
-
-		materials[matDef.ID] = material
+		if val, ok := matDef["diffuse_loss"]; ok {
+			material.DiffuseLoss = cast.ToFloat64(val)
+		}
+		if val, ok := matDef["reflect_loss"]; ok {
+			material.ReflectLoss = cast.ToFloat64(val)
+		}
+		if val, ok := matDef["refract_loss"]; ok {
+			material.RefractLoss = cast.ToFloat64(val)
+		}
+		materials[cast.ToString(matDef["id"])] = material
 	}
 
 	return materials

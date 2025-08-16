@@ -10,7 +10,7 @@ type Shape interface {
 	Name() string
 	Intersect(rayStart, rayDir *mat.VecDense) float64
 	GetNormalVector(intersect *mat.VecDense) *mat.VecDense
-	BuildBoundingBox() (pmax, pmin *mat.VecDense)
+	BuildBoundingBox() (pmin, pmax *mat.VecDense)
 	SetEngraving(fn func(*mat.VecDense) bool)
 }
 
@@ -31,7 +31,7 @@ func (bs *BaseShape) GetNormalVector(intersect *mat.VecDense) *mat.VecDense {
 	return &mat.VecDense{}
 }
 
-func (bs *BaseShape) BuildBoundingBox() (pmax, pmin *mat.VecDense) {
+func (bs *BaseShape) BuildBoundingBox() (pmin, pmax *mat.VecDense) {
 	maxVal := math.MaxFloat64 / 2 // 避免后续计算溢出
 	pmin = mat.NewVecDense(3, []float64{-maxVal, -maxVal, -maxVal})
 	pmax = mat.NewVecDense(3, []float64{+maxVal, +maxVal, +maxVal})

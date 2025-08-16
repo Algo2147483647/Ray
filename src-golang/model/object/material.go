@@ -9,14 +9,14 @@ import (
 
 // Material 表示物体的材质属性
 type Material struct {
-	Color           *mat.VecDense `json:"color"`           // 材质的基础颜色
-	Radiation       bool          `json:"radiation"`       // 是否自发光
-	Reflectivity    float64       `json:"reflectivity"`    // 反射系数 [0, 1]
-	Refractivity    float64       `json:"refractivity"`    // 折射系数 [0, 1]
-	RefractiveIndex float64       `json:"refractiveIndex"` // 折射率
-	DiffuseLoss     float64       `json:"diffuseLoss"`     // 漫反射损失系数
-	ReflectLoss     float64       `json:"reflectLoss"`     // 反射损失系数
-	RefractLoss     float64       `json:"refractLoss"`     // 折射损失系数
+	Color           *mat.VecDense `json:"color"`            // 材质的基础颜色
+	Radiation       bool          `json:"radiation"`        // 是否自发光
+	Reflectivity    float64       `json:"reflectivity"`     // 反射系数 [0, 1]
+	Refractivity    float64       `json:"refractivity"`     // 折射系数 [0, 1]
+	RefractiveIndex float64       `json:"refractive_index"` // 折射率
+	DiffuseLoss     float64       `json:"diffuse_loss"`     // 漫反射损失系数
+	ReflectLoss     float64       `json:"reflect_loss"`     // 反射损失系数
+	RefractLoss     float64       `json:"refract_loss"`     // 折射损失系数
 }
 
 // NewMaterial 创建新材质

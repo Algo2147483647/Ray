@@ -77,6 +77,6 @@ func (c *Cuboid) GetNormalVector(intersect *mat.VecDense) *mat.VecDense {
 }
 
 // BuildBoundingBox 返回包围盒边界
-func (c *Cuboid) BuildBoundingBox() (*mat.VecDense, *mat.VecDense) {
+func (c *Cuboid) BuildBoundingBox() (pmin, pmax *mat.VecDense) {
 	return c.Pmin, c.Pmax
 }
