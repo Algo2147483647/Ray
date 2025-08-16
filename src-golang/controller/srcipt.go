@@ -136,10 +136,10 @@ func ParseMaterials(script *Script) map[string]*object.Material {
 			material.Radiation = cast.ToBool(val)
 		}
 		if val, ok := matDef["reflectivity"]; ok {
-			material.ReflectLoss = cast.ToFloat64(val)
+			material.Reflectivity = cast.ToFloat64(val)
 		}
 		if val, ok := matDef["refractivity"]; ok {
-			material.RefractLoss = cast.ToFloat64(val)
+			material.Refractivity = cast.ToFloat64(val)
 		}
 		if val, ok := matDef["refractive_index"]; ok {
 			material.RefractiveIndex = cast.ToFloat64(val)

@@ -21,13 +21,13 @@
         {
             "id": "wallpaper1",
             "color": [0.65, 0.62, 1],
-            "reflectivity": 1,
+            "reflectivity": 0.0,
             "refractivity": 0.0
         },
         {
             "id": "wallpaper2",
             "color": [1, 0.68, 0.75],
-            "reflectivity": 1,
+            "reflectivity": 0.0,
             "refractivity": 0.0
         }
     ],
@@ -49,8 +49,8 @@
         {
             "id": "MainLight",
             "shape": "triangle",
-            "p1": [2.5, 2.5, 2.49],
-            "p2": [2.5, -2.5, 2.49],
+            "p1": [ 2.5, 2.5, 2.49],
+            "p2": [ 2.5,-2.5, 2.49],
             "p3": [-2.5, 2.5, 2.49],
             "material_id": "LightSource"
         },
@@ -73,10 +73,26 @@
         {
             "id": "wallpaper",
             "shape": "triangle",
-            "p1": [-2.5, 2.49,-2.5],
+            "p1": [ 2.5, 2.49, 2.5],
             "p2": [-2.5, 2.49, 2.5],
-            "p3": [2.5, 2.49, -2.5],
+            "p3": [ 2.5, 2.49,-2.5],
             "material_id": "wallpaper1"
+        },
+        {
+            "id": "wallpaper",
+            "shape": "triangle",
+            "p1": [-2.5,-2.49,-2.5],
+            "p2": [-2.5,-2.49, 2.5],
+            "p3": [2.5,-2.49, -2.5],
+            "material_id": "wallpaper2"
+        },
+        {
+            "id": "wallpaper",
+            "shape": "triangle",
+            "p1": [ 2.5,-2.49, 2.5],
+            "p2": [-2.5,-2.49, 2.5],
+            "p3": [ 2.5,-2.49,-2.5],
+            "material_id": "wallpaper2"
         }
     ]
 }
