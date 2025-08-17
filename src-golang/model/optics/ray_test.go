@@ -2,6 +2,10 @@ package optics
 
 import (
 	"gonum.org/v1/gonum/mat"
+	"gonum.org/v1/plot"
+	"gonum.org/v1/plot/plotter"
+	"gonum.org/v1/plot/plotutil"
+	"gonum.org/v1/plot/vg"
 	"math"
 	"src-golang/math_lib"
 	"testing"
@@ -9,7 +13,7 @@ import (
 
 // TestConvertToMonochromeMonteCarlo 使用蒙特卡洛方法测试 ConvertToMonochrome 方法
 func TestConvertToMonochromeMonteCarlo(t *testing.T) {
-	const numSamples = 500000
+	const numSamples = 10000000
 
 	// 存储收集的数据
 	redValues := make([]float64, numSamples)
@@ -95,4 +99,83 @@ func validateDistribution(t *testing.T, wavelengths, red, green, blue []float64)
 	t.Logf("Red: mean=%f, std=%f", rMean, rStd)
 	t.Logf("Green: mean=%f, std=%f", gMean, gStd)
 	t.Logf("Blue: mean=%f, std=%f", bMean, bStd)
+}
+
+func TestWaveLengthToRGB(t *testing.T) {
+	// 创建新的图表
+	p := plot.New()
+
+	p.Title.Text = "RGB values by Wavelength"
+	p.X.Label.Text = "Wavelength (nm)"
+	p.Y.Label.Text = "RGB Value"
+
+	// 创建数据点
+	var rData, gData, bData plotter.XYs
+	step := 1.0
+	count := int((math_lib.WavelengthMax - math_lib.WavelengthMin) / step)
+
+	rData = make(plotter.XYs, count)
+	gData = make(plotter.XYs, count)
+	bData = make(plotter.XYs, count)
+
+	for i := 0; i < count; i++ {
+		wavelength := math_lib.WavelengthMin + float64(i)*step
+		rgb := WaveLengthToRGB(wavelength)
+
+		rData[i].X = wavelength
+		rData[i].Y = rgb.AtVec(0)
+
+		gData[i].X = wavelength
+		gData[i].Y = rgb.AtVec(1)
+
+		bData[i].X = wavelength
+		bData[i].Y = rgb.AtVec(2)
+	}
+
+	// 添加数据线到图表
+	rLine, err := plotter.NewLine(rData)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rLine.Color = plotutil.Color(0) // Red line
+
+	gLine, err := plotter.NewLine(gData)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gLine.Color = plotutil.Color(1) // Green line
+
+	bLine, err := plotter.NewLine(bData)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bLine.Color = plotutil.Color(2) // Blue line
+
+	// 将线条添加到图表
+	p.Add(rLine, gLine, bLine)
+	p.Legend.Add("Red", rLine)
+	p.Legend.Add("Green", gLine)
+	p.Legend.Add("Blue", bLine)
+
+	// 设置图例位置
+	p.Legend.Top = true
+
+	// 保存图表为PNG文件
+	if err := p.Save(10*vg.Inch, 6*vg.Inch, "wavelength_rgb_curve.png"); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// Benchmark测试WaveLengthToRGB性能
+func BenchmarkWaveLengthToRGB(b *testing.B) {
+	// 随机生成测试波长值
+	wavelengths := make([]float64, b.N)
+	for i := 0; i < b.N; i++ {
+		wavelengths[i] = math_lib.WavelengthMin + float64(i%int(math_lib.WavelengthMax-math_lib.WavelengthMin))
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = WaveLengthToRGB(wavelengths[i])
+	}
 }
