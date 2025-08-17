@@ -2,7 +2,7 @@
     "materials": [
         {
             "id": "LightSource",
-            "color": [3.0, 3.0, 3.0],
+            "color": [6.0, 6.0, 6.0],
             "radiate": 1
         },
         {
@@ -65,50 +65,38 @@
         {
             "id": "sphere",
             "shape": "sphere",
-            "position": [1.5, 0, -1.25],
-            "r": 0.3,
+            "position": [1.5, 0, 0],
+            "r": 0.9,
             "material_id": "glass"
         },
         {
             "id": "glass",
             "shape": "sphere",
-            "position": [1.5, -1, -1.25],
-            "r": 0.3,
+            "position": [1.5, -1, 0],
+            "r": 0.9,
             "material_id": "glass2"
         },
         {
             "id": "glass",
             "shape": "sphere",
-            "position": [1.5, 1, -1.2],
-            "r": 0.3,
+            "position": [1.5, 1, 0],
+            "r": 0.9,
             "material_id": "glass3"
-        },
-        {
-            "id": "glass",
-            "shape": "quadratic equation",
-            "a": [
-                1.0, 0, 0,
-                0, 0.25, 0,
-                0, 0, 0.5
-            ],
-            "b": [0, 0, 0],
-            "c": 0,
-            "material_id": "yellow mirror"
         },
         {
             "id": "MainLight",
             "shape": "triangle",
-            "p1": [ 2.5, 2.5, 2.49],
-            "p2": [ 2.5,-2.5, 2.49],
-            "p3": [-2.5, 2.5, 2.49],
+            "p1": [ 1.5, 1.5, 2.49],
+            "p2": [ 1.5,-1.5, 2.49],
+            "p3": [-1.5, 1.5, 2.49],
             "material_id": "LightSource"
         },
         {
             "id": "MainLight",
             "shape": "triangle",
-            "p1": [-2.5,-2.5, 2.49],
-            "p2": [-2.5, 2.5, 2.49],
-            "p3": [2.5, -2.5, 2.49],
+            "p1": [-1.5,-1.5, 2.49],
+            "p2": [-1.5, 1.5, 2.49],
+            "p3": [1.5, -1.5, 2.49],
             "material_id": "LightSource"
         },
         {
@@ -142,27 +130,6 @@
             "p2": [-2.5,-2.49, 2.5],
             "p3": [ 2.5,-2.49,-2.5],
             "material_id": "wallpaper2"
-        },
-        {
-            "id": "table",
-            "shape": "cuboid",
-            "position": [1.5, 0, -1.65],
-            "size": [1.2, 2.5, 0.1],
-            "material_id": "glass"
-        },
-        {
-            "id": "table",
-            "shape": "cuboid",
-            "position": [1.5, 1.2, -2.1],
-            "size": [1.2, 0.1, 0.8],
-            "material_id": "glass"
-        },
-        {
-            "id": "table",
-            "shape": "cuboid",
-            "position": [1.5, -1.2, -2.1],
-            "size": [1.2, 0.1, 0.8],
-            "material_id": "glass"
         }
     ]
 }

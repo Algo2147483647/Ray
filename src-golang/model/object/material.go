@@ -70,7 +70,9 @@ func (m *Material) DielectricSurfacePropagation(ray *optics.Ray, norm *mat.VecDe
 			refractionIndex = 1.0 / refractionIndex
 			ray.RefractionIndex = 1.0
 		} else {
+			refractionIndexTmp := refractionIndex / ray.RefractionIndex
 			ray.RefractionIndex = refractionIndex
+			refractionIndex = refractionIndexTmp
 		}
 
 		ray.Direction = math_lib.Refract(ray.Direction, norm, refractionIndex)

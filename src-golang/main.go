@@ -14,13 +14,14 @@ func main() {
 		fmt.Printf("Using default script: %s\n", scriptPath)
 	}
 
-	h := NewHandler().
-		SetScriptPath(scriptPath).
-		LoadScript().
+	h := NewHandler(800, 800).
+		LoadScript(scriptPath).
 		BuildCamera().
-		Render().
-		BuildResult().
-		SaveResult()
+		LoadResult("img.bin").
+		Render(40, 40).
+		SaveResult("img.bin").
+		SaveImg("output.png").
+		SaveDebugInfo("debug_traces.json")
 
 	if h.err != nil {
 		fmt.Printf("Error: %v\n", h.err)
