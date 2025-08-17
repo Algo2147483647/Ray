@@ -18,7 +18,7 @@ func main() {
 		LoadScript(scriptPath).
 		BuildCamera().
 		LoadResult("img.bin").
-		Render(40, 40).
+		Render(500, 1000).
 		SaveResult("img.bin").
 		SaveImg("output.png").
 		SaveDebugInfo("debug_traces.json")

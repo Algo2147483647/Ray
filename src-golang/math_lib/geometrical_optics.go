@@ -38,3 +38,9 @@ func DiffuseReflect(incidentRay, normal *mat.VecDense) *mat.VecDense {
 	v := ScaleVec2(math.Sin(angle)*math.Sqrt(r), Normalize(Cross(normal, u)))
 	return Normalize(AddVecs(incidentRay, ScaleVec2(math.Sqrt(1-r), normal), u, v))
 }
+
+// CauchyDispersion Cauchy 公式, 计算给定波长下的折射率
+func CauchyDispersion(wavelength, A, B, C float64) float64 {
+	wl2 := wavelength * wavelength
+	return A + B/wl2 + C/(wl2*wl2)
+}

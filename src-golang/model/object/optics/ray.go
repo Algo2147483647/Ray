@@ -4,7 +4,6 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-// Ray 表示光线
 type Ray struct {
 	Origin            *mat.VecDense `json:"origin"`
 	Direction         *mat.VecDense `json:"direction"`
@@ -30,12 +29,11 @@ func (r *Ray) Init() {
 	}
 
 	if r.Color == nil {
-		r.Color = mat.NewVecDense(3, nil)
+		r.Color = mat.NewVecDense(3, []float64{1, 1, 1})
 	} else {
-		r.Origin.Zero()
+		r.Color = mat.NewVecDense(3, []float64{1, 1, 1})
 	}
 
 	r.RefractionIndex = 1
-	r.RefractColorIndex = -1
 	r.DebugSwitch = false
 }

@@ -11,6 +11,7 @@ import (
 	"src-golang/math_lib"
 	"src-golang/model"
 	"src-golang/model/object"
+	"src-golang/model/object/optics"
 	"src-golang/model/object/shape"
 )
 
@@ -114,11 +115,11 @@ func ParseShape(objDef map[string]interface{}) shape.Shape {
 	return nil
 }
 
-func ParseMaterials(script *Script) map[string]*object.Material {
-	materials := make(map[string]*object.Material)
+func ParseMaterials(script *Script) map[string]*optics.Material {
+	materials := make(map[string]*optics.Material)
 
 	for _, matDef := range script.Materials {
-		material := object.NewMaterial(mat.NewVecDense(3, cast.ToFloat64Slice(matDef["color"])))
+		material := optics.NewMaterial(mat.NewVecDense(3, cast.ToFloat64Slice(matDef["color"])))
 
 		if val, ok := matDef["radiate"]; ok {
 			material.Radiation = cast.ToBool(val)

@@ -1,10 +1,9 @@
-package object
+package optics
 
 import (
 	"gonum.org/v1/gonum/mat"
 	"math/rand"
 	"src-golang/math_lib"
-	"src-golang/model/object/optics"
 )
 
 // Material 表示物体的材质属性
@@ -30,7 +29,7 @@ func NewMaterial(color *mat.VecDense) *Material {
 }
 
 // DielectricSurfacePropagation 处理光线在介质表面的传播
-func (m *Material) DielectricSurfacePropagation(ray *optics.Ray, norm *mat.VecDense) bool {
+func (m *Material) DielectricSurfacePropagation(ray *Ray, norm *mat.VecDense) bool {
 	if m.Radiation {
 		for i := 0; i < norm.Len(); i++ {
 			ray.Color.SetVec(i, ray.Color.AtVec(i)*m.Color.AtVec(i))
@@ -45,38 +44,10 @@ func (m *Material) DielectricSurfacePropagation(ray *optics.Ray, norm *mat.VecDe
 		ray.Color.ScaleVec(m.ReflectLoss, ray.Color)
 
 	case randNum <= m.Reflectivity+m.Refractivity:
-		var refractionIndex float64
-
-		if m.RefractiveIndex.Len() == 1 {
-			refractionIndex = m.RefractiveIndex.AtVec(0)
-
-		} else if m.RefractiveIndex.Len() == 3 {
-			if ray.RefractColorIndex == -1 {
-				ray.RefractColorIndex = rand.Int() % 3
-
-				for i := 0; i < ray.Color.Len(); i++ {
-					if i == ray.RefractColorIndex {
-						ray.Color.SetVec(i, 3*ray.Color.AtVec(i))
-					} else {
-						ray.Color.SetVec(i, 0)
-					}
-				}
-			}
-
-			refractionIndex = m.RefractiveIndex.AtVec(ray.RefractColorIndex)
-		}
-
-		if ray.RefractionIndex == refractionIndex {
-			refractionIndex = 1.0 / refractionIndex
-			ray.RefractionIndex = 1.0
-		} else {
-			refractionIndexTmp := refractionIndex / ray.RefractionIndex
-			ray.RefractionIndex = refractionIndex
-			refractionIndex = refractionIndexTmp
-		}
-
-		ray.Direction = math_lib.Refract(ray.Direction, norm, refractionIndex)
+		refractionIndex := m.GetRefractionIndex(ray)
+		ray.Direction = math_lib.Refract(ray.Direction, norm, refractionIndex/ray.RefractionIndex)
 		ray.Color.ScaleVec(m.RefractLoss, ray.Color)
+		ray.RefractionIndex = refractionIndex
 
 	default:
 		ray.Direction = math_lib.DiffuseReflect(ray.Direction, norm)
@@ -87,4 +58,30 @@ func (m *Material) DielectricSurfacePropagation(ray *optics.Ray, norm *mat.VecDe
 		ray.Color.SetVec(i, ray.Color.AtVec(i)*m.Color.AtVec(i))
 	}
 	return false
+}
+
+func (m *Material) GetRefractionIndex(ray *Ray) (res float64) {
+	if m.RefractiveIndex.Len() == 1 {
+		res = m.RefractiveIndex.AtVec(0)
+
+	} else if m.RefractiveIndex.Len() == 3 {
+		if ray.RefractColorIndex == -1 {
+			ray.RefractColorIndex = rand.Int() % 3
+
+			for i := 0; i < ray.Color.Len(); i++ {
+				if i == ray.RefractColorIndex {
+					ray.Color.SetVec(i, 3*ray.Color.AtVec(i))
+				} else {
+					ray.Color.SetVec(i, 0)
+				}
+			}
+		}
+
+		res = m.RefractiveIndex.AtVec(ray.RefractColorIndex)
+	}
+
+	if ray.RefractionIndex == res { // 出射折射率
+		res = 1.0
+	}
+	return
 }
