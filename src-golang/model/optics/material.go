@@ -2,14 +2,8 @@ package optics
 
 import (
 	"gonum.org/v1/gonum/mat"
-	"math"
 	"math/rand"
 	"src-golang/math_lib"
-)
-
-const (
-	WavelengthMin = 380.0 // 最小波长(nm)
-	WavelengthMax = 750.0 // 最大波长(nm)
 )
 
 // Material 表示物体的材质属性
@@ -60,7 +54,7 @@ func (m *Material) DielectricSurfacePropagation(ray *Ray, norm *mat.VecDense) bo
 		ray.Color.ScaleVec(m.DiffuseLoss, ray.Color)
 	}
 
-	for i := 0; i < norm.Len(); i++ { // 应用基础颜色（分量乘法）
+	for i := 0; i < norm.Len(); i++ { // 材质基础颜色
 		ray.Color.SetVec(i, ray.Color.AtVec(i)*m.Color.AtVec(i))
 	}
 	return false
@@ -71,7 +65,7 @@ func (m *Material) GetRefractionIndex(ray *Ray) (res float64) {
 		res = m.RefractiveIndex.AtVec(0)
 
 	} else if m.RefractiveIndex.Len() == 3 {
-		if ray.WaveLength < WavelengthMin {
+		if ray.WaveLength < math_lib.WavelengthMin {
 			ray.ConvertToMonochrome()
 		}
 
@@ -93,48 +87,4 @@ func CalculateLuminance(c *mat.VecDense) float64 {
 	g := c.AtVec(1)
 	b := c.AtVec(2)
 	return 0.2126*r + 0.7152*g + 0.0722*b
-}
-
-func WaveLengthToRGB(wavelength float64) *mat.VecDense {
-	if wavelength >= WavelengthMax || wavelength <= WavelengthMin {
-		return mat.NewVecDense(3, []float64{0, 0, 0})
-	}
-
-	r, g, b := 0.0, 0.0, 0.0 // 简化色散模型
-	factor := 0.0
-	switch {
-	case wavelength < 440:
-		r = (440 - wavelength) / (440 - 380)
-		b = 1.0
-	case wavelength < 490:
-		g = (wavelength - 440) / (490 - 440)
-		b = 1.0
-	case wavelength < 510:
-		g = 1.0
-		b = (510 - wavelength) / (510 - 490)
-	case wavelength < 580:
-		r = (wavelength - 510) / (580 - 510)
-		g = 1.0
-	case wavelength < 645:
-		r = 1.0
-		g = (645 - wavelength) / (645 - 580)
-	default: // 645-750
-		r = 1.0
-	}
-
-	// 计算亮度衰减因子
-	switch {
-	case wavelength < 420:
-		factor = 0.3 + 0.7*(wavelength-380)/(420-380)
-	case wavelength < 700:
-		factor = 1.0
-	default: // 700-750
-		factor = 0.3 + 0.7*(750-wavelength)/(750-700)
-	}
-
-	return mat.NewVecDense(3, []float64{
-		math.Max(0, math.Min(1, r*factor)),
-		math.Max(0, math.Min(1, g*factor)),
-		math.Max(0, math.Min(1, b*factor)),
-	})
 }

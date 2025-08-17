@@ -37,14 +37,14 @@
             "color": [1, 1, 1],
             "reflectivity": 0.0,
             "refractivity": 1.0,
-            "refractive_index": [1.600, 0.0080, 0]
+            "refractive_index": [1.500, 50000, 0]
         },
         {
             "id": "glass3",
             "color": [1, 1, 1],
             "reflectivity": 0.0,
             "refractivity": 1.0,
-            "refractive_index": [0.8, 0.0080, 0]
+            "refractive_index": [0.4, 50000, 0]
         }
     ],
     "objects": [

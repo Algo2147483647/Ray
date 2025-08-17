@@ -6,6 +6,11 @@ import (
 	"math/rand/v2"
 )
 
+const (
+	WavelengthMin = 380.0 // 最小波长(nm)
+	WavelengthMax = 750.0 // 最大波长(nm)
+)
+
 // Reflect 计算光线的反射方向
 func Reflect(incidentRay, normal *mat.VecDense) *mat.VecDense {
 	return Normalize(SubVec(incidentRay, incidentRay, ScaleVec2(2*mat.Dot(normal, incidentRay), normal)))
@@ -42,5 +47,6 @@ func DiffuseReflect(incidentRay, normal *mat.VecDense) *mat.VecDense {
 // CauchyDispersion Cauchy 公式, 计算给定波长下的折射率
 func CauchyDispersion(wavelength, A, B, C float64) float64 {
 	wl2 := wavelength * wavelength
-	return A + B/wl2 + C/(wl2*wl2)
+	res := A + B/wl2 + C/(wl2*wl2)
+	return res
 }
