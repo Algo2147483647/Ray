@@ -2,13 +2,14 @@ package optics
 
 import (
 	"gonum.org/v1/gonum/mat"
+	"math"
 	"math/rand"
 	"src-golang/math_lib"
 )
 
 const (
 	WavelengthMin = 380.0 // 最小波长(nm)
-	WavelengthMax = 780.0 // 最大波长(nm)
+	WavelengthMax = 750.0 // 最大波长(nm)
 )
 
 // Material 表示物体的材质属性
@@ -95,40 +96,45 @@ func CalculateLuminance(c *mat.VecDense) float64 {
 }
 
 func WaveLengthToRGB(wavelength float64) *mat.VecDense {
-	r, g, b := 0.0, 0.0, 0.0
+	if wavelength >= WavelengthMax || wavelength <= WavelengthMin {
+		return mat.NewVecDense(3, []float64{0, 0, 0})
+	}
 
-	// 简化色散模型
-	if wavelength >= 380 && wavelength < 440 {
+	r, g, b := 0.0, 0.0, 0.0 // 简化色散模型
+	factor := 0.0
+	switch {
+	case wavelength < 440:
 		r = (440 - wavelength) / (440 - 380)
 		b = 1.0
-	} else if wavelength >= 440 && wavelength < 490 {
+	case wavelength < 490:
 		g = (wavelength - 440) / (490 - 440)
 		b = 1.0
-	} else if wavelength >= 490 && wavelength < 510 {
+	case wavelength < 510:
 		g = 1.0
 		b = (510 - wavelength) / (510 - 490)
-	} else if wavelength >= 510 && wavelength < 580 {
+	case wavelength < 580:
 		r = (wavelength - 510) / (580 - 510)
 		g = 1.0
-	} else if wavelength >= 580 && wavelength < 645 {
+	case wavelength < 645:
 		r = 1.0
 		g = (645 - wavelength) / (645 - 580)
-	} else if wavelength >= 645 && wavelength <= 780 {
+	default: // 645-750
 		r = 1.0
-		g = 0.0
 	}
 
-	// 降低边缘亮度
-	attenuation := 1.0
-	if wavelength > 700 {
-		attenuation = 0.3 + 0.7*(780-wavelength)/(780-700)
-	} else if wavelength < 420 {
-		attenuation = 0.3 + 0.7*(wavelength-380)/(420-380)
+	// 计算亮度衰减因子
+	switch {
+	case wavelength < 420:
+		factor = 0.3 + 0.7*(wavelength-380)/(420-380)
+	case wavelength < 700:
+		factor = 1.0
+	default: // 700-750
+		factor = 0.3 + 0.7*(750-wavelength)/(750-700)
 	}
 
-	r *= attenuation
-	g *= attenuation
-	b *= attenuation
-
-	return mat.NewVecDense(3, []float64{r, g, b})
+	return mat.NewVecDense(3, []float64{
+		math.Max(0, math.Min(1, r*factor)),
+		math.Max(0, math.Min(1, g*factor)),
+		math.Max(0, math.Min(1, b*factor)),
+	})
 }
