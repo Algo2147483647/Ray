@@ -5,7 +5,7 @@ import (
 	"math"
 	"src-golang/math_lib"
 	"src-golang/model/object"
-	"src-golang/model/object/optics"
+	"src-golang/model/optics"
 )
 
 func TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level int) *mat.VecDense {

@@ -2,7 +2,7 @@ package object
 
 import (
 	"fmt"
-	"src-golang/model/object/shape"
+	"src-golang/model/shape"
 	"src-golang/utils"
 	"strings"
 )

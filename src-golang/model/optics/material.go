@@ -6,6 +6,11 @@ import (
 	"src-golang/math_lib"
 )
 
+const (
+	WavelengthMin = 380.0 // 最小波长(nm)
+	WavelengthMax = 780.0 // 最大波长(nm)
+)
+
 // Material 表示物体的材质属性
 type Material struct {
 	Color           *mat.VecDense `json:"color"`            // 材质的基础颜色
@@ -65,23 +70,65 @@ func (m *Material) GetRefractionIndex(ray *Ray) (res float64) {
 		res = m.RefractiveIndex.AtVec(0)
 
 	} else if m.RefractiveIndex.Len() == 3 {
-		if ray.RefractColorIndex == -1 {
-			ray.RefractColorIndex = rand.Int() % 3
-
-			for i := 0; i < ray.Color.Len(); i++ {
-				if i == ray.RefractColorIndex {
-					ray.Color.SetVec(i, 3*ray.Color.AtVec(i))
-				} else {
-					ray.Color.SetVec(i, 0)
-				}
-			}
+		if ray.WaveLength < WavelengthMin {
+			ray.ConvertToMonochrome()
 		}
 
-		res = m.RefractiveIndex.AtVec(ray.RefractColorIndex)
+		res = math_lib.CauchyDispersion(ray.WaveLength,
+			m.RefractiveIndex.AtVec(0),
+			m.RefractiveIndex.AtVec(1),
+			m.RefractiveIndex.AtVec(2),
+		)
 	}
 
 	if ray.RefractionIndex == res { // 出射折射率
 		res = 1.0
 	}
 	return
+}
+
+func CalculateLuminance(c *mat.VecDense) float64 {
+	r := c.AtVec(0)
+	g := c.AtVec(1)
+	b := c.AtVec(2)
+	return 0.2126*r + 0.7152*g + 0.0722*b
+}
+
+func WaveLengthToRGB(wavelength float64) *mat.VecDense {
+	r, g, b := 0.0, 0.0, 0.0
+
+	// 简化色散模型
+	if wavelength >= 380 && wavelength < 440 {
+		r = (440 - wavelength) / (440 - 380)
+		b = 1.0
+	} else if wavelength >= 440 && wavelength < 490 {
+		g = (wavelength - 440) / (490 - 440)
+		b = 1.0
+	} else if wavelength >= 490 && wavelength < 510 {
+		g = 1.0
+		b = (510 - wavelength) / (510 - 490)
+	} else if wavelength >= 510 && wavelength < 580 {
+		r = (wavelength - 510) / (580 - 510)
+		g = 1.0
+	} else if wavelength >= 580 && wavelength < 645 {
+		r = 1.0
+		g = (645 - wavelength) / (645 - 580)
+	} else if wavelength >= 645 && wavelength <= 780 {
+		r = 1.0
+		g = 0.0
+	}
+
+	// 降低边缘亮度
+	attenuation := 1.0
+	if wavelength > 700 {
+		attenuation = 0.3 + 0.7*(780-wavelength)/(780-700)
+	} else if wavelength < 420 {
+		attenuation = 0.3 + 0.7*(wavelength-380)/(420-380)
+	}
+
+	r *= attenuation
+	g *= attenuation
+	b *= attenuation
+
+	return mat.NewVecDense(3, []float64{r, g, b})
 }

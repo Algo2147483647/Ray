@@ -2,7 +2,7 @@ package model
 
 import (
 	"src-golang/model/object"
-	"src-golang/model/object/optics"
+	"src-golang/model/optics"
 )
 
 type Scene struct {

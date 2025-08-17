@@ -1,8 +1,8 @@
 package object
 
 import (
-	"src-golang/model/object/optics"
-	"src-golang/model/object/shape"
+	"src-golang/model/optics"
+	"src-golang/model/shape"
 )
 
 // Object 表示场景中的物体

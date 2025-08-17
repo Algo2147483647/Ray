@@ -6,7 +6,7 @@ import (
 	"src-golang/math_lib"
 	"src-golang/model"
 	"src-golang/model/object"
-	"src-golang/model/object/optics"
+	optics2 "src-golang/model/optics"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -19,11 +19,11 @@ var (
 )
 
 // TracePixel 追踪单个像素
-func TracePixel(camera *optics.Camera, objTree *object.ObjectTree, row, col, samples int) *mat.VecDense {
+func TracePixel(camera *optics2.Camera, objTree *object.ObjectTree, row, col, samples int) *mat.VecDense {
 	color := mat.NewVecDense(3, nil)
 	for s := 0; s < samples; s++ {
 		// new ray
-		ray := RayPool.Get().(*optics.Ray)
+		ray := RayPool.Get().(*optics2.Ray)
 		defer RayPool.Put(ray)
 
 		// build ray
@@ -37,7 +37,7 @@ func TracePixel(camera *optics.Camera, objTree *object.ObjectTree, row, col, sam
 	return math_lib.ScaleVec(color, 1.0/float64(samples), color)
 }
 
-func DebugIsRecordRay(ray *optics.Ray, row, col, sample int) {
+func DebugIsRecordRay(ray *optics2.Ray, row, col, sample int) {
 	if row%100 == 1 && col%100 == 1 && sample == 0 {
 		ray.DebugSwitch = true
 	} else {

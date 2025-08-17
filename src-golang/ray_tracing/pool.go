@@ -2,7 +2,7 @@ package ray_tracing
 
 import (
 	"gonum.org/v1/gonum/mat"
-	"src-golang/model/object/optics"
+	"src-golang/model/optics"
 	"sync"
 )
 

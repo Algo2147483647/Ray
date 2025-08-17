@@ -11,8 +11,8 @@ import (
 	"src-golang/math_lib"
 	"src-golang/model"
 	"src-golang/model/object"
-	"src-golang/model/object/optics"
-	"src-golang/model/object/shape"
+	"src-golang/model/optics"
+	"src-golang/model/shape"
 )
 
 type Script struct {

@@ -6,7 +6,7 @@ import (
 	"math"
 	"sort"
 	"src-golang/math_lib"
-	"src-golang/model/object/shape"
+	"src-golang/model/shape"
 	"strings"
 )
 

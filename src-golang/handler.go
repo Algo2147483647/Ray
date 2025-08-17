@@ -10,7 +10,7 @@ import (
 	"os"
 	"src-golang/controller"
 	"src-golang/model"
-	"src-golang/model/object/optics"
+	optics2 "src-golang/model/optics"
 	"src-golang/ray_tracing"
 	"src-golang/utils"
 	"time"
@@ -57,7 +57,7 @@ func (h *Handler) BuildCamera() *Handler {
 		return h
 	}
 
-	camera := &optics.Camera{
+	camera := &optics2.Camera{
 		Position:    mat.NewVecDense(3, []float64{-1.7, 0.1, 0.5}),
 		Up:          mat.NewVecDense(3, []float64{0, 0, 1}),
 		Width:       h.Width,
@@ -117,7 +117,7 @@ func (h *Handler) SaveDebugInfo(filename string) *Handler {
 
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")
-	err = encoder.Encode(optics.DebugRayTraces)
+	err = encoder.Encode(optics2.DebugRayTraces)
 	if err != nil {
 		h.err = err
 		return h
