@@ -35,5 +35,6 @@ func (r *Ray) Init() {
 	}
 
 	r.RefractionIndex = 1
+	r.RefractColorIndex = -1
 	r.DebugSwitch = false
 }
