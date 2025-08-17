@@ -36,12 +36,7 @@ func (c *Camera) GenerateRay(ray *Ray, row, col int) *Ray {
 	if ray == nil {
 		ray = &Ray{}
 	}
-	if ray.Origin == nil {
-		ray.Origin = mat.NewVecDense(3, nil)
-	}
-	if ray.Direction == nil {
-		ray.Direction = mat.NewVecDense(3, nil)
-	}
+	ray.Init()
 
 	dir := c.Direction
 	up := c.Up

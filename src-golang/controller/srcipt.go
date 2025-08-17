@@ -7,6 +7,7 @@ import (
 	"gonum.org/v1/gonum/mat"
 	"io"
 	"os"
+	"reflect"
 	"src-golang/math_lib"
 	"src-golang/model"
 	"src-golang/model/object"
@@ -103,7 +104,12 @@ func ParseShape(objDef map[string]interface{}) shape.Shape {
 		)
 
 	case "plane":
-	case "cylinder":
+	case "quadratic equation":
+		return shape.NewQuadraticEquation(
+			mat.NewDense(3, 3, cast.ToFloat64Slice(objDef["a"])),
+			mat.NewVecDense(3, cast.ToFloat64Slice(objDef["b"])),
+			cast.ToFloat64(objDef["c"]),
+		)
 	}
 	return nil
 }
@@ -124,7 +130,11 @@ func ParseMaterials(script *Script) map[string]*object.Material {
 			material.Refractivity = cast.ToFloat64(val)
 		}
 		if val, ok := matDef["refractive_index"]; ok {
-			material.RefractiveIndex = cast.ToFloat64(val)
+			if reflect.TypeOf(val).Kind() == reflect.Slice {
+				material.RefractiveIndex = mat.NewVecDense(3, cast.ToFloat64Slice(val))
+			} else {
+				material.RefractiveIndex = mat.NewVecDense(1, []float64{cast.ToFloat64(val)})
+			}
 		}
 		if val, ok := matDef["diffuse_loss"]; ok {
 			material.DiffuseLoss = cast.ToFloat64(val)

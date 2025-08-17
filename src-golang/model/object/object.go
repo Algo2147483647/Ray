@@ -1,6 +1,8 @@
 package object
 
-import "src-golang/model/object/shape"
+import (
+	"src-golang/model/object/shape"
+)
 
 // Object 表示场景中的物体
 type Object struct {

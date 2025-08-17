@@ -13,7 +13,7 @@ type Material struct {
 	Radiation       bool          `json:"radiation"`        // 是否自发光
 	Reflectivity    float64       `json:"reflectivity"`     // 反射系数 [0, 1]
 	Refractivity    float64       `json:"refractivity"`     // 折射系数 [0, 1]
-	RefractiveIndex float64       `json:"refractive_index"` // 折射率
+	RefractiveIndex *mat.VecDense `json:"refractive_index"` // 折射率
 	DiffuseLoss     float64       `json:"diffuse_loss"`     // 漫反射损失系数
 	ReflectLoss     float64       `json:"reflect_loss"`     // 反射损失系数
 	RefractLoss     float64       `json:"refract_loss"`     // 折射损失系数
@@ -45,13 +45,36 @@ func (m *Material) DielectricSurfacePropagation(ray *optics.Ray, norm *mat.VecDe
 		ray.Color.ScaleVec(m.ReflectLoss, ray.Color)
 
 	case randNum <= m.Reflectivity+m.Refractivity:
-		refractionIndex := m.RefractiveIndex
-		if ray.Refractivity == 1.0 {
-			refractionIndex = 1.0 / m.RefractiveIndex
+		var refractionIndex float64
+
+		if m.RefractiveIndex.Len() == 1 {
+			refractionIndex = m.RefractiveIndex.AtVec(0)
+
+		} else if m.RefractiveIndex.Len() == 3 {
+			if ray.RefractColorIndex == -1 {
+				ray.RefractColorIndex = rand.Int() % 3
+
+				for i := 0; i < ray.Color.Len(); i++ {
+					if i == ray.RefractColorIndex {
+						ray.Color.SetVec(i, 3*ray.Color.AtVec(i))
+					} else {
+						ray.Color.SetVec(i, 0)
+					}
+				}
+			}
+
+			refractionIndex = m.RefractiveIndex.AtVec(ray.RefractColorIndex)
 		}
+
+		if ray.RefractionIndex == refractionIndex {
+			refractionIndex = 1.0 / refractionIndex
+			ray.RefractionIndex = 1.0
+		} else {
+			ray.RefractionIndex = refractionIndex
+		}
+
 		ray.Direction = math_lib.Refract(ray.Direction, norm, refractionIndex)
 		ray.Color.ScaleVec(m.RefractLoss, ray.Color)
-		ray.Refractivity = refractionIndex
 
 	default:
 		ray.Direction = math_lib.DiffuseReflect(ray.Direction, norm)
