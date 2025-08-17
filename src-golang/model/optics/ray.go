@@ -45,7 +45,7 @@ func (ray *Ray) ConvertToMonochrome() {
 	ray.WaveLength = math_lib.WavelengthMin + rand.Float64()*(math_lib.WavelengthMax-math_lib.WavelengthMin)
 
 	baseColor := math_lib.Normalize(WaveLengthToRGB(ray.WaveLength))
-	baseColor = math_lib.ScaleVec(baseColor, 2, baseColor)
+	baseColor = math_lib.ScaleVec(baseColor, 2.318, baseColor)
 
 	ray.Color.SetVec(0, baseColor.AtVec(0)*ray.Color.AtVec(0))
 	ray.Color.SetVec(1, baseColor.AtVec(1)*ray.Color.AtVec(1))
@@ -56,21 +56,8 @@ func WaveLengthToRGB(wavelength float64) *mat.VecDense {
 	if wavelength >= math_lib.WavelengthMax || wavelength <= math_lib.WavelengthMin {
 		return mat.NewVecDense(3, []float64{0, 0, 0})
 	}
-
 	t := (wavelength - math_lib.WavelengthMin) / (math_lib.WavelengthMax - math_lib.WavelengthMin)
-
-	r, g, b := 0.0, 0.0, 0.0 // 简化色散模型
-	switch {
-	case t < 1.0/2:
-		r = t
-		g = t * 2
-		b = 1.0 - t
-	case t < 1.0:
-		r = t
-		g = 1 - (t-0.5)*2
-		b = 1.0 - t
-	}
-
+	r, g, b := math_lib.SpectrumFiveDivided(t)
 	return mat.NewVecDense(3, []float64{
 		math.Max(0, math.Min(1, r)),
 		math.Max(0, math.Min(1, g)),

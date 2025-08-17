@@ -6,7 +6,11 @@ import (
 	"gonum.org/v1/plot/plotter"
 	"gonum.org/v1/plot/plotutil"
 	"gonum.org/v1/plot/vg"
+	"image"
+	"image/color"
+	"image/png"
 	"math"
+	"os"
 	"src-golang/math_lib"
 	"testing"
 )
@@ -165,17 +169,41 @@ func TestWaveLengthToRGB(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+func TestWaveLengthToRGB2(t *testing.T) {
+	// 3. 生成光谱图像
+	generateSpectrumImage("spectrum.png")
+	t.Log("Spectrum image generated: spectrum.png")
+}
 
-// Benchmark测试WaveLengthToRGB性能
-func BenchmarkWaveLengthToRGB(b *testing.B) {
-	// 随机生成测试波长值
-	wavelengths := make([]float64, b.N)
-	for i := 0; i < b.N; i++ {
-		wavelengths[i] = math_lib.WavelengthMin + float64(i%int(math_lib.WavelengthMax-math_lib.WavelengthMin))
+// 生成光谱图像
+func generateSpectrumImage(filename string) {
+	const (
+		width  = 800
+		height = 200
+	)
+
+	img := image.NewRGBA(image.Rect(0, 0, width, height))
+	step := (math_lib.WavelengthMax - math_lib.WavelengthMin) / float64(width)
+
+	// 绘制渐变光谱
+	for x := 0; x < width; x++ {
+		wavelength := math_lib.WavelengthMin + float64(x)*step
+		rgb := WaveLengthToRGB(wavelength).RawVector().Data
+		c := color.RGBA{
+			R: uint8(rgb[0] * 255),
+			G: uint8(rgb[1] * 255),
+			B: uint8(rgb[2] * 255),
+			A: 255,
+		}
+
+		// 填充整个高度
+		for y := 0; y < height; y++ {
+			img.Set(x, y, c)
+		}
 	}
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_ = WaveLengthToRGB(wavelengths[i])
-	}
+	// 保存为PNG
+	f, _ := os.Create(filename)
+	defer f.Close()
+	png.Encode(f, img)
 }
