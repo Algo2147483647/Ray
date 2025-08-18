@@ -5,7 +5,9 @@
 
 ## Introduction
 
-<img src="./docs/assets/RayTracingTest.png" alt="RayTracingTest" style="zoom:50%;" />
+<img src="./docs/assets/RayTracingTest.png" alt="RayTracingTest" />
+
+<img src="./docs/assets/dispersion-three-balls-10000.png" alt="RayTracingTest_OpticalVerification" />
 
 <img src="./docs/assets/RayTracingTest_OpticalVerification.jpg" alt="RayTracingTest_OpticalVerification" style="zoom:12%;" />
 

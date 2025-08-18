@@ -17,9 +17,9 @@ func main() {
 	h := NewHandler(800, 800).
 		LoadScript(scriptPath).
 		BuildCamera().
-		//LoadResult("img.bin").
-		Render(500, 0).
-		SaveResult("img.bin").
+		LoadResult("img.bin").
+		Render(8000, 2000).
+		SaveResult("img2.bin").
 		SaveImg("output.png").
 		SaveDebugInfo("debug_traces.json")
 
