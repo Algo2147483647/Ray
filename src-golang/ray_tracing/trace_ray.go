@@ -8,7 +8,7 @@ import (
 	"src-golang/model/optics"
 )
 
-func TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level int) *mat.VecDense {
+func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level int64) *mat.VecDense {
 	var (
 		normal        = mat.NewVecDense(3, nil)
 		DebugRayTrace = map[string]interface{}{
@@ -28,7 +28,7 @@ func TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level int) *mat.VecDe
 		}
 	}()
 
-	if level > MaxRayLevel {
+	if level > h.MaxRayLevel {
 		ray.Color.ScaleVec(0, ray.Color)
 		return ray.Color
 	}
@@ -54,5 +54,5 @@ func TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level int) *mat.VecDe
 		return ray.Color
 	}
 
-	return TraceRay(objTree, ray, level+1)
+	return h.TraceRay(objTree, ray, level+1)
 }

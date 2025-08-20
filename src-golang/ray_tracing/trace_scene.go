@@ -3,52 +3,17 @@ package ray_tracing
 import (
 	"fmt"
 	"gonum.org/v1/gonum/mat"
-	"src-golang/math_lib"
 	"src-golang/model"
-	"src-golang/model/object"
-	optics2 "src-golang/model/optics"
 	"sync"
 	"sync/atomic"
 	"time"
 )
 
-// 全局配置
-var (
-	MaxRayLevel = 6  // 最大光线递归深度
-	ThreadNum   = 30 // 并发线程数
-)
-
-// TracePixel 追踪单个像素
-func TracePixel(camera *optics2.Camera, objTree *object.ObjectTree, row, col, samples int) *mat.VecDense {
-	color := mat.NewVecDense(3, nil)
-	for s := 0; s < samples; s++ {
-		// new ray
-		ray := RayPool.Get().(*optics2.Ray)
-		defer RayPool.Put(ray)
-
-		// build ray
-		camera.GenerateRay(ray, row, col)
-		DebugIsRecordRay(ray, row, col, s)
-
-		// trace ray
-		sampleColor := TraceRay(objTree, ray, 0)
-		color.AddVec(color, sampleColor)
-	}
-	return math_lib.ScaleVec(color, 1.0/float64(samples), color)
-}
-
-func DebugIsRecordRay(ray *optics2.Ray, row, col, sample int) {
-	if row%100 == 1 && col%100 == 1 && sample == 0 {
-		ray.DebugSwitch = true
-	} else {
-		ray.DebugSwitch = false
-	}
-}
-
-// TraceScene 追踪整个场景（添加进度条）
-func TraceScene(scene *model.Scene, img [3]*mat.Dense, samples int) {
+// TraceScene 追踪整个场景
+func (h *Handler) TraceScene(scene *model.Scene, img [3]*mat.Dense, samples int) {
 	rows, cols := img[0].Dims()
 	totalPixels := rows * cols
+
 	var wg sync.WaitGroup
 	taskChan := make(chan [2]int, rows*cols)
 
@@ -86,12 +51,12 @@ func TraceScene(scene *model.Scene, img [3]*mat.Dense, samples int) {
 	close(taskChan)
 
 	// 启动工作线程
-	for i := 0; i < ThreadNum; i++ {
+	for i := 0; i < h.ThreadNum; i++ {
 		wg.Add(1)
 		go func(seed int64) {
 			defer wg.Done()
 			for pixel := range taskChan {
-				color := TracePixel(scene.Cameras[0], scene.ObjectTree, pixel[0], pixel[1], samples)
+				color := h.TracePixel(scene.Cameras[0], scene.ObjectTree, pixel[0], pixel[1], samples)
 				for ch := 0; ch < 3; ch++ {
 					img[ch].Set(pixel[0], pixel[1], color.AtVec(ch))
 				}
