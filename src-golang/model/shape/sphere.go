@@ -51,8 +51,7 @@ func (s *Sphere) Intersect(raySt, ray *mat.VecDense) float64 {
 	}
 }
 
-func (s *Sphere) GetNormalVector(intersect *mat.VecDense) *mat.VecDense {
-	res := mat.NewVecDense(3, nil)
+func (s *Sphere) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {
 	return math_lib.Normalize(math_lib.SubVec(res, intersect, s.center))
 }
 

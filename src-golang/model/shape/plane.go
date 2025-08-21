@@ -29,6 +29,7 @@ func (p *Plane) Intersect(raySt, rayDir *mat.VecDense) float64 {
 	return math.MaxFloat64
 }
 
-func (p *Plane) GetNormalVector(intersect *mat.VecDense) *mat.VecDense {
-	return math_lib.Normalize(p.A)
+func (p *Plane) GetNormalVector(_, res *mat.VecDense) *mat.VecDense {
+	res = math_lib.Normalize(p.A)
+	return res
 }

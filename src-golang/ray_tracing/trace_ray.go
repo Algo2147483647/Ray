@@ -39,7 +39,7 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level in
 	}
 
 	ray.Origin.AddVec(ray.Origin, math_lib.ScaleVec2(distance, ray.Direction)) // 计算新交点, 法向量：新交点 origin = origin + dis * direction, 确保法线朝向光源
-	normal = obj.Shape.GetNormalVector(ray.Origin)
+	normal = obj.Shape.GetNormalVector(ray.Origin, normal)
 	if dot := mat.Dot(normal, ray.Direction); dot > 0 {
 		normal.ScaleVec(-1, normal)
 	}

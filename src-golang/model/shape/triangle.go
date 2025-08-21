@@ -78,8 +78,9 @@ func (t *Triangle) Intersect(raySt, rayDir *mat.VecDense) float64 {
 	return mat.Dot(t.Mem.Edge2, q) / a
 }
 
-func (t *Triangle) GetNormalVector(_ *mat.VecDense) *mat.VecDense {
-	return t.Mem.Normal
+func (t *Triangle) GetNormalVector(_, res *mat.VecDense) *mat.VecDense {
+	res = t.Mem.Normal
+	return res
 }
 
 func TriangleGetNormalVector(Edge1, Edge2 *mat.VecDense) *mat.VecDense {

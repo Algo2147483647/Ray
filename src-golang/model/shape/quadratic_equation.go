@@ -63,9 +63,8 @@ func (p *QuadraticEquation) Intersect(raySt, rayDir *mat.VecDense) float64 {
 	return minT
 }
 
-func (p *QuadraticEquation) GetNormalVector(intersect *mat.VecDense) *mat.VecDense {
+func (p *QuadraticEquation) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {
 	// 计算梯度: ∇f(x) = 2A x + b
-	normal := mat.NewVecDense(3, nil)
-	normal.MulVec(p.A, intersect)
-	return math_lib.Normalize(math_lib.AddVec(normal, math_lib.ScaleVec(normal, 2, normal), p.B))
+	res.MulVec(p.A, intersect)
+	return math_lib.Normalize(math_lib.AddVec(res, math_lib.ScaleVec(res, 2, res), p.B))
 }

@@ -9,7 +9,7 @@ import (
 type Shape interface {
 	Name() string
 	Intersect(rayStart, rayDir *mat.VecDense) float64
-	GetNormalVector(intersect *mat.VecDense) *mat.VecDense
+	GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense
 	BuildBoundingBox() (pmin, pmax *mat.VecDense)
 	SetEngraving(fn func(*mat.VecDense) bool)
 }
@@ -27,8 +27,8 @@ func (bs *BaseShape) Intersect(rayStart, rayDir *mat.VecDense) float64 {
 	return 0
 }
 
-func (bs *BaseShape) GetNormalVector(intersect *mat.VecDense) *mat.VecDense {
-	return &mat.VecDense{}
+func (bs *BaseShape) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {
+	return res
 }
 
 func (bs *BaseShape) BuildBoundingBox() (pmin, pmax *mat.VecDense) {
