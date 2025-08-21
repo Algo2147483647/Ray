@@ -4,6 +4,7 @@ import (
 	"gonum.org/v1/gonum/mat"
 	"math"
 	"src-golang/math_lib"
+	"src-golang/utils"
 )
 
 type Sphere struct {
@@ -22,13 +23,16 @@ func (s *Sphere) Name() string {
 }
 
 func (s *Sphere) Intersect(raySt, ray *mat.VecDense) float64 {
-	rayStCenter := mat.NewVecDense(3, nil)
-	rayStCenter.SubVec(raySt, s.center)
+	t := utils.VectorPool.Get().(*mat.VecDense)
+	defer func() {
+		utils.VectorPool.Put(t)
+	}()
 
 	// 计算系数
+	t.SubVec(raySt, s.center)
 	A := mat.Dot(ray, ray)
-	B := 2 * mat.Dot(ray, rayStCenter)
-	Delta := B*B - 4*A*(mat.Dot(rayStCenter, rayStCenter)-s.R*s.R)
+	B := 2 * mat.Dot(ray, t)
+	Delta := B*B - 4*A*(mat.Dot(t, t)-s.R*s.R)
 	if Delta < 0 {
 		return math.MaxFloat64 // 无交点
 	}

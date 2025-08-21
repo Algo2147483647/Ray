@@ -4,6 +4,7 @@ import (
 	"gonum.org/v1/gonum/mat"
 	"math"
 	"math/rand/v2"
+	"src-golang/utils"
 )
 
 const (
@@ -29,6 +30,15 @@ func Refract(incidentRay, normal *mat.VecDense, eta float64) *mat.VecDense {
 
 // DiffuseReflect 计算漫反射方向
 func DiffuseReflect(incidentRay, normal *mat.VecDense) *mat.VecDense {
+	u := utils.VectorPool.Get().(*mat.VecDense)
+	v := utils.VectorPool.Get().(*mat.VecDense)
+	t := utils.VectorPool.Get().(*mat.VecDense)
+	defer func() {
+		utils.VectorPool.Put(u)
+		utils.VectorPool.Put(v)
+		utils.VectorPool.Put(t)
+	}()
+
 	angle := 2 * math.Pi * rand.Float64()
 	r := rand.Float64() // 余弦加权采样
 
@@ -39,9 +49,9 @@ func DiffuseReflect(incidentRay, normal *mat.VecDense) *mat.VecDense {
 		tangent = mat.NewVecDense(3, []float64{1, 0, 0}) // UnitX
 	}
 
-	u := ScaleVec2(math.Cos(angle)*math.Sqrt(r), Normalize(Cross2(tangent, normal)))
-	v := ScaleVec2(math.Sin(angle)*math.Sqrt(r), Normalize(Cross2(normal, u)))
-	return Normalize(AddVecs(incidentRay, ScaleVec2(math.Sqrt(1-r), normal), u, v))
+	ScaleVec(u, math.Cos(angle)*math.Sqrt(r), Normalize(Cross(t, tangent, normal)))
+	ScaleVec(v, math.Sin(angle)*math.Sqrt(r), Normalize(Cross(t, normal, u)))
+	return Normalize(AddVecs(incidentRay, ScaleVec(t, math.Sqrt(1-r), normal), u, v))
 }
 
 // CauchyDispersion Cauchy 公式, 计算给定波长下的折射率

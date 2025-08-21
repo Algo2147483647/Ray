@@ -46,13 +46,17 @@ func (t *Triangle) Name() string {
 
 func (t *Triangle) Intersect(raySt, rayDir *mat.VecDense) float64 {
 	tmp := utils.VectorPool.Get().(*mat.VecDense)
+	p := utils.VectorPool.Get().(*mat.VecDense)
+	q := utils.VectorPool.Get().(*mat.VecDense)
 	defer func() {
 		utils.VectorPool.Put(tmp)
+		utils.VectorPool.Put(p)
+		utils.VectorPool.Put(q)
 	}()
 
-	p := math_lib.Cross2(rayDir, t.Mem.Edge2) // 计算法向量和行列式 (P = D × E2)
-	a := mat.Dot(t.Mem.Edge1, p)              // a = E1·P
-	if a > 0 {                                // 处理背面剔除
+	math_lib.Cross(p, rayDir, t.Mem.Edge2) // 计算法向量和行列式 (P = D × E2)
+	a := mat.Dot(t.Mem.Edge1, p)           // a = E1·P
+	if a > 0 {                             // 处理背面剔除
 		tmp.SubVec(raySt, t.P1) // T = O - P1
 	} else {
 		tmp.SubVec(t.P1, raySt) // T = P1 - O
@@ -62,9 +66,9 @@ func (t *Triangle) Intersect(raySt, rayDir *mat.VecDense) float64 {
 		return math.MaxFloat64
 	}
 
-	q := math_lib.Cross2(tmp, t.Mem.Edge1) // Q = T × E1
-	u := mat.Dot(tmp, p) / a               // 重心坐标 u
-	v := mat.Dot(rayDir, q) / a            // 重心坐标 v
+	math_lib.Cross(q, tmp, t.Mem.Edge1) // Q = T × E1
+	u := mat.Dot(tmp, p) / a            // 重心坐标 u
+	v := mat.Dot(rayDir, q) / a         // 重心坐标 v
 	if u < 0 || u > 1 {
 		return math.MaxFloat64
 	}
