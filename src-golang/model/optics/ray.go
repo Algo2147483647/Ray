@@ -33,8 +33,6 @@ func (r *Ray) Init() {
 
 	if r.Color == nil {
 		r.Color = mat.NewVecDense(3, []float64{1, 1, 1})
-	} else {
-		r.Color = mat.NewVecDense(3, []float64{1, 1, 1})
 	}
 
 	r.RefractionIndex = 1

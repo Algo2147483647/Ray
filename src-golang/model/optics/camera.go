@@ -40,7 +40,7 @@ func (c *Camera) GenerateRay(ray *Ray, row, col int) *Ray {
 
 	dir := c.Direction
 	up := c.Up
-	right := math_lib.Normalize(math_lib.Cross(dir, up)) // 计算右向量和上向量
+	right := math_lib.Normalize(math_lib.Cross2(dir, up)) // 计算右向量和上向量
 
 	fovRad := c.FieldOfView * math.Pi / 180
 	halfHeight := math.Tan(fovRad / 2)

@@ -4,38 +4,39 @@ import (
 	"gonum.org/v1/gonum/mat"
 	"math"
 	"src-golang/math_lib"
-	"sync"
-)
-
-// 全局临时向量池
-var (
-	edgePool = sync.Pool{
-		New: func() interface{} {
-			return [2]*mat.VecDense{
-				mat.NewVecDense(3, nil),
-				mat.NewVecDense(3, nil),
-			}
-		},
-	}
-	tmpPool = sync.Pool{
-		New: func() interface{} {
-			return mat.NewVecDense(3, nil)
-		},
-	}
+	"src-golang/utils"
 )
 
 type Triangle struct {
 	BaseShape
-	P1 *mat.VecDense `json:"p1"`
-	P2 *mat.VecDense `json:"p2"`
-	P3 *mat.VecDense `json:"p3"`
+	P1  *mat.VecDense `json:"p1"`
+	P2  *mat.VecDense `json:"p2"`
+	P3  *mat.VecDense `json:"p3"`
+	Mem TriangleCalculateStorage
+}
+
+type TriangleCalculateStorage struct {
+	Edge1  *mat.VecDense
+	Edge2  *mat.VecDense
+	Normal *mat.VecDense
 }
 
 func NewTriangle(P1, P2, P3 *mat.VecDense) *Triangle {
+	edge1 := new(mat.VecDense)
+	edge2 := new(mat.VecDense)
+	edge1.SubVec(P2, P1)
+	edge2.SubVec(P3, P1)
+	normal := TriangleGetNormalVector(edge1, edge2)
+
 	return &Triangle{
 		P1: P1,
 		P2: P2,
 		P3: P3,
+		Mem: TriangleCalculateStorage{
+			Edge1:  edge1,
+			Edge2:  edge2,
+			Normal: normal,
+		},
 	}
 }
 
@@ -44,18 +45,14 @@ func (t *Triangle) Name() string {
 }
 
 func (t *Triangle) Intersect(raySt, rayDir *mat.VecDense) float64 {
-	edges := edgePool.Get().([2]*mat.VecDense)
-	tmp := tmpPool.Get().(*mat.VecDense)
+	tmp := utils.VectorPool.Get().(*mat.VecDense)
 	defer func() {
-		edgePool.Put(edges)
-		tmpPool.Put(tmp)
+		utils.VectorPool.Put(tmp)
 	}()
 
-	edges[0].SubVec(t.P2, t.P1)           // E1 = P2 - P1
-	edges[1].SubVec(t.P3, t.P1)           // E2 = P3 - P1
-	p := math_lib.Cross(rayDir, edges[1]) // 计算法向量和行列式 (P = D × E2)
-	a := mat.Dot(edges[0], p)             // a = E1·P
-	if a > 0 {                            // 处理背面剔除
+	p := math_lib.Cross2(rayDir, t.Mem.Edge2) // 计算法向量和行列式 (P = D × E2)
+	a := mat.Dot(t.Mem.Edge1, p)              // a = E1·P
+	if a > 0 {                                // 处理背面剔除
 		tmp.SubVec(raySt, t.P1) // T = O - P1
 	} else {
 		tmp.SubVec(t.P1, raySt) // T = P1 - O
@@ -65,24 +62,24 @@ func (t *Triangle) Intersect(raySt, rayDir *mat.VecDense) float64 {
 		return math.MaxFloat64
 	}
 
-	q := math_lib.Cross(tmp, edges[0]) // Q = T × E1
-	u := mat.Dot(tmp, p) / a           // 重心坐标 u
-	v := mat.Dot(rayDir, q) / a        // 重心坐标 v
+	q := math_lib.Cross2(tmp, t.Mem.Edge1) // Q = T × E1
+	u := mat.Dot(tmp, p) / a               // 重心坐标 u
+	v := mat.Dot(rayDir, q) / a            // 重心坐标 v
 	if u < 0 || u > 1 {
 		return math.MaxFloat64
 	}
 	if v < 0 || u+v > 1 {
 		return math.MaxFloat64
 	}
-	return mat.Dot(edges[1], q) / a
+	return mat.Dot(t.Mem.Edge2, q) / a
 }
 
 func (t *Triangle) GetNormalVector(_ *mat.VecDense) *mat.VecDense {
-	edge1 := mat.NewVecDense(3, nil)
-	edge2 := mat.NewVecDense(3, nil)
-	edge1.SubVec(t.P2, t.P1)
-	edge2.SubVec(t.P3, t.P1)
-	return math_lib.Normalize(math_lib.Cross(edge1, edge2))
+	return t.Mem.Normal
+}
+
+func TriangleGetNormalVector(Edge1, Edge2 *mat.VecDense) *mat.VecDense {
+	return math_lib.Normalize(math_lib.Cross2(Edge1, Edge2))
 }
 
 func (t *Triangle) BuildBoundingBox() (pmin, pmax *mat.VecDense) {

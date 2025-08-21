@@ -11,7 +11,17 @@ func Normalize(v *mat.VecDense) *mat.VecDense {
 	return v
 }
 
-func Cross(u, v *mat.VecDense) *mat.VecDense {
+func Cross(res, u, v *mat.VecDense) *mat.VecDense {
+	if res.Len() != 3 || u.Len() != 3 || v.Len() != 3 {
+		panic("The cross product requires that the vector must be three-dimensional.")
+	}
+	res.SetVec(0, u.AtVec(1)*v.AtVec(2)-u.AtVec(2)*v.AtVec(1))
+	res.SetVec(1, u.AtVec(2)*v.AtVec(0)-u.AtVec(0)*v.AtVec(2))
+	res.SetVec(2, u.AtVec(0)*v.AtVec(1)-u.AtVec(1)*v.AtVec(0))
+	return res
+}
+
+func Cross2(u, v *mat.VecDense) *mat.VecDense {
 	if u.Len() != 3 || v.Len() != 3 {
 		panic("The cross product requires that the vector must be three-dimensional.")
 	}

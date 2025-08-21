@@ -39,8 +39,8 @@ func DiffuseReflect(incidentRay, normal *mat.VecDense) *mat.VecDense {
 		tangent = mat.NewVecDense(3, []float64{1, 0, 0}) // UnitX
 	}
 
-	u := ScaleVec2(math.Cos(angle)*math.Sqrt(r), Normalize(Cross(tangent, normal)))
-	v := ScaleVec2(math.Sin(angle)*math.Sqrt(r), Normalize(Cross(normal, u)))
+	u := ScaleVec2(math.Cos(angle)*math.Sqrt(r), Normalize(Cross2(tangent, normal)))
+	v := ScaleVec2(math.Sin(angle)*math.Sqrt(r), Normalize(Cross2(normal, u)))
 	return Normalize(AddVecs(incidentRay, ScaleVec2(math.Sqrt(1-r), normal), u, v))
 }
 
