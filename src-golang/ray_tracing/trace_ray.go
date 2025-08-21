@@ -10,22 +10,22 @@ import (
 
 func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level int64) *mat.VecDense {
 	var (
-		normal        = mat.NewVecDense(3, nil)
-		DebugRayTrace = map[string]interface{}{
-			"start":      append([]float64(nil), ray.Origin.RawVector().Data...),
-			"direction":  append([]float64(nil), ray.Direction.RawVector().Data...),
-			"color":      append([]float64(nil), ray.Color.RawVector().Data...),
-			"level":      level,
-			"hit_object": "",
-		}
+		normal = mat.NewVecDense(3, nil)
+		//DebugRayTrace = map[string]interface{}{
+		//	"start":      append([]float64(nil), ray.Origin.RawVector().Data...),
+		//	"direction":  append([]float64(nil), ray.Direction.RawVector().Data...),
+		//	"color":      append([]float64(nil), ray.Color.RawVector().Data...),
+		//	"level":      level,
+		//	"hit_object": "",
+		//}
 	)
-	normal.AddVec(ray.Origin, math_lib.ScaleVec2(1, ray.Direction))
-	DebugRayTrace["end"] = append([]float64(nil), normal.RawVector().Data...)
+	// XZH normal.AddVec(ray.Origin, math_lib.ScaleVec2(1, ray.Direction))
+	// DebugRayTrace["end"] = append([]float64(nil), normal.RawVector().Data...)
 
 	defer func() {
-		if ray.DebugSwitch {
-			optics.DebugRayTraces = append(optics.DebugRayTraces, DebugRayTrace)
-		}
+		//if ray.DebugSwitch {
+		//	optics.DebugRayTraces = append(optics.DebugRayTraces, DebugRayTrace)
+		//}
 	}()
 
 	if level > h.MaxRayLevel {
@@ -44,9 +44,9 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level in
 		normal.ScaleVec(-1, normal)
 	}
 
-	DebugRayTrace["hit_object"] = obj.Shape.Name()
-	DebugRayTrace["end"] = append([]float64(nil), ray.Origin.RawVector().Data...)
-	DebugRayTrace["distance"] = distance
+	//DebugRayTrace["hit_object"] = obj.Shape.Name()
+	//DebugRayTrace["end"] = append([]float64(nil), ray.Origin.RawVector().Data...)
+	//DebugRayTrace["distance"] = distance
 
 	// 处理材质交互
 	terminate := obj.Material.DielectricSurfacePropagation(ray, normal)

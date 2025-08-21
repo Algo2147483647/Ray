@@ -17,7 +17,7 @@ func (h *Handler) TracePixel(camera *optics.Camera, objTree *object.ObjectTree, 
 
 		// build ray
 		camera.GenerateRay(ray, row, col)
-		DebugIsRecordRay(ray, row, col, s)
+		//DebugIsRecordRay(ray, row, col, s)
 
 		// trace ray
 		sampleColor := h.TraceRay(objTree, ray, 0)
