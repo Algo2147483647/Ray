@@ -5,7 +5,6 @@ import (
 	"src-golang/math_lib"
 	"src-golang/model/object"
 	"src-golang/model/optics"
-	"src-golang/utils"
 )
 
 // TracePixel 追踪单个像素
@@ -18,9 +17,9 @@ func (h *Handler) TracePixel(camera *optics.Camera, objTree *object.ObjectTree, 
 
 		// build ray
 		camera.GenerateRay(ray, row, col)
-		if utils.IsDebug {
-			DebugIsRecordRay(ray, row, col, s)
-		}
+		//if utils.IsDebug {
+		//	DebugIsRecordRay(ray, row, col, s)
+		//}
 
 		// trace ray
 		sampleColor := h.TraceRay(objTree, ray, 0)

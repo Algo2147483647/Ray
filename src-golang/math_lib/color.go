@@ -1,6 +1,7 @@
 package math_lib
 
 import (
+	"gonum.org/v1/gonum/mat"
 	"math"
 )
 
@@ -76,4 +77,11 @@ func SpectrumTrisection(t float64) (r, g, b float64) {
 	}
 
 	return
+}
+
+func CalculateLuminance(c *mat.VecDense) float64 {
+	r := c.AtVec(0)
+	g := c.AtVec(1)
+	b := c.AtVec(2)
+	return 0.2126*r + 0.7152*g + 0.0722*b
 }

@@ -32,17 +32,7 @@ func NewMaterial(color *mat.VecDense) *Material {
 // DielectricSurfacePropagation 处理光线在介质表面的传播
 func (m *Material) DielectricSurfacePropagation(ray *Ray, norm *mat.VecDense) bool {
 	if m.Radiation {
-		if m.RadiationType == "" {
-			for i := 0; i < norm.Len(); i++ {
-				ray.Color.SetVec(i, ray.Color.AtVec(i)*m.Color.AtVec(i))
-			}
-		} else if m.RadiationType == "directional light source" {
-			v := mat.Dot(ray.Direction, norm)
-			for i := 0; i < norm.Len(); i++ {
-				ray.Color.SetVec(i, v*v*ray.Color.AtVec(i)*m.Color.AtVec(i))
-			}
-		}
-
+		m.LightSource(ray, norm)
 		return true
 	}
 
@@ -91,9 +81,16 @@ func (m *Material) GetRefractionIndex(ray *Ray) (res float64) {
 	return
 }
 
-func CalculateLuminance(c *mat.VecDense) float64 {
-	r := c.AtVec(0)
-	g := c.AtVec(1)
-	b := c.AtVec(2)
-	return 0.2126*r + 0.7152*g + 0.0722*b
+func (m *Material) LightSource(ray *Ray, norm *mat.VecDense) {
+	switch m.RadiationType {
+	case "":
+		for i := 0; i < norm.Len(); i++ {
+			ray.Color.SetVec(i, ray.Color.AtVec(i)*m.Color.AtVec(i))
+		}
+	case "directional light source":
+		v := mat.Dot(ray.Direction, norm)
+		for i := 0; i < norm.Len(); i++ {
+			ray.Color.SetVec(i, v*v*ray.Color.AtVec(i)*m.Color.AtVec(i))
+		}
+	}
 }
