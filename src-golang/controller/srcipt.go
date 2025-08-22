@@ -124,6 +124,9 @@ func ParseMaterials(script *Script) map[string]*optics.Material {
 		if val, ok := matDef["radiate"]; ok {
 			material.Radiation = cast.ToBool(val)
 		}
+		if val, ok := matDef["radiation_type"]; ok {
+			material.RadiationType = cast.ToString(val)
+		}
 		if val, ok := matDef["reflectivity"]; ok {
 			material.Reflectivity = cast.ToFloat64(val)
 		}

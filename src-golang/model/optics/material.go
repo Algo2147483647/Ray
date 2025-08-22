@@ -2,14 +2,16 @@ package optics
 
 import (
 	"gonum.org/v1/gonum/mat"
+	"math"
 	"math/rand"
 	"src-golang/math_lib"
 )
 
 // Material 表示物体的材质属性
 type Material struct {
-	Color           *mat.VecDense `json:"color"`            // 材质的基础颜色
-	Radiation       bool          `json:"radiation"`        // 是否自发光
+	Color           *mat.VecDense `json:"color"`     // 材质的基础颜色
+	Radiation       bool          `json:"radiation"` // 是否自发光
+	RadiationType   string        `json:"radiation_type"`
 	Reflectivity    float64       `json:"reflectivity"`     // 反射系数 [0, 1]
 	Refractivity    float64       `json:"refractivity"`     // 折射系数 [0, 1]
 	RefractiveIndex *mat.VecDense `json:"refractive_index"` // 折射率
@@ -31,9 +33,17 @@ func NewMaterial(color *mat.VecDense) *Material {
 // DielectricSurfacePropagation 处理光线在介质表面的传播
 func (m *Material) DielectricSurfacePropagation(ray *Ray, norm *mat.VecDense) bool {
 	if m.Radiation {
-		for i := 0; i < norm.Len(); i++ {
-			ray.Color.SetVec(i, ray.Color.AtVec(i)*m.Color.AtVec(i))
+		if m.RadiationType == "" {
+			for i := 0; i < norm.Len(); i++ {
+				ray.Color.SetVec(i, ray.Color.AtVec(i)*m.Color.AtVec(i))
+			}
+		} else if m.RadiationType == "directional light source" {
+			v := math.Abs(mat.Dot(ray.Direction, norm))
+			for i := 0; i < norm.Len(); i++ {
+				ray.Color.SetVec(i, v*ray.Color.AtVec(i)*m.Color.AtVec(i))
+			}
 		}
+
 		return true
 	}
 
