@@ -2,7 +2,6 @@ package optics
 
 import (
 	"gonum.org/v1/gonum/mat"
-	"math"
 	"math/rand"
 	"src-golang/math_lib"
 )
@@ -38,9 +37,9 @@ func (m *Material) DielectricSurfacePropagation(ray *Ray, norm *mat.VecDense) bo
 				ray.Color.SetVec(i, ray.Color.AtVec(i)*m.Color.AtVec(i))
 			}
 		} else if m.RadiationType == "directional light source" {
-			v := math.Abs(mat.Dot(ray.Direction, norm))
+			v := mat.Dot(ray.Direction, norm)
 			for i := 0; i < norm.Len(); i++ {
-				ray.Color.SetVec(i, v*ray.Color.AtVec(i)*m.Color.AtVec(i))
+				ray.Color.SetVec(i, v*v*ray.Color.AtVec(i)*m.Color.AtVec(i))
 			}
 		}
 

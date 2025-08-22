@@ -134,35 +134,35 @@ def plot_ray_paths(ray_data, scene_data=None):
     if scene_data:
         draw_scene(ax, scene_data)
 
-    # print(f"正在绘制 {len(ray_data)} 条光线路径...")
+    print(f"正在绘制 {len(ray_data)} 条光线路径...")
 
     # 处理每条光线
-    # for i, ray in enumerate(ray_data):
-    #     # 解析数据
-    #     origin = np.array(ray['start'])
-    #     endpoint = np.array(ray['end'])
-    #     color = ray['color']  # 使用原始颜色
-    #     color = [min(c, 1.0) for c in color]
-    #
-    #     # 收集坐标点
-    #     all_points.append(origin)
-    #     all_points.append(endpoint)
-    #
-    #     # 绘制光线路径
-    #     ax.plot(
-    #         [origin[0], endpoint[0]],
-    #         [origin[1], endpoint[1]],
-    #         [origin[2], endpoint[2]],
-    #         color=[max(c - 0.2, 0) for c in color],
-    #         linewidth=0.5, alpha=0.7
-    #     )
-    #
-    #     # 标记起点（使用更深的颜色）
-    #     start_color = [max(c, 0) for c in color]  # 加深颜色
-    #     ax.scatter(
-    #         origin[0], origin[1], origin[2],
-    #         color=start_color, s=10, depthshade=False, alpha=0.7
-    #     )
+    for i, ray in enumerate(ray_data):
+        # 解析数据
+        origin = np.array(ray['start'])
+        endpoint = np.array(ray['end'])
+        color = ray['color']  # 使用原始颜色
+        color = [min(c, 1.0) for c in color]
+
+        # 收集坐标点
+        all_points.append(origin)
+        all_points.append(endpoint)
+
+        # 绘制光线路径
+        ax.plot(
+            [origin[0], endpoint[0]],
+            [origin[1], endpoint[1]],
+            [origin[2], endpoint[2]],
+            color=[max(c - 0.2, 0) for c in color],
+            linewidth=0.5, alpha=0.7
+        )
+
+        # 标记起点（使用更深的颜色）
+        start_color = [max(c, 0) for c in color]  # 加深颜色
+        ax.scatter(
+            origin[0], origin[1], origin[2],
+            color=start_color, s=10, depthshade=False, alpha=0.7
+        )
 
     # 设置坐标轴范围
     if all_points:

@@ -109,20 +109,27 @@ func (h *Handler) Render(samples, samplesSt int) *Handler {
 }
 
 func (h *Handler) SaveDebugInfo(filename string) *Handler {
-	file, err := os.Create(filename)
-	if err != nil {
-		h.err = err
+	if h.err != nil {
 		return h
 	}
-	defer file.Close()
 
-	encoder := json.NewEncoder(file)
-	encoder.SetIndent("", "  ")
-	err = encoder.Encode(optics2.DebugRayTraces)
-	if err != nil {
-		h.err = err
-		return h
+	if utils.IsDebug {
+		file, err := os.Create(filename)
+		if err != nil {
+			h.err = err
+			return h
+		}
+		defer file.Close()
+
+		encoder := json.NewEncoder(file)
+		encoder.SetIndent("", "  ")
+		err = encoder.Encode(optics2.DebugRayTraces)
+		if err != nil {
+			h.err = err
+			return h
+		}
 	}
+
 	return h
 }
 
