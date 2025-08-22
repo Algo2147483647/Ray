@@ -40,46 +40,46 @@ func NewTriangle(P1, P2, P3 *mat.VecDense) *Triangle {
 	}
 }
 
-func (t *Triangle) Name() string {
+func (f *Triangle) Name() string {
 	return "Triangle"
 }
 
-func (t *Triangle) Intersect(raySt, rayDir *mat.VecDense) float64 {
-	tmp := utils.VectorPool.Get().(*mat.VecDense)
+func (f *Triangle) Intersect(raySt, rayDir *mat.VecDense) float64 {
+	t := utils.VectorPool.Get().(*mat.VecDense)
 	p := utils.VectorPool.Get().(*mat.VecDense)
 	q := utils.VectorPool.Get().(*mat.VecDense)
 	defer func() {
-		utils.VectorPool.Put(tmp)
+		utils.VectorPool.Put(t)
 		utils.VectorPool.Put(p)
 		utils.VectorPool.Put(q)
 	}()
 
-	math_lib.Cross(p, rayDir, t.Mem.Edge2) // 计算法向量和行列式 (P = D × E2)
-	a := mat.Dot(t.Mem.Edge1, p)           // a = E1·P
+	math_lib.Cross(p, rayDir, f.Mem.Edge2) // 计算法向量和行列式 (P = D × E2)
+	a := mat.Dot(f.Mem.Edge1, p)           // a = E1·P
 	if a > 0 {                             // 处理背面剔除
-		tmp.SubVec(raySt, t.P1) // T = O - P1
+		t.SubVec(raySt, f.P1) // T = O - P1
 	} else {
-		tmp.SubVec(t.P1, raySt) // T = P1 - O
+		t.SubVec(f.P1, raySt) // T = P1 - O
 		a = -a
 	}
 	if a < math_lib.EPS { // 检查平行
 		return math.MaxFloat64
 	}
 
-	math_lib.Cross(q, tmp, t.Mem.Edge1) // Q = T × E1
-	u := mat.Dot(tmp, p) / a            // 重心坐标 u
-	v := mat.Dot(rayDir, q) / a         // 重心坐标 v
+	math_lib.Cross(q, t, f.Mem.Edge1) // Q = T × E1
+	u := mat.Dot(t, p) / a            // 重心坐标 u
+	v := mat.Dot(rayDir, q) / a       // 重心坐标 v
 	if u < 0 || u > 1 {
 		return math.MaxFloat64
 	}
 	if v < 0 || u+v > 1 {
 		return math.MaxFloat64
 	}
-	return mat.Dot(t.Mem.Edge2, q) / a
+	return mat.Dot(f.Mem.Edge2, q) / a
 }
 
-func (t *Triangle) GetNormalVector(_, res *mat.VecDense) *mat.VecDense {
-	res = t.Mem.Normal
+func (f *Triangle) GetNormalVector(_, res *mat.VecDense) *mat.VecDense {
+	res.CloneFromVec(f.Mem.Normal)
 	return res
 }
 
@@ -87,12 +87,12 @@ func TriangleGetNormalVector(Edge1, Edge2 *mat.VecDense) *mat.VecDense {
 	return math_lib.Normalize(math_lib.Cross2(Edge1, Edge2))
 }
 
-func (t *Triangle) BuildBoundingBox() (pmin, pmax *mat.VecDense) {
+func (f *Triangle) BuildBoundingBox() (pmin, pmax *mat.VecDense) {
 	pmin = mat.NewVecDense(3, make([]float64, 3))
 	pmax = mat.NewVecDense(3, make([]float64, 3))
 
-	for i := 0; i < t.P1.Len(); i++ {
-		vals := []float64{t.P1.AtVec(i), t.P2.AtVec(i), t.P3.AtVec(i)}
+	for i := 0; i < f.P1.Len(); i++ {
+		vals := []float64{f.P1.AtVec(i), f.P2.AtVec(i), f.P3.AtVec(i)}
 		minVal, maxVal := vals[0], vals[0]
 		for _, v := range vals[1:] {
 			if v < minVal {

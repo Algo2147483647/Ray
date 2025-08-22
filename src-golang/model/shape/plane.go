@@ -30,6 +30,6 @@ func (p *Plane) Intersect(raySt, rayDir *mat.VecDense) float64 {
 }
 
 func (p *Plane) GetNormalVector(_, res *mat.VecDense) *mat.VecDense {
-	res = math_lib.Normalize(p.A)
-	return res
+	res.CloneFromVec(p.A)
+	return math_lib.Normalize(res)
 }
