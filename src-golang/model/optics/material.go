@@ -8,15 +8,16 @@ import (
 
 // Material 表示物体的材质属性
 type Material struct {
-	Color           *mat.VecDense `json:"color"`     // 材质的基础颜色
-	Radiation       bool          `json:"radiation"` // 是否自发光
-	RadiationType   string        `json:"radiation_type"`
-	Reflectivity    float64       `json:"reflectivity"`     // 反射系数 [0, 1]
-	Refractivity    float64       `json:"refractivity"`     // 折射系数 [0, 1]
-	RefractiveIndex *mat.VecDense `json:"refractive_index"` // 折射率
-	DiffuseLoss     float64       `json:"diffuse_loss"`     // 漫反射损失系数
-	ReflectLoss     float64       `json:"reflect_loss"`     // 反射损失系数
-	RefractLoss     float64       `json:"refract_loss"`     // 折射损失系数
+	Color           *mat.VecDense                                    `json:"color"` // 材质的基础颜色
+	ColorFunc       func(ray *Ray, norm *mat.VecDense) *mat.VecDense `json:"color_func"`
+	Radiation       bool                                             `json:"radiation"` // 是否自发光
+	RadiationType   string                                           `json:"radiation_type"`
+	Reflectivity    float64                                          `json:"reflectivity"`     // 反射系数 [0, 1]
+	Refractivity    float64                                          `json:"refractivity"`     // 折射系数 [0, 1]
+	RefractiveIndex *mat.VecDense                                    `json:"refractive_index"` // 折射率
+	DiffuseLoss     float64                                          `json:"diffuse_loss"`     // 漫反射损失系数
+	ReflectLoss     float64                                          `json:"reflect_loss"`     // 反射损失系数
+	RefractLoss     float64                                          `json:"refract_loss"`     // 折射损失系数
 }
 
 // NewMaterial 创建新材质
@@ -53,8 +54,9 @@ func (m *Material) DielectricSurfacePropagation(ray *Ray, norm *mat.VecDense) bo
 		ray.Color.ScaleVec(m.DiffuseLoss, ray.Color)
 	}
 
+	MaterialColor := m.GetColor(ray, norm)
 	for i := 0; i < norm.Len(); i++ { // 材质基础颜色
-		ray.Color.SetVec(i, ray.Color.AtVec(i)*m.Color.AtVec(i))
+		ray.Color.SetVec(i, ray.Color.AtVec(i)*MaterialColor.AtVec(i))
 	}
 	return false
 }
@@ -81,16 +83,25 @@ func (m *Material) GetRefractionIndex(ray *Ray) (res float64) {
 	return
 }
 
+func (m *Material) GetColor(ray *Ray, norm *mat.VecDense) *mat.VecDense {
+	if m.ColorFunc != nil {
+		return m.ColorFunc(ray, norm)
+	}
+	return m.Color
+}
+
 func (m *Material) LightSource(ray *Ray, norm *mat.VecDense) {
+	MaterialColor := m.GetColor(ray, norm)
 	switch m.RadiationType {
 	case "":
 		for i := 0; i < norm.Len(); i++ {
-			ray.Color.SetVec(i, ray.Color.AtVec(i)*m.Color.AtVec(i))
+			ray.Color.SetVec(i, ray.Color.AtVec(i)*MaterialColor.AtVec(i))
 		}
 	case "directional light source":
 		v := mat.Dot(ray.Direction, norm)
+		v = v * v * v * v
 		for i := 0; i < norm.Len(); i++ {
-			ray.Color.SetVec(i, v*v*ray.Color.AtVec(i)*m.Color.AtVec(i))
+			ray.Color.SetVec(i, v*ray.Color.AtVec(i)*MaterialColor.AtVec(i))
 		}
 	}
 }
