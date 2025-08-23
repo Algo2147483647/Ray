@@ -17,15 +17,16 @@ func Reflect(incidentRay, normal *mat.VecDense) *mat.VecDense {
 	return Normalize(SubVec(incidentRay, incidentRay, ScaleVec2(2*mat.Dot(normal, incidentRay), normal)))
 }
 
-// Refract 计算光线的折射方向
+// Refract 计算光线的折射方向, n = n_I / n_T, normal 与入射光线方向相反
 func Refract(incidentRay, normal *mat.VecDense, eta float64) *mat.VecDense {
-	cosI := mat.Dot(normal, incidentRay)
-	sin2T := eta * eta * (1.0 - cosI*cosI)
-	if sin2T > 1.0 { // Total internal reflection
+	cosI := math.Abs(mat.Dot(normal, incidentRay))
+	sin2T := eta * eta * (1.0 - cosI*cosI) // sin^2 T
+	if sin2T > 1.0 {                       // Total internal reflection
 		return Reflect(incidentRay, normal)
 	}
+	cosT := math.Sqrt(1.0 - sin2T)
 
-	return Normalize(AddVec(incidentRay, ScaleVec(incidentRay, eta, incidentRay), ScaleVec2(eta*cosI-math.Sqrt(1.0-sin2T), normal)))
+	return Normalize(AddVec(incidentRay, ScaleVec(incidentRay, eta, incidentRay), ScaleVec2(-cosT+eta*cosI, normal)))
 }
 
 // DiffuseReflect 计算漫反射方向

@@ -4,6 +4,7 @@ import (
 	"gonum.org/v1/gonum/mat"
 	"math/rand"
 	"src-golang/math_lib"
+	"src-golang/utils"
 )
 
 // Material 表示物体的材质属性
@@ -45,7 +46,7 @@ func (m *Material) DielectricSurfacePropagation(ray *Ray, norm *mat.VecDense) bo
 
 	case randNum <= m.Reflectivity+m.Refractivity:
 		refractionIndex := m.GetRefractionIndex(ray)
-		ray.Direction = math_lib.Refract(ray.Direction, norm, refractionIndex/ray.RefractionIndex)
+		ray.Direction = math_lib.Refract(ray.Direction, norm, ray.RefractionIndex/refractionIndex)
 		ray.Color.ScaleVec(m.RefractLoss, ray.Color)
 		ray.RefractionIndex = refractionIndex
 
@@ -99,7 +100,14 @@ func (m *Material) LightSource(ray *Ray, norm *mat.VecDense) {
 		}
 	case "directional light source":
 		v := mat.Dot(ray.Direction, norm)
-		v = v * v * v * v
+		v = v * v
+		if v < 0.98 {
+			ray.Color.Zero()
+			return
+		}
+		if utils.IsDebug {
+			ray.DebugSwitch = true
+		}
 		for i := 0; i < norm.Len(); i++ {
 			ray.Color.SetVec(i, v*ray.Color.AtVec(i)*MaterialColor.AtVec(i))
 		}
