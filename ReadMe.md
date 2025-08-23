@@ -9,7 +9,7 @@
 
 <img src="./docs/assets/dispersion-three-balls-10000.png" alt="RayTracingTest_OpticalVerification" />
 
-<img src="./docs/assets/prism refraction.png" alt="RayTracingTest_OpticalVerification" />
+<img src="./docs/assets/prism_refraction-8000.png" alt="RayTracingTest_OpticalVerification" />
 
 ## System
 

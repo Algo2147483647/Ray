@@ -24,20 +24,18 @@ type TriangleCalculateStorage struct {
 func NewTriangle(P1, P2, P3 *mat.VecDense) *Triangle {
 	edge1 := new(mat.VecDense)
 	edge2 := new(mat.VecDense)
-	edge1.SubVec(P2, P1)
-	edge2.SubVec(P3, P1)
-	normal := TriangleGetNormalVector(edge1, edge2)
-
-	return &Triangle{
+	res := &Triangle{
 		P1: P1,
 		P2: P2,
 		P3: P3,
 		Mem: TriangleCalculateStorage{
-			Edge1:  edge1,
-			Edge2:  edge2,
-			Normal: normal,
+			Edge1: math_lib.SubVec(edge1, P2, P1),
+			Edge2: math_lib.SubVec(edge2, P3, P1),
 		},
 	}
+	res.Mem.Normal = res.GetNormalVectorPure()
+
+	return res
 }
 
 func (f *Triangle) Name() string {
@@ -45,6 +43,22 @@ func (f *Triangle) Name() string {
 }
 
 func (f *Triangle) Intersect(raySt, rayDir *mat.VecDense) float64 {
+	distance := f.IntersectPure(raySt, rayDir)
+
+	if f.EngravingFunc != nil && distance != math.MaxFloat64 {
+		if f.EngravingFunc(map[string]interface{}{
+			"ray_start": raySt,
+			"ray_dir":   rayDir,
+			"distance":  distance,
+			"self":      f,
+		}) {
+			return math.MaxFloat64
+		}
+	}
+	return distance
+}
+
+func (f *Triangle) IntersectPure(raySt, rayDir *mat.VecDense) float64 {
 	t := utils.VectorPool.Get().(*mat.VecDense)
 	p := utils.VectorPool.Get().(*mat.VecDense)
 	q := utils.VectorPool.Get().(*mat.VecDense)
@@ -83,8 +97,10 @@ func (f *Triangle) GetNormalVector(_, res *mat.VecDense) *mat.VecDense {
 	return res
 }
 
-func TriangleGetNormalVector(Edge1, Edge2 *mat.VecDense) *mat.VecDense {
-	return math_lib.Normalize(math_lib.Cross2(Edge1, Edge2))
+func (f *Triangle) GetNormalVectorPure() *mat.VecDense {
+	edge1 := new(mat.VecDense)
+	edge2 := new(mat.VecDense)
+	return math_lib.Normalize(math_lib.Cross2(math_lib.SubVec(edge1, f.P2, f.P1), math_lib.SubVec(edge2, f.P3, f.P1)))
 }
 
 func (f *Triangle) BuildBoundingBox() (pmin, pmax *mat.VecDense) {

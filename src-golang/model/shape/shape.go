@@ -11,12 +11,11 @@ type Shape interface {
 	Intersect(rayStart, rayDir *mat.VecDense) float64
 	GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense
 	BuildBoundingBox() (pmin, pmax *mat.VecDense)
-	SetEngraving(fn func(*mat.VecDense) bool)
 }
 
 // BaseShape 提供形状的基础实现
 type BaseShape struct {
-	EngravingFunc func(*mat.VecDense) bool
+	EngravingFunc func(data map[string]interface{}) bool
 }
 
 func (bs *BaseShape) Name() string {
@@ -36,8 +35,4 @@ func (bs *BaseShape) BuildBoundingBox() (pmin, pmax *mat.VecDense) {
 	pmin = mat.NewVecDense(3, []float64{-maxVal, -maxVal, -maxVal})
 	pmax = mat.NewVecDense(3, []float64{+maxVal, +maxVal, +maxVal})
 	return
-}
-
-func (bs *BaseShape) SetEngraving(fn func(*mat.VecDense) bool) {
-	bs.EngravingFunc = fn
 }

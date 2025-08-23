@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"src-golang/example_lib"
 	"src-golang/math_lib"
 	"src-golang/model"
 	"src-golang/model/object"
@@ -74,6 +75,7 @@ func LoadSceneFromScript(script *Script, scene *model.Scene) error {
 func ParseShape(objDef map[string]interface{}) shape.Shape {
 	switch objDef["shape"] {
 	case "cuboid":
+		res := &shape.Cuboid{}
 		if _, ok := objDef["position"]; ok {
 			position := mat.NewVecDense(3, cast.ToFloat64Slice(objDef["position"]))
 			halfSize := math_lib.ScaleVec2(0.5, mat.NewVecDense(3, cast.ToFloat64Slice(objDef["size"])))
@@ -81,21 +83,30 @@ func ParseShape(objDef map[string]interface{}) shape.Shape {
 			pmin := mat.NewVecDense(3, nil)
 			pmax.AddVec(position, halfSize)
 			pmin.SubVec(position, halfSize)
-			return shape.NewCuboid(pmin, pmax)
+			res = shape.NewCuboid(pmin, pmax)
 		}
 
 		if _, ok := objDef["pmax"]; ok {
-			return shape.NewCuboid(
+			res = shape.NewCuboid(
 				mat.NewVecDense(3, cast.ToFloat64Slice(objDef["pmin"])),
 				mat.NewVecDense(3, cast.ToFloat64Slice(objDef["pmax"])),
 			)
 		}
 
+		if _, ok := objDef["engraving_func"]; ok {
+			res.EngravingFunc = example_lib.EngravingFuncMap[cast.ToString(objDef["engraving_func"])]
+		}
+		return res
+
 	case "sphere":
-		return shape.NewSphere(
+		res := shape.NewSphere(
 			mat.NewVecDense(3, cast.ToFloat64Slice(objDef["position"])),
 			cast.ToFloat64(objDef["r"]),
 		)
+		if _, ok := objDef["engraving_func"]; ok {
+			res.EngravingFunc = example_lib.EngravingFuncMap[cast.ToString(objDef["engraving_func"])]
+		}
+		return res
 
 	case "triangle":
 		return shape.NewTriangle(

@@ -25,6 +25,22 @@ func (c *Cuboid) Name() string {
 }
 
 func (c *Cuboid) Intersect(raySt, rayDir *mat.VecDense) float64 {
+	distance := c.IntersectPure(raySt, rayDir)
+
+	if c.EngravingFunc != nil && distance != math.MaxFloat64 {
+		if c.EngravingFunc(map[string]interface{}{
+			"ray_start": raySt,
+			"ray_dir":   rayDir,
+			"distance":  distance,
+			"self":      c,
+		}) {
+			return math.MaxFloat64
+		}
+	}
+	return distance
+}
+
+func (c *Cuboid) IntersectPure(raySt, rayDir *mat.VecDense) float64 {
 	t0 := -math.MaxFloat64
 	t1 := math.MaxFloat64
 

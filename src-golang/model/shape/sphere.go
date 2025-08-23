@@ -22,7 +22,24 @@ func (s *Sphere) Name() string {
 	return "Sphere"
 }
 
-func (s *Sphere) Intersect(raySt, ray *mat.VecDense) float64 {
+func (s *Sphere) Intersect(raySt, rayDir *mat.VecDense) float64 {
+	distance := s.IntersectPure(raySt, rayDir)
+
+	if s.EngravingFunc != nil && distance != math.MaxFloat64 {
+		if s.EngravingFunc(map[string]interface{}{
+			"ray_start": raySt,
+			"ray_dir":   rayDir,
+			"distance":  distance,
+			"center":    s.center,
+			"r":         s.R,
+		}) {
+			return math.MaxFloat64
+		}
+	}
+	return distance
+}
+
+func (s *Sphere) IntersectPure(raySt, rayDir *mat.VecDense) float64 {
 	t := utils.VectorPool.Get().(*mat.VecDense)
 	defer func() {
 		utils.VectorPool.Put(t)
@@ -30,8 +47,8 @@ func (s *Sphere) Intersect(raySt, ray *mat.VecDense) float64 {
 
 	// 计算系数
 	t.SubVec(raySt, s.center)
-	A := mat.Dot(ray, ray)
-	B := 2 * mat.Dot(ray, t)
+	A := mat.Dot(rayDir, rayDir)
+	B := 2 * mat.Dot(rayDir, t)
 	Delta := B*B - 4*A*(mat.Dot(t, t)-s.R*s.R)
 	if Delta < 0 {
 		return math.MaxFloat64 // 无交点
