@@ -14,7 +14,7 @@ func main() {
 		fmt.Printf("Using default script: %s\n", scriptPath)
 	}
 
-	h := NewHandler(200, 200).
+	h := NewHandler(400, 400).
 		LoadScript(scriptPath).
 		BuildCamera().
 		//LoadResult("img.bin").
