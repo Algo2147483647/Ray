@@ -8,12 +8,12 @@ import (
 	"io"
 	"os"
 	"reflect"
-	"src-golang/example_lib"
 	"src-golang/math_lib"
 	"src-golang/model"
 	"src-golang/model/object"
 	"src-golang/model/optics"
 	"src-golang/model/shape"
+	"src-golang/utils/example_lib"
 )
 
 type Script struct {
