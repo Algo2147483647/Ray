@@ -33,18 +33,18 @@
             "diffuse_loss": 0.7
         },
         {
-            "id": "glass3",
-            "color": [1, 1, 1],
-            "reflectivity": 0.0,
-            "refractivity": 1.0,
-            "refractive_index": [1.000, 200000, 0]
-        },
-        {
             "id": "glass",
             "color": [1, 1, 1],
             "reflectivity": 0.0,
             "refractivity": 1.0,
-            "refractive_index": [0.4, 200000, 0]
+            "refractive_index": [1.000, 50000, 0]
+        },
+        {
+            "id": "glass3",
+            "color": [1, 1, 1],
+            "reflectivity": 0.0,
+            "refractivity": 1.0,
+            "refractive_index": [0.4, 50000, 0]
         }
     ],
     "objects": [
