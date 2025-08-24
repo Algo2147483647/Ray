@@ -51,7 +51,7 @@ func (t *ObjectTree) Build() *ObjectTree {
 
 	t.build(0, len(t.ObjectNodes)-1, &t.Root)
 
-	fmt.Println(t.TreeString())
+	//fmt.Println(t.TreeString())
 	return t
 }
 

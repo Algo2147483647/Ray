@@ -23,8 +23,8 @@ func ParseShape(objDef map[string]interface{}) (res []*shape.Shape) {
 			pmax := mat.NewVecDense(3, nil)
 			pmin := mat.NewVecDense(3, nil)
 			item = shape.NewCuboid(
-				math_lib.AddVec(pmin, position, halfSize),
-				math_lib.SubVec(pmax, position, halfSize),
+				math_lib.SubVec(pmin, position, halfSize),
+				math_lib.AddVec(pmax, position, halfSize),
 			)
 		} else if _, ok := objDef["pmax"]; ok {
 			item = shape.NewCuboid(
@@ -94,23 +94,29 @@ func ParseShapeForSTL(objDef map[string]interface{}) []*shape.Shape {
 	}
 	defer file.Close()
 
-	// 创建变换矩阵
+	// 创建变换矩阵, 构建4x4统一变换矩阵
+	transformMatrix := mat.NewDense(4, 4, []float64{
+		1, 0, 0, position.AtVec(0),
+		0, 1, 0, position.AtVec(1),
+		0, 0, 1, position.AtVec(2),
+		0, 0, 0, 1,
+	})
+
 	// 首先根据z_dir和x_dir计算旋转矩阵
 	z_dir = math_lib.Normalize(z_dir)
 	x_dir = math_lib.Normalize(x_dir)
-	y_dir := math_lib.Cross2(z_dir, x_dir)
-	y_dir = math_lib.Normalize(y_dir)
+	y_dir := math_lib.Normalize(math_lib.Cross2(z_dir, x_dir))
 
-	// 构建旋转矩阵
-	rotationMatrix := mat.NewDense(3, 3, nil)
 	for i := 0; i < 3; i++ {
-		rotationMatrix.Set(i, 0, x_dir.AtVec(i))
-		rotationMatrix.Set(i, 1, y_dir.AtVec(i))
-		rotationMatrix.Set(i, 2, z_dir.AtVec(i))
+		// 构建旋转矩阵
+		transformMatrix.Set(i, 0, x_dir.AtVec(i))
+		transformMatrix.Set(i, 1, y_dir.AtVec(i))
+		transformMatrix.Set(i, 2, z_dir.AtVec(i))
+		// 应用缩放
+		for j := 0; j < 3; j++ {
+			transformMatrix.Set(i, j, transformMatrix.At(i, j)*scale.AtVec(j))
+		}
 	}
-
-	// 构建平移向量
-	translation := position
 
 	var triangles []*shape.Shape
 
@@ -145,9 +151,9 @@ func ParseShapeForSTL(objDef map[string]interface{}) []*shape.Shape {
 
 				if p3 != nil {
 					triangle := shape.NewTriangle(
-						transformVertex(p1, rotationMatrix, translation),
-						transformVertex(p2, rotationMatrix, translation),
-						transformVertex(p3, rotationMatrix, translation),
+						transformVertexWithMatrix(p1, transformMatrix),
+						transformVertexWithMatrix(p2, transformMatrix),
+						transformVertexWithMatrix(p3, transformMatrix),
 					)
 					s := shape.Shape(triangle)
 					triangles = append(triangles, &s)
@@ -194,9 +200,9 @@ func ParseShapeForSTL(objDef map[string]interface{}) []*shape.Shape {
 			p2 := mat.NewVecDense(3, []float64{float64(vertices[3]), float64(vertices[4]), float64(vertices[5])})
 			p3 := mat.NewVecDense(3, []float64{float64(vertices[6]), float64(vertices[7]), float64(vertices[8])})
 			triangle := shape.NewTriangle(
-				transformVertex(p1, rotationMatrix, translation),
-				transformVertex(p2, rotationMatrix, translation),
-				transformVertex(p3, rotationMatrix, translation),
+				transformVertexWithMatrix(p1, transformMatrix),
+				transformVertexWithMatrix(p2, transformMatrix),
+				transformVertexWithMatrix(p3, transformMatrix),
 			)
 			s := shape.Shape(triangle)
 			triangles = append(triangles, &s)
@@ -206,15 +212,26 @@ func ParseShapeForSTL(objDef map[string]interface{}) []*shape.Shape {
 	return triangles
 }
 
-// 变换顶点：应用旋转和平移
-func transformVertex(vertex *mat.VecDense, rotation *mat.Dense, translation *mat.VecDense) *mat.VecDense {
-	// 应用旋转: R * V
-	rotated := new(mat.VecDense)
-	rotated.MulVec(rotation, vertex)
+// 使用4x4变换矩阵变换顶点
+func transformVertexWithMatrix(vertex *mat.VecDense, transformMatrix *mat.Dense) *mat.VecDense {
+	// 将3D顶点转换为齐次坐标（4D）
+	vertexHomogeneous := mat.NewVecDense(4, []float64{
+		vertex.AtVec(0),
+		vertex.AtVec(1),
+		vertex.AtVec(2),
+		1.0,
+	})
 
-	// 应用平移: R * V + T
-	result := new(mat.VecDense)
-	result.AddVec(rotated, translation)
+	// 应用变换矩阵
+	transformed := new(mat.VecDense)
+	transformed.MulVec(transformMatrix, vertexHomogeneous)
+
+	// 转换回3D坐标
+	result := mat.NewVecDense(3, []float64{
+		transformed.AtVec(0),
+		transformed.AtVec(1),
+		transformed.AtVec(2),
+	})
 
 	return result
 }
