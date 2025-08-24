@@ -2,6 +2,7 @@ package controller
 
 import (
 	"bufio"
+	"encoding/binary"
 	"fmt"
 	"github.com/spf13/cast"
 	"gonum.org/v1/gonum/mat"
@@ -12,10 +13,12 @@ import (
 	"strings"
 )
 
-func ParseShape(objDef map[string]interface{}) shape.Shape {
+func ParseShape(objDef map[string]interface{}) (res []*shape.Shape) {
+	res := make([]*shape.Shape, 0)
+
 	switch objDef["shape"] {
 	case "cuboid":
-		res := &shape.Cuboid{}
+		item := &shape.Cuboid{}
 		if _, ok := objDef["position"]; ok {
 			position := mat.NewVecDense(3, cast.ToFloat64Slice(objDef["position"]))
 			halfSize := math_lib.ScaleVec2(0.5, mat.NewVecDense(3, cast.ToFloat64Slice(objDef["size"])))
@@ -23,19 +26,20 @@ func ParseShape(objDef map[string]interface{}) shape.Shape {
 			pmin := mat.NewVecDense(3, nil)
 			pmax.AddVec(position, halfSize)
 			pmin.SubVec(position, halfSize)
-			res = shape.NewCuboid(pmin, pmax)
+			item = shape.NewCuboid(pmin, pmax)
 		}
 
 		if _, ok := objDef["pmax"]; ok {
-			res = shape.NewCuboid(
+			item = shape.NewCuboid(
 				mat.NewVecDense(3, cast.ToFloat64Slice(objDef["pmin"])),
 				mat.NewVecDense(3, cast.ToFloat64Slice(objDef["pmax"])),
 			)
 		}
 
 		if _, ok := objDef["engraving_func"]; ok {
-			res.EngravingFunc = example_lib.EngravingFuncMap[cast.ToString(objDef["engraving_func"])]
+			item.EngravingFunc = example_lib.EngravingFuncMap[cast.ToString(objDef["engraving_func"])]
 		}
+		res = append(res, item)
 		return res
 
 	case "sphere":
@@ -70,7 +74,7 @@ func ParseShape(objDef map[string]interface{}) shape.Shape {
 	return nil
 }
 
-func ParseShapeForSTL(objDef map[string]interface{}) {
+func ParseShapeForSTL(objDef map[string]interface{}) []*shape.Shape {
 	file_path := cast.ToString(objDef["file"])
 	position := mat.NewVecDense(3, cast.ToFloat64Slice(objDef["position"]))
 	z_dir := mat.NewVecDense(3, cast.ToFloat64Slice(objDef["z_dir"]))
@@ -101,15 +105,13 @@ func ParseShapeForSTL(objDef map[string]interface{}) {
 	// 构建平移向量
 	translation := position
 
-	var triangles []shape.Shape
+	var triangles []*shape.Shape
 
 	// 判断STL文件类型（ASCII还是二进制）
 	scanner := bufio.NewScanner(file)
 	scanner.Scan()
 	firstLine := scanner.Text()
-
-	// 重置文件指针
-	file.Seek(0, 0)
+	file.Seek(0, 0) // 重置文件指针
 
 	if strings.HasPrefix(firstLine, "solid") {
 		// ASCII STL文件
@@ -145,16 +147,52 @@ func ParseShapeForSTL(objDef map[string]interface{}) {
 			}
 		}
 	} else {
-		// 二进制STL文件处理（简化版）
-		// 跳过文件头（80字节）
-		reader := bufio.NewReader(file)
-		reader.Discard(80)
+		// 二进制STL文件处理
+		header := make([]byte, 80) // 跳过文件头（80字节）
+		_, err := file.Read(header)
+		if err != nil {
+			panic(err)
+		}
 
-		// 读取三角形数量（4字节）
-		// 注意：这里需要实际实现二进制读取逻辑
-		// 为简化起见，我们只处理ASCII STL
-		panic("Binary STL not implemented yet")
+		var numTriangles uint32
+		err = binary.Read(file, binary.LittleEndian, &numTriangles) // 读取三角形数量（4字节，小端序）
+		if err != nil {
+			panic(err)
+		}
+
+		// 读取每个三角形的数据
+		for i := uint32(0); i < numTriangles; i++ {
+			normal := make([]byte, 12) // 跳过法向量（12字节，3个float32）
+			_, err := file.Read(normal)
+			if err != nil {
+				panic(err)
+			}
+
+			var vertices [9]float32 // 读取三个顶点的坐标（36字节，9个float32）
+			err = binary.Read(file, binary.LittleEndian, &vertices)
+			if err != nil {
+				panic(err)
+			}
+
+			var attrByteCount uint16 // 读取属性字节数（2字节），并跳过
+			err = binary.Read(file, binary.LittleEndian, &attrByteCount)
+			if err != nil {
+				panic(err)
+			}
+
+			// 创建三角形
+			p1 := mat.NewVecDense(3, []float64{float64(vertices[0]), float64(vertices[1]), float64(vertices[2])})
+			p2 := mat.NewVecDense(3, []float64{float64(vertices[3]), float64(vertices[4]), float64(vertices[5])})
+			p3 := mat.NewVecDense(3, []float64{float64(vertices[6]), float64(vertices[7]), float64(vertices[8])})
+			triangles = append(triangles, shape.NewTriangle(
+				transformVertex(p1, rotationMatrix, translation),
+				transformVertex(p2, rotationMatrix, translation),
+				transformVertex(p3, rotationMatrix, translation),
+			))
+		}
 	}
+
+	return triangles
 }
 
 // 变换顶点：应用旋转和平移

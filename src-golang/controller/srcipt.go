@@ -51,15 +51,17 @@ func LoadSceneFromScript(script *Script, scene *model.Scene) error {
 			continue // 跳过未定义材质的物体
 		}
 
-		shape := ParseShape(item)
-		if shape == nil {
+		shapes := ParseShape(item)
+		if shapes == nil || len(shapes) == 0 {
 			continue
 		}
 
-		scene.ObjectTree.AddObject(&object.Object{
-			Shape:    shape,
-			Material: material,
-		})
+		for _, shape := range shapes {
+			scene.ObjectTree.AddObject(&object.Object{
+				Shape:    *shape,
+				Material: material,
+			})
+		}
 	}
 
 	scene.ObjectTree.Build()
