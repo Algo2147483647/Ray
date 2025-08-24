@@ -22,19 +22,10 @@ The system implements a physically-based ray tracing algorithm that simulates th
 
 ### System Objectives
 
-- Provide accurate light propagation simulation
-- Support various geometric shapes and material properties
-- Implement visualization of optical phenomena
-- Provide research tools for optical engineers, researchers, and educators
-
-### Core Functions
-
-- Ray-object intersection detection and computation
-- Optical object modeling (spheres, planes, cuboids, etc.)
-- Scene construction and rendering
-- Material definition like refractive index properties
-- High-quality image rendering and data output
-
+- Implement advanced visualization of optical phenomena through ray tracing rendering, supporting topological spaces with arbitrary dimensions and curvature to ensure accurate simulation of light propagation.
+- Enable intersection detection and computation between rays and a variety of geometric shapes with customizable material properties, including refractive indices.
+- Provide support for reading STL and texture files, and exporting images in .png, .jpg, and .ppm formats. Facilitate scene setup via user-defined construction scripts.
+- Deliver a specialized research tool tailored for optical engineers, researchers, and educators to support theoretical and applied studies in optics.
 
 ## System Architecture
 
@@ -131,15 +122,6 @@ The `RayTracing` module simulates light rays interacting with objects in a 3D en
   - Generate secondary rays (reflected, refracted) up to depth limit
   - Accumulate color contributions along ray path
 - **Sample Accumulation & Result Output**: Combine multiple samples per pixel for anti-aliasing, and normalize pixel values by the number of samples. Write ray's result and final color values to the corresponding pixel in the image base on its coordinates.
-
-The process of the **Trace Ray**.
-
-- First load the scene files and initial the scene, which contain the camera and the object.
-- For the camara, generate a full set of rays for the image. For all objects on the scene, we build the object tree base on the objects to organizes objects in a 3D scene into a binary tree structure. Next, for each sample iteration, do execute as following, 
-
-- - 
-  
-- Finally, map the ray's result to the corresponding pixel in the image base on its coordinates. And normalize pixel values by the number of samples.
 
 <img src="./docs/assets/system2.svg" alt="system2" style="zoom:67%;" />
 
