@@ -22,19 +22,18 @@ func ParseShape(objDef map[string]interface{}) (res []*shape.Shape) {
 			halfSize := math_lib.ScaleVec2(0.5, mat.NewVecDense(3, cast.ToFloat64Slice(objDef["size"])))
 			pmax := mat.NewVecDense(3, nil)
 			pmin := mat.NewVecDense(3, nil)
-			pmax.AddVec(position, halfSize)
-			pmin.SubVec(position, halfSize)
-			item = shape.NewCuboid(pmin, pmax)
-		}
-
-		if _, ok := objDef["pmax"]; ok {
+			item = shape.NewCuboid(
+				math_lib.AddVec(pmin, position, halfSize),
+				math_lib.SubVec(pmax, position, halfSize),
+			)
+		} else if _, ok := objDef["pmax"]; ok {
 			item = shape.NewCuboid(
 				mat.NewVecDense(3, cast.ToFloat64Slice(objDef["pmin"])),
 				mat.NewVecDense(3, cast.ToFloat64Slice(objDef["pmax"])),
 			)
 		}
 
-		if item != nil {
+		if item == nil {
 			return []*shape.Shape{}
 		}
 
@@ -86,6 +85,7 @@ func ParseShapeForSTL(objDef map[string]interface{}) []*shape.Shape {
 	position := mat.NewVecDense(3, cast.ToFloat64Slice(objDef["position"]))
 	z_dir := mat.NewVecDense(3, cast.ToFloat64Slice(objDef["z_dir"]))
 	x_dir := mat.NewVecDense(3, cast.ToFloat64Slice(objDef["x_dir"]))
+	scale := mat.NewVecDense(3, cast.ToFloat64Slice(objDef["scale"]))
 
 	// 读取 STL 文件中的数据
 	file, err := os.Open(file_path)

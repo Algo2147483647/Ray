@@ -56,6 +56,16 @@
             "material_id": "WorldBoundary"
         },
         {
+            "id": "rabbit",
+            "shape": "stl",
+            "position": [0, 0, 0],
+            "scale": [1, 1, 1],
+            "z_dir": [0, 0, 1],
+            "x_dir": [1, 0, 0],
+            "file": "C:\\Users\\29753\\Downloads\\bun_zipper2.stl",
+            "material_id": "WorldBoundary"
+        },
+        {
             "id": "sphere",
             "shape": "sphere",
             "position": [1.2, 0, 0],
@@ -64,14 +74,14 @@
             "engraving_func": "sphere1"
         },
         {
-            "id": "glass",
+            "id": "glass sphere",
             "shape": "sphere",
             "position": [1.2, -1, 0],
             "r": 0.9,
             "material_id": "glass3"
         },
         {
-            "id": "glass",
+            "id": "glass sphere",
             "shape": "sphere",
             "position": [1.2, 1, 0],
             "r": 0.9,
