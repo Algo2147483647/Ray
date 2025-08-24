@@ -14,11 +14,9 @@ import (
 )
 
 func ParseShape(objDef map[string]interface{}) (res []*shape.Shape) {
-	res := make([]*shape.Shape, 0)
-
 	switch objDef["shape"] {
 	case "cuboid":
-		item := &shape.Cuboid{}
+		var item *shape.Cuboid
 		if _, ok := objDef["position"]; ok {
 			position := mat.NewVecDense(3, cast.ToFloat64Slice(objDef["position"]))
 			halfSize := math_lib.ScaleVec2(0.5, mat.NewVecDense(3, cast.ToFloat64Slice(objDef["size"])))
@@ -36,42 +34,51 @@ func ParseShape(objDef map[string]interface{}) (res []*shape.Shape) {
 			)
 		}
 
+		if item != nil {
+			return []*shape.Shape{}
+		}
+
 		if _, ok := objDef["engraving_func"]; ok {
 			item.EngravingFunc = example_lib.EngravingFuncMap[cast.ToString(objDef["engraving_func"])]
 		}
-		res = append(res, item)
-		return res
+		s := shape.Shape(item)
+		return []*shape.Shape{&s}
 
 	case "sphere":
-		res := shape.NewSphere(
+		sphere := shape.NewSphere(
 			mat.NewVecDense(3, cast.ToFloat64Slice(objDef["position"])),
 			cast.ToFloat64(objDef["r"]),
 		)
 		if _, ok := objDef["engraving_func"]; ok {
-			res.EngravingFunc = example_lib.EngravingFuncMap[cast.ToString(objDef["engraving_func"])]
+			sphere.EngravingFunc = example_lib.EngravingFuncMap[cast.ToString(objDef["engraving_func"])]
 		}
-		return res
+		s := shape.Shape(sphere)
+		return []*shape.Shape{&s}
 
 	case "triangle":
-		return shape.NewTriangle(
+		triangle := shape.NewTriangle(
 			mat.NewVecDense(3, cast.ToFloat64Slice(objDef["p1"])),
 			mat.NewVecDense(3, cast.ToFloat64Slice(objDef["p2"])),
 			mat.NewVecDense(3, cast.ToFloat64Slice(objDef["p3"])),
 		)
+		s := shape.Shape(triangle)
+		return []*shape.Shape{&s}
 
 	case "plane":
 	case "quadratic equation":
-		return shape.NewQuadraticEquation(
+		qe := shape.NewQuadraticEquation(
 			mat.NewDense(3, 3, cast.ToFloat64Slice(objDef["a"])),
 			mat.NewVecDense(3, cast.ToFloat64Slice(objDef["b"])),
 			cast.ToFloat64(objDef["c"]),
 		)
+		s := shape.Shape(qe)
+		return []*shape.Shape{&s}
 
 	case "stl":
 		return ParseShapeForSTL(objDef)
 	}
 
-	return nil
+	return []*shape.Shape{}
 }
 
 func ParseShapeForSTL(objDef map[string]interface{}) []*shape.Shape {
@@ -137,11 +144,13 @@ func ParseShapeForSTL(objDef map[string]interface{}) []*shape.Shape {
 				}
 
 				if p3 != nil {
-					triangles = append(triangles, shape.NewTriangle(
+					triangle := shape.NewTriangle(
 						transformVertex(p1, rotationMatrix, translation),
 						transformVertex(p2, rotationMatrix, translation),
 						transformVertex(p3, rotationMatrix, translation),
-					))
+					)
+					s := shape.Shape(triangle)
+					triangles = append(triangles, &s)
 					p1, p2, p3 = nil, nil, nil
 				}
 			}
@@ -184,11 +193,13 @@ func ParseShapeForSTL(objDef map[string]interface{}) []*shape.Shape {
 			p1 := mat.NewVecDense(3, []float64{float64(vertices[0]), float64(vertices[1]), float64(vertices[2])})
 			p2 := mat.NewVecDense(3, []float64{float64(vertices[3]), float64(vertices[4]), float64(vertices[5])})
 			p3 := mat.NewVecDense(3, []float64{float64(vertices[6]), float64(vertices[7]), float64(vertices[8])})
-			triangles = append(triangles, shape.NewTriangle(
+			triangle := shape.NewTriangle(
 				transformVertex(p1, rotationMatrix, translation),
 				transformVertex(p2, rotationMatrix, translation),
 				transformVertex(p3, rotationMatrix, translation),
-			))
+			)
+			s := shape.Shape(triangle)
+			triangles = append(triangles, &s)
 		}
 	}
 
