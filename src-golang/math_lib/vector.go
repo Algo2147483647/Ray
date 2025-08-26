@@ -1,6 +1,9 @@
 package math_lib
 
-import "gonum.org/v1/gonum/mat"
+import (
+	"gonum.org/v1/gonum/mat"
+	"math"
+)
 
 func Normalize(v *mat.VecDense) *mat.VecDense {
 	norm := mat.Norm(v, 2)
@@ -63,5 +66,21 @@ func AddVecs(res *mat.VecDense, vecs ...*mat.VecDense) *mat.VecDense {
 
 func SubVec(res, a, b *mat.VecDense) *mat.VecDense {
 	res.SubVec(a, b)
+	return res
+}
+
+func MinVec(a, b *mat.VecDense) *mat.VecDense {
+	res := mat.NewVecDense(a.Len(), nil)
+	for i := 0; i < a.Len(); i++ {
+		res.SetVec(i, math.Min(a.AtVec(i), b.AtVec(i)))
+	}
+	return res
+}
+
+func MaxVec(a, b *mat.VecDense) *mat.VecDense {
+	res := mat.NewVecDense(a.Len(), nil)
+	for i := 0; i < a.Len(); i++ {
+		res.SetVec(i, math.Max(a.AtVec(i), b.AtVec(i)))
+	}
 	return res
 }

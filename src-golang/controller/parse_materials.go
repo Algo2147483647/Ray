@@ -11,7 +11,7 @@ func ParseMaterials(script *Script) map[string]*optics.Material {
 	materials := make(map[string]*optics.Material)
 
 	for _, matDef := range script.Materials {
-		material := optics.NewMaterial(mat.NewVecDense(3, cast.ToFloat64Slice(matDef["color"])))
+		material := optics.NewMaterial(mat.NewVecDense(GetFloat64SliceForScript(matDef["color"])))
 
 		if val, ok := matDef["radiate"]; ok {
 			material.Radiation = cast.ToBool(val)
@@ -27,7 +27,7 @@ func ParseMaterials(script *Script) map[string]*optics.Material {
 		}
 		if val, ok := matDef["refractive_index"]; ok {
 			if reflect.TypeOf(val).Kind() == reflect.Slice {
-				material.RefractiveIndex = mat.NewVecDense(3, cast.ToFloat64Slice(val))
+				material.RefractiveIndex = mat.NewVecDense(GetFloat64SliceForScript(val))
 			} else {
 				material.RefractiveIndex = mat.NewVecDense(1, []float64{cast.ToFloat64(val)})
 			}

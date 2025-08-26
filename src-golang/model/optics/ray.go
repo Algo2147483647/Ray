@@ -5,6 +5,7 @@ import (
 	"math"
 	"math/rand/v2"
 	"src-golang/math_lib"
+	"src-golang/utils"
 )
 
 type Ray struct {
@@ -20,13 +21,13 @@ var DebugRayTraces []map[string]interface{}
 
 func (r *Ray) Init() {
 	if r.Origin == nil {
-		r.Origin = mat.NewVecDense(3, nil)
+		r.Origin = mat.NewVecDense(utils.Dimension, nil)
 	} else {
 		r.Origin.Zero()
 	}
 
 	if r.Direction == nil {
-		r.Direction = mat.NewVecDense(3, nil)
+		r.Direction = mat.NewVecDense(utils.Dimension, nil)
 	} else {
 		r.Origin.Zero()
 	}

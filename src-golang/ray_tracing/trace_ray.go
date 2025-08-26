@@ -11,7 +11,7 @@ import (
 
 func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level int64) *mat.VecDense {
 	var (
-		normal        = mat.NewVecDense(3, nil)
+		normal        = mat.NewVecDense(ray.Origin.Len(), nil)
 		DebugRayTrace = map[string]interface{}{}
 	)
 

@@ -3,6 +3,7 @@ package ray_tracing
 import (
 	"gonum.org/v1/gonum/mat"
 	"src-golang/model/optics"
+	"src-golang/utils"
 	"sync"
 )
 
@@ -23,8 +24,8 @@ func NewHandler() *Handler {
 		RayPool: sync.Pool{
 			New: func() interface{} {
 				return &optics.Ray{
-					Origin:    mat.NewVecDense(3, nil),
-					Direction: mat.NewVecDense(3, nil),
+					Origin:    mat.NewVecDense(utils.Dimension, nil),
+					Direction: mat.NewVecDense(utils.Dimension, nil),
 					Color:     mat.NewVecDense(3, nil),
 				}
 			},

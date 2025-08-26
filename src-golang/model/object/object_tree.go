@@ -10,31 +10,12 @@ import (
 	"strings"
 )
 
-// ObjectTree 管理场景中的物体层次结构
 type ObjectTree struct {
 	Root        *ObjectNode
 	Objects     []*Object
 	ObjectNodes []*ObjectNode
 }
 
-// 向量操作工具函数
-func vecMin(a, b *mat.VecDense) *mat.VecDense {
-	return mat.NewVecDense(3, []float64{
-		math.Min(a.AtVec(0), b.AtVec(0)),
-		math.Min(a.AtVec(1), b.AtVec(1)),
-		math.Min(a.AtVec(2), b.AtVec(2)),
-	})
-}
-
-func vecMax(a, b *mat.VecDense) *mat.VecDense {
-	return mat.NewVecDense(3, []float64{
-		math.Max(a.AtVec(0), b.AtVec(0)),
-		math.Max(a.AtVec(1), b.AtVec(1)),
-		math.Max(a.AtVec(2), b.AtVec(2)),
-	})
-}
-
-// Add 添加新物体到场景
 func (t *ObjectTree) AddObject(object *Object) *Object {
 	t.Objects = append(t.Objects, object)
 	return t.Objects[len(t.Objects)-1]
@@ -74,8 +55,8 @@ func (t *ObjectTree) build(l, r int, node **ObjectNode) {
 
 	for i := l + 1; i <= r; i++ {
 		box := t.ObjectNodes[i].BoundBox
-		pmin = vecMin(pmin, box.Pmin)
-		pmax = vecMax(pmax, box.Pmax)
+		pmin = math_lib.MinVec(pmin, box.Pmin)
+		pmax = math_lib.MaxVec(pmax, box.Pmax)
 	}
 
 	// 2. 选择划分维度

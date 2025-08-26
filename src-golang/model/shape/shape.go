@@ -3,6 +3,7 @@ package shape
 import (
 	"gonum.org/v1/gonum/mat"
 	"math"
+	"src-golang/utils"
 )
 
 // Shape 表示几何形状的接口
@@ -31,8 +32,11 @@ func (bs *BaseShape) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense
 }
 
 func (bs *BaseShape) BuildBoundingBox() (pmin, pmax *mat.VecDense) {
-	maxVal := math.MaxFloat64 / 2 // 避免后续计算溢出
-	pmin = mat.NewVecDense(3, []float64{-maxVal, -maxVal, -maxVal})
-	pmax = mat.NewVecDense(3, []float64{+maxVal, +maxVal, +maxVal})
+	pmin = mat.NewVecDense(utils.Dimension, nil)
+	pmax = mat.NewVecDense(utils.Dimension, nil)
+	for i := 0; i < utils.Dimension; i++ {
+		pmin.SetVec(i, -math.MaxFloat64/2) // math.MaxFloat64 / 2  避免后续计算溢出
+		pmax.SetVec(i, +math.MaxFloat64/2)
+	}
 	return
 }

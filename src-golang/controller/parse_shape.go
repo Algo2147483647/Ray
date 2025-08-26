@@ -13,23 +13,27 @@ import (
 	"strings"
 )
 
+func GetFloat64SliceForScript(req interface{}) (int, []float64) {
+	return len(cast.ToFloat64Slice(req)), cast.ToFloat64Slice(req)
+}
+
 func ParseShape(objDef map[string]interface{}) (res []*shape.Shape) {
 	switch objDef["shape"] {
 	case "cuboid":
 		var item *shape.Cuboid
 		if _, ok := objDef["position"]; ok {
-			position := mat.NewVecDense(3, cast.ToFloat64Slice(objDef["position"]))
-			halfSize := math_lib.ScaleVec2(0.5, mat.NewVecDense(3, cast.ToFloat64Slice(objDef["size"])))
-			pmax := mat.NewVecDense(3, nil)
-			pmin := mat.NewVecDense(3, nil)
+			position := mat.NewVecDense(GetFloat64SliceForScript(objDef["position"]))
+			halfSize := math_lib.ScaleVec2(0.5, mat.NewVecDense(GetFloat64SliceForScript(objDef["size"])))
+			pmax := mat.NewVecDense(position.Len(), nil)
+			pmin := mat.NewVecDense(position.Len(), nil)
 			item = shape.NewCuboid(
 				math_lib.SubVec(pmin, position, halfSize),
 				math_lib.AddVec(pmax, position, halfSize),
 			)
 		} else if _, ok := objDef["pmax"]; ok {
 			item = shape.NewCuboid(
-				mat.NewVecDense(3, cast.ToFloat64Slice(objDef["pmin"])),
-				mat.NewVecDense(3, cast.ToFloat64Slice(objDef["pmax"])),
+				mat.NewVecDense(GetFloat64SliceForScript(objDef["pmin"])),
+				mat.NewVecDense(GetFloat64SliceForScript(objDef["pmax"])),
 			)
 		}
 
@@ -45,7 +49,7 @@ func ParseShape(objDef map[string]interface{}) (res []*shape.Shape) {
 
 	case "sphere":
 		sphere := shape.NewSphere(
-			mat.NewVecDense(3, cast.ToFloat64Slice(objDef["position"])),
+			mat.NewVecDense(GetFloat64SliceForScript(objDef["position"])),
 			cast.ToFloat64(objDef["r"]),
 		)
 		if _, ok := objDef["engraving_func"]; ok {
@@ -56,9 +60,9 @@ func ParseShape(objDef map[string]interface{}) (res []*shape.Shape) {
 
 	case "triangle":
 		triangle := shape.NewTriangle(
-			mat.NewVecDense(3, cast.ToFloat64Slice(objDef["p1"])),
-			mat.NewVecDense(3, cast.ToFloat64Slice(objDef["p2"])),
-			mat.NewVecDense(3, cast.ToFloat64Slice(objDef["p3"])),
+			mat.NewVecDense(GetFloat64SliceForScript(objDef["p1"])),
+			mat.NewVecDense(GetFloat64SliceForScript(objDef["p2"])),
+			mat.NewVecDense(GetFloat64SliceForScript(objDef["p3"])),
 		)
 		s := shape.Shape(triangle)
 		return []*shape.Shape{&s}
@@ -67,7 +71,7 @@ func ParseShape(objDef map[string]interface{}) (res []*shape.Shape) {
 	case "quadratic equation":
 		qe := shape.NewQuadraticEquation(
 			mat.NewDense(3, 3, cast.ToFloat64Slice(objDef["a"])),
-			mat.NewVecDense(3, cast.ToFloat64Slice(objDef["b"])),
+			mat.NewVecDense(GetFloat64SliceForScript(objDef["b"])),
 			cast.ToFloat64(objDef["c"]),
 		)
 		s := shape.Shape(qe)
@@ -82,10 +86,10 @@ func ParseShape(objDef map[string]interface{}) (res []*shape.Shape) {
 
 func ParseShapeForSTL(objDef map[string]interface{}) []*shape.Shape {
 	file_path := cast.ToString(objDef["file"])
-	position := mat.NewVecDense(3, cast.ToFloat64Slice(objDef["position"]))
-	z_dir := mat.NewVecDense(3, cast.ToFloat64Slice(objDef["z_dir"]))
-	x_dir := mat.NewVecDense(3, cast.ToFloat64Slice(objDef["x_dir"]))
-	scale := mat.NewVecDense(3, cast.ToFloat64Slice(objDef["scale"]))
+	position := mat.NewVecDense(GetFloat64SliceForScript(objDef["position"]))
+	z_dir := mat.NewVecDense(GetFloat64SliceForScript(objDef["z_dir"]))
+	x_dir := mat.NewVecDense(GetFloat64SliceForScript(objDef["x_dir"]))
+	scale := mat.NewVecDense(GetFloat64SliceForScript(objDef["scale"]))
 
 	// 读取 STL 文件中的数据
 	file, err := os.Open(file_path)
@@ -215,7 +219,7 @@ func ParseShapeForSTL(objDef map[string]interface{}) []*shape.Shape {
 // 使用4x4变换矩阵变换顶点
 func transformVertexWithMatrix(vertex *mat.VecDense, transformMatrix *mat.Dense) *mat.VecDense {
 	// 将3D顶点转换为齐次坐标（4D）
-	vertexHomogeneous := mat.NewVecDense(4, []float64{
+	vertexHomogeneous := mat.NewVecDense(vertex.Len()+1, []float64{
 		vertex.AtVec(0),
 		vertex.AtVec(1),
 		vertex.AtVec(2),
@@ -227,7 +231,7 @@ func transformVertexWithMatrix(vertex *mat.VecDense, transformMatrix *mat.Dense)
 	transformed.MulVec(transformMatrix, vertexHomogeneous)
 
 	// 转换回3D坐标
-	result := mat.NewVecDense(3, []float64{
+	result := mat.NewVecDense(vertex.Len(), []float64{
 		transformed.AtVec(0),
 		transformed.AtVec(1),
 		transformed.AtVec(2),

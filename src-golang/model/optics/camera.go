@@ -26,7 +26,7 @@ func NewCamera() *Camera {
 
 // SetLookAt 设置相机观察目标
 func (c *Camera) SetLookAt(lookAt *mat.VecDense) *Camera {
-	c.Direction = mat.NewVecDense(3, nil)
+	c.Direction = mat.NewVecDense(lookAt.Len(), nil)
 	c.Direction.SubVec(lookAt, c.Position)
 	math_lib.Normalize(c.Direction)
 	return c
@@ -38,24 +38,22 @@ func (c *Camera) GenerateRay(ray *Ray, row, col int) *Ray {
 	}
 	ray.Init()
 
-	dir := c.Direction
-	up := c.Up
-	right := math_lib.Normalize(math_lib.Cross2(dir, up)) // 计算右向量和上向量
-
-	fovRad := c.FieldOfView * math.Pi / 180
-	halfHeight := math.Tan(fovRad / 2)
-	halfWidth := c.AspectRatio * halfHeight
-
-	u := 2*(float64(row)+rand.Float64())/float64(c.Width) - 1  // [-1, 1]
-	v := 2*(float64(col)+rand.Float64())/float64(c.Height) - 1 // [-1, 1]
-	u *= halfWidth
-	v *= -halfHeight //（翻转Y轴）
+	var (
+		dir        = c.Direction
+		up         = c.Up
+		right      = math_lib.Normalize(math_lib.Cross2(dir, up))          // 计算右向量和上向量
+		u          = 2*(float64(row)+rand.Float64())/float64(c.Width) - 1  // [-1, 1]
+		v          = 2*(float64(col)+rand.Float64())/float64(c.Height) - 1 // [-1, 1]
+		fovRad     = c.FieldOfView * math.Pi / 180
+		halfHeight = math.Tan(fovRad / 2)
+		halfWidth  = c.AspectRatio * halfHeight
+	)
 
 	ray.Color = mat.NewVecDense(3, []float64{1, 1, 1})
 	ray.Origin.CloneFromVec(c.Position)
 	ray.Direction.CloneFromVec(dir)
-	ray.Direction.AddScaledVec(ray.Direction, u, right)
-	ray.Direction.AddScaledVec(ray.Direction, v, up)
+	ray.Direction.AddScaledVec(ray.Direction, u*halfWidth, right)
+	ray.Direction.AddScaledVec(ray.Direction, -v*halfHeight, up)
 	math_lib.Normalize(ray.Direction)
 
 	return ray

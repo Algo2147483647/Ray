@@ -34,20 +34,22 @@ func DiffuseReflect(incidentRay, normal *mat.VecDense) *mat.VecDense {
 	u := utils.VectorPool.Get().(*mat.VecDense)
 	v := utils.VectorPool.Get().(*mat.VecDense)
 	t := utils.VectorPool.Get().(*mat.VecDense)
+	tangent := utils.VectorPool.Get().(*mat.VecDense)
 	defer func() {
 		utils.VectorPool.Put(u)
 		utils.VectorPool.Put(v)
 		utils.VectorPool.Put(t)
+		utils.VectorPool.Put(tangent)
 	}()
 
 	angle := 2 * math.Pi * rand.Float64()
 	r := rand.Float64() // 余弦加权采样
 
-	var tangent *mat.VecDense // 选择切向量基底
+	tangent.Zero()
 	if math.Abs(normal.AtVec(0)) > EPS {
-		tangent = mat.NewVecDense(3, []float64{0, 1, 0}) // UnitY
+		tangent.SetVec(1, 1) // UnitY
 	} else {
-		tangent = mat.NewVecDense(3, []float64{1, 0, 0}) // UnitX
+		tangent.SetVec(0, 1) // UnitX
 	}
 
 	ScaleVec(u, math.Cos(angle)*math.Sqrt(r), Normalize(Cross(t, tangent, normal)))

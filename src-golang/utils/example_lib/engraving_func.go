@@ -19,12 +19,12 @@ func EngravingFuncSphere1(data map[string]interface{}) bool {
 	r := data["r"].(float64)
 
 	// 计算交点位置
-	intersection := mat.NewVecDense(3, nil)
+	intersection := mat.NewVecDense(raySt.Len(), nil)
 	intersection.ScaleVec(distance, rayDir)
 	intersection.AddVec(intersection, raySt)
 
 	// 转换为相对于球心的坐标
-	relPos := mat.NewVecDense(3, nil)
+	relPos := mat.NewVecDense(raySt.Len(), nil)
 	relPos.SubVec(intersection, center)
 
 	// 计算球面坐标（方位角和极角）, 归一化到单位球
