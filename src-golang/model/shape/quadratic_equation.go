@@ -26,8 +26,8 @@ func (p *QuadraticEquation) Name() string {
 }
 
 func (p *QuadraticEquation) Intersect(raySt, rayDir *mat.VecDense) float64 {
-	A_rayDir := mat.NewVecDense(3, nil) // 计算二次项系数: rayDir^T A rayDir
-	A_raySt := mat.NewVecDense(3, nil)  // 计算一次项系数: 2 * raySt^T A rayDir + b^T rayDir
+	A_rayDir := mat.NewVecDense(raySt.Len(), nil) // 计算二次项系数: rayDir^T A rayDir
+	A_raySt := mat.NewVecDense(raySt.Len(), nil)  // 计算一次项系数: 2 * raySt^T A rayDir + b^T rayDir
 	A_rayDir.MulVec(p.A, rayDir)
 	A_raySt.MulVec(p.A, raySt)
 	a := mat.Dot(rayDir, A_rayDir)

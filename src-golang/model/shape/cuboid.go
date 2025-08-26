@@ -75,21 +75,19 @@ func (c *Cuboid) IntersectPure(raySt, rayDir *mat.VecDense) float64 {
 
 // GetNormalVector 计算交点的法向量
 func (c *Cuboid) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {
-	a := mat.NewVecDense(3, nil)
-	b := mat.NewVecDense(3, nil)
+	a := mat.NewVecDense(intersect.Len(), nil)
+	b := mat.NewVecDense(intersect.Len(), nil)
+	res = mat.NewVecDense(intersect.Len(), nil)
 	a.SubVec(intersect, c.Pmin)
 	b.SubVec(intersect, c.Pmax)
 
-	switch {
-	case math.Abs(a.AtVec(0)) < math_lib.EPS || math.Abs(b.AtVec(0)) < math_lib.EPS:
-		res = mat.NewVecDense(3, []float64{1, 0, 0})
-	case math.Abs(a.AtVec(1)) < math_lib.EPS || math.Abs(b.AtVec(1)) < math_lib.EPS:
-		res = mat.NewVecDense(3, []float64{0, 1, 0})
-	case math.Abs(a.AtVec(2)) < math_lib.EPS || math.Abs(b.AtVec(2)) < math_lib.EPS:
-		res = mat.NewVecDense(3, []float64{0, 0, 1})
-	default:
-		res = mat.NewVecDense(3, []float64{0, 0, 1})
+	for i := 0; i < intersect.Len(); i++ {
+		if math.Abs(a.AtVec(i)) < math_lib.EPS || math.Abs(b.AtVec(i)) < math_lib.EPS {
+			res.SetVec(i, 1)
+			return res
+		}
 	}
+
 	return res
 }
 

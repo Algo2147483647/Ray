@@ -7,6 +7,6 @@ import (
 
 var VectorPool = sync.Pool{
 	New: func() interface{} {
-		return mat.NewVecDense(3, nil)
+		return mat.NewVecDense(Dimension, nil)
 	},
 }

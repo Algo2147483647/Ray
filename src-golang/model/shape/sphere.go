@@ -73,9 +73,14 @@ func (s *Sphere) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {
 }
 
 func (s *Sphere) BuildBoundingBox() (pmin, pmax *mat.VecDense) {
-	offset := mat.NewVecDense(3, []float64{s.R, s.R, s.R})
-	pmax = mat.NewVecDense(3, nil)
-	pmin = mat.NewVecDense(3, nil)
+	dim := s.center.Len()
+	offsetData := make([]float64, dim)
+	for i := range offsetData {
+		offsetData[i] = s.R
+	}
+	offset := mat.NewVecDense(dim, offsetData)
+	pmax = mat.NewVecDense(dim, nil)
+	pmin = mat.NewVecDense(dim, nil)
 	pmax.AddVec(s.center, offset)
 	pmin.SubVec(s.center, offset)
 	return

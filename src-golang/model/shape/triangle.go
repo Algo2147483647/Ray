@@ -22,8 +22,8 @@ type TriangleCalculateStorage struct {
 }
 
 func NewTriangle(P1, P2, P3 *mat.VecDense) *Triangle {
-	edge1 := new(mat.VecDense)
-	edge2 := new(mat.VecDense)
+	edge1 := mat.NewVecDense(P1.Len(), nil)
+	edge2 := mat.NewVecDense(P1.Len(), nil)
 	res := &Triangle{
 		P1: P1,
 		P2: P2,
@@ -98,14 +98,14 @@ func (f *Triangle) GetNormalVector(_, res *mat.VecDense) *mat.VecDense {
 }
 
 func (f *Triangle) GetNormalVectorPure() *mat.VecDense {
-	edge1 := new(mat.VecDense)
-	edge2 := new(mat.VecDense)
+	edge1 := mat.NewVecDense(f.P1.Len(), nil)
+	edge2 := mat.NewVecDense(f.P1.Len(), nil)
 	return math_lib.Normalize(math_lib.Cross2(math_lib.SubVec(edge1, f.P2, f.P1), math_lib.SubVec(edge2, f.P3, f.P1)))
 }
 
 func (f *Triangle) BuildBoundingBox() (pmin, pmax *mat.VecDense) {
-	pmin = mat.NewVecDense(3, make([]float64, 3))
-	pmax = mat.NewVecDense(3, make([]float64, 3))
+	pmin = mat.NewVecDense(f.P1.Len(), nil)
+	pmax = mat.NewVecDense(f.P1.Len(), nil)
 
 	for i := 0; i < f.P1.Len(); i++ {
 		vals := []float64{f.P1.AtVec(i), f.P2.AtVec(i), f.P3.AtVec(i)}

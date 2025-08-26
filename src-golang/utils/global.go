@@ -1,5 +1,6 @@
 package utils
 
 const (
-	IsDebug = false
+	IsDebug   = false
+	Dimension = 3
 )
