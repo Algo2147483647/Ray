@@ -76,8 +76,6 @@ func Cross2(u, v *mat.VecDense) *mat.VecDense {
 	return Cross(mat.NewVecDense(u.Len(), nil), u, v)
 }
 
-// Cross4 计算四维向量叉积（需要三个向量）
-// 在四维空间中，需要三个线性无关的向量来定义一个垂直方向
 func Cross4(u, v, w *mat.VecDense) *mat.VecDense {
 	if u.Len() != 4 || v.Len() != 4 || w.Len() != 4 {
 		panic("The 4D cross product requires three 4-dimensional vectors.")
@@ -105,34 +103,32 @@ func Cross4(u, v, w *mat.VecDense) *mat.VecDense {
 	return result
 }
 
-// GramSchmidt4 对四个四维向量进行格拉姆-施密特正交化
-func GramSchmidt4(v1, v2, v3, v4 *mat.VecDense) (*mat.VecDense, *mat.VecDense, *mat.VecDense, *mat.VecDense) {
-	u1 := mat.VecDenseCopyOf(v1)
-	Normalize(u1)
+// GramSchmidt Perform Gram Schmidt orthogonalization on any number of vectors
+func GramSchmidt(v ...*mat.VecDense) []*mat.VecDense {
+	if len(v) == 0 {
+		return []*mat.VecDense{}
+	}
 
-	u2 := mat.NewVecDense(4, nil)
-	u2.SubVec(v2, project(v2, u1))
-	Normalize(u2)
+	dim := v[0].Len()
+	res := make([]*mat.VecDense, len(v))
+	res[0] = Normalize(mat.VecDenseCopyOf(v[0]))
 
-	u3 := mat.NewVecDense(4, nil)
-	u3.SubVec(v3, project(v3, u1))
-	temp := project(v3, u2)
-	u3.SubVec(u3, temp)
-	Normalize(u3)
+	for i := 1; i < len(v); i++ {
+		res[i] = mat.NewVecDense(dim, nil) // 创建新向量，初始值为原向量的副本
+		res[i].CopyVec(v[i])
 
-	u4 := mat.NewVecDense(4, nil)
-	u4.SubVec(v4, project(v4, u1))
-	temp = project(v4, u2)
-	u4.SubVec(u4, temp)
-	temp = project(v4, u3)
-	u4.SubVec(u4, temp)
-	Normalize(u4)
+		for j := 0; j < i; j++ {
+			res[i].SubVec(res[i], Project(v[i], res[j])) // 减去在之前所有已正交化向量上的投影
+		}
 
-	return u1, u2, u3, u4
+		Normalize(res[i]) // 归一化
+	}
+
+	return res
 }
 
 // project 计算向量投影: proj_u(v) = (v·u / u·u) * u
-func project(v, u *mat.VecDense) *mat.VecDense {
+func Project(v, u *mat.VecDense) *mat.VecDense {
 	dotProduct := mat.Dot(v, u)
 	uNormSq := mat.Dot(u, u)
 	coef := dotProduct / uNormSq
