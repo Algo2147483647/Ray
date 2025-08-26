@@ -29,7 +29,7 @@ func (r *Ray) Init() {
 	if r.Direction == nil {
 		r.Direction = mat.NewVecDense(utils.Dimension, nil)
 	} else {
-		r.Origin.Zero()
+		r.Direction.Zero()
 	}
 
 	if r.Color == nil {
@@ -40,11 +40,12 @@ func (r *Ray) Init() {
 	r.WaveLength = 0
 	r.DebugSwitch = false
 }
+
 func (ray *Ray) ConvertToMonochrome() {
 	ray.WaveLength = math_lib.WavelengthMin + rand.Float64()*(math_lib.WavelengthMax-math_lib.WavelengthMin)
 
 	baseColor := math_lib.Normalize(WaveLengthToRGB(ray.WaveLength))
-	baseColor = math_lib.ScaleVec(baseColor, 2, baseColor)
+	math_lib.ScaleVec(baseColor, 2, baseColor)
 
 	ray.Color.SetVec(0, baseColor.AtVec(0)*ray.Color.AtVec(0))
 	ray.Color.SetVec(1, baseColor.AtVec(1)*ray.Color.AtVec(1))
@@ -53,7 +54,7 @@ func (ray *Ray) ConvertToMonochrome() {
 
 func WaveLengthToRGB(wavelength float64) *mat.VecDense {
 	if wavelength >= math_lib.WavelengthMax || wavelength <= math_lib.WavelengthMin {
-		return mat.NewVecDense(3, []float64{0, 0, 0})
+		return mat.NewVecDense(3, nil)
 	}
 	t := (wavelength - math_lib.WavelengthMin) / (math_lib.WavelengthMax - math_lib.WavelengthMin)
 	r, g, b := math_lib.SpectrumFiveDivided(t)
