@@ -17,21 +17,13 @@ import (
 )
 
 type Handler struct {
-	err    error
-	Scene  *model.Scene
-	img    [3]*mat.Dense
-	Width  int
-	Height int
+	err   error
+	Scene *model.Scene
 }
 
-func NewHandler(Width, Height int) *Handler {
+func NewHandler() *Handler {
 	h := &Handler{
-		Scene:  model.NewScene(),
-		Width:  Width,
-		Height: Height,
-	}
-	for i, _ := range h.img {
-		h.img[i] = mat.NewDense(h.Width, h.Height, nil)
+		Scene: model.NewScene(),
 	}
 
 	return h
@@ -52,19 +44,18 @@ func (h *Handler) LoadScript(ScriptPath string) *Handler {
 	return h
 }
 
-func (h *Handler) BuildCamera() *Handler {
+func (h *Handler) BuildCamera(Width, Height int) *Handler {
 	if h.err != nil {
 		return h
 	}
 
-	camera := &optics.Camera3D{
-		Position:    mat.NewVecDense(utils.Dimension, []float64{-1.7, 0.1, 0.5}),
-		Up:          mat.NewVecDense(utils.Dimension, []float64{0, 0, 1}),
-		Width:       h.Width,
-		Height:      h.Height,
-		AspectRatio: 1,
-		FieldOfView: 100,
-	}
+	camera := optics.NewCamera3D()
+	camera.Position = mat.NewVecDense(utils.Dimension, []float64{-1.7, 0.1, 0.5})
+	camera.Up = mat.NewVecDense(utils.Dimension, []float64{0, 0, 1})
+	camera.Width = Width
+	camera.Height = Height
+	camera.AspectRatio = 1
+	camera.FieldOfView = 100
 	camera.SetLookAt(mat.NewVecDense(utils.Dimension, []float64{2, 0, 0}))
 	c := optics.Camera(camera)
 	h.Scene.Cameras = append(h.Scene.Cameras, c)
@@ -77,9 +68,10 @@ func (h *Handler) Render(samples, samplesSt int64) *Handler {
 		return h
 	}
 
+	c := h.Scene.Cameras[0].(*optics.Camera3D)
 	var img [3]*mat.Dense
-	for i, _ := range h.img {
-		img[i] = mat.NewDense(h.Width, h.Height, nil)
+	for i, _ := range img {
+		img[i] = mat.NewDense(c.Width, c.Height, nil)
 	}
 
 	fmt.Println("Starting rendering...")
@@ -91,21 +83,7 @@ func (h *Handler) Render(samples, samplesSt int64) *Handler {
 	elapsed := time.Since(start)
 	fmt.Printf("Rendering completed in %v\n", elapsed)
 
-	totalSamples := samples + samplesSt
-	if samplesSt > 0 {
-		for i := range h.img { // 使用加权平均合并采样结果
-			for x := 0; x < h.Width; x++ {
-				for y := 0; y < h.Height; y++ {
-					mergedValue := (h.img[i].At(x, y)*float64(samplesSt) + img[i].At(x, y)*float64(samples)) / float64(totalSamples) // 加权平均: (oldValue * samplesSt + newValue * samples) / totalSamples
-					h.img[i].Set(x, y, mergedValue)
-				}
-			}
-		}
-	} else {
-		for i := range h.img {
-			h.img[i].Copy(img[i])
-		}
-	}
+	c.MergeImage(img, samples, samplesSt)
 	return h
 }
 
@@ -140,13 +118,13 @@ func (h *Handler) SaveImg(filename string) *Handler {
 	}
 
 	fmt.Printf("Saving result to: %s\n", filename)
-
-	imgout := image.NewRGBA(image.Rect(0, 0, h.Width, h.Height))
-	for i := 0; i < h.Width; i++ {
-		for j := 0; j < h.Height; j++ {
-			r := uint8(min(h.img[0].At(i, j)*255, 255))
-			g := uint8(min(h.img[1].At(i, j)*255, 255))
-			b := uint8(min(h.img[2].At(i, j)*255, 255))
+	c := h.Scene.Cameras[0].(*optics.Camera3D)
+	imgout := image.NewRGBA(image.Rect(0, 0, c.Width, c.Height))
+	for i := 0; i < c.Width; i++ {
+		for j := 0; j < c.Height; j++ {
+			r := uint8(min(c.Image[0].At(i, j)*255, 255))
+			g := uint8(min(c.Image[1].At(i, j)*255, 255))
+			b := uint8(min(c.Image[2].At(i, j)*255, 255))
 			imgout.Set(i, j, color.RGBA{r, g, b, 255})
 		}
 	}
@@ -171,9 +149,8 @@ func (h *Handler) SaveResult(filename string) *Handler {
 		return h
 	}
 
-	if err := utils.SaveMatrices(filename, h.img); err != nil {
-		panic(err)
-	}
+	c := h.Scene.Cameras[0].(*optics.Camera3D)
+	c.SaveImage(filename)
 
 	return h
 }
@@ -182,11 +159,8 @@ func (h *Handler) LoadResult(filename string) *Handler {
 	if h.err != nil {
 		return h
 	}
-
-	h.img, h.err = utils.LoadMatrices(filename)
-	if h.err != nil {
-		panic(h.err)
-	}
+	c := h.Scene.Cameras[0].(*optics.Camera3D)
+	c.LoadImage(filename)
 
 	return h
 }
