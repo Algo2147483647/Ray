@@ -10,7 +10,7 @@ import (
 	"os"
 	"src-golang/controller"
 	"src-golang/model"
-	optics2 "src-golang/model/optics"
+	"src-golang/model/optics"
 	"src-golang/ray_tracing"
 	"src-golang/utils"
 	"time"
@@ -57,7 +57,7 @@ func (h *Handler) BuildCamera() *Handler {
 		return h
 	}
 
-	camera := &optics2.Camera{
+	camera := &optics.Camera3D{
 		Position:    mat.NewVecDense(utils.Dimension, []float64{-1.7, 0.1, 0.5}),
 		Up:          mat.NewVecDense(utils.Dimension, []float64{0, 0, 1}),
 		Width:       h.Width,
@@ -66,12 +66,13 @@ func (h *Handler) BuildCamera() *Handler {
 		FieldOfView: 100,
 	}
 	camera.SetLookAt(mat.NewVecDense(utils.Dimension, []float64{2, 0, 0}))
-	h.Scene.Cameras = append(h.Scene.Cameras, camera)
+	c := optics.Camera(camera)
+	h.Scene.Cameras = append(h.Scene.Cameras, c)
 
 	return h
 }
 
-func (h *Handler) Render(samples, samplesSt int) *Handler {
+func (h *Handler) Render(samples, samplesSt int64) *Handler {
 	if h.err != nil {
 		return h
 	}
@@ -123,7 +124,7 @@ func (h *Handler) SaveDebugInfo(filename string) *Handler {
 
 		encoder := json.NewEncoder(file)
 		encoder.SetIndent("", "  ")
-		err = encoder.Encode(optics2.DebugRayTraces)
+		err = encoder.Encode(optics.DebugRayTraces)
 		if err != nil {
 			h.err = err
 			return h

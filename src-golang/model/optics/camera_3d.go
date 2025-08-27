@@ -32,11 +32,11 @@ func (c *Camera3D) SetLookAt(lookAt *mat.VecDense) *Camera3D {
 	return c
 }
 
-func (c *Camera3D) GenerateRay(ray *Ray, index []int64) *Ray {
-	if ray == nil {
-		ray = &Ray{}
+func (c *Camera3D) GenerateRay(res *Ray, index []int64) *Ray {
+	if res == nil {
+		res = &Ray{}
 	}
-	ray.Init()
+	res.Init()
 
 	var (
 		row, col   = index[0], index[1]
@@ -50,12 +50,12 @@ func (c *Camera3D) GenerateRay(ray *Ray, index []int64) *Ray {
 		halfWidth  = c.AspectRatio * halfHeight
 	)
 
-	ray.Color = mat.NewVecDense(3, []float64{1, 1, 1})
-	ray.Origin.CloneFromVec(c.Position)
-	ray.Direction.CloneFromVec(dir)
-	ray.Direction.AddScaledVec(ray.Direction, u*halfWidth, right)
-	ray.Direction.AddScaledVec(ray.Direction, -v*halfHeight, up)
-	math_lib.Normalize(ray.Direction)
+	res.Color = mat.NewVecDense(3, []float64{1, 1, 1})
+	res.Origin.CloneFromVec(c.Position)
+	res.Direction.CloneFromVec(dir)
+	res.Direction.AddScaledVec(res.Direction, u*halfWidth, right)
+	res.Direction.AddScaledVec(res.Direction, -v*halfHeight, up)
+	math_lib.Normalize(res.Direction)
 
-	return ray
+	return res
 }

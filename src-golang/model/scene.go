@@ -7,7 +7,7 @@ import (
 
 type Scene struct {
 	ObjectTree *object.ObjectTree `json:"object_tree"`
-	Cameras    []*optics.Camera   `json:"cameras"`
+	Cameras    []optics.Camera    `json:"cameras"`
 }
 
 func NewScene() *Scene {

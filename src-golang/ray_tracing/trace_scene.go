@@ -10,7 +10,7 @@ import (
 )
 
 // TraceScene 追踪整个场景
-func (h *Handler) TraceScene(scene *model.Scene, img [3]*mat.Dense, samples int) {
+func (h *Handler) TraceScene(scene *model.Scene, img [3]*mat.Dense, samples int64) {
 	rows, cols := img[0].Dims()
 	totalPixels := rows * cols
 
@@ -56,7 +56,7 @@ func (h *Handler) TraceScene(scene *model.Scene, img [3]*mat.Dense, samples int)
 		go func(seed int64) {
 			defer wg.Done()
 			for pixel := range taskChan {
-				color := h.TracePixel(scene.Cameras[0], scene.ObjectTree, pixel[0], pixel[1], samples)
+				color := h.TracePixel(scene.Cameras[0], scene.ObjectTree, int64(pixel[0]), int64(pixel[1]), samples)
 				for ch := 0; ch < 3; ch++ {
 					img[ch].Set(pixel[0], pixel[1], color.AtVec(ch))
 				}
