@@ -13,109 +13,35 @@
             "diffuse_loss": 0.7
         },
         {
-            "id": "mirror",
-            "color": [1.0, 1.0, 1.0],
-            "reflectivity": 1,
-            "refractivity": 0.0
-        },
-        {
             "id": "wallpaper1",
             "color": [1, 0.68, 0.75],
             "reflectivity": 0.0,
             "refractivity": 0.0,
             "diffuse_loss": 0.7
-        },
-        {
-            "id": "wallpaper2",
-            "color": [0.65, 0.62, 1],
-            "reflectivity": 0.0,
-            "refractivity": 0.0,
-            "diffuse_loss": 0.7
-        },
-        {
-            "id": "glass",
-            "color": [1, 1, 1],
-            "reflectivity": 0.0,
-            "refractivity": 1.0,
-            "refractive_index": [1.000, 50000, 0]
-        },
-        {
-            "id": "glass3",
-            "color": [1, 1, 1],
-            "reflectivity": 0.0,
-            "refractivity": 1.0,
-            "refractive_index": [0.4, 50000, 0]
         }
     ],
     "objects": [
         {
             "id": "WorldBox",
             "shape": "cuboid",
-            "position": [0, 0, 0],
-            "size": [5, 5, 5],
+            "position": [0, 0, 0, 0],
+            "size": [5, 5, 5, 5],
             "material_id": "WorldBoundary"
         },
         {
             "id": "sphere",
             "shape": "sphere",
-            "position": [1.2, 0, 0],
+            "position": [2.2, 0, 0, 0],
             "r": 0.9,
             "material_id": "mirror",
             "engraving_func": "sphere1"
         },
         {
-            "id": "glass",
-            "shape": "sphere",
-            "position": [1.2, -1, 0],
-            "r": 0.9,
-            "material_id": "glass3"
-        },
-        {
-            "id": "glass",
-            "shape": "sphere",
-            "position": [1.2, 1, 0],
-            "r": 0.9,
-            "material_id": "glass"
-        },
-        {
-            "id": "MainLight",
-            "shape": "triangle",
-            "p1": [ 1.5, 1.5, 2.49],
-            "p2": [ 1.5,-1.5, 2.49],
-            "p3": [-1.5, 1.5, 2.49],
-            "material_id": "LightSource"
-        },
-        {
-            "id": "wallpaper",
-            "shape": "triangle",
-            "p1": [-2.5, 2.49,-2.5],
-            "p2": [-2.5, 2.49, 2.5],
-            "p3": [2.5, 2.49, -2.5],
+            "id": "wallpaper1",
+            "shape": "cuboid",
+            "position": [1, 1, 1, 1],
+            "size": [0.3, 0.3, 0.3, 0.3],
             "material_id": "wallpaper1"
-        },
-        {
-            "id": "wallpaper",
-            "shape": "triangle",
-            "p1": [ 2.5, 2.49, 2.5],
-            "p2": [-2.5, 2.49, 2.5],
-            "p3": [ 2.5, 2.49,-2.5],
-            "material_id": "wallpaper1"
-        },
-        {
-            "id": "wallpaper",
-            "shape": "triangle",
-            "p1": [-2.5,-2.49,-2.5],
-            "p2": [-2.5,-2.49, 2.5],
-            "p3": [2.5,-2.49, -2.5],
-            "material_id": "wallpaper2"
-        },
-        {
-            "id": "wallpaper",
-            "shape": "triangle",
-            "p1": [ 2.5,-2.49, 2.5],
-            "p2": [-2.5,-2.49, 2.5],
-            "p3": [ 2.5,-2.49,-2.5],
-            "material_id": "wallpaper2"
         }
     ]
 }

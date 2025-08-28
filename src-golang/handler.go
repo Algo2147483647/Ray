@@ -10,6 +10,7 @@ import (
 	"os"
 	"src-golang/controller"
 	"src-golang/model"
+	"src-golang/model/camera"
 	"src-golang/model/optics"
 	"src-golang/ray_tracing"
 	"src-golang/utils"
@@ -49,7 +50,7 @@ func (h *Handler) BuildCamera(Width, Height int) *Handler {
 		return h
 	}
 
-	camera := optics.NewCamera3D()
+	camera := camera.NewCamera3D()
 	camera.Position = mat.NewVecDense(utils.Dimension, []float64{-1.7, 0.1, 0.5})
 	camera.Up = mat.NewVecDense(utils.Dimension, []float64{0, 0, 1})
 	camera.Width = Width
@@ -57,7 +58,7 @@ func (h *Handler) BuildCamera(Width, Height int) *Handler {
 	camera.AspectRatio = 1
 	camera.FieldOfView = 100
 	camera.SetLookAt(mat.NewVecDense(utils.Dimension, []float64{2, 0, 0}))
-	c := optics.Camera(camera)
+	c := camera.Camera(camera)
 	h.Scene.Cameras = append(h.Scene.Cameras, c)
 
 	return h
@@ -68,7 +69,7 @@ func (h *Handler) Render(samples, samplesSt int64) *Handler {
 		return h
 	}
 
-	c := h.Scene.Cameras[0].(*optics.Camera3D)
+	c := h.Scene.Cameras[0].(*camera.Camera3D)
 	var img [3]*mat.Dense
 	for i, _ := range img {
 		img[i] = mat.NewDense(c.Width, c.Height, nil)
@@ -118,7 +119,7 @@ func (h *Handler) SaveImg(filename string) *Handler {
 	}
 
 	fmt.Printf("Saving result to: %s\n", filename)
-	c := h.Scene.Cameras[0].(*optics.Camera3D)
+	c := h.Scene.Cameras[0].(*camera.Camera3D)
 	imgout := image.NewRGBA(image.Rect(0, 0, c.Width, c.Height))
 	for i := 0; i < c.Width; i++ {
 		for j := 0; j < c.Height; j++ {
@@ -149,7 +150,7 @@ func (h *Handler) SaveResult(filename string) *Handler {
 		return h
 	}
 
-	c := h.Scene.Cameras[0].(*optics.Camera3D)
+	c := h.Scene.Cameras[0].(*camera.Camera3D)
 	c.SaveImage(filename)
 
 	return h
@@ -159,7 +160,7 @@ func (h *Handler) LoadResult(filename string) *Handler {
 	if h.err != nil {
 		return h
 	}
-	c := h.Scene.Cameras[0].(*optics.Camera3D)
+	c := h.Scene.Cameras[0].(*camera.Camera3D)
 	c.LoadImage(filename)
 
 	return h

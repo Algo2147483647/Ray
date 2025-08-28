@@ -1,14 +1,14 @@
-package optics
+package camera
 
 import (
 	"gonum.org/v1/gonum/mat"
 	"math"
-	"math/rand"
+	"math/rand/v2"
 	"src-golang/math_lib"
+	"src-golang/model/optics"
 	"src-golang/utils"
 )
 
-// Camera 表示场景中的相机
 type Camera3D struct {
 	CameraBase
 	Position    *mat.VecDense // 相机位置
@@ -24,6 +24,34 @@ type Camera3D struct {
 
 func NewCamera3D() *Camera3D {
 	return &Camera3D{}
+}
+
+func (c *Camera3D) GenerateRay(res *optics.Ray, index ...int) *optics.Ray {
+	if res == nil {
+		res = &optics.Ray{}
+	}
+	res.Init()
+
+	var (
+		row, col   = index[0], index[1]
+		dir        = c.Direction
+		up         = c.Up
+		right      = math_lib.Normalize(math_lib.Cross2(dir, up))          // 计算右向量和上向量
+		u          = 2*(float64(row)+rand.Float64())/float64(c.Width) - 1  // [-1, 1]
+		v          = 2*(float64(col)+rand.Float64())/float64(c.Height) - 1 // [-1, 1]
+		fovRad     = c.FieldOfView * math.Pi / 180
+		halfHeight = math.Tan(fovRad / 2)
+		halfWidth  = c.AspectRatio * halfHeight
+	)
+
+	res.Color = mat.NewVecDense(3, []float64{1, 1, 1})
+	res.Origin.CloneFromVec(c.Position)
+	res.Direction.CloneFromVec(dir)
+	res.Direction.AddScaledVec(res.Direction, u*halfWidth, right)
+	res.Direction.AddScaledVec(res.Direction, -v*halfHeight, up)
+	math_lib.Normalize(res.Direction)
+
+	return res
 }
 
 // SetLookAt 设置相机观察目标
@@ -73,32 +101,4 @@ func (c *Camera3D) MergeImage(data [3]*mat.Dense, samples, samplesSt int64) {
 			c.Image[i].Copy(data[i])
 		}
 	}
-}
-
-func (c *Camera3D) GenerateRay(res *Ray, index []int64) *Ray {
-	if res == nil {
-		res = &Ray{}
-	}
-	res.Init()
-
-	var (
-		row, col   = index[0], index[1]
-		dir        = c.Direction
-		up         = c.Up
-		right      = math_lib.Normalize(math_lib.Cross2(dir, up))          // 计算右向量和上向量
-		u          = 2*(float64(row)+rand.Float64())/float64(c.Width) - 1  // [-1, 1]
-		v          = 2*(float64(col)+rand.Float64())/float64(c.Height) - 1 // [-1, 1]
-		fovRad     = c.FieldOfView * math.Pi / 180
-		halfHeight = math.Tan(fovRad / 2)
-		halfWidth  = c.AspectRatio * halfHeight
-	)
-
-	res.Color = mat.NewVecDense(3, []float64{1, 1, 1})
-	res.Origin.CloneFromVec(c.Position)
-	res.Direction.CloneFromVec(dir)
-	res.Direction.AddScaledVec(res.Direction, u*halfWidth, right)
-	res.Direction.AddScaledVec(res.Direction, -v*halfHeight, up)
-	math_lib.Normalize(res.Direction)
-
-	return res
 }

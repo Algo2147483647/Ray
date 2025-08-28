@@ -1,19 +1,21 @@
-package optics
+package camera
 
 import (
 	"gonum.org/v1/gonum/mat"
 	"math"
 	"math/rand"
 	"src-golang/math_lib"
+	"src-golang/model/optics"
 )
 
 type CameraNDim struct {
 	CameraBase
-	Position    *mat.VecDense   // 相机位置
-	Coordinates []*mat.VecDense // 坐标系
-	Width       []int64         // 像素宽度
-	FieldOfView []float64       // 视野角度 (度)
-	Ortho       bool            // 正交相机 / 透视相机
+	Position    *mat.VecDense               // 相机位置
+	Coordinates []*mat.VecDense             // 坐标系
+	Width       []int64                     // 像素宽度
+	FieldOfView []float64                   // 视野角度 (度)
+	Ortho       bool                        // 正交相机 / 透视相机
+	Image       [3]math_lib.Tensor[float64] // 输出图像
 }
 
 // NewCamera 创建新相机
@@ -21,9 +23,9 @@ func NewCameraNDim() *CameraNDim {
 	return &CameraNDim{}
 }
 
-func (c *CameraNDim) GenerateRay(res *Ray, x []int64) *Ray {
+func (c *CameraNDim) GenerateRay(res *optics.Ray, x ...int) *optics.Ray {
 	if res == nil {
-		res = &Ray{}
+		res = &optics.Ray{}
 	}
 	res.Init()
 

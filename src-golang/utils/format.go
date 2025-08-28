@@ -25,3 +25,21 @@ func MatrixToSlice(m *mat.Dense) [][]float64 {
 	}
 	return result
 }
+
+func CreateNDSlice[T any](sizes []int) any {
+	if len(sizes) == 0 {
+		var zero T
+		return zero
+	}
+
+	if len(sizes) == 1 {
+		return make([]T, sizes[0])
+	}
+
+	// 递归创建子切片
+	slice := make([]any, sizes[0])
+	for i := range slice {
+		slice[i] = CreateNDSlice[T](sizes[1:])
+	}
+	return slice
+}
