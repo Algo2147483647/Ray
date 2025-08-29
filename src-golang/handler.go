@@ -44,32 +44,32 @@ func (h *Handler) LoadScript(ScriptPath string) *Handler {
 	return h
 }
 
-func (h *Handler) BuildCamera(Width, Height int) *Handler {
+func (h *Handler) BuildCamera(Width ...int64) *Handler {
 	if h.err != nil {
 		return h
 	}
 
-	camera := &camera.Camera{
-		Position:    mat.NewVecDense(utils.Dimension, []float64{-1.7, 0.1, 0.5}),
-		Up:          mat.NewVecDense(utils.Dimension, []float64{0, 0, 1}),
+	c := &camera.CameraNDim{
+		Position: mat.NewVecDense(utils.Dimension, []float64{0, 0, 0, 0}),
+		Coordinates: []*mat.VecDense{
+			mat.NewVecDense(utils.Dimension, []float64{1, 0, 0, 0}),
+			mat.NewVecDense(utils.Dimension, []float64{0, 1, 0, 0}),
+			mat.NewVecDense(utils.Dimension, []float64{0, 0, 1, 0}),
+			mat.NewVecDense(utils.Dimension, []float64{0, 0, 0, 1}),
+		},
 		Width:       Width,
-		Height:      Height,
-		AspectRatio: 1,
-		FieldOfView: 100,
+		FieldOfView: []float64{100, 100, 100},
 	}
-	camera.SetLookAt(mat.NewVecDense(utils.Dimension, []float64{2, 0, 0}))
-	c := camera.Camera(camera)
 	h.Scene.Cameras = append(h.Scene.Cameras, c)
-
 	return h
 }
 
-func (h *Handler) BuildFilm(Width, Height int) *Handler {
+func (h *Handler) BuildFilm(Width ...int64) *Handler {
 	if h.err != nil {
 		return h
 	}
 
-	h.Film = camera.NewFilm(3, Width, Height)
+	h.Film = camera.NewFilm(Width...)
 
 	return h
 }
@@ -156,7 +156,7 @@ func (h *Handler) MergeFilm(filename string) *Handler {
 		return h
 	}
 
-	t := camera.NewFilm(h.Film.Data.Shape...)
+	t := camera.NewFilm(h.Film.Data[0].Shape...)
 	err := t.LoadFromFile(filename)
 	if err != nil {
 		h.err = err

@@ -9,13 +9,13 @@ import (
 )
 
 // TracePixel 追踪单个像素
-func (h *Handler) TracePixel(camera camera.Camera, objTree *object.ObjectTree, row, col int64, samples int64) *mat.VecDense {
+func (h *Handler) TracePixel(camera camera.Camera, objTree *object.ObjectTree, samples int64, index ...int64) *mat.VecDense {
 	color := mat.NewVecDense(3, nil)
 	ray := h.RayPool.Get().(*optics.Ray) // new ray
 	defer h.RayPool.Put(ray)
 
 	for s := int64(0); s < samples; s++ {
-		camera.GenerateRay(ray, row, col)          // build ray
+		camera.GenerateRay(ray, index...)          // build ray
 		sampleColor := h.TraceRay(objTree, ray, 0) // trace ray
 		color.AddVec(color, sampleColor)
 	}

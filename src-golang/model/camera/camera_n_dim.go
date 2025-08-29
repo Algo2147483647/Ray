@@ -22,7 +22,7 @@ func NewCameraNDim() *CameraNDim {
 	return &CameraNDim{}
 }
 
-func (c *CameraNDim) GenerateRay(res *optics.Ray, x ...int) *optics.Ray {
+func (c *CameraNDim) GenerateRay(res *optics.Ray, x ...int64) *optics.Ray {
 	if res == nil {
 		res = &optics.Ray{}
 	}
@@ -35,7 +35,7 @@ func (c *CameraNDim) GenerateRay(res *optics.Ray, x ...int) *optics.Ray {
 	)
 
 	for i := 0; i < dim; i++ {
-		u[i] = 2*(float64(x[i])+rand.Float64())/float64(c.Width[0]) - 1
+		u[i] = 2*(float64(x[i])+rand.Float64())/float64(c.Width[i]) - 1
 	}
 
 	res.Color = mat.NewVecDense(3, []float64{1, 1, 1})

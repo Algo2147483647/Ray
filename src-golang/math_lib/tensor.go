@@ -10,32 +10,32 @@ type Number interface {
 }
 
 type Tensor[T Number] struct {
-	Data   []T   `json:"data"`
-	Shape  []int `json:"shape"`
-	Stride []int `json:"stride"`
-	Offset int   `json:"offset"`
+	Data   []T     `json:"data"`
+	Shape  []int64 `json:"shape"`
+	Stride []int64 `json:"stride"`
+	Offset int64   `json:"offset"`
 }
 
-func NewTensor[T Number](shape []int) *Tensor[T] {
+func NewTensor[T Number](shape []int64) *Tensor[T] {
 	t := &Tensor[T]{
 		Shape: shape,
 	}
 
-	var total int
+	var total int64
 	t.Stride, total = CalculateStrideForTensor(shape)
 	t.Data = make([]T, total)
 	return t
 }
 
-func NewTensorFromSlice[T Number](data []T, shape []int) *Tensor[T] {
+func NewTensorFromSlice[T Number](data []T, shape []int64) *Tensor[T] {
 	t := NewTensor[T](shape)
 	copy(t.Data, data)
 	return t
 }
 
-func CalculateStrideForTensor(shape []int) ([]int, int) {
-	stride := make([]int, len(shape))
-	total := 1
+func CalculateStrideForTensor(shape []int64) ([]int64, int64) {
+	stride := make([]int64, len(shape))
+	total := int64(1)
 	for i := len(shape) - 1; i >= 0; i-- {
 		stride[i] = total
 		total *= shape[i]
@@ -43,7 +43,7 @@ func CalculateStrideForTensor(shape []int) ([]int, int) {
 	return stride, total
 }
 
-func (t *Tensor[T]) Get(indices ...int) T {
+func (t *Tensor[T]) Get(indices ...int64) T {
 	if len(indices) != len(t.Shape) {
 		panic("维度不匹配")
 	}
@@ -59,7 +59,7 @@ func (t *Tensor[T]) Get(indices ...int) T {
 	return t.Data[pos]
 }
 
-func (t *Tensor[T]) Set(value T, indices ...int) {
+func (t *Tensor[T]) Set(value T, indices ...int64) {
 	if len(indices) != len(t.Shape) {
 		panic("维度不匹配")
 	}
@@ -75,9 +75,9 @@ func (t *Tensor[T]) Set(value T, indices ...int) {
 	t.Data[pos] = value
 }
 
-func (t *Tensor[T]) Reshape(newShape []int) *Tensor[T] {
+func (t *Tensor[T]) Reshape(newShape []int64) *Tensor[T] {
 	stride, total := CalculateStrideForTensor(newShape)
-	if total != len(t.Data) {
+	if total != int64(len(t.Data)) {
 		panic("新形状的元素总数不匹配")
 	}
 
@@ -122,4 +122,20 @@ func (t *Tensor[T]) ScalarMul(scalar T) *Tensor[T] {
 		t.Data[i] = t.Data[i] * scalar
 	}
 	return t
+}
+
+func (t *Tensor[T]) GetCoordinates(i int64) []int64 {
+	if i < 0 || i >= int64(len(t.Data)) {
+		return nil // 或者返回错误，索引越界
+	}
+
+	actualIndex := t.Offset + i
+	coords := make([]int64, len(t.Shape))
+
+	for dim := len(t.Stride) - 1; dim >= 0; dim-- {
+		coords[dim] = actualIndex / t.Stride[dim]
+		actualIndex = actualIndex % t.Stride[dim]
+	}
+
+	return coords
 }

@@ -2,5 +2,5 @@ package utils
 
 const (
 	IsDebug   = false
-	Dimension = 3
+	Dimension = 4
 )

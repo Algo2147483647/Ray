@@ -16,8 +16,8 @@ func main() {
 
 	h := NewHandler().
 		LoadScript(scriptPath).
-		BuildCamera(400, 400).
-		BuildFilm(400, 400).
+		BuildCamera(100, 100, 100).
+		BuildFilm(100, 100, 100).
 		Render(20).
 		MergeFilm("img.bin").
 		SaveFilm("img.bin").
