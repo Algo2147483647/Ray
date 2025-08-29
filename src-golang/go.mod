@@ -1,6 +1,14 @@
 module src-golang
 
-go 1.23.0
+go 1.24.0
+
+toolchain go1.24.6
+
+require (
+	github.com/spf13/cast v1.9.2
+	gonum.org/v1/gonum v0.16.0
+	gonum.org/v1/plot v0.16.0
+)
 
 require (
 	codeberg.org/go-fonts/liberation v0.5.0 // indirect
@@ -11,9 +19,6 @@ require (
 	github.com/campoy/embedmd v1.0.0 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/spf13/cast v1.9.2 // indirect
 	golang.org/x/image v0.25.0 // indirect
 	golang.org/x/text v0.23.0 // indirect
-	gonum.org/v1/gonum v0.16.0 // indirect
-	gonum.org/v1/plot v0.16.0 // indirect
 )

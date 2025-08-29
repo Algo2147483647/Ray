@@ -10,12 +10,11 @@ import (
 
 type CameraNDim struct {
 	CameraBase
-	Position    *mat.VecDense               // 相机位置
-	Coordinates []*mat.VecDense             // 坐标系
-	Width       []int64                     // 像素宽度
-	FieldOfView []float64                   // 视野角度 (度)
-	Ortho       bool                        // 正交相机 / 透视相机
-	Image       [3]math_lib.Tensor[float64] // 输出图像
+	Position    *mat.VecDense   // 相机位置
+	Coordinates []*mat.VecDense // 坐标系
+	Width       []int64         // 像素宽度
+	FieldOfView []float64       // 视野角度 (度)
+	Ortho       bool            // 正交相机 / 透视相机
 }
 
 // NewCamera 创建新相机

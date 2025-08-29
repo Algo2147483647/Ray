@@ -1,102 +1,125 @@
 package math_lib
 
-type Tensor[T any] struct {
-	data   []T
-	shape  []int
-	stride []int
-	offset int
+import "reflect"
+
+type Number interface {
+	~int | ~int8 | ~int16 | ~int32 | ~int64 |
+		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr |
+		~float32 | ~float64 |
+		~complex64 | ~complex128
 }
 
-// NewTensor 创建新张量
-func NewTensor[T any](shape []int) *Tensor[T] {
+type Tensor[T Number] struct {
+	Data   []T   `json:"data"`
+	Shape  []int `json:"shape"`
+	Stride []int `json:"stride"`
+	Offset int   `json:"offset"`
+}
+
+func NewTensor[T Number](shape []int) *Tensor[T] {
 	t := &Tensor[T]{
-		shape:  shape,
-		stride: make([]int, len(shape)),
+		Shape: shape,
 	}
 
-	// 计算总元素数和步长
-	total := 1
-	for i := len(shape) - 1; i >= 0; i-- {
-		t.stride[i] = total
-		total *= shape[i]
-	}
-
-	t.data = make([]T, total)
+	var total int
+	t.Stride, total = CalculateStrideForTensor(shape)
+	t.Data = make([]T, total)
 	return t
 }
 
-// FromSlice 从切片创建张量
-func FromSlice[T any](data []T, shape []int) *Tensor[T] {
+func NewTensorFromSlice[T Number](data []T, shape []int) *Tensor[T] {
 	t := NewTensor[T](shape)
-	copy(t.data, data)
+	copy(t.Data, data)
 	return t
 }
 
-// Get 获取元素
-func (t *Tensor[T]) Get(indices ...int) T {
-	if len(indices) != len(t.shape) {
-		panic("维度不匹配")
-	}
-
-	pos := t.offset
-	for i, idx := range indices {
-		if idx < 0 || idx >= t.shape[i] {
-			panic("索引超出范围")
-		}
-		pos += idx * t.stride[i]
-	}
-
-	return t.data[pos]
-}
-
-// Set 设置元素
-func (t *Tensor[T]) Set(value T, indices ...int) {
-	if len(indices) != len(t.shape) {
-		panic("维度不匹配")
-	}
-
-	pos := t.offset
-	for i, idx := range indices {
-		if idx < 0 || idx >= t.shape[i] {
-			panic("索引超出范围")
-		}
-		pos += idx * t.stride[i]
-	}
-
-	t.data[pos] = value
-}
-
-// Shape 返回形状
-func (t *Tensor[T]) Shape() []int {
-	return t.shape
-}
-
-// Reshape 改变形状
-func (t *Tensor[T]) Reshape(newShape []int) *Tensor[T] {
-	// 验证新形状的元素总数是否匹配
-	total := 1
-	for _, dim := range newShape {
-		total *= dim
-	}
-	if total != len(t.data) {
-		panic("新形状的元素总数不匹配")
-	}
-
-	return &Tensor[T]{
-		data:   t.data,
-		shape:  newShape,
-		stride: calculateStride(newShape),
-		offset: t.offset,
-	}
-}
-
-// calculateStride 计算步长
-func calculateStride(shape []int) []int {
+func CalculateStrideForTensor(shape []int) ([]int, int) {
 	stride := make([]int, len(shape))
 	total := 1
 	for i := len(shape) - 1; i >= 0; i-- {
 		stride[i] = total
 		total *= shape[i]
 	}
-	return stride
+	return stride, total
+}
+
+func (t *Tensor[T]) Get(indices ...int) T {
+	if len(indices) != len(t.Shape) {
+		panic("维度不匹配")
+	}
+
+	pos := t.Offset
+	for i, idx := range indices {
+		if idx < 0 || idx >= t.Shape[i] {
+			panic("索引超出范围")
+		}
+		pos += idx * t.Stride[i]
+	}
+
+	return t.Data[pos]
+}
+
+func (t *Tensor[T]) Set(value T, indices ...int) {
+	if len(indices) != len(t.Shape) {
+		panic("维度不匹配")
+	}
+
+	pos := t.Offset
+	for i, idx := range indices {
+		if idx < 0 || idx >= t.Shape[i] {
+			panic("索引超出范围")
+		}
+		pos += idx * t.Stride[i]
+	}
+
+	t.Data[pos] = value
+}
+
+func (t *Tensor[T]) Reshape(newShape []int) *Tensor[T] {
+	stride, total := CalculateStrideForTensor(newShape)
+	if total != len(t.Data) {
+		panic("新形状的元素总数不匹配")
+	}
+
+	return &Tensor[T]{
+		Data:   t.Data,
+		Shape:  newShape,
+		Stride: stride,
+		Offset: t.Offset,
+	}
+}
+
+func (t *Tensor[T]) Add(a, b *Tensor[T]) *Tensor[T] {
+	if !reflect.DeepEqual(a.Shape, b.Shape) {
+		panic("张量维度不匹配")
+	} else if !reflect.DeepEqual(a.Shape, t.Shape) {
+		t = NewTensor[T](a.Shape)
+	}
+
+	for i := range t.Data {
+		t.Data[i] = a.Data[i] + b.Data[i]
+	}
+
+	return t
+}
+
+func (t *Tensor[T]) Sub(a, b *Tensor[T]) *Tensor[T] {
+	if !reflect.DeepEqual(a.Shape, b.Shape) {
+		panic("张量维度不匹配")
+	} else if !reflect.DeepEqual(a.Shape, t.Shape) {
+		t = NewTensor[T](a.Shape)
+	}
+
+	for i := range t.Data {
+		t.Data[i] = a.Data[i] - b.Data[i]
+	}
+
+	return t
+}
+
+func (t *Tensor[T]) ScalarMul(scalar T) *Tensor[T] {
+	for i := range t.Data {
+		t.Data[i] = t.Data[i] * scalar
+	}
+	return t
 }

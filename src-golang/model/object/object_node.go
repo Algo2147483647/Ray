@@ -2,8 +2,8 @@ package object
 
 import (
 	"fmt"
+	"src-golang/math_lib"
 	"src-golang/model/shape"
-	"src-golang/utils"
 	"strings"
 )
 
@@ -48,8 +48,8 @@ func (node *ObjectNode) TreeNodeString(depth int) string {
 	// 添加包围盒信息
 	if node.BoundBox != nil {
 		nodeInfo.WriteString(fmt.Sprintf("BoundBox: [%s → %s]",
-			utils.FormatVec(node.BoundBox.Pmin),
-			utils.FormatVec(node.BoundBox.Pmax)))
+			math_lib.FormatVec(node.BoundBox.Pmin),
+			math_lib.FormatVec(node.BoundBox.Pmax)))
 	} else {
 		nodeInfo.WriteString("BoundBox: nil")
 	}

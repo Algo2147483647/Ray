@@ -2,16 +2,16 @@ package ray_tracing
 
 import (
 	"fmt"
-	"gonum.org/v1/gonum/mat"
 	"src-golang/model"
+	"src-golang/model/camera"
 	"sync"
 	"sync/atomic"
 	"time"
 )
 
 // TraceScene 追踪整个场景
-func (h *Handler) TraceScene(scene *model.Scene, img [3]*mat.Dense, samples int64) {
-	rows, cols := img[0].Dims()
+func (h *Handler) TraceScene(scene *model.Scene, film *camera.Film, samples int64) {
+	rows, cols := film.Data.Shape[1], film.Data.Shape[2]
 	totalPixels := rows * cols
 
 	var wg sync.WaitGroup
@@ -58,7 +58,7 @@ func (h *Handler) TraceScene(scene *model.Scene, img [3]*mat.Dense, samples int6
 			for pixel := range taskChan {
 				color := h.TracePixel(scene.Cameras[0], scene.ObjectTree, int64(pixel[0]), int64(pixel[1]), samples)
 				for ch := 0; ch < 3; ch++ {
-					img[ch].Set(pixel[0], pixel[1], color.AtVec(ch))
+					film.Data.Set(color.AtVec(ch), ch, pixel[0], pixel[1])
 				}
 
 				atomic.AddInt64(&progress, 1) // 原子更新进度
@@ -69,4 +69,6 @@ func (h *Handler) TraceScene(scene *model.Scene, img [3]*mat.Dense, samples int6
 	wg.Wait()
 	close(done)                        // 通知进度条关闭
 	time.Sleep(100 * time.Millisecond) // 确保最后进度信息被覆盖
+
+	film.Samples = samples
 }

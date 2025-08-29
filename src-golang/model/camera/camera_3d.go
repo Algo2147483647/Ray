@@ -6,7 +6,6 @@ import (
 	"math/rand/v2"
 	"src-golang/math_lib"
 	"src-golang/model/optics"
-	"src-golang/utils"
 )
 
 type Camera3D struct {
@@ -14,12 +13,11 @@ type Camera3D struct {
 	Position    *mat.VecDense // 相机位置
 	Direction   *mat.VecDense // 观察方向
 	Up          *mat.VecDense // 上方向向量
-	Image       [3]*mat.Dense
-	Width       int     // 胶片宽 (像素)
-	Height      int     // 胶片高 (像素)
-	FieldOfView float64 // 视野角度 (度)
-	AspectRatio float64 // 宽高比
-	Ortho       bool    // 正交相机 / 透视相机
+	Width       int           // 胶片宽 (像素)
+	Height      int           // 胶片高 (像素)
+	FieldOfView float64       // 视野角度 (度)
+	AspectRatio float64       // 宽高比
+	Ortho       bool          // 正交相机 / 透视相机
 }
 
 func NewCamera3D() *Camera3D {
@@ -60,45 +58,4 @@ func (c *Camera3D) SetLookAt(lookAt *mat.VecDense) *Camera3D {
 	c.Direction.SubVec(lookAt, c.Position)
 	math_lib.Normalize(c.Direction)
 	return c
-}
-
-func (c *Camera3D) InitImage(Width, Height int) {
-	c.Width = Width
-	c.Height = Height
-	for i, _ := range c.Image {
-		c.Image[i] = mat.NewDense(c.Width, c.Height, nil)
-	}
-}
-
-func (c *Camera3D) LoadImage(filename string) {
-	var err error
-	c.Image, err = utils.LoadMatrices(filename)
-	if err != nil {
-		panic(err)
-	}
-}
-
-func (c *Camera3D) SaveImage(filename string) {
-	err := utils.SaveMatrices(filename, c.Image)
-	if err != nil {
-		panic(err)
-	}
-}
-
-func (c *Camera3D) MergeImage(data [3]*mat.Dense, samples, samplesSt int64) {
-	totalSamples := samples + samplesSt
-	if samplesSt > 0 {
-		for i := range c.Image { // 使用加权平均合并采样结果
-			for x := 0; x < c.Width; x++ {
-				for y := 0; y < c.Height; y++ {
-					mergedValue := (c.Image[i].At(x, y)*float64(samplesSt) + data[i].At(x, y)*float64(samples)) / float64(totalSamples) // 加权平均: (oldValue * samplesSt + newValue * samples) / totalSamples
-					c.Image[i].Set(x, y, mergedValue)
-				}
-			}
-		}
-	} else {
-		for i := range c.Image {
-			c.Image[i].Copy(data[i])
-		}
-	}
 }
