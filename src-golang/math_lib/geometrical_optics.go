@@ -31,6 +31,10 @@ func Refract(incidentRay, normal *mat.VecDense, eta float64) *mat.VecDense {
 
 // DiffuseReflect 计算漫反射方向
 func DiffuseReflect(incidentRay, normal *mat.VecDense) *mat.VecDense {
+	if normal.Len() == 4 {
+		return DiffuseReflect4D(incidentRay, normal)
+	}
+
 	u := utils.VectorPool.Get().(*mat.VecDense)
 	v := utils.VectorPool.Get().(*mat.VecDense)
 	t := utils.VectorPool.Get().(*mat.VecDense)
@@ -55,6 +59,57 @@ func DiffuseReflect(incidentRay, normal *mat.VecDense) *mat.VecDense {
 	ScaleVec(u, math.Cos(angle)*math.Sqrt(r), Normalize(Cross(t, tangent, normal)))
 	ScaleVec(v, math.Sin(angle)*math.Sqrt(r), Normalize(Cross(t, normal, u)))
 	return Normalize(AddVecs(incidentRay, ScaleVec(t, math.Sqrt(1-r), normal), u, v))
+}
+
+func DiffuseReflect4D(incidentRay, normal *mat.VecDense) *mat.VecDense {
+	r := rand.Float64()
+	rsqrt := math.Sqrt(r)
+	invSqrt := math.Sqrt(1 - r)
+
+	// 在4维超球面上生成均匀随机方向
+	u := mat.NewVecDense(4, nil)
+	for {
+		// 生成4个独立的高斯随机数
+		u.SetVec(0, rand.NormFloat64())
+		u.SetVec(1, rand.NormFloat64())
+		u.SetVec(2, rand.NormFloat64())
+		u.SetVec(3, rand.NormFloat64())
+
+		// 归一化
+		norm := math.Sqrt(
+			u.AtVec(0)*u.AtVec(0) +
+				u.AtVec(1)*u.AtVec(1) +
+				u.AtVec(2)*u.AtVec(2) +
+				u.AtVec(3)*u.AtVec(3))
+
+		if norm > 1e-8 {
+			u.ScaleVec(1/norm, u)
+			break
+		}
+	}
+
+	// 确保u与法线正交
+	dot := mat.Dot(u, normal)
+	u.AddScaledVec(u, -dot, normal)
+	uNorm := mat.Norm(u, 2)
+	if uNorm > 1e-8 {
+		u.ScaleVec(1/uNorm, u)
+	} else {
+		// 如果u太小，重新生成一个基向量
+		u.SetVec(0, 1)
+		u.SetVec(1, 0)
+		u.SetVec(2, 0)
+		u.SetVec(3, 0)
+		dot = mat.Dot(u, normal)
+		u.AddScaledVec(u, -dot, normal)
+		u.ScaleVec(1/uNorm, u)
+	}
+
+	// 组合最终方向
+	result := mat.NewVecDense(4, nil)
+	result.AddScaledVec(result, invSqrt, normal)
+	result.AddScaledVec(result, rsqrt, u)
+	return Normalize(result)
 }
 
 // CauchyDispersion Cauchy 公式, 计算给定波长下的折射率
