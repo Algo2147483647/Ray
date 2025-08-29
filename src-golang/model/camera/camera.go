@@ -9,6 +9,6 @@ type Camera interface {
 type CameraBase struct {
 }
 
-func (c *CameraBase) GenerateRay(ray *optics.Ray, index ...int) *optics.Ray {
+func (c *CameraBase) GenerateRay(ray *optics.Ray, index ...int64) *optics.Ray {
 	return &optics.Ray{}
 }

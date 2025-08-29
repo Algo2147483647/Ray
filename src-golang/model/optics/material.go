@@ -56,7 +56,7 @@ func (m *Material) DielectricSurfacePropagation(ray *Ray, norm *mat.VecDense) bo
 	}
 
 	MaterialColor := m.GetColor(ray, norm)
-	for i := 0; i < norm.Len(); i++ { // 材质基础颜色
+	for i := 0; i < 3; i++ { // 材质基础颜色
 		ray.Color.SetVec(i, ray.Color.AtVec(i)*MaterialColor.AtVec(i))
 	}
 	return false
