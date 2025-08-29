@@ -11,15 +11,14 @@ import (
 
 // TraceScene 追踪整个场景
 func (h *Handler) TraceScene(scene *model.Scene, film *camera.Film, samples int64) {
-	var wg sync.WaitGroup
-	totalPixels := len(film.Data[0].Data)
-	taskChan := make(chan []int64, totalPixels)
+	var (
+		progress    int64 // 原子进度计数器
+		wg          sync.WaitGroup
+		totalPixels = len(film.Data[0].Data)
+		taskChan    = make(chan []int64, totalPixels)
+		done        = make(chan bool) // 启动进度显示goroutine
+	)
 
-	// 原子进度计数器
-	var progress int64
-
-	// 启动进度显示goroutine
-	done := make(chan bool)
 	go func() {
 		startTime := time.Now()
 		for {

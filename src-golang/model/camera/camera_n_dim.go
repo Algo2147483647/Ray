@@ -29,19 +29,18 @@ func (c *CameraNDim) GenerateRay(res *optics.Ray, x ...int64) *optics.Ray {
 	res.Init()
 
 	var (
-		dim         = len(x)
-		u           = make([]float64, dim)
+		u           = make([]float64, len(x))
 		coordinates = math_lib.GramSchmidt(c.Coordinates...) // 正交化所有向量，确保它们互相垂直
 	)
 
-	for i := 0; i < dim; i++ {
+	for i := 0; i < len(x); i++ {
 		u[i] = 2*(float64(x[i])+rand.Float64())/float64(c.Width[i]) - 1
 	}
 
 	res.Color = mat.NewVecDense(3, []float64{1, 1, 1})
 	res.Origin.CloneFromVec(c.Position)
-	res.Direction = mat.NewVecDense(dim, nil)
-	for i := 1; i < dim; i++ {
+	res.Direction = mat.NewVecDense(len(x)+1, nil)
+	for i := 0; i < len(x); i++ {
 		res.Direction.AddScaledVec(res.Direction, u[i]*math.Tan(c.FieldOfView[i]*math.Pi/180/2.0), coordinates[i])
 	}
 	math_lib.Normalize(res.Direction)
