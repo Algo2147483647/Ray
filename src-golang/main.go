@@ -19,7 +19,7 @@ func main() {
 		BuildCamera(100, 100, 100).
 		BuildFilm(100, 100, 100).
 		Render(20).
-		MergeFilm("img.bin").
+		//MergeFilm("img.bin").
 		SaveFilm("img.bin").
 		SaveImg("output.png").
 		SaveDebugInfo("debug_traces.json")
