@@ -39,7 +39,7 @@ func (c *CameraNDim) GenerateRay(res *optics.Ray, x ...int64) *optics.Ray {
 
 	res.Color = mat.NewVecDense(3, []float64{1, 1, 1})
 	res.Origin.CloneFromVec(c.Position)
-	res.Direction = mat.NewVecDense(len(x)+1, nil)
+	res.Direction = mat.NewVecDense(c.Position.Len(), nil)
 	for i := 0; i < len(x); i++ {
 		res.Direction.AddScaledVec(res.Direction, u[i]*math.Tan(c.FieldOfView[i]*math.Pi/180/2.0), coordinates[i])
 	}
