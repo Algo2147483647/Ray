@@ -13,7 +13,6 @@ type Tensor[T Number] struct {
 	Data   []T     `json:"data"`
 	Shape  []int64 `json:"shape"`
 	Stride []int64 `json:"stride"`
-	Offset int64   `json:"offset"`
 }
 
 func NewTensor[T Number](shape []int64) *Tensor[T] {
@@ -48,7 +47,7 @@ func (t *Tensor[T]) Get(indices ...int64) T {
 		panic("维度不匹配")
 	}
 
-	pos := t.Offset
+	pos := int64(0)
 	for i, idx := range indices {
 		if idx < 0 || idx >= t.Shape[i] {
 			panic("索引超出范围")
@@ -64,7 +63,7 @@ func (t *Tensor[T]) Set(value T, indices ...int64) {
 		panic("维度不匹配")
 	}
 
-	pos := t.Offset
+	pos := int64(0)
 	for i, idx := range indices {
 		if idx < 0 || idx >= t.Shape[i] {
 			panic("索引超出范围")
@@ -85,7 +84,6 @@ func (t *Tensor[T]) Reshape(newShape []int64) *Tensor[T] {
 		Data:   t.Data,
 		Shape:  newShape,
 		Stride: stride,
-		Offset: t.Offset,
 	}
 }
 
@@ -129,10 +127,10 @@ func (t *Tensor[T]) GetCoordinates(i int64) []int64 {
 		return nil // 或者返回错误，索引越界
 	}
 
-	actualIndex := t.Offset + i
+	actualIndex := i
 	coords := make([]int64, len(t.Shape))
 
-	for dim := len(t.Stride) - 1; dim >= 0; dim-- {
+	for dim := 0; dim < len(t.Stride); dim++ {
 		coords[dim] = actualIndex / t.Stride[dim]
 		actualIndex = actualIndex % t.Stride[dim]
 	}
