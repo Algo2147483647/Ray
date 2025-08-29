@@ -4,12 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"gonum.org/v1/gonum/mat"
-	"image"
-	"image/color"
 	"image/png"
 	"os"
 	"src-golang/controller"
 	"src-golang/model"
+	"src-golang/model/camera"
 	optics2 "src-golang/model/optics"
 	"src-golang/ray_tracing"
 	"src-golang/utils"
@@ -17,21 +16,14 @@ import (
 )
 
 type Handler struct {
-	err    error
-	Scene  *model.Scene
-	img    [3]*mat.Dense
-	Width  int
-	Height int
+	err   error
+	Scene *model.Scene
+	Film  *camera.Film
 }
 
-func NewHandler(Width, Height int) *Handler {
+func NewHandler() *Handler {
 	h := &Handler{
-		Scene:  model.NewScene(),
-		Width:  Width,
-		Height: Height,
-	}
-	for i, _ := range h.img {
-		h.img[i] = mat.NewDense(h.Width, h.Height, nil)
+		Scene: model.NewScene(),
 	}
 
 	return h
@@ -52,7 +44,7 @@ func (h *Handler) LoadScript(ScriptPath string) *Handler {
 	return h
 }
 
-func (h *Handler) BuildCamera() *Handler {
+func (h *Handler) BuildCamera(Width, Height int) *Handler {
 	if h.err != nil {
 		return h
 	}
@@ -60,8 +52,8 @@ func (h *Handler) BuildCamera() *Handler {
 	camera := &optics2.Camera{
 		Position:    mat.NewVecDense(utils.Dimension, []float64{-1.7, 0.1, 0.5}),
 		Up:          mat.NewVecDense(utils.Dimension, []float64{0, 0, 1}),
-		Width:       h.Width,
-		Height:      h.Height,
+		Width:       Width,
+		Height:      Height,
 		AspectRatio: 1,
 		FieldOfView: 100,
 	}
@@ -71,40 +63,29 @@ func (h *Handler) BuildCamera() *Handler {
 	return h
 }
 
-func (h *Handler) Render(samples, samplesSt int) *Handler {
+func (h *Handler) BuildFilm(Width, Height int) *Handler {
 	if h.err != nil {
 		return h
 	}
 
-	var img [3]*mat.Dense
-	for i, _ := range h.img {
-		img[i] = mat.NewDense(h.Width, h.Height, nil)
+	h.Film = camera.NewFilm(3, Width, Height)
+
+	return h
+}
+
+func (h *Handler) Render(samples int64) *Handler {
+	if h.err != nil {
+		return h
 	}
 
 	fmt.Println("Starting rendering...")
 	start := time.Now()
 
 	renderHandler := ray_tracing.NewHandler()
-	renderHandler.TraceScene(h.Scene, img, samples)
+	renderHandler.TraceScene(h.Scene, h.Film, samples)
 
 	elapsed := time.Since(start)
 	fmt.Printf("Rendering completed in %v\n", elapsed)
-
-	totalSamples := samples + samplesSt
-	if samplesSt > 0 {
-		for i := range h.img { // 使用加权平均合并采样结果
-			for x := 0; x < h.Width; x++ {
-				for y := 0; y < h.Height; y++ {
-					mergedValue := (h.img[i].At(x, y)*float64(samplesSt) + img[i].At(x, y)*float64(samples)) / float64(totalSamples) // 加权平均: (oldValue * samplesSt + newValue * samples) / totalSamples
-					h.img[i].Set(x, y, mergedValue)
-				}
-			}
-		}
-	} else {
-		for i := range h.img {
-			h.img[i].Copy(img[i])
-		}
-	}
 	return h
 }
 
@@ -140,16 +121,6 @@ func (h *Handler) SaveImg(filename string) *Handler {
 
 	fmt.Printf("Saving result to: %s\n", filename)
 
-	imgout := image.NewRGBA(image.Rect(0, 0, h.Width, h.Height))
-	for i := 0; i < h.Width; i++ {
-		for j := 0; j < h.Height; j++ {
-			r := uint8(min(h.img[0].At(i, j)*255, 255))
-			g := uint8(min(h.img[1].At(i, j)*255, 255))
-			b := uint8(min(h.img[2].At(i, j)*255, 255))
-			imgout.Set(i, j, color.RGBA{r, g, b, 255})
-		}
-	}
-
 	file, err := os.Create(filename)
 	if err != nil {
 		h.err = err
@@ -157,7 +128,7 @@ func (h *Handler) SaveImg(filename string) *Handler {
 	}
 	defer file.Close()
 
-	err = png.Encode(file, imgout) // 使用 PNG 编码器直接写入整个图像
+	err = png.Encode(file, h.Film.ToImage()) // 使用 PNG 编码器直接写入整个图像
 	if err != nil {
 		h.err = err
 	}
@@ -165,27 +136,32 @@ func (h *Handler) SaveImg(filename string) *Handler {
 	return h
 }
 
-func (h *Handler) SaveResult(filename string) *Handler {
+func (h *Handler) SaveFilm(filename string) *Handler {
 	if h.err != nil {
 		return h
 	}
 
-	if err := utils.SaveMatrices(filename, h.img); err != nil {
-		panic(err)
+	err := h.Film.SaveToFile(filename)
+	if err != nil {
+		h.err = err
+		return h
 	}
 
 	return h
 }
 
-func (h *Handler) LoadResult(filename string) *Handler {
+func (h *Handler) MergeFilm(filename string) *Handler {
 	if h.err != nil {
 		return h
 	}
 
-	h.img, h.err = utils.LoadMatrices(filename)
-	if h.err != nil {
-		panic(h.err)
+	t := camera.NewFilm(h.Film.Data.Shape...)
+	err := t.LoadFromFile(filename)
+	if err != nil {
+		h.err = err
+		return h
 	}
 
+	h.Film.Merge(t)
 	return h
 }

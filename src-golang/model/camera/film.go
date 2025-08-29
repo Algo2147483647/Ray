@@ -66,19 +66,19 @@ func (f *Film) LoadFromFile(filename string) error {
 	}
 	defer file.Close()
 
-	if err := binary.Read(file, binary.LittleEndian, &f.Samples); err != nil {
+	if err = binary.Read(file, binary.LittleEndian, &f.Samples); err != nil {
 		return err
 	}
 
 	var shapeLen int32
-	if err := binary.Read(file, binary.LittleEndian, &shapeLen); err != nil {
+	if err = binary.Read(file, binary.LittleEndian, &shapeLen); err != nil {
 		return err
 	}
 
 	shape := make([]int, shapeLen)
 	for i := range shape {
 		var dim int32
-		if err := binary.Read(file, binary.LittleEndian, &dim); err != nil {
+		if err = binary.Read(file, binary.LittleEndian, &dim); err != nil {
 			return err
 		}
 		shape[i] = int(dim)
@@ -87,7 +87,7 @@ func (f *Film) LoadFromFile(filename string) error {
 	f.Data = *math_lib.NewTensor[float64](shape)
 
 	for i := range f.Data.Data {
-		if err := binary.Read(file, binary.LittleEndian, &f.Data.Data[i]); err != nil {
+		if err = binary.Read(file, binary.LittleEndian, &f.Data.Data[i]); err != nil {
 			return err
 		}
 	}
@@ -102,23 +102,23 @@ func (f *Film) SaveToFile(filename string) error {
 	}
 	defer file.Close()
 
-	if err := binary.Write(file, binary.LittleEndian, f.Samples); err != nil {
+	if err = binary.Write(file, binary.LittleEndian, f.Samples); err != nil {
 		return err
 	}
 
 	shapeLen := int32(len(f.Data.Shape))
-	if err := binary.Write(file, binary.LittleEndian, shapeLen); err != nil {
+	if err = binary.Write(file, binary.LittleEndian, shapeLen); err != nil {
 		return err
 	}
 
 	for _, dim := range f.Data.Shape {
-		if err := binary.Write(file, binary.LittleEndian, int32(dim)); err != nil {
+		if err = binary.Write(file, binary.LittleEndian, int32(dim)); err != nil {
 			return err
 		}
 	}
 
 	for i := range f.Data.Data {
-		if err := binary.Write(file, binary.LittleEndian, f.Data.Data[i]); err != nil {
+		if err = binary.Write(file, binary.LittleEndian, f.Data.Data[i]); err != nil {
 			return err
 		}
 	}
