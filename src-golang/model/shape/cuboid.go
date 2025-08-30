@@ -4,6 +4,7 @@ import (
 	"gonum.org/v1/gonum/mat"
 	"math"
 	"src-golang/math_lib"
+	"src-golang/utils"
 )
 
 type Cuboid struct {
@@ -75,9 +76,16 @@ func (c *Cuboid) IntersectPure(raySt, rayDir *mat.VecDense) float64 {
 
 // GetNormalVector 计算交点的法向量
 func (c *Cuboid) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {
-	a := mat.NewVecDense(intersect.Len(), nil)
-	b := mat.NewVecDense(intersect.Len(), nil)
-	res = mat.NewVecDense(intersect.Len(), nil)
+	if res == nil || res.Len() != intersect.Len() {
+		res = mat.NewVecDense(intersect.Len(), nil)
+	}
+
+	a := utils.VectorPool.Get().(*mat.VecDense)
+	b := utils.VectorPool.Get().(*mat.VecDense)
+	defer func() {
+		utils.VectorPool.Put(a)
+		utils.VectorPool.Put(b)
+	}()
 	a.SubVec(intersect, c.Pmin)
 	b.SubVec(intersect, c.Pmax)
 
