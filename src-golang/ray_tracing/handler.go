@@ -17,7 +17,7 @@ type Handler struct {
 
 func NewHandler() *Handler {
 	return &Handler{
-		MaxRayLevel: 6,
+		MaxRayLevel: 4,
 		ThreadNum:   30,
 		BlockCols:   8,
 		BlockRows:   8,
