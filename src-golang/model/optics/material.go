@@ -95,7 +95,7 @@ func (m *Material) LightSource(ray *Ray, norm *mat.VecDense) {
 	MaterialColor := m.GetColor(ray, norm)
 	switch m.RadiationType {
 	case "":
-		for i := 0; i < norm.Len(); i++ {
+		for i := 0; i < 3; i++ {
 			ray.Color.SetVec(i, ray.Color.AtVec(i)*MaterialColor.AtVec(i))
 		}
 	case "directional light source":
@@ -108,7 +108,7 @@ func (m *Material) LightSource(ray *Ray, norm *mat.VecDense) {
 		if utils.IsDebug && v > 0.98 {
 			ray.DebugSwitch = true
 		}
-		for i := 0; i < norm.Len(); i++ {
+		for i := 0; i < 3; i++ {
 			ray.Color.SetVec(i, v*ray.Color.AtVec(i)*MaterialColor.AtVec(i))
 		}
 	}
