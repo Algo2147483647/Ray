@@ -6,9 +6,15 @@
 
 This document describes a comprehensive ray tracing simulation and rendering system designed for optical simulation and visualization. The system accurately simulates light propagation, reflection, refraction, and other optical phenomena in various materials, generating high-quality rendered images of optical scenes.
 
+***Complex scenario, Texture, STL model file***: 
+
 <img src="./docs/assets/RayTracingTest.png" alt="RayTracingTest" style="zoom: 67%;" />
 
-<img src="./docs/assets/dispersion-three-balls-10000.png" alt="RayTracingTest_OpticalVerification" style="zoom:67%;" />
+***Four-order & quadratic polynomial surface***:
+
+<img src="./docs/assets/four-order_equation-1200.png" alt="RayTracingTest_OpticalVerification" style="zoom:67%;" />
+
+***Chromatic dispersion***: 
 
 <img src="./docs/assets/prism_refraction-8000.png" alt="RayTracingTest_OpticalVerification" style="zoom:67%;" />
 
@@ -78,12 +84,13 @@ Material defines the optical properties of object surfaces:
 #### Shape
 
 The system supports various geometric shapes:
-- **Cuboid**
-- **Sphere**
-- **Quadratic Equation Surface**
-- **Plane**
-- **Triangle**
-- **Circle**
+- ***Plane***
+- ***Sphere***
+- ***Quadratic Polynomial Equation Surface***
+- ***Four-Order Polynomial Equation Surface***
+- ***Cuboid***
+- ***Triangle***
+- ***Circle***
 
 Each shape implements the following interface methods:
 - ***Intersect***: Calculate intersection with ray
