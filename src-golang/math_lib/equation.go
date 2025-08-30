@@ -81,10 +81,10 @@ func SolveCubicEquation(a, b, c, d float64) [3]complex128 {
 }
 
 // 解四次方程: ax⁴ + bx³ + cx² + dx + e = 0
-func SolveQuarticEquation(a, b, c, d, e complex128) [4]complex128 {
-	if a == 0 {
+func SolveQuarticEquation(a_, b_, c_, d_, e_ float64) [4]complex128 {
+	if a_ == 0 {
 		// 降次为三次方程
-		roots := SolveCubicEquation(real(b), real(c), real(d), real(e))
+		roots := SolveCubicEquation(b_, c_, d_, e_)
 		return [4]complex128{
 			complex(real(roots[0]), imag(roots[0])),
 			complex(real(roots[1]), imag(roots[1])),
@@ -93,23 +93,19 @@ func SolveQuarticEquation(a, b, c, d, e complex128) [4]complex128 {
 		}
 	}
 
-	// 正规化系数
-	b, c, d, e = b/a, c/a, d/a, e/a
+	var (
+		b, c, d, e = complex(b_/a_, 0), complex(c_/a_, 0), complex(d_/a_, 0), complex(e_/a_, 0) // 正规化系数
+		Q1         = c*c - 3*b*d + 12*e                                                         // 预计算中间变量
+		Q2         = 2*c*c*c - 9*b*c*d + 27*d*d + 27*b*b*e - 72*c*e
+		Q3         = 8*b*c - 16*d - 2*b*b*b
+		Q4         = 3*b*b - 8*c
+		inner      = cmplx.Sqrt(Q2*Q2/4 - Q1*Q1*Q1) // 计算中间根
+		Q5         = cmplx.Pow(Q2/2+inner, 1.0/3)
+		Q6         = (Q1/Q5 + Q5) / 3
+		Q7         = 2 * cmplx.Sqrt(Q4/12+Q6)
+		term       = cmplx.Sqrt(complex(4, 0)*Q4/complex(6, 0) - complex(4, 0)*Q6 - Q3/Q7) // 计算最终根
+	)
 
-	// 预计算中间变量
-	Q1 := c*c - 3*b*d + 12*e
-	Q2 := 2*c*c*c - 9*b*c*d + 27*d*d + 27*b*b*e - 72*c*e
-	Q3 := 8*b*c - 16*d - 2*b*b*b
-	Q4 := 3*b*b - 8*c
-
-	// 计算中间根
-	inner := cmplx.Sqrt(Q2*Q2/4 - Q1*Q1*Q1)
-	Q5 := cmplx.Pow(Q2/2+inner, 1.0/3)
-	Q6 := (Q1/Q5 + Q5) / 3
-	Q7 := 2 * cmplx.Sqrt(Q4/12+Q6)
-
-	// 计算最终根
-	term := cmplx.Sqrt(complex(4, 0)*Q4/complex(6, 0) - complex(4, 0)*Q6 - Q3/Q7)
 	return [4]complex128{
 		(-b - Q7 - term) / 4,
 		(-b - Q7 + term) / 4,
