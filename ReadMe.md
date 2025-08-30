@@ -12,7 +12,7 @@ This document describes a comprehensive ray tracing simulation and rendering sys
 
 ***Four-order & quadratic polynomial surface***:
 
-<img src="./docs/assets/four-order_equation-1200.png" alt="RayTracingTest_OpticalVerification" style="zoom:67%;" />
+<img src="./docs/assets/four-order_equation-2400.png" alt="RayTracingTest_OpticalVerification" style="zoom:67%;" />
 
 ***Chromatic dispersion***: 
 
