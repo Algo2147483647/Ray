@@ -11,7 +11,7 @@ type FourOrderEquation struct {
 	A *math_lib.Tensor[float64] `json:"a"`
 }
 
-func NewFourOrderEquation(A []float64) *FourOrderEquation {
+func NewFourOrderEquation(A []float64) *FourOrderEquation { // 索引顺序: 1, x, y, z
 	ATensor := math_lib.NewTensorFromSlice(A, []int{4, 4, 4, 4})
 
 	return &FourOrderEquation{
