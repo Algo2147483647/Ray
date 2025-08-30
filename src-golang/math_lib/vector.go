@@ -47,6 +47,11 @@ func SubVec(res, a, b *mat.VecDense) *mat.VecDense {
 	return res
 }
 
+func MulVec(res *mat.VecDense, a *mat.Dense, b *mat.VecDense) *mat.VecDense {
+	res.MulVec(a, b)
+	return res
+}
+
 func MinVec(a, b *mat.VecDense) *mat.VecDense {
 	res := mat.NewVecDense(a.Len(), nil)
 	for i := 0; i < a.Len(); i++ {

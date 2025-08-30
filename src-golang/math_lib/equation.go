@@ -27,7 +27,7 @@ func SolveQuadraticEquation(a, b, c float64) (complex128, complex128) {
 	return (-complex(b, 0) + sqrtDelta) / denom, (-complex(b, 0) - sqrtDelta) / denom
 }
 
-// 解二次方程 (实数根): ax² + bx + c = 0// 返回根数量及有效根
+// SolveQuadraticEquationReal 解二次方程 (实数根): ax² + bx + c = 0// 返回根数量及有效根
 func SolveQuadraticEquationReal(a, b, c float64) (root1, root2 float64, count int) {
 	if a == 0 {
 		if root, err := SolveLinearEquation(b, c); err == nil {
@@ -50,7 +50,7 @@ func SolveQuadraticEquationReal(a, b, c float64) (root1, root2 float64, count in
 	}
 }
 
-// 解三次方程: ax³ + bx² + cx + d = 0
+// SolveCubicEquation 解三次方程: ax³ + bx² + cx + d = 0
 func SolveCubicEquation(a, b, c, d float64) [3]complex128 {
 	if a == 0 {
 		// 降次为二次方程

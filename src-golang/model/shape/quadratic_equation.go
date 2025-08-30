@@ -4,6 +4,7 @@ import (
 	"gonum.org/v1/gonum/mat"
 	"math"
 	"src-golang/math_lib"
+	"src-golang/utils"
 )
 
 type QuadraticEquation struct { // f(x) = x^T A x + b^T x + c
@@ -26,45 +27,39 @@ func (p *QuadraticEquation) Name() string {
 }
 
 func (p *QuadraticEquation) Intersect(raySt, rayDir *mat.VecDense) float64 {
-	A_rayDir := mat.NewVecDense(raySt.Len(), nil) // 计算二次项系数: rayDir^T A rayDir
-	A_raySt := mat.NewVecDense(raySt.Len(), nil)  // 计算一次项系数: 2 * raySt^T A rayDir + b^T rayDir
-	A_rayDir.MulVec(p.A, rayDir)
-	A_raySt.MulVec(p.A, raySt)
-	a := mat.Dot(rayDir, A_rayDir)
-	b := 2*mat.Dot(raySt, A_rayDir) + mat.Dot(p.B, rayDir)
-	c := mat.Dot(raySt, A_raySt) + mat.Dot(p.B, raySt) + p.C // 计算常数项: raySt^T A raySt + b^T raySt + c
+	t := utils.VectorPool.Get().(*mat.VecDense)
+	defer func() {
+		utils.VectorPool.Put(t)
+	}()
 
-	t1, t2, count := math_lib.SolveQuadraticEquationReal(a, b, c) // 解二次方程 a*t^2 + b*t + c = 0
+	t.MulVec(p.A, rayDir)
+	a := mat.Dot(rayDir, t)                                                         // 计算二次项系数: rayDir^T A rayDir
+	b := 2*mat.Dot(raySt, t) + mat.Dot(p.B, rayDir)                                 // 计算一次项系数: 2 * raySt^T A rayDir + b^T rayDir
+	c := mat.Dot(raySt, math_lib.MulVec(t, p.A, raySt)) + mat.Dot(p.B, raySt) + p.C // 计算常数项: raySt^T A raySt + b^T raySt + c
+	t1, t2, count := math_lib.SolveQuadraticEquationReal(a, b, c)                   // 解二次方程 a*t^2 + b*t + c = 0
 
-	minT := 0.0 // 寻找最小正实数解
-	found := false
 	switch count {
 	case 1:
 		if t1 > math_lib.EPS {
-			minT = t1
-			found = true
+			return t1
 		}
 	case 2:
-		if t1 > math_lib.EPS && t2 > math_lib.EPS {
-			minT = math.Min(t1, t2)
-			found = true
-		} else if t1 > math_lib.EPS {
-			minT = t1
-			found = true
-		} else if t2 > math_lib.EPS {
-			minT = t2
-			found = true
+		minValidRoots := math.MaxFloat64 // 过滤出所有正根，选择其中最小的
+		if t1 != math.MaxFloat64 && t1 > math_lib.EPS {
+			minValidRoots = math.Min(minValidRoots, t1)
 		}
+		if t2 != math.MaxFloat64 && t2 > math_lib.EPS {
+			minValidRoots = math.Min(minValidRoots, t2)
+		}
+		return minValidRoots
 	}
 
-	if !found {
-		return math.MaxFloat64
-	}
-	return minT
+	return math.MaxFloat64
 }
 
 func (p *QuadraticEquation) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {
 	// 计算梯度: ∇f(x) = 2A x + b
 	res.MulVec(p.A, intersect)
-	return math_lib.Normalize(math_lib.AddVec(res, math_lib.ScaleVec(res, 2, res), p.B))
+	math_lib.ScaleVec(res, 2, res)
+	return math_lib.Normalize(math_lib.AddVec(res, res, p.B))
 }
