@@ -113,3 +113,127 @@ func SolveQuarticEquation(a_, b_, c_, d_, e_ float64) [4]complex128 {
 		(-b + Q7 + cmplx.Sqrt(complex(4, 0)*Q4/complex(6, 0)-complex(4, 0)*Q6+Q3/Q7)) / 4,
 	}
 }
+
+// NewtonRaphson 实现牛顿-拉弗森方法求解非线性方程组
+func NewtonRaphson(f func([]float64) []float64, x0 []float64, tol float64, maxIter int) ([]float64, bool) {
+	n := len(x0)
+	x := make([]float64, n)
+	copy(x, x0)
+
+	for iter := 0; iter < maxIter; iter++ {
+		// 计算函数值
+		fx := f(x)
+
+		// 检查收敛
+		maxError := 0.0
+		for i := 0; i < len(fx); i++ {
+			if math.Abs(fx[i]) > maxError {
+				maxError = math.Abs(fx[i])
+			}
+		}
+		if maxError < tol {
+			return x, true
+		}
+
+		// 数值计算雅可比矩阵
+		jacobian := NumericalJacobian(f, x, 1e-6)
+
+		// 求解线性方程组 J * Δx = -f(x)
+		rhs := make([]float64, len(fx))
+		for i := range rhs {
+			rhs[i] = -fx[i]
+		}
+
+		// 使用高斯消元法求解
+		delta, success := SolveLinearSystem(jacobian, rhs)
+		if !success {
+			return nil, false
+		}
+
+		// 更新解
+		for i := 0; i < n; i++ {
+			x[i] += delta[i]
+		}
+	}
+
+	return nil, false
+}
+
+// NumericalJacobian 数值计算雅可比矩阵
+func NumericalJacobian(f func([]float64) []float64, x []float64, eps float64) [][]float64 {
+	n := len(x)
+	fx := f(x)
+	m := len(fx)
+
+	jacobian := make([][]float64, m)
+	for i := range jacobian {
+		jacobian[i] = make([]float64, n)
+	}
+
+	for j := 0; j < n; j++ {
+		// 向前差分
+		xPlus := make([]float64, n)
+		copy(xPlus, x)
+		xPlus[j] += eps
+
+		fxPlus := f(xPlus)
+
+		for i := 0; i < m; i++ {
+			jacobian[i][j] = (fxPlus[i] - fx[i]) / eps
+		}
+	}
+
+	return jacobian
+}
+
+// SolveLinearSystem 使用高斯消元法求解线性方程组
+func SolveLinearSystem(A [][]float64, b []float64) ([]float64, bool) {
+	n := len(b)
+
+	// 创建增广矩阵
+	augmented := make([][]float64, n)
+	for i := range augmented {
+		augmented[i] = make([]float64, n+1)
+		copy(augmented[i], A[i])
+		augmented[i][n] = b[i]
+	}
+
+	// 前向消元
+	for i := 0; i < n; i++ {
+		// 寻找主元
+		maxRow := i
+		for k := i + 1; k < n; k++ {
+			if math.Abs(augmented[k][i]) > math.Abs(augmented[maxRow][i]) {
+				maxRow = k
+			}
+		}
+
+		// 交换行
+		augmented[i], augmented[maxRow] = augmented[maxRow], augmented[i]
+
+		// 检查主元是否为零
+		if math.Abs(augmented[i][i]) < 1e-12 {
+			return nil, false
+		}
+
+		// 消元
+		for k := i + 1; k < n; k++ {
+			factor := augmented[k][i] / augmented[i][i]
+			for j := i; j < n+1; j++ {
+				augmented[k][j] -= factor * augmented[i][j]
+			}
+		}
+	}
+
+	// 回代
+	x := make([]float64, n)
+	for i := n - 1; i >= 0; i-- {
+		x[i] = augmented[i][n]
+		for j := i + 1; j < n; j++ {
+			x[i] -= augmented[i][j] * x[j]
+		}
+		x[i] /= augmented[i][i]
+	}
+
+	return x, true
+}
