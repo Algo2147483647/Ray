@@ -171,10 +171,9 @@ function generateObjectsTable() {
                 <tr>
                 <th>ID</th>
                 <th>Shape</th>
-                <th>Position (X, Y, Z)</th>
-                <th>Size / Radius</th>
+                <th>几何参数</th>
                 <th>Material ID</th>
-                <th>Action</th>
+                <th>操作</th>
             </tr>
         </thead>
         <tbody>
@@ -182,8 +181,8 @@ function generateObjectsTable() {
 
     sceneData.objects.forEach((obj, index) => {
         tableHTML += `
-            <tr>
-                <td>${obj.id || ''}</td>
+            <tr data-index="${index}">
+                <td><input type="text" class="obj-id" value="${obj.id || ''}"></td>
                 <td>
                     <span class="shape-icon">${obj.shape === 'cuboid' ? '◼' : obj.shape === 'sphere' ? '●' : '△'}</span>
                     ${obj.shape}
@@ -191,47 +190,59 @@ function generateObjectsTable() {
                 <td>
         `;
         
-        // 显示位置信息（如果存在）
-        if (obj.position) {
-            tableHTML += `
-                    <input type="number" id="pos-x-${index}" value="${obj.position[0]}" min="-2000" max="2000">
-                    <input type="number" id="pos-y-${index}" value="${obj.position[1]}" min="-2000" max="2000">
-                    <input type="number" id="pos-z-${index}" value="${obj.position[2]}" min="-2000" max="2000">
-                `;
-        } else if (obj.p1 && obj.p2 && obj.p3) {
-            // 三角形的三个点
-            tableHTML += `
-                P1: [${obj.p1.join(', ')}]<br/>
-                P2: [${obj.p2.join(', ')}]<br/>
-                P3: [${obj.p3.join(', ')}]
-            `;
-        }
-
-        tableHTML += `
-                </td>
-                <td>
-            `;
-
+        // 显示几何参数
         if (obj.shape === 'cuboid') {
             tableHTML += `
-                    <input type="number" id="size-w-${index}" value="${obj.size[0]}" min="1" max="2000">
-                    <input type="number" id="size-h-${index}" value="${obj.size[1]}" min="1" max="2000">
-                    <input type="number" id="size-d-${index}" value="${obj.size[2]}" min="1" max="2000">
-                `;
+                位置: 
+                <input type="number" class="obj-pos-x" value="${obj.position ? obj.position[0] : 0}" step="10">
+                <input type="number" class="obj-pos-y" value="${obj.position ? obj.position[1] : 0}" step="10">
+                <input type="number" class="obj-pos-z" value="${obj.position ? obj.position[2] : 0}" step="10">
+                <br/>
+                尺寸: 
+                <input type="number" class="obj-size-w" value="${obj.size[0]}" min="1" step="10">
+                <input type="number" class="obj-size-h" value="${obj.size[1]}" min="1" step="10">
+                <input type="number" class="obj-size-d" value="${obj.size[2]}" min="1" step="10">
+            `;
         } else if (obj.shape === 'sphere') {
             const radius = obj.r || obj.radius || 100;
             tableHTML += `
-                    <input type="number" id="radius-${index}" value="${radius}" min="1" max="1000">
-                `;
-        } else {
-            tableHTML += `N/A`;
+                位置: 
+                <input type="number" class="obj-pos-x" value="${obj.position ? obj.position[0] : 0}" step="10">
+                <input type="number" class="obj-pos-y" value="${obj.position ? obj.position[1] : 0}" step="10">
+                <input type="number" class="obj-pos-z" value="${obj.position ? obj.position[2] : 0}" step="10">
+                <br/>
+                半径: 
+                <input type="number" class="obj-radius" value="${radius}" min="1" step="10">
+            `;
+        } else if (obj.shape === 'triangle') {
+            // 三角形的三个点
+            tableHTML += `
+                P1: 
+                <input type="number" class="obj-p1-x" value="${obj.p1[0]}" step="0.1">
+                <input type="number" class="obj-p1-y" value="${obj.p1[1]}" step="0.1">
+                <input type="number" class="obj-p1-z" value="${obj.p1[2]}" step="0.1">
+                <br/>
+                P2: 
+                <input type="number" class="obj-p2-x" value="${obj.p2[0]}" step="0.1">
+                <input type="number" class="obj-p2-y" value="${obj.p2[1]}" step="0.1">
+                <input type="number" class="obj-p2-z" value="${obj.p2[2]}" step="0.1">
+                <br/>
+                P3: 
+                <input type="number" class="obj-p3-x" value="${obj.p3[0]}" step="0.1">
+                <input type="number" class="obj-p3-y" value="${obj.p3[1]}" step="0.1">
+                <input type="number" class="obj-p3-z" value="${obj.p3[2]}" step="0.1">
+            `;
         }
 
         tableHTML += `
                 </td>
-                <td>${obj.material_id || obj.material || ''}</td>
                 <td>
-                    <button class="update-btn" data-index="${index}">更新</button>
+                    <input type="text" class="obj-material-id" value="${obj.material_id || obj.material || ''}">
+                </td>
+                <td>
+                    <button class="move-up-btn" data-index="${index}" ${index === 0 ? 'disabled' : ''}>上移</button>
+                    <button class="move-down-btn" data-index="${index}" ${index === sceneData.objects.length - 1 ? 'disabled' : ''}>下移</button>
+                    <button class="delete-btn" data-index="${index}">删除</button>
                 </td>
             </tr>
             `;
@@ -240,47 +251,146 @@ function generateObjectsTable() {
     tableHTML += `
             </tbody>
         </table>
+        <div class="table-controls">
+            <button id="update-all-btn" class="btn">更新所有对象</button>
+        </div>
         `;
 
     objectsTable.innerHTML = tableHTML;
 
-    // 添加更新按钮事件监听
-    document.querySelectorAll('.update-btn').forEach(btn => {
+    // 添加事件监听器
+    document.querySelectorAll('.move-up-btn').forEach(btn => {
         btn.addEventListener('click', function() {
-            const index = this.getAttribute('data-index');
-            updateObject(index);
+            const index = parseInt(this.getAttribute('data-index'));
+            moveObject(index, -1);
         });
     });
+
+    document.querySelectorAll('.move-down-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const index = parseInt(this.getAttribute('data-index'));
+            moveObject(index, 1);
+        });
+    });
+
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const index = parseInt(this.getAttribute('data-index'));
+            deleteObject(index);
+        });
+    });
+
+    document.getElementById('update-all-btn').addEventListener('click', updateAllObjects);
 }
 
-// 更新几何体参数
-function updateObject(index) {
-    // 获取输入值
-    const posX = parseFloat(document.getElementById(`pos-x-${index}`).value) || 0;
-    const posY = parseFloat(document.getElementById(`pos-y-${index}`).value) || 0;
-    const posZ = parseFloat(document.getElementById(`pos-z-${index}`).value) || 0;
-
-    // 更新位置
-    sceneData.objects[index].position = [posX, posY, posZ];
-
-    // 更新尺寸
-    if (sceneData.objects[index].shape === 'cuboid') {
-        const sizeW = parseFloat(document.getElementById(`size-w-${index}`).value) || 100;
-        const sizeH = parseFloat(document.getElementById(`size-h-${index}`).value) || 100;
-        const sizeD = parseFloat(document.getElementById(`size-d-${index}`).value) || 100;
-        sceneData.objects[index].size = [sizeW, sizeH, sizeD];
-    } else if (sceneData.objects[index].shape === 'sphere') {
-        const radius = parseFloat(document.getElementById(`radius-${index}`).value) || 100;
-        // 同时更新r和radius字段以保持兼容性
-        sceneData.objects[index].r = radius;
-        if (sceneData.objects[index].radius !== undefined) {
-            sceneData.objects[index].radius = radius;
-        }
-    }
-
+// 移动对象
+function moveObject(index, direction) {
+    if (!sceneData || !sceneData.objects) return;
+    
+    const newIndex = index + direction;
+    
+    // 检查边界
+    if (newIndex < 0 || newIndex >= sceneData.objects.length) return;
+    
+    // 交换对象位置
+    const temp = sceneData.objects[index];
+    sceneData.objects[index] = sceneData.objects[newIndex];
+    sceneData.objects[newIndex] = temp;
+    
     // 更新JSON输入框
     jsonInput.value = JSON.stringify(sceneData, null, 2);
+    
+    // 重新生成表格
+    generateObjectsTable();
+    
+    // 重新渲染场景
+    parseAndRender();
+}
 
+// 删除对象
+function deleteObject(index) {
+    if (!sceneData || !sceneData.objects) return;
+    
+    // 确认删除
+    const obj = sceneData.objects[index];
+    if (!confirm(`确定要删除对象 "${obj.id}" 吗?`)) {
+        return;
+    }
+    
+    // 从数组中移除对象
+    sceneData.objects.splice(index, 1);
+    
+    // 更新JSON输入框
+    jsonInput.value = JSON.stringify(sceneData, null, 2);
+    
+    // 重新生成表格
+    generateObjectsTable();
+    
+    // 重新渲染场景
+    parseAndRender();
+}
+
+// 更新所有对象
+function updateAllObjects() {
+    if (!sceneData || !sceneData.objects) return;
+    
+    const rows = objectsTable.querySelectorAll('tbody tr');
+    
+    rows.forEach(row => {
+        const index = parseInt(row.getAttribute('data-index'));
+        const obj = sceneData.objects[index];
+        
+        // 更新ID
+        const idInput = row.querySelector('.obj-id');
+        if (idInput) obj.id = idInput.value;
+        
+        // 更新位置和尺寸
+        if (obj.shape === 'cuboid') {
+            const posX = parseFloat(row.querySelector('.obj-pos-x').value) || 0;
+            const posY = parseFloat(row.querySelector('.obj-pos-y').value) || 0;
+            const posZ = parseFloat(row.querySelector('.obj-pos-z').value) || 0;
+            obj.position = [posX, posY, posZ];
+            
+            const sizeW = parseFloat(row.querySelector('.obj-size-w').value) || 1;
+            const sizeH = parseFloat(row.querySelector('.obj-size-h').value) || 1;
+            const sizeD = parseFloat(row.querySelector('.obj-size-d').value) || 1;
+            obj.size = [sizeW, sizeH, sizeD];
+        } else if (obj.shape === 'sphere') {
+            const posX = parseFloat(row.querySelector('.obj-pos-x').value) || 0;
+            const posY = parseFloat(row.querySelector('.obj-pos-y').value) || 0;
+            const posZ = parseFloat(row.querySelector('.obj-pos-z').value) || 0;
+            obj.position = [posX, posY, posZ];
+            
+            const radius = parseFloat(row.querySelector('.obj-radius').value) || 1;
+            obj.r = radius;
+            if (obj.radius !== undefined) {
+                obj.radius = radius;
+            }
+        } else if (obj.shape === 'triangle') {
+            const p1x = parseFloat(row.querySelector('.obj-p1-x').value) || 0;
+            const p1y = parseFloat(row.querySelector('.obj-p1-y').value) || 0;
+            const p1z = parseFloat(row.querySelector('.obj-p1-z').value) || 0;
+            obj.p1 = [p1x, p1y, p1z];
+            
+            const p2x = parseFloat(row.querySelector('.obj-p2-x').value) || 0;
+            const p2y = parseFloat(row.querySelector('.obj-p2-y').value) || 0;
+            const p2z = parseFloat(row.querySelector('.obj-p2-z').value) || 0;
+            obj.p2 = [p2x, p2y, p2z];
+            
+            const p3x = parseFloat(row.querySelector('.obj-p3-x').value) || 0;
+            const p3y = parseFloat(row.querySelector('.obj-p3-y').value) || 0;
+            const p3z = parseFloat(row.querySelector('.obj-p3-z').value) || 0;
+            obj.p3 = [p3x, p3y, p3z];
+        }
+        
+        // 更新材质ID
+        const materialIdInput = row.querySelector('.obj-material-id');
+        if (materialIdInput) obj.material_id = materialIdInput.value;
+    });
+    
+    // 更新JSON输入框
+    jsonInput.value = JSON.stringify(sceneData, null, 2);
+    
     // 重新渲染场景
     parseAndRender();
 }
