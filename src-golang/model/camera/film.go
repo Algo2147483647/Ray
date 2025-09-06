@@ -14,8 +14,8 @@ type Film struct {
 	Samples int64                       `json:"samples"`
 }
 
-func NewFilm(width ...int64) *Film {
-	shape := make([]int64, len(width))
+func NewFilm(width ...int) *Film {
+	shape := make([]int, len(width))
 	copy(shape, width)
 
 	return &Film{
@@ -28,8 +28,8 @@ func NewFilm(width ...int64) *Film {
 	}
 }
 
-func (f *Film) Init(width ...int64) *Film {
-	shape := make([]int64, len(width))
+func (f *Film) Init(width ...int) *Film {
+	shape := make([]int, len(width))
 	copy(shape, width)
 
 	f.Data = [3]math_lib.Tensor[float64]{
@@ -59,7 +59,7 @@ func (f *Film) ToImage() *image.RGBA {
 		r := uint8(min(f.Data[0].Data[i], 255))
 		g := uint8(min(f.Data[1].Data[i], 255))
 		b := uint8(min(f.Data[2].Data[i], 255))
-		ind := f.Data[0].GetCoordinates(int64(i))
+		ind := f.Data[0].GetCoordinates(i)
 		imgout.Set(int(ind[0]), int(ind[1]+ind[2]*f.Data[0].Shape[1]), color.RGBA{r, g, b, 255})
 	}
 
@@ -82,13 +82,13 @@ func (f *Film) LoadFromFile(filename string) error {
 		return err
 	}
 
-	shape := make([]int64, shapeLen)
+	shape := make([]int, shapeLen)
 	for i := range shape {
-		var dim int32
+		var dim int
 		if err = binary.Read(file, binary.LittleEndian, &dim); err != nil {
 			return err
 		}
-		shape[i] = int64(dim)
+		shape[i] = dim
 	}
 
 	f.Data = [3]math_lib.Tensor[float64]{

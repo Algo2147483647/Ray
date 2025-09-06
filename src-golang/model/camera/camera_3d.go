@@ -24,7 +24,7 @@ func NewCamera3D() *Camera3D {
 	return &Camera3D{}
 }
 
-func (c *Camera3D) GenerateRay(res *optics.Ray, index ...int64) *optics.Ray {
+func (c *Camera3D) GenerateRay(res *optics.Ray, index ...int) *optics.Ray {
 	if res == nil {
 		res = &optics.Ray{}
 	}

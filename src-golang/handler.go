@@ -44,7 +44,7 @@ func (h *Handler) LoadScript(ScriptPath string) *Handler {
 	return h
 }
 
-func (h *Handler) BuildCamera(Width ...int64) *Handler {
+func (h *Handler) BuildCamera(Width ...int) *Handler {
 	if h.err != nil {
 		return h
 	}
@@ -64,7 +64,7 @@ func (h *Handler) BuildCamera(Width ...int64) *Handler {
 	return h
 }
 
-func (h *Handler) BuildFilm(Width ...int64) *Handler {
+func (h *Handler) BuildFilm(Width ...int) *Handler {
 	if h.err != nil {
 		return h
 	}

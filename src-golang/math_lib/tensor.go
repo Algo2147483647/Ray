@@ -10,23 +10,24 @@ type Number interface {
 }
 
 type Tensor[T Number] struct {
-	Data   []T     `json:"data"`
-	Shape  []int64 `json:"shape"`
-	Stride []int64 `json:"stride"`
+	Data   []T   `json:"data"`
+	Shape  []int `json:"shape"`
+	Stride []int `json:"stride"`
+	Offset int   `json:"offset"`
 }
 
-func NewTensor[T Number](shape []int64) *Tensor[T] {
+func NewTensor[T Number](shape []int) *Tensor[T] {
 	t := &Tensor[T]{
 		Shape: shape,
 	}
 
-	var total int64
+	var total int
 	t.Stride, total = CalculateStrideForTensor(shape)
 	t.Data = make([]T, total)
 	return t
 }
 
-func NewTensorFromSlice[T Number](data []T, shape []int64) *Tensor[T] {
+func NewTensorFromSlice[T Number](data []T, shape []int) *Tensor[T] {
 	t := NewTensor[T](shape)
 	copy(t.Data, data)
 	return t
@@ -66,9 +67,9 @@ func (t *Tensor[T]) Set(value T, coordinate ...int) {
 	t.Data[t.CoordinateToIndex(coordinate...)] = value
 }
 
-func (t *Tensor[T]) Reshape(newShape []int64) *Tensor[T] {
+func (t *Tensor[T]) Reshape(newShape []int) *Tensor[T] {
 	stride, total := CalculateStrideForTensor(newShape)
-	if total != int64(len(t.Data)) {
+	if total != len(t.Data) {
 		panic("新形状的元素总数不匹配")
 	}
 
@@ -76,6 +77,7 @@ func (t *Tensor[T]) Reshape(newShape []int64) *Tensor[T] {
 		Data:   t.Data,
 		Shape:  newShape,
 		Stride: stride,
+		Offset: t.Offset,
 	}
 }
 
@@ -114,15 +116,15 @@ func (t *Tensor[T]) ScalarMul(scalar T) *Tensor[T] {
 	return t
 }
 
-func (t *Tensor[T]) GetCoordinates(i int64) []int64 {
-	if i < 0 || i >= int64(len(t.Data)) {
+func (t *Tensor[T]) GetCoordinates(i int) []int {
+	if i < 0 || i >= len(t.Data) {
 		return nil // 或者返回错误，索引越界
 	}
 
 	actualIndex := i
-	coords := make([]int64, len(t.Shape))
+	coords := make([]int, len(t.Shape))
 
-	for dim := 0; dim < len(t.Stride); dim++ {
+	for dim := len(t.Stride) - 1; dim >= 0; dim-- {
 		coords[dim] = actualIndex / t.Stride[dim]
 		actualIndex = actualIndex % t.Stride[dim]
 	}
