@@ -2,12 +2,12 @@
     "materials": [
         {
             "id": "LightSource",
-            "color": [100.0, 100.0, 100.0],
+            "color": [10.0, 10.0, 10.0],
             "radiate": 1
         },
         {
             "id": "WorldBoundary",
-            "color": [1.0, 1.0, 1.0],
+            "color": [1, 0.68, 0.75],
             "reflectivity": 0.0,
             "refractivity": 0.0,
             "diffuse_loss": 0.7
@@ -26,22 +26,14 @@
             "shape": "cuboid",
             "position": [0, 0, 0, 0],
             "size": [5, 5, 5, 5],
-            "material_id": "LightSource"
+            "material_id": "WorldBoundary"
         },
         {
             "id": "sphere",
             "shape": "sphere",
             "position": [2.2, 0, 0, 0],
-            "r": 0.9,
-            "material_id": "mirror",
-            "engraving_func": "wallpaper1"
-        },
-        {
-            "id": "wallpaper1",
-            "shape": "cuboid",
-            "position": [1, 1, 1, 1],
-            "size": [0.3, 0.3, 0.3, 0.3],
-            "material_id": "wallpaper1"
+            "r": 1,
+            "material_id": "LightSource"
         }
     ]
 }
