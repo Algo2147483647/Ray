@@ -99,7 +99,7 @@ The system supports various geometric shapes:
 |***Triangle***|$(\boldsymbol P_1, \boldsymbol P_2, \boldsymbol P_3)$|
 |***Circle***||
 |***Implicit Equation***|$f(\boldsymbol x) = 0$|
-|***Parametric Equation***|$f: (u, v) \to \mathbb R^3$|
+|***Parametric Equation***|$f: (u, v) \to \mathbb R^{\dim}$|
 
 
 Each shape implements the following interface methods:
