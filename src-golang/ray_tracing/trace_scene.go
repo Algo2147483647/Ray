@@ -15,7 +15,7 @@ func (h *Handler) TraceScene(scene *model.Scene, film *camera.Film, samples int6
 		progress    int64 // 原子进度计数器
 		totalPixels = len(film.Data[0].Data)
 		wg          sync.WaitGroup
-		taskChan    = make(chan []int, totalPixels)
+		taskChan    = make(chan int, totalPixels)
 		done        = make(chan bool) // 启动进度显示goroutine
 	)
 
@@ -41,7 +41,7 @@ func (h *Handler) TraceScene(scene *model.Scene, film *camera.Film, samples int6
 
 	// 创建任务队列
 	for i := 0; i < len(film.Data[0].Data); i++ {
-		taskChan <- film.Data[0].GetCoordinates(i)
+		taskChan <- i
 	}
 	close(taskChan)
 
@@ -51,9 +51,10 @@ func (h *Handler) TraceScene(scene *model.Scene, film *camera.Film, samples int6
 		go func(seed int64) {
 			defer wg.Done()
 			for pixel := range taskChan {
-				color := h.TracePixel(scene.Cameras[0], scene.ObjectTree, samples, pixel...)
+				x := film.Data[0].GetCoordinates(pixel)
+				color := h.TracePixel(scene.Cameras[0], scene.ObjectTree, samples, x...)
 				for ch := 0; ch < 3; ch++ {
-					film.Data[ch].Set(color.AtVec(ch), pixel...)
+					film.Data[ch].Data[pixel] = color.AtVec(ch)
 				}
 
 				atomic.AddInt64(&progress, 1) // 原子更新进度
