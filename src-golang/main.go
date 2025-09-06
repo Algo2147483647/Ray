@@ -20,8 +20,8 @@ func main() {
 		LoadScript(scriptPath).
 		BuildCamera(width, width, width).
 		BuildFilm(width, width, width).
-		Render(20).
-		//MergeFilm("img.bin").
+		Render(100).
+		MergeFilm("img-2.bin").
 		SaveFilm("img.bin").
 		SaveImg("output.png").
 		SaveDebugInfo("debug_traces.json")
