@@ -12,7 +12,7 @@ type CameraNDim struct {
 	CameraBase
 	Position    *mat.VecDense   // 相机位置
 	Coordinates []*mat.VecDense // 坐标系
-	Width       []int64         // 像素宽度
+	Width       []int           // 像素宽度
 	FieldOfView []float64       // 视野角度 (度)
 	Ortho       bool            // 正交相机 / 透视相机
 }
@@ -22,7 +22,7 @@ func NewCameraNDim() *CameraNDim {
 	return &CameraNDim{}
 }
 
-func (c *CameraNDim) GenerateRay(res *optics.Ray, x ...int64) *optics.Ray {
+func (c *CameraNDim) GenerateRay(res *optics.Ray, x ...int) *optics.Ray {
 	if res == nil {
 		res = &optics.Ray{}
 	}
@@ -39,9 +39,9 @@ func (c *CameraNDim) GenerateRay(res *optics.Ray, x ...int64) *optics.Ray {
 
 	res.Color = mat.NewVecDense(3, []float64{1, 1, 1})
 	res.Origin.CloneFromVec(c.Position)
-	res.Direction = mat.NewVecDense(c.Position.Len(), nil)
+	res.Direction.CloneFromVec(coordinates[0])
 	for i := 0; i < len(x); i++ {
-		res.Direction.AddScaledVec(res.Direction, u[i]*math.Tan(c.FieldOfView[i]*math.Pi/180/2.0), coordinates[i])
+		res.Direction.AddScaledVec(res.Direction, u[i]*math.Tan(c.FieldOfView[i]*math.Pi/180/2.0), coordinates[i+1])
 	}
 	math_lib.Normalize(res.Direction)
 

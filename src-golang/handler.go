@@ -9,7 +9,7 @@ import (
 	"src-golang/controller"
 	"src-golang/model"
 	"src-golang/model/camera"
-	optics2 "src-golang/model/optics"
+	"src-golang/model/optics"
 	"src-golang/ray_tracing"
 	"src-golang/utils"
 	"time"
@@ -44,16 +44,16 @@ func (h *Handler) LoadScript(ScriptPath string) *Handler {
 	return h
 }
 
-func (h *Handler) BuildCamera(Width, Height int) *Handler {
+func (h *Handler) BuildCamera(Width ...int) *Handler {
 	if h.err != nil {
 		return h
 	}
 
-	camera := &optics2.Camera{
+	camera := &optics.Camera{
 		Position:    mat.NewVecDense(utils.Dimension, []float64{-1.7, 0.1, 0.5}),
 		Up:          mat.NewVecDense(utils.Dimension, []float64{0, 0, 1}),
-		Width:       Width,
-		Height:      Height,
+		Width:       Width[0],
+		Height:      Width[1],
 		AspectRatio: 1,
 		FieldOfView: 100,
 	}
@@ -63,12 +63,12 @@ func (h *Handler) BuildCamera(Width, Height int) *Handler {
 	return h
 }
 
-func (h *Handler) BuildFilm(Width, Height int) *Handler {
+func (h *Handler) BuildFilm(Width ...int) *Handler {
 	if h.err != nil {
 		return h
 	}
 
-	h.Film = camera.NewFilm(3, Width, Height)
+	h.Film = camera.NewFilm(Width...)
 
 	return h
 }
@@ -104,7 +104,7 @@ func (h *Handler) SaveDebugInfo(filename string) *Handler {
 
 		encoder := json.NewEncoder(file)
 		encoder.SetIndent("", "  ")
-		err = encoder.Encode(optics2.DebugRayTraces)
+		err = encoder.Encode(optics.DebugRayTraces)
 		if err != nil {
 			h.err = err
 			return h
@@ -155,7 +155,7 @@ func (h *Handler) MergeFilm(filename string) *Handler {
 		return h
 	}
 
-	t := camera.NewFilm(h.Film.Data.Shape...)
+	t := camera.NewFilm(h.Film.Data[0].Shape...)
 	err := t.LoadFromFile(filename)
 	if err != nil {
 		h.err = err

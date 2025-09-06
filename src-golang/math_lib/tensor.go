@@ -43,6 +43,22 @@ func CalculateStrideForTensor(shape []int) ([]int, int) {
 	return stride, total
 }
 
+func (t *Tensor[T]) GetCoordinates(i int) []int {
+	if i < 0 || i >= len(t.Data) {
+		return nil // 或者返回错误，索引越界
+	}
+
+	actualIndex := i
+	coords := make([]int, len(t.Shape))
+
+	for dim := len(t.Stride) - 1; dim >= 0; dim-- {
+		coords[dim] = actualIndex / t.Stride[dim]
+		actualIndex = actualIndex % t.Stride[dim]
+	}
+
+	return coords
+}
+
 func (t *Tensor[T]) CoordinateToIndex(coordinate ...int) int {
 	if len(coordinate) != len(t.Shape) {
 		panic("维度不匹配")

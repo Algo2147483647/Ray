@@ -32,7 +32,7 @@ func (c *Camera) SetLookAt(lookAt *mat.VecDense) *Camera {
 	return c
 }
 
-func (c *Camera) GenerateRay(ray *Ray, row, col int) *Ray {
+func (c *Camera) GenerateRay(ray *Ray, coordinate ...int) *Ray {
 	if ray == nil {
 		ray = &Ray{}
 	}
@@ -41,9 +41,9 @@ func (c *Camera) GenerateRay(ray *Ray, row, col int) *Ray {
 	var (
 		dir        = c.Direction
 		up         = c.Up
-		right      = math_lib.Normalize(math_lib.Cross2(dir, up))          // 计算右向量和上向量
-		u          = 2*(float64(row)+rand.Float64())/float64(c.Width) - 1  // [-1, 1]
-		v          = 2*(float64(col)+rand.Float64())/float64(c.Height) - 1 // [-1, 1]
+		right      = math_lib.Normalize(math_lib.Cross2(dir, up))                    // 计算右向量和上向量
+		u          = 2*(float64(coordinate[0])+rand.Float64())/float64(c.Width) - 1  // [-1, 1]
+		v          = 2*(float64(coordinate[1])+rand.Float64())/float64(c.Height) - 1 // [-1, 1]
 		fovRad     = c.FieldOfView * math.Pi / 180
 		halfHeight = math.Tan(fovRad / 2)
 		halfWidth  = c.AspectRatio * halfHeight
