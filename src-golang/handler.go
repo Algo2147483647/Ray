@@ -52,13 +52,13 @@ func (h *Handler) BuildCamera(Width ...int) *Handler {
 	c := &camera.CameraNDim{
 		Position: mat.NewVecDense(utils.Dimension, []float64{0, 0, 0, 0}),
 		Coordinates: []*mat.VecDense{
-			mat.NewVecDense(utils.Dimension, []float64{1, 0, 0, 0}),
-			mat.NewVecDense(utils.Dimension, []float64{0, 1, 0, 0}),
-			mat.NewVecDense(utils.Dimension, []float64{0, 0, 1, 0}),
+			mat.NewVecDense(utils.Dimension, []float64{1, 1, 1, 1}),
+			mat.NewVecDense(utils.Dimension, []float64{1, -1, 0, 0}),
+			mat.NewVecDense(utils.Dimension, []float64{0, 0, 1, -1}),
 			mat.NewVecDense(utils.Dimension, []float64{0, 0, 0, 1}),
 		},
 		Width:       Width,
-		FieldOfView: []float64{100, 100, 100},
+		FieldOfView: []float64{120, 120, 120},
 	}
 	h.Scene.Cameras = append(h.Scene.Cameras, c)
 	return h

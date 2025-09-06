@@ -14,13 +14,13 @@ func main() {
 		fmt.Printf("Using default script: %s\n", scriptPath)
 	}
 
-	width := 100
+	width := 200
 
 	h := NewHandler().
 		LoadScript(scriptPath).
 		BuildCamera(width, width, width).
 		BuildFilm(width, width, width).
-		Render(100).
+		Render(20).
 		//MergeFilm("img.bin").
 		SaveFilm("img.bin").
 		SaveImg("output.png").

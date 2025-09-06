@@ -84,11 +84,11 @@ func (f *Film) LoadFromFile(filename string) error {
 
 	shape := make([]int, shapeLen)
 	for i := range shape {
-		var dim int
+		var dim int32
 		if err = binary.Read(file, binary.LittleEndian, &dim); err != nil {
 			return err
 		}
-		shape[i] = dim
+		shape[i] = int(dim)
 	}
 
 	f.Data = [3]math_lib.Tensor[float64]{

@@ -66,50 +66,23 @@ func DiffuseReflect4D(incidentRay, normal *mat.VecDense) *mat.VecDense {
 	rsqrt := math.Sqrt(r)
 	invSqrt := math.Sqrt(1 - r)
 
-	// 在4维超球面上生成均匀随机方向
+	// 在4维超球面上生成均匀随机方向, 生成4个独立的高斯随机数
 	u := mat.NewVecDense(4, nil)
-	for {
-		// 生成4个独立的高斯随机数
-		u.SetVec(0, rand.NormFloat64())
-		u.SetVec(1, rand.NormFloat64())
-		u.SetVec(2, rand.NormFloat64())
-		u.SetVec(3, rand.NormFloat64())
-
-		// 归一化
-		norm := math.Sqrt(
-			u.AtVec(0)*u.AtVec(0) +
-				u.AtVec(1)*u.AtVec(1) +
-				u.AtVec(2)*u.AtVec(2) +
-				u.AtVec(3)*u.AtVec(3))
-
-		if norm > 1e-8 {
-			u.ScaleVec(1/norm, u)
-			break
-		}
+	for i := 0; i < u.Len(); i++ {
+		u.SetVec(i, rand.NormFloat64())
 	}
+	Normalize(u)
 
 	// 确保u与法线正交
 	dot := mat.Dot(u, normal)
 	u.AddScaledVec(u, -dot, normal)
-	uNorm := mat.Norm(u, 2)
-	if uNorm > 1e-8 {
-		u.ScaleVec(1/uNorm, u)
-	} else {
-		// 如果u太小，重新生成一个基向量
-		u.SetVec(0, 1)
-		u.SetVec(1, 0)
-		u.SetVec(2, 0)
-		u.SetVec(3, 0)
-		dot = mat.Dot(u, normal)
-		u.AddScaledVec(u, -dot, normal)
-		u.ScaleVec(1/uNorm, u)
-	}
+	Normalize(u)
 
 	// 组合最终方向
-	result := mat.NewVecDense(4, nil)
-	result.AddScaledVec(result, invSqrt, normal)
-	result.AddScaledVec(result, rsqrt, u)
-	return Normalize(result)
+	res := mat.NewVecDense(4, nil)
+	res.AddScaledVec(res, invSqrt, normal)
+	res.AddScaledVec(res, rsqrt, u)
+	return Normalize(res)
 }
 
 // CauchyDispersion Cauchy 公式, 计算给定波长下的折射率
