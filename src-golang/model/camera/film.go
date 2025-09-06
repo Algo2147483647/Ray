@@ -54,13 +54,13 @@ func (f *Film) Merge(a *Film) *Film {
 }
 
 func (f *Film) ToImage() *image.RGBA {
-	imgout := image.NewRGBA(image.Rect(0, 0, int(f.Data[0].Shape[0]), int(f.Data[0].Shape[1]*f.Data[0].Shape[2])))
+	imgout := image.NewRGBA(image.Rect(0, 0, f.Data[0].Shape[0], f.Data[0].Shape[1]*f.Data[0].Shape[2]))
 	for i := 0; i < len(f.Data[0].Data); i++ {
 		r := uint8(min(f.Data[0].Data[i]*255, 255))
 		g := uint8(min(f.Data[1].Data[i]*255, 255))
 		b := uint8(min(f.Data[2].Data[i]*255, 255))
 		ind := f.Data[0].GetCoordinates(i)
-		imgout.Set(int(ind[0]), int(ind[1]+ind[2]*f.Data[0].Shape[1]), color.RGBA{r, g, b, 255})
+		imgout.Set(ind[0], ind[1]+ind[2]*f.Data[0].Shape[1], color.RGBA{r, g, b, 255})
 	}
 
 	return imgout
