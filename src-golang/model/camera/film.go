@@ -54,16 +54,30 @@ func (f *Film) Merge(a *Film) *Film {
 }
 
 func (f *Film) ToImage() *image.RGBA {
-	imgout := image.NewRGBA(image.Rect(0, 0, f.Data[0].Shape[0], f.Data[0].Shape[1]))
-	for i := 0; i < len(f.Data[0].Data); i++ {
-		r := uint8(min(f.Data[0].Data[i]*255, 255))
-		g := uint8(min(f.Data[1].Data[i]*255, 255))
-		b := uint8(min(f.Data[2].Data[i]*255, 255))
-		ind := f.Data[0].GetCoordinates(i)
-		imgout.Set(ind[0], ind[1], color.RGBA{r, g, b, 255})
-	}
+	if len(f.Data[0].Shape) == 2 {
+		imgout := image.NewRGBA(image.Rect(0, 0, f.Data[0].Shape[0], f.Data[0].Shape[1]))
+		for i := 0; i < len(f.Data[0].Data); i++ {
+			r := uint8(min(f.Data[0].Data[i]*255, 255))
+			g := uint8(min(f.Data[1].Data[i]*255, 255))
+			b := uint8(min(f.Data[2].Data[i]*255, 255))
+			ind := f.Data[0].GetCoordinates(i)
+			imgout.Set(ind[0], ind[1], color.RGBA{r, g, b, 255})
+		}
 
-	return imgout
+		return imgout
+	} else if len(f.Data[0].Shape) == 3 {
+		imgout := image.NewRGBA(image.Rect(0, 0, f.Data[0].Shape[0], f.Data[0].Shape[1]*f.Data[0].Shape[2]))
+		for i := 0; i < len(f.Data[0].Data); i++ {
+			r := uint8(min(f.Data[0].Data[i]*255, 255))
+			g := uint8(min(f.Data[1].Data[i]*255, 255))
+			b := uint8(min(f.Data[2].Data[i]*255, 255))
+			ind := f.Data[0].GetCoordinates(i)
+			imgout.Set(ind[0], ind[1]+ind[2]*f.Data[0].Shape[1], color.RGBA{r, g, b, 255})
+		}
+
+		return imgout
+	}
+	return nil
 }
 
 func (f *Film) LoadFromFile(filename string) error {
@@ -84,11 +98,11 @@ func (f *Film) LoadFromFile(filename string) error {
 
 	shape := make([]int, shapeLen)
 	for i := range shape {
-		var dim int
+		var dim int32
 		if err = binary.Read(file, binary.LittleEndian, &dim); err != nil {
 			return err
 		}
-		shape[i] = dim
+		shape[i] = int(dim)
 	}
 
 	f.Data = [3]math_lib.Tensor[float64]{
