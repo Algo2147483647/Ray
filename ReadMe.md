@@ -10,13 +10,18 @@ This document describes a comprehensive ray tracing simulation and rendering sys
 
 <img src="./docs/assets/RayTracingTest.png" alt="RayTracingTest" style="zoom: 67%;" />
 
-***Four-order & quadratic polynomial surface***:
+***Fourth-order & Quadratic polynomial surface***:
 
 <img src="./docs/assets/four-order_equation-2400.png" alt="RayTracingTest_OpticalVerification" style="zoom:67%;" />
 
 ***Chromatic dispersion***: 
 
 <img src="./docs/assets/prism_refraction-8000.png" alt="RayTracingTest_OpticalVerification" style="zoom:67%;" />
+
+***Multi-Dimension | 4D (Testing)***: 
+
+<img src="./docs/assets/f3454e1c32548fc4f8c7ef8ffa6ecdb.png" alt="RayTracingTest_OpticalVerification" style="zoom:67%;" />
+
 
 ### System Overview
 
