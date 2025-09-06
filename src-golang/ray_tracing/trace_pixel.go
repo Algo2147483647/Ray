@@ -3,12 +3,13 @@ package ray_tracing
 import (
 	"gonum.org/v1/gonum/mat"
 	"src-golang/math_lib"
+	"src-golang/model/camera"
 	"src-golang/model/object"
 	"src-golang/model/optics"
 )
 
 // TracePixel 追踪单个像素
-func (h *Handler) TracePixel(camera *optics.Camera, objTree *object.ObjectTree, samples int64, index ...int) *mat.VecDense {
+func (h *Handler) TracePixel(camera camera.Camera, objTree *object.ObjectTree, samples int64, index ...int) *mat.VecDense {
 	color := mat.NewVecDense(3, nil)
 	ray := h.RayPool.Get().(*optics.Ray) // new ray
 	defer h.RayPool.Put(ray)

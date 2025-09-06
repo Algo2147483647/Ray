@@ -49,7 +49,7 @@ func (h *Handler) BuildCamera(Width ...int) *Handler {
 		return h
 	}
 
-	camera := &optics.Camera{
+	camera := &camera.Camera3D{
 		Position:    mat.NewVecDense(utils.Dimension, []float64{-1.7, 0.1, 0.5}),
 		Up:          mat.NewVecDense(utils.Dimension, []float64{0, 0, 1}),
 		Width:       Width[0],
