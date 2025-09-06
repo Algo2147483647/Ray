@@ -6,9 +6,15 @@
 
 This document describes a comprehensive ray tracing simulation and rendering system designed for optical simulation and visualization. The system accurately simulates light propagation, reflection, refraction, and other optical phenomena in various materials, generating high-quality rendered images of optical scenes.
 
+***Complex scenario, Texture, STL model file***: 
+
 <img src="./docs/assets/RayTracingTest.png" alt="RayTracingTest" style="zoom: 67%;" />
 
-<img src="./docs/assets/dispersion-three-balls-10000.png" alt="RayTracingTest_OpticalVerification" style="zoom:67%;" />
+***Four-order & quadratic polynomial surface***:
+
+<img src="./docs/assets/four-order_equation-2400.png" alt="RayTracingTest_OpticalVerification" style="zoom:67%;" />
+
+***Chromatic dispersion***: 
 
 <img src="./docs/assets/prism_refraction-8000.png" alt="RayTracingTest_OpticalVerification" style="zoom:67%;" />
 
@@ -78,12 +84,18 @@ Material defines the optical properties of object surfaces:
 #### Shape
 
 The system supports various geometric shapes:
-- **Cuboid**
-- **Sphere**
-- **Quadratic Equation Surface**
-- **Plane**
-- **Triangle**
-- **Circle**
+|Shape |Expression|
+| :------------------------------------------- | :----------------------------------------------------------: |
+| ***Plane***|$\boldsymbol A \boldsymbol x + \boldsymbol b = 0$ |
+| ***Sphere*** | $\|\boldsymbol x - \boldsymbol x_c \|_2 = r$ |
+| ***Quadratic Polynomial Equation Surface***| $\boldsymbol x^T \boldsymbol A \boldsymbol x + \boldsymbol b^T \boldsymbol x + c = 0$ |
+| ***Four-Order Polynomial Equation Surface*** | $f(\boldsymbol x) = \sum\limits_{i_1=0}^{\dim} \sum\limits_{i_2=i_1}^{\dim} \sum\limits_{i_3=i_2}^{\dim} \sum\limits_{i_4=i_3}^{\dim} a_{i_1 i_2 i_3 i_4} \cdot x_{i_1} x_{i_2} x_{i_3} x_{i_4}$ |
+| ***Cuboid*** |$(\boldsymbol P_\min, \boldsymbol P_\max)$|
+|***Triangle***|$(\boldsymbol P_1, \boldsymbol P_2, \boldsymbol P_3)$|
+|***Circle***||
+|***Implicit Equation***|$f(\boldsymbol x) = 0$|
+|***Parametric Equation***|$f: (u, v) \to \mathbb R^3$|
+
 
 Each shape implements the following interface methods:
 - ***Intersect***: Calculate intersection with ray

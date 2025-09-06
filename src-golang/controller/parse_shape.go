@@ -17,35 +17,34 @@ func GetFloat64SliceForScript(req interface{}) (int, []float64) {
 	return len(cast.ToFloat64Slice(req)), cast.ToFloat64Slice(req)
 }
 
-func ParseShape(objDef map[string]interface{}) (res []*shape.Shape) {
+func ParseShape(objDef map[string]interface{}) (res []shape.Shape) {
 	switch objDef["shape"] {
 	case "cuboid":
-		var item *shape.Cuboid
+		var c *shape.Cuboid
 		if _, ok := objDef["position"]; ok {
 			position := mat.NewVecDense(GetFloat64SliceForScript(objDef["position"]))
 			halfSize := math_lib.ScaleVec2(0.5, mat.NewVecDense(GetFloat64SliceForScript(objDef["size"])))
 			pmax := mat.NewVecDense(position.Len(), nil)
 			pmin := mat.NewVecDense(position.Len(), nil)
-			item = shape.NewCuboid(
+			c = shape.NewCuboid(
 				math_lib.SubVec(pmin, position, halfSize),
 				math_lib.AddVec(pmax, position, halfSize),
 			)
 		} else if _, ok := objDef["pmax"]; ok {
-			item = shape.NewCuboid(
+			c = shape.NewCuboid(
 				mat.NewVecDense(GetFloat64SliceForScript(objDef["pmin"])),
 				mat.NewVecDense(GetFloat64SliceForScript(objDef["pmax"])),
 			)
 		}
 
-		if item == nil {
-			return []*shape.Shape{}
+		if c == nil {
+			return []shape.Shape{}
 		}
 
 		if _, ok := objDef["engraving_func"]; ok {
-			item.EngravingFunc = example_lib.EngravingFuncMap[cast.ToString(objDef["engraving_func"])]
+			c.EngravingFunc = example_lib.EngravingFuncMap[cast.ToString(objDef["engraving_func"])]
 		}
-		s := shape.Shape(item)
-		return []*shape.Shape{&s}
+		return []shape.Shape{c}
 
 	case "sphere":
 		sphere := shape.NewSphere(
@@ -55,8 +54,7 @@ func ParseShape(objDef map[string]interface{}) (res []*shape.Shape) {
 		if _, ok := objDef["engraving_func"]; ok {
 			sphere.EngravingFunc = example_lib.EngravingFuncMap[cast.ToString(objDef["engraving_func"])]
 		}
-		s := shape.Shape(sphere)
-		return []*shape.Shape{&s}
+		return []shape.Shape{sphere}
 
 	case "triangle":
 		triangle := shape.NewTriangle(
@@ -64,27 +62,31 @@ func ParseShape(objDef map[string]interface{}) (res []*shape.Shape) {
 			mat.NewVecDense(GetFloat64SliceForScript(objDef["p2"])),
 			mat.NewVecDense(GetFloat64SliceForScript(objDef["p3"])),
 		)
-		s := shape.Shape(triangle)
-		return []*shape.Shape{&s}
+		return []shape.Shape{triangle}
 
 	case "plane":
 	case "quadratic equation":
-		qe := shape.NewQuadraticEquation(
+		e := shape.NewQuadraticEquation(
 			mat.NewDense(3, 3, cast.ToFloat64Slice(objDef["a"])),
 			mat.NewVecDense(GetFloat64SliceForScript(objDef["b"])),
 			cast.ToFloat64(objDef["c"]),
 		)
-		s := shape.Shape(qe)
-		return []*shape.Shape{&s}
+		return []shape.Shape{e}
+
+	case "four-order equation":
+		e := shape.NewFourOrderEquation(
+			cast.ToFloat64Slice(objDef["a"]),
+		)
+		return []shape.Shape{e}
 
 	case "stl":
 		return ParseShapeForSTL(objDef)
 	}
 
-	return []*shape.Shape{}
+	return []shape.Shape{}
 }
 
-func ParseShapeForSTL(objDef map[string]interface{}) []*shape.Shape {
+func ParseShapeForSTL(objDef map[string]interface{}) []shape.Shape {
 	file_path := cast.ToString(objDef["file"])
 	position := mat.NewVecDense(GetFloat64SliceForScript(objDef["position"]))
 	z_dir := mat.NewVecDense(GetFloat64SliceForScript(objDef["z_dir"]))
@@ -122,7 +124,7 @@ func ParseShapeForSTL(objDef map[string]interface{}) []*shape.Shape {
 		}
 	}
 
-	var triangles []*shape.Shape
+	var triangles []shape.Shape
 
 	// 判断STL文件类型（ASCII还是二进制）
 	scanner := bufio.NewScanner(file)
@@ -159,8 +161,7 @@ func ParseShapeForSTL(objDef map[string]interface{}) []*shape.Shape {
 						transformVertexWithMatrix(p2, transformMatrix),
 						transformVertexWithMatrix(p3, transformMatrix),
 					)
-					s := shape.Shape(triangle)
-					triangles = append(triangles, &s)
+					triangles = append(triangles, triangle)
 					p1, p2, p3 = nil, nil, nil
 				}
 			}
@@ -208,8 +209,7 @@ func ParseShapeForSTL(objDef map[string]interface{}) []*shape.Shape {
 				transformVertexWithMatrix(p2, transformMatrix),
 				transformVertexWithMatrix(p3, transformMatrix),
 			)
-			s := shape.Shape(triangle)
-			triangles = append(triangles, &s)
+			triangles = append(triangles, triangle)
 		}
 	}
 

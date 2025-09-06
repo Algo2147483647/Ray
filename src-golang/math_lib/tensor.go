@@ -32,46 +32,38 @@ func NewTensorFromSlice[T Number](data []T, shape []int64) *Tensor[T] {
 	return t
 }
 
-func CalculateStrideForTensor(shape []int64) ([]int64, int64) {
-	stride := make([]int64, len(shape))
-	total := int64(1)
-	for i := len(shape) - 1; i >= 0; i-- {
+func CalculateStrideForTensor(shape []int) ([]int, int) {
+	stride := make([]int, len(shape))
+	total := 1
+	for i := 0; i < len(shape); i++ {
 		stride[i] = total
 		total *= shape[i]
 	}
 	return stride, total
 }
 
-func (t *Tensor[T]) Get(indices ...int64) T {
-	if len(indices) != len(t.Shape) {
+func (t *Tensor[T]) CoordinateToIndex(coordinate ...int) int {
+	if len(coordinate) != len(t.Shape) {
 		panic("维度不匹配")
 	}
 
-	pos := int64(0)
-	for i, idx := range indices {
+	index := t.Offset
+	for i, idx := range coordinate {
 		if idx < 0 || idx >= t.Shape[i] {
 			panic("索引超出范围")
 		}
-		pos += idx * t.Stride[i]
+		index += idx * t.Stride[i]
 	}
 
-	return t.Data[pos]
+	return index
 }
 
-func (t *Tensor[T]) Set(value T, indices ...int64) {
-	if len(indices) != len(t.Shape) {
-		panic("维度不匹配")
-	}
+func (t *Tensor[T]) Get(coordinate ...int) T {
+	return t.Data[t.CoordinateToIndex(coordinate...)]
+}
 
-	pos := int64(0)
-	for i, idx := range indices {
-		if idx < 0 || idx >= t.Shape[i] {
-			panic("索引超出范围")
-		}
-		pos += idx * t.Stride[i]
-	}
-
-	t.Data[pos] = value
+func (t *Tensor[T]) Set(value T, coordinate ...int) {
+	t.Data[t.CoordinateToIndex(coordinate...)] = value
 }
 
 func (t *Tensor[T]) Reshape(newShape []int64) *Tensor[T] {

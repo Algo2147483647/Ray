@@ -58,7 +58,7 @@ func LoadSceneFromScript(script *Script, scene *model.Scene) error {
 
 		for _, shape := range shapes {
 			scene.ObjectTree.AddObject(&object.Object{
-				Shape:    *shape,
+				Shape:    shape,
 				Material: material,
 			})
 		}

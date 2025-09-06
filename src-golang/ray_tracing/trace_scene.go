@@ -13,8 +13,8 @@ import (
 func (h *Handler) TraceScene(scene *model.Scene, film *camera.Film, samples int64) {
 	var (
 		progress    int64 // 原子进度计数器
-		wg          sync.WaitGroup
 		totalPixels = len(film.Data[0].Data)
+		wg          sync.WaitGroup
 		taskChan    = make(chan []int64, totalPixels)
 		done        = make(chan bool) // 启动进度显示goroutine
 	)

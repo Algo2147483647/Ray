@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D场景几何体编辑器</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>3D场景几何体编辑器</h1>
+        <p class="subtitle">输入JSON配置来定义几何体场景，实时编辑参数并预览3D效果。</p>
+    </header>
+
+    <div class="content">
+        <div class="panel">
+            <div class="panel-header">
+                <h2 class="panel-title">JSON配置</h2>
+            </div>
+            <textarea id="json-input">{
+    "materials": [
+        {
+            "id": "Paper",
+            "color": [1, 1, 1],
+            "diffuse_loss": 1,
+            "reflect_loss": 0,
+            "refract_loss": 0,
+            "refractivity": 0
+        },
+        {
+            "id": "Glass",
+            "color": [1, 1, 1],
+            "diffuse_loss": 0,
+            "reflect_loss": 1,
+            "refract_loss": 0,
+            "refractivity": 1.7
+        },
+        {
+            "id": "Metal",
+            "color": [1, 1, 0],
+            "diffuse_loss": 0.5,
+            "reflect_loss": 0.5,
+            "refract_loss": 0,
+            "refractivity": 0
+        },
+        {
+            "id": "Light",
+            "color": [10, 10, 10],
+            "radiate": 1
+        }
+    ],
+    "objects": [
+        {
+            "id": "box1",
+            "shape": "cuboid",
+            "position": [0, 0, 0],
+            "size": [2000, 2000, 2000],
+            "material_id": "Paper"
+        },
+        {
+            "id": "glass_panel1",
+            "shape": "cuboid",
+            "position": [850, 1320, 0],
+            "size": [1150, 1350, 300],
+            "material_id": "Glass"
+        },
+        {
+            "id": "glass_panel2",
+            "shape": "cuboid",
+            "position": [850, 900, 0],
+            "size": [1150, 930, 300],
+            "material_id": "Glass"
+        },
+        {
+            "id": "glass_panel3",
+            "shape": "cuboid",
+            "position": [850, 900, 0],
+            "size": [1150, 930, 300],
+            "material_id": "Glass"
+        },
+        {
+            "id": "light_source",
+            "shape": "sphere",
+            "position": [1000, 1000, 1600],
+            "r": 400,
+            "material_id": "Light"
+        }
+    ],
+    "cameras": [
+        {
+            "position": [0, 0, 3000],
+            "direction": [0, 0, -1],
+            "up": [0, 1, 0],
+            "width": 800,
+            "height": 600,
+            "field_of_view": 90
+        }
+    ]
+}</textarea>
+
+            <div class="controls">
+                <button id="confirm-btn" class="btn">确认并生成场景</button>
+                <button id="reset-btn" class="btn btn-secondary">重置配置</button>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">
+                <h2 class="panel-title">3D场景预览</h2>
+                <div class="scene-info">使用鼠标拖拽旋转场景，滚轮缩放</div>
+            </div>
+            <div id="scene-container">
+                <canvas id="scene-canvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header">
+            <h2 class="panel-title">几何体参数列表</h2>
+        </div>
+        <div id="objects-table"></div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="cuboid-count">0</div>
+                <div class="stat-label">立方体</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="sphere-count">0</div>
+                <div class="stat-label">球体</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="total-count">0</div>
+                <div class="stat-label">几何体总数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="light-count">0</div>
+                <div class="stat-label">光源</div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>3D场景几何体编辑器 &copy; 2023 | 使用Three.js构建</p>
+    </footer>
+</div>
+
+<script src="assets/script.js"></script>
+</body>
+</html>
