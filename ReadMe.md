@@ -20,7 +20,7 @@ This document describes a comprehensive ray tracing simulation and rendering sys
 
 ***Multi-Dimension | 4D (Testing)***: 
 
-<img src="./docs/assets/f3454e1c32548fc4f8c7ef8ffa6ecdb.png" alt="RayTracingTest_OpticalVerification" style="zoom:67%;" />
+<img src="./docs/assets/4D.png" alt="RayTracingTest_OpticalVerification" style="zoom:67%;" />
 
 
 ### System Overview
