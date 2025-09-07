@@ -41,6 +41,9 @@ func ParseMaterials(script *Script) map[string]*optics.Material {
 		if val, ok := matDef["refract_loss"]; ok {
 			material.RefractLoss = cast.ToFloat64(val)
 		}
+		if val, ok := matDef["color_func"]; ok {
+			material.ColorFunc = optics.ColorFuncMap[cast.ToString(val)]
+		}
 		materials[cast.ToString(matDef["id"])] = material
 	}
 

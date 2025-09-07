@@ -101,7 +101,7 @@ def visualize_3d_volume(volume_data, threshold=50):
 
 def main():
     # 图像路径
-    image_path = r"C:\Algo\Projects\Ray\src-golang\output.png"
+    image_path = r"D:\Algo\Projects\Ray\src-golang\output.png"
     
     # 检查图像文件是否存在
     if not os.path.exists(image_path):
@@ -110,7 +110,8 @@ def main():
     
     # 加载并重塑图像数据
     print("正在加载和重塑图像数据...")
-    volume_data = load_and_reshape_image(image_path, 100, 100, 100)
+    n = 200
+    volume_data = load_and_reshape_image(image_path, n, n, n)
     
     # 显示3D体积
     print("正在显示3D体积数据...")
