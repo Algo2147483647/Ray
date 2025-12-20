@@ -6,6 +6,34 @@ let renderer = null;
 let controls = null;
 const objects = [];
 
+// 定义形状及其参数的映射关系
+const SHAPE_PARAMETERS = {
+    'cuboid': {
+        icon: '◼',
+        params: ['position', 'size']
+    },
+    'sphere': {
+        icon: '●',
+        params: ['position', 'r']
+    },
+    'triangle': {
+        icon: '△',
+        params: ['p1', 'p2', 'p3']
+    },
+    'plane': {
+        icon: '▭',
+        params: ['A', 'b']
+    },
+    'quadratic equation': {
+        icon: 'QE',
+        params: ['a', 'b', 'c']
+    },
+    'four-order equation': {
+        icon: 'FE',
+        params: ['a']
+    }
+};
+
 // DOM elements
 const jsonInput = document.getElementById('json-input');
 const confirmBtn = document.getElementById('confirm-btn');
@@ -183,55 +211,122 @@ function generateObjectsTable() {
             <tr data-index="${index}" class="object-row">
                 <td><input type="text" class="obj-id" value="${obj.id || ''}"></td>
                 <td>
-                    <span class="shape-icon">${obj.shape === 'cuboid' ? '◼' : obj.shape === 'sphere' ? '●' : '△'}</span>
-                    ${obj.shape}
+                    <select class="obj-shape-select">
+                        ${Object.keys(SHAPE_PARAMETERS).map(shape => 
+                            `<option value="${shape}" ${obj.shape === shape ? 'selected' : ''}>${shape}</option>`
+                        ).join('')}
+                    </select>
+                    <span class="shape-icon">${SHAPE_PARAMETERS[obj.shape]?.icon || '◆'}</span>
                 </td>
                 <td>
         `;
         
         // 显示几何参数
-        if (obj.shape === 'cuboid') {
-            tableHTML += `
-                Position: 
-                <input type="number" class="obj-pos-x" value="${obj.position ? obj.position[0] : 0}" step="10">
-                <input type="number" class="obj-pos-y" value="${obj.position ? obj.position[1] : 0}" step="10">
-                <input type="number" class="obj-pos-z" value="${obj.position ? obj.position[2] : 0}" step="10">
-                <br/>
-                Size: 
-                <input type="number" class="obj-size-w" value="${obj.size[0]}" min="1" step="10">
-                <input type="number" class="obj-size-h" value="${obj.size[1]}" min="1" step="10">
-                <input type="number" class="obj-size-d" value="${obj.size[2]}" min="1" step="10">
-            `;
-        } else if (obj.shape === 'sphere') {
-            const radius = obj.r || obj.radius || 100;
-            tableHTML += `
-                Position: 
-                <input type="number" class="obj-pos-x" value="${obj.position ? obj.position[0] : 0}" step="10">
-                <input type="number" class="obj-pos-y" value="${obj.position ? obj.position[1] : 0}" step="10">
-                <input type="number" class="obj-pos-z" value="${obj.position ? obj.position[2] : 0}" step="10">
-                <br/>
-                Radius: 
-                <input type="number" class="obj-radius" value="${radius}" min="1" step="10">
-            `;
-        } else if (obj.shape === 'triangle') {
-            // Triangle vertices
-            tableHTML += `
-                P1: 
-                <input type="number" class="obj-p1-x" value="${obj.p1[0]}" step="0.1">
-                <input type="number" class="obj-p1-y" value="${obj.p1[1]}" step="0.1">
-                <input type="number" class="obj-p1-z" value="${obj.p1[2]}" step="0.1">
-                <br/>
-                P2: 
-                <input type="number" class="obj-p2-x" value="${obj.p2[0]}" step="0.1">
-                <input type="number" class="obj-p2-y" value="${obj.p2[1]}" step="0.1">
-                <input type="number" class="obj-p2-z" value="${obj.p2[2]}" step="0.1">
-                <br/>
-                P3: 
-                <input type="number" class="obj-p3-x" value="${obj.p3[0]}" step="0.1">
-                <input type="number" class="obj-p3-y" value="${obj.p3[1]}" step="0.1">
-                <input type="number" class="obj-p3-z" value="${obj.p3[2]}" step="0.1">
-            `;
-        }
+        const shapeParams = SHAPE_PARAMETERS[obj.shape] ? SHAPE_PARAMETERS[obj.shape].params : [];
+        shapeParams.forEach(param => {
+            switch(param) {
+                case 'position':
+                    tableHTML += `
+                        Position: 
+                        <input type="number" class="obj-pos-x" value="${obj.position ? obj.position[0] : 0}" step="10">
+                        <input type="number" class="obj-pos-y" value="${obj.position ? obj.position[1] : 0}" step="10">
+                        <input type="number" class="obj-pos-z" value="${obj.position ? obj.position[2] : 0}" step="10">
+                        <br/>
+                    `;
+                    break;
+                    
+                case 'size':
+                    tableHTML += `
+                        Size: 
+                        <input type="number" class="obj-size-w" value="${obj.size ? obj.size[0] : 100}" min="1" step="10">
+                        <input type="number" class="obj-size-h" value="${obj.size ? obj.size[1] : 100}" min="1" step="10">
+                        <input type="number" class="obj-size-d" value="${obj.size ? obj.size[2] : 100}" min="1" step="10">
+                        <br/>
+                    `;
+                    break;
+                    
+                case 'r':
+                    const radius = obj.r || obj.radius || 100;
+                    tableHTML += `
+                        Radius: 
+                        <input type="number" class="obj-radius" value="${radius}" min="1" step="10">
+                        <br/>
+                    `;
+                    break;
+                    
+                case 'p1':
+                    tableHTML += `
+                        P1: 
+                        <input type="number" class="obj-p1-x" value="${obj.p1 ? obj.p1[0] : 0}" step="0.1">
+                        <input type="number" class="obj-p1-y" value="${obj.p1 ? obj.p1[1] : 0}" step="0.1">
+                        <input type="number" class="obj-p1-z" value="${obj.p1 ? obj.p1[2] : 0}" step="0.1">
+                        <br/>
+                    `;
+                    break;
+                    
+                case 'p2':
+                    tableHTML += `
+                        P2: 
+                        <input type="number" class="obj-p2-x" value="${obj.p2 ? obj.p2[0] : 0}" step="0.1">
+                        <input type="number" class="obj-p2-y" value="${obj.p2 ? obj.p2[1] : 0}" step="0.1">
+                        <input type="number" class="obj-p2-z" value="${obj.p2 ? obj.p2[2] : 0}" step="0.1">
+                        <br/>
+                    `;
+                    break;
+                    
+                case 'p3':
+                    tableHTML += `
+                        P3: 
+                        <input type="number" class="obj-p3-x" value="${obj.p3 ? obj.p3[0] : 0}" step="0.1">
+                        <input type="number" class="obj-p3-y" value="${obj.p3 ? obj.p3[1] : 0}" step="0.1">
+                        <input type="number" class="obj-p3-z" value="${obj.p3 ? obj.p3[2] : 0}" step="0.1">
+                        <br/>
+                    `;
+                    break;
+                    
+                case 'A':
+                    tableHTML += `
+                        A: 
+                        <input type="number" class="obj-A-x" value="${obj.A ? obj.A[0] : 0}" step="0.1">
+                        <input type="number" class="obj-A-y" value="${obj.A ? obj.A[1] : 0}" step="0.1">
+                        <input type="number" class="obj-A-z" value="${obj.A ? obj.A[2] : 0}" step="0.1">
+                        <br/>
+                    `;
+                    break;
+                    
+                case 'b':
+                    tableHTML += `
+                        b: 
+                        <input type="number" class="obj-b" value="${obj.b || 0}" step="0.1">
+                        <br/>
+                    `;
+                    break;
+                    
+                case 'a':
+                    if (obj.shape === 'quadratic equation') {
+                        tableHTML += `
+                            a (3x3 matrix): 
+                            <textarea class="obj-a-quadratic" rows="3" cols="30">${obj.a ? JSON.stringify(obj.a) : '[[0,0,0],[0,0,0],[0,0,0]]'}</textarea>
+                            <br/>
+                        `;
+                    } else if (obj.shape === 'four-order equation') {
+                        tableHTML += `
+                            a (coefficients): 
+                            <textarea class="obj-a-fourth" rows="3" cols="30">${obj.a ? JSON.stringify(obj.a) : '[]'}</textarea>
+                            <br/>
+                        `;
+                    }
+                    break;
+                    
+                case 'c':
+                    tableHTML += `
+                        c: 
+                        <input type="number" class="obj-c" value="${obj.c || 0}" step="0.1">
+                        <br/>
+                    `;
+                    break;
+            }
+        });
 
         tableHTML += `
                 </td>
@@ -255,6 +350,23 @@ function generateObjectsTable() {
     // 添加事件监听器
     document.querySelectorAll('.object-row').forEach(row => {
         const index = parseInt(row.getAttribute('data-index'));
+        
+        // 为形状选择器添加事件监听
+        const shapeSelect = row.querySelector('.obj-shape-select');
+        shapeSelect.addEventListener('change', function() {
+            const newShape = this.value;
+            const obj = sceneData.objects[index];
+            obj.shape = newShape;
+            
+            // 更新JSON输入框
+            jsonInput.value = JSON.stringify(sceneData, null, 2);
+            
+            // 重新生成表格
+            generateObjectsTable();
+            
+            // 重新渲染场景
+            parseAndRender();
+        });
         
         // 创建悬停操作框
         const actionBox = document.createElement('div');
@@ -347,6 +459,10 @@ function updateAllObjects() {
         const idInput = row.querySelector('.obj-id');
         if (idInput) obj.id = idInput.value;
         
+        // 更新形状
+        const shapeSelect = row.querySelector('.obj-shape-select');
+        if (shapeSelect) obj.shape = shapeSelect.value;
+        
         // 更新位置和尺寸
         if (obj.shape === 'cuboid') {
             const posX = parseFloat(row.querySelector('.obj-pos-x').value) || 0;
@@ -384,6 +500,36 @@ function updateAllObjects() {
             const p3y = parseFloat(row.querySelector('.obj-p3-y').value) || 0;
             const p3z = parseFloat(row.querySelector('.obj-p3-z').value) || 0;
             obj.p3 = [p3x, p3y, p3z];
+        } else if (obj.shape === 'plane') {
+            const ax = parseFloat(row.querySelector('.obj-A-x').value) || 0;
+            const ay = parseFloat(row.querySelector('.obj-A-y').value) || 0;
+            const az = parseFloat(row.querySelector('.obj-A-z').value) || 0;
+            obj.A = [ax, ay, az];
+            
+            const b = parseFloat(row.querySelector('.obj-b').value) || 0;
+            obj.b = b;
+        } else if (obj.shape === 'quadratic equation') {
+            const posX = parseFloat(row.querySelector('.obj-pos-x').value) || 0;
+            const posY = parseFloat(row.querySelector('.obj-pos-y').value) || 0;
+            const posZ = parseFloat(row.querySelector('.obj-pos-z').value) || 0;
+            obj.position = [posX, posY, posZ];
+            
+            try {
+                const aText = row.querySelector('.obj-a-quadratic').value;
+                obj.a = JSON.parse(aText);
+            } catch (e) {
+                console.warn("Failed to parse quadratic equation coefficients");
+            }
+            
+            const c = parseFloat(row.querySelector('.obj-c').value) || 0;
+            obj.c = c;
+        } else if (obj.shape === 'four-order equation') {
+            try {
+                const aText = row.querySelector('.obj-a-fourth').value;
+                obj.a = JSON.parse(aText);
+            } catch (e) {
+                console.warn("Failed to parse fourth-order equation coefficients");
+            }
         }
         
         // 更新材质ID
