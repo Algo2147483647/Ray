@@ -6,7 +6,7 @@
 }
 
 body {
-    background: linear-gradient(135deg, #1a2a6c, #2c3e50);
+    background: linear-gradient(135deg, #f5f7fa, #e4edf9);
     color: #333;
     min-height: 100vh;
     padding: 20px;
@@ -21,17 +21,17 @@ header {
     text-align: center;
     margin-bottom: 30px;
     padding: 30px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: linear-gradient(135deg, #d1e8ff, #cce5ff);
+    color: #333;
     border-radius: 15px;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
 }
 
 h1 {
     font-size: 2.2rem;
     margin-bottom: 15px;
-    color: white;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    color: #333;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .subtitle {
@@ -56,9 +56,9 @@ h1 {
 }
 
 .panel {
-    background: white;
+    background: #f8fafc;
     border-radius: 15px;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
     overflow: hidden;
     margin-bottom: 30px;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -70,8 +70,8 @@ h1 {
 }
 
 .panel-header {
-    background: linear-gradient(to right, #4b6cb7, #182848);
-    color: white;
+    background: linear-gradient(to right, #a3c9ff, #70a3f2);
+    color: #333;
     padding: 20px 25px;
     display: flex;
     justify-content: space-between;
@@ -101,10 +101,10 @@ h1 {
     cursor: pointer;
     font-weight: 600;
     transition: all 0.3s ease;
-    background: linear-gradient(to right, #4facfe 0%, #00f2fe 100%);
-    color: white;
+    background: linear-gradient(to right, #a3c9ff, #70a3f2);
+    color: #333;
     font-size: 1rem;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
 }
 
 .btn:hover {
@@ -118,7 +118,7 @@ h1 {
 }
 
 .btn-secondary {
-    background: linear-gradient(to right, #a1c4fd 0%, #c2e9fb 100%);
+    background: linear-gradient(to right, #d1e8ff, #cce5ff);
     color: #333;
 }
 
@@ -131,11 +131,11 @@ h1 {
     width: 100%;
     height: 450px;
     padding: 20px;
-    border: none;
+    border: 1px solid #d1dce5;
     font-family: 'Consolas', 'Courier New', monospace;
     font-size: 15px;
-    background: #1a202c;
-    color: #f7fafc;
+    background: #ffffff;
+    color: #333;
     resize: vertical;
 }
 
@@ -148,8 +148,9 @@ textarea:focus {
 #scene-container {
     height: 550px;
     position: relative;
-    background: #1a202c;
+    background: #ffffff;
     border-radius: 0 0 15px 15px;
+    border: 1px solid #d1dce5;
 }
 
 #scene-canvas {
@@ -185,8 +186,8 @@ th, td {
 }
 
 th {
-    background: linear-gradient(to bottom, #4b6cb7, #182848);
-    color: white;
+    background: linear-gradient(to bottom, #a3c9ff, #70a3f2);
+    color: #333;
     font-weight: 600;
     text-transform: uppercase;
     font-size: 0.9rem;
@@ -261,7 +262,7 @@ input:focus {
     display: flex;
     justify-content: space-around;
     padding: 30px;
-    background: linear-gradient(to right, #f5f7fa, #e4edf9);
+    background: #f1f7fd;
     border-radius: 0 0 15px 15px;
 }
 
@@ -404,9 +405,9 @@ input:focus {
 footer {
     text-align: center;
     padding: 25px;
-    color: #a0aec0;
+    color: #718096;
     font-size: 1rem;
-    background: rgba(255, 255, 255, 0.1);
+    background: #f1f7fd;
     border-radius: 10px;
     margin-top: 20px;
 }
