@@ -194,8 +194,8 @@ def plot_ray_paths(ray_data, scene_data=None):
 # 主程序
 if __name__ == "__main__":
     # 指定JSON文件路径
-    scene_file = "../test.json"  # 场景描述文件
-    ray_file = "../debug_traces.json"  # 光线路径文件
+    scene_file = "../src-golang/test.json"  # 场景描述文件
+    ray_file = "../src-golang/debug_traces.json"  # 光线路径文件
 
     # 加载场景数据
     scene_data = None

@@ -101,7 +101,7 @@ def visualize_3d_volume(volume_data, threshold=50):
 
 def main():
     # 图像路径
-    image_path = r"D:\Algo\Projects\Ray\src-golang\output.png"
+    image_path = r"/src-golang/output.png"
     
     # 检查图像文件是否存在
     if not os.path.exists(image_path):
