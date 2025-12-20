@@ -164,7 +164,7 @@ textarea:focus {
     font-style: italic;
 }
 
-/* 表格样式 */
+/* Table styles */
 #objects-table {
     padding: 25px;
 }
@@ -256,7 +256,7 @@ input:focus {
     box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.2);
 }
 
-/* 统计信息 */
+/* Statistics */
 .stats {
     display: flex;
     justify-content: space-around;
@@ -284,7 +284,7 @@ input:focus {
     margin-top: 5px;
 }
 
-/* 表格控件 */
+/* Table controls */
 .table-controls {
     padding: 20px;
     text-align: center;
@@ -292,7 +292,7 @@ input:focus {
     border-radius: 10px;
 }
 
-/* 移动按钮样式 */
+/* Move button styles */
 .move-up-btn, .move-down-btn, .delete-btn {
     padding: 8px 15px;
     margin: 0 5px;
@@ -334,7 +334,7 @@ input:focus {
     transform: translateY(1px);
 }
 
-/* 页脚 */
+/* Footer */
 footer {
     text-align: center;
     padding: 25px;
@@ -345,7 +345,7 @@ footer {
     margin-top: 20px;
 }
 
-/* 响应式设计 */
+/* Responsive design */
 @media (max-width: 768px) {
     .content {
         grid-template-columns: 1fr;

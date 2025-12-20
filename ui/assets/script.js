@@ -1,4 +1,4 @@
-// 全局变量
+// Global variables
 let sceneData = null;
 let scene = null;
 let camera = null;
@@ -6,7 +6,7 @@ let renderer = null;
 let controls = null;
 const objects = [];
 
-// DOM元素
+// DOM elements
 const jsonInput = document.getElementById('json-input');
 const confirmBtn = document.getElementById('confirm-btn');
 const resetBtn = document.getElementById('reset-btn');
@@ -16,7 +16,7 @@ const sphereCount = document.getElementById('sphere-count');
 const totalCount = document.getElementById('total-count');
 const lightCount = document.getElementById('light-count');
 
-// 初始化Three.js场景
+// Initialize Three.js scene
 function initScene() {
     // 创建场景
     scene = new THREE.Scene();
@@ -61,20 +61,20 @@ function initScene() {
     animate();
 }
 
-// 动画循环
+// Animation loop
 function animate() {
     requestAnimationFrame(animate);
     controls.update();
     renderer.render(scene, camera);
 }
 
-// 解析JSON并渲染场景
+// Parse JSON and render the scene
 function parseAndRender() {
     try {
         // 解析JSON
         sceneData = JSON.parse(jsonInput.value);
 
-        // 清除之前的物体
+        // Remove previous objects
         objects.forEach(obj => scene.remove(obj));
         objects.length = 0;
 
@@ -86,11 +86,11 @@ function parseAndRender() {
         sceneData.objects.forEach(obj => {
             let geometry, material, mesh;
 
-            // 根据材质类型设置颜色
+            // Set color based on material
             let color = 0xffffff;
             const materialInfo = sceneData.materials.find(m => m.id === obj.material_id);
             if (materialInfo) {
-                // 将颜色值从0-1范围转换为0-255范围，然后组合成十六进制颜色
+                // Convert color values from 0-1 range to 0-255 and combine to hex
                 if (materialInfo.color) {
                     const r = Math.min(255, Math.floor(materialInfo.color[0] * 255));
                     const g = Math.min(255, Math.floor(materialInfo.color[1] * 255));
@@ -103,7 +103,7 @@ function parseAndRender() {
                 }
             }
 
-            // 创建材质
+            // Create material
             material = new THREE.MeshPhongMaterial({
                 color: color,
                 transparent: obj.material_id === 'Glass',
@@ -111,7 +111,7 @@ function parseAndRender() {
                 wireframe: obj.id === 'WorldBox'
             });
 
-            // 创建几何体
+            // Create geometry
             if (obj.shape === 'cuboid') {
                 geometry = new THREE.BoxGeometry(obj.size[0], obj.size[1], obj.size[2]);
                 cuboids++;
@@ -120,7 +120,7 @@ function parseAndRender() {
                 geometry = new THREE.SphereGeometry(radius, 32, 32);
                 spheres++;
             } else if (obj.shape === 'triangle') {
-                // 创建三角形几何体
+                // Create triangle geometry
                 const p1 = new THREE.Vector3(...obj.p1);
                 const p2 = new THREE.Vector3(...obj.p2);
                 const p3 = new THREE.Vector3(...obj.p3);
@@ -132,10 +132,10 @@ function parseAndRender() {
                 ]);
                 geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
                 geometry.computeVertexNormals();
-                // 三角形不计入统计
+                // Triangles are not counted in stats
             }
 
-            // 创建网格
+            // Create mesh
             if (geometry) {
                 mesh = new THREE.Mesh(geometry, material);
                 mesh.position.set(obj.position ? obj.position[0] : 0, 
@@ -146,7 +146,7 @@ function parseAndRender() {
             }
         });
 
-        // 更新统计 (只统计立方体和球体)
+        // Update statistics (only count cuboids and spheres)
         cuboidCount.textContent = cuboids;
         sphereCount.textContent = spheres;
         totalCount.textContent = cuboids + spheres;
@@ -156,12 +156,12 @@ function parseAndRender() {
         generateObjectsTable();
 
     } catch (e) {
-        alert('JSON解析错误: ' + e.message);
+        alert('JSON parse error: ' + e.message);
         console.error(e);
     }
 }
 
-// 生成几何体参数表格
+// Generate geometry parameters table
 function generateObjectsTable() {
     if (!sceneData || !sceneData.objects) return;
     
@@ -171,9 +171,9 @@ function generateObjectsTable() {
                 <tr>
                 <th>ID</th>
                 <th>Shape</th>
-                <th>几何参数</th>
+                <th>Geometry Parameters</th>
                 <th>Material ID</th>
-                <th>操作</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -193,12 +193,12 @@ function generateObjectsTable() {
         // 显示几何参数
         if (obj.shape === 'cuboid') {
             tableHTML += `
-                位置: 
+                Position: 
                 <input type="number" class="obj-pos-x" value="${obj.position ? obj.position[0] : 0}" step="10">
                 <input type="number" class="obj-pos-y" value="${obj.position ? obj.position[1] : 0}" step="10">
                 <input type="number" class="obj-pos-z" value="${obj.position ? obj.position[2] : 0}" step="10">
                 <br/>
-                尺寸: 
+                Size: 
                 <input type="number" class="obj-size-w" value="${obj.size[0]}" min="1" step="10">
                 <input type="number" class="obj-size-h" value="${obj.size[1]}" min="1" step="10">
                 <input type="number" class="obj-size-d" value="${obj.size[2]}" min="1" step="10">
@@ -206,16 +206,16 @@ function generateObjectsTable() {
         } else if (obj.shape === 'sphere') {
             const radius = obj.r || obj.radius || 100;
             tableHTML += `
-                位置: 
+                Position: 
                 <input type="number" class="obj-pos-x" value="${obj.position ? obj.position[0] : 0}" step="10">
                 <input type="number" class="obj-pos-y" value="${obj.position ? obj.position[1] : 0}" step="10">
                 <input type="number" class="obj-pos-z" value="${obj.position ? obj.position[2] : 0}" step="10">
                 <br/>
-                半径: 
+                Radius: 
                 <input type="number" class="obj-radius" value="${radius}" min="1" step="10">
             `;
         } else if (obj.shape === 'triangle') {
-            // 三角形的三个点
+            // Triangle vertices
             tableHTML += `
                 P1: 
                 <input type="number" class="obj-p1-x" value="${obj.p1[0]}" step="0.1">
@@ -240,9 +240,9 @@ function generateObjectsTable() {
                     <input type="text" class="obj-material-id" value="${obj.material_id || obj.material || ''}">
                 </td>
                 <td>
-                    <button class="move-up-btn" data-index="${index}" ${index === 0 ? 'disabled' : ''}>上移</button>
-                    <button class="move-down-btn" data-index="${index}" ${index === sceneData.objects.length - 1 ? 'disabled' : ''}>下移</button>
-                    <button class="delete-btn" data-index="${index}">删除</button>
+                    <button class="move-up-btn" data-index="${index}" ${index === 0 ? 'disabled' : ''}>Move Up</button>
+                    <button class="move-down-btn" data-index="${index}" ${index === sceneData.objects.length - 1 ? 'disabled' : ''}>Move Down</button>
+                    <button class="delete-btn" data-index="${index}">Delete</button>
                 </td>
             </tr>
             `;
@@ -252,7 +252,7 @@ function generateObjectsTable() {
             </tbody>
         </table>
         <div class="table-controls">
-            <button id="update-all-btn" class="btn">更新所有对象</button>
+            <button id="update-all-btn" class="btn">Update All Objects</button>
         </div>
         `;
 
@@ -283,7 +283,7 @@ function generateObjectsTable() {
     document.getElementById('update-all-btn').addEventListener('click', updateAllObjects);
 }
 
-// 移动对象
+// Move object
 function moveObject(index, direction) {
     if (!sceneData || !sceneData.objects) return;
     
@@ -307,13 +307,13 @@ function moveObject(index, direction) {
     parseAndRender();
 }
 
-// 删除对象
+// Delete object
 function deleteObject(index) {
     if (!sceneData || !sceneData.objects) return;
     
-    // 确认删除
+    // Confirm deletion
     const obj = sceneData.objects[index];
-    if (!confirm(`确定要删除对象 "${obj.id}" 吗?`)) {
+    if (!confirm(`Are you sure you want to delete object "${obj.id}"?`)) {
         return;
     }
     
@@ -330,7 +330,7 @@ function deleteObject(index) {
     parseAndRender();
 }
 
-// 更新所有对象
+// Update all objects
 function updateAllObjects() {
     if (!sceneData || !sceneData.objects) return;
     
@@ -395,7 +395,7 @@ function updateAllObjects() {
     parseAndRender();
 }
 
-// 重置配置
+// Reset configuration
 function resetConfig() {
     jsonInput.value = `{
     "materials": [

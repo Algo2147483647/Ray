@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D场景几何体编辑器</title>
+    <title>3D Scene Geometry Editor</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
     <link rel="stylesheet" href="assets/style.css">
@@ -11,14 +11,14 @@
 <body>
 <div class="container">
     <header>
-        <h1>3D场景几何体编辑器</h1>
-        <p class="subtitle">输入JSON配置来定义几何体场景，实时编辑参数并预览3D效果。</p>
+        <h1>3D Scene Geometry Editor</h1>
+        <p class="subtitle">Enter a JSON configuration to define the geometry scene, edit parameters in real time, and preview the 3D result.</p>
     </header>
 
     <div class="content">
         <div class="panel">
             <div class="panel-header">
-                <h2 class="panel-title">JSON配置</h2>
+                <h2 class="panel-title">JSON Configuration</h2>
             </div>
             <textarea id="json-input">{
     "materials": [
@@ -102,15 +102,15 @@
 }</textarea>
 
             <div class="controls">
-                <button id="confirm-btn" class="btn">确认并生成场景</button>
-                <button id="reset-btn" class="btn btn-secondary">重置配置</button>
+                <button id="confirm-btn" class="btn">Confirm and Generate Scene</button>
+                <button id="reset-btn" class="btn btn-secondary">Reset Configuration</button>
             </div>
         </div>
 
         <div class="panel">
             <div class="panel-header">
-                <h2 class="panel-title">3D场景预览</h2>
-                <div class="scene-info">使用鼠标拖拽旋转场景，滚轮缩放</div>
+                <h2 class="panel-title">3D Scene Preview</h2>
+                <div class="scene-info">Drag with mouse to rotate the scene, scroll to zoom</div>
             </div>
             <div id="scene-container">
                 <canvas id="scene-canvas"></canvas>
@@ -120,32 +120,32 @@
 
     <div class="panel">
         <div class="panel-header">
-            <h2 class="panel-title">几何体参数列表</h2>
+            <h2 class="panel-title">Geometry Parameter List</h2>
         </div>
         <div id="objects-table"></div>
 
         <div class="stats">
             <div class="stat-item">
                 <div class="stat-value" id="cuboid-count">0</div>
-                <div class="stat-label">立方体</div>
+                <div class="stat-label">Cuboids</div>
             </div>
             <div class="stat-item">
                 <div class="stat-value" id="sphere-count">0</div>
-                <div class="stat-label">球体</div>
+                <div class="stat-label">Spheres</div>
             </div>
             <div class="stat-item">
                 <div class="stat-value" id="total-count">0</div>
-                <div class="stat-label">几何体总数</div>
+                <div class="stat-label">Total Objects</div>
             </div>
             <div class="stat-item">
                 <div class="stat-value" id="light-count">0</div>
-                <div class="stat-label">光源</div>
+                <div class="stat-label">Light Sources</div>
             </div>
         </div>
     </div>
 
     <footer>
-        <p>3D场景几何体编辑器 &copy; 2023 | 使用Three.js构建</p>
+        <p>3D Scene Geometry Editor &copy; 2023 | Built with Three.js</p>
     </footer>
 </div>
 
