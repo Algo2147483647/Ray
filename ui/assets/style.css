@@ -295,6 +295,61 @@ input:focus, textarea:focus {
     box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.2);
 }
 
+/* Geometry parameters formatting improvements */
+.geometry-parameters {
+    line-height: 1.8;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.geometry-parameters div {
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.geometry-parameter-name {
+    font-weight: 600;
+    color: #4a5568;
+    min-width: 100px;
+    margin-right: 15px;
+    text-align: right;
+    padding-right: 10px;
+    border-right: 1px dashed #cbd5e0;
+}
+
+.geometry-parameter-inputs {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.geometry-parameter-inputs input[type="number"] {
+    width: 80px;
+    padding: 6px 8px;
+}
+
+.geometry-parameter-inputs textarea {
+    min-width: 200px;
+    min-height: 60px;
+    padding: 6px 8px;
+}
+
+.geometry-coordinates {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.geometry-coordinate-label {
+    font-weight: 500;
+    color: #718096;
+    font-size: 0.9em;
+    min-width: 20px;
+    text-align: center;
+}
+
 /* Statistics */
 .stats {
     display: flex;

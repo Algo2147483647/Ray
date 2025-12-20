@@ -253,7 +253,7 @@ function generateObjectsTable() {
                     </select>
                     <span class="shape-icon">${icon}</span>
                 </td>
-                <td>
+                <td class="geometry-parameters">
         `;
         
         // 显示几何参数 (完全基于JSON配置)
@@ -261,11 +261,13 @@ function generateObjectsTable() {
         if (shapeParams) {
             Object.keys(shapeParams).forEach(param => {
                 const paramType = shapeParams[param];
-                tableHTML += `${param}: `;
+                tableHTML += `<div>`;
+                tableHTML += `<span class="geometry-parameter-name">${param}:</span>`;
+                tableHTML += `<span class="geometry-parameter-inputs">`;
                 
                 // 通用处理方式
                 tableHTML += generateParameterInput(param, paramType, obj[param]);
-                tableHTML += '<br/>';
+                tableHTML += `</span></div>`;
             });
         }
 
