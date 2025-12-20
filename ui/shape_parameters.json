@@ -18,10 +18,10 @@
   },
   "quadratic equation": {
     "position": "n",
-    "a": "[n, n]",
+    "a": "text",
     "c": "1"
   },
   "four-order equation": {
-    "a": "coefficients array"
+    "a": "text"
   }
 }
