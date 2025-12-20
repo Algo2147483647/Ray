@@ -173,7 +173,6 @@ function generateObjectsTable() {
                 <th>Shape</th>
                 <th>Geometry Parameters</th>
                 <th>Material ID</th>
-                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -181,7 +180,7 @@ function generateObjectsTable() {
 
     sceneData.objects.forEach((obj, index) => {
         tableHTML += `
-            <tr data-index="${index}">
+            <tr data-index="${index}" class="object-row">
                 <td><input type="text" class="obj-id" value="${obj.id || ''}"></td>
                 <td>
                     <span class="shape-icon">${obj.shape === 'cuboid' ? '◼' : obj.shape === 'sphere' ? '●' : '△'}</span>
@@ -239,11 +238,6 @@ function generateObjectsTable() {
                 <td>
                     <input type="text" class="obj-material-id" value="${obj.material_id || obj.material || ''}">
                 </td>
-                <td>
-                    <button class="move-up-btn" data-index="${index}" ${index === 0 ? 'disabled' : ''}>Move Up</button>
-                    <button class="move-down-btn" data-index="${index}" ${index === sceneData.objects.length - 1 ? 'disabled' : ''}>Move Down</button>
-                    <button class="delete-btn" data-index="${index}">Delete</button>
-                </td>
             </tr>
             `;
     });
@@ -259,23 +253,32 @@ function generateObjectsTable() {
     objectsTable.innerHTML = tableHTML;
 
     // 添加事件监听器
-    document.querySelectorAll('.move-up-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const index = parseInt(this.getAttribute('data-index'));
+    document.querySelectorAll('.object-row').forEach(row => {
+        const index = parseInt(row.getAttribute('data-index'));
+        
+        // 创建悬停操作框
+        const actionBox = document.createElement('div');
+        actionBox.className = 'action-box';
+        actionBox.innerHTML = `
+            <button class="move-up-btn" data-index="${index}" ${index === 0 ? 'disabled' : ''}>↑</button>
+            <button class="move-down-btn" data-index="${index}" ${index === sceneData.objects.length - 1 ? 'disabled' : ''}>↓</button>
+            <button class="delete-btn" data-index="${index}">✕</button>
+        `;
+        row.appendChild(actionBox);
+        
+        // 为每个操作按钮添加事件监听器
+        actionBox.querySelector('.move-up-btn').addEventListener('click', function(e) {
+            e.stopPropagation();
             moveObject(index, -1);
         });
-    });
-
-    document.querySelectorAll('.move-down-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const index = parseInt(this.getAttribute('data-index'));
+        
+        actionBox.querySelector('.move-down-btn').addEventListener('click', function(e) {
+            e.stopPropagation();
             moveObject(index, 1);
         });
-    });
-
-    document.querySelectorAll('.delete-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const index = parseInt(this.getAttribute('data-index'));
+        
+        actionBox.querySelector('.delete-btn').addEventListener('click', function(e) {
+            e.stopPropagation();
             deleteObject(index);
         });
     });
