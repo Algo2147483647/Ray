@@ -1,0 +1,27 @@
+{
+  "cuboid": {
+    "position": "n",
+    "size": "n"
+  },
+  "sphere": {
+    "position": "n",
+    "r": "1"
+  },
+  "triangle": {
+    "p1": "n",
+    "p2": "n",
+    "p3": "n"
+  },
+  "plane": {
+    "A": "n",
+    "b": "1"
+  },
+  "quadratic equation": {
+    "position": "n",
+    "a": "[n, n]",
+    "c": "1"
+  },
+  "four-order equation": {
+    "a": "coefficients array"
+  }
+}
