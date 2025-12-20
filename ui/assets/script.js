@@ -130,36 +130,41 @@ async function parseAndRender() {
                 wireframe: obj.id === 'WorldBox'
             });
 
-            // Create geometry
-            if (obj.shape === 'cuboid') {
-                geometry = new THREE.BoxGeometry(obj.size[0], obj.size[1], obj.size[2]);
-                cuboids++;
-            } else if (obj.shape === 'sphere') {
-                const radius = obj.r || obj.radius || 100; // 支持r和radius两种字段
-                geometry = new THREE.SphereGeometry(radius, 32, 32);
-                spheres++;
-            } else if (obj.shape === 'triangle') {
-                // Create triangle geometry
-                const p1 = new THREE.Vector3(...obj.p1);
-                const p2 = new THREE.Vector3(...obj.p2);
-                const p3 = new THREE.Vector3(...obj.p3);
-                geometry = new THREE.BufferGeometry();
-                const vertices = new Float32Array([
-                    p1.x, p1.y, p1.z,
-                    p2.x, p2.y, p2.z,
-                    p3.x, p3.y, p3.z
-                ]);
-                geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-                geometry.computeVertexNormals();
-                // Triangles are not counted in stats
+            // Create geometry based on shape parameters configuration
+            const shapeParams = SHAPE_PARAMETERS[obj.shape];
+            if (shapeParams) {
+                if (obj.shape === 'cuboid' && obj.size) {
+                    geometry = new THREE.BoxGeometry(obj.size[0], obj.size[1], obj.size[2]);
+                    cuboids++;
+                } else if (obj.shape === 'sphere') {
+                    const radius = obj.r || obj.radius || 100;
+                    geometry = new THREE.SphereGeometry(radius, 32, 32);
+                    spheres++;
+                } else if (obj.shape === 'triangle' && obj.p1 && obj.p2 && obj.p3) {
+                    // Create triangle geometry
+                    const p1 = new THREE.Vector3(...obj.p1);
+                    const p2 = new THREE.Vector3(...obj.p2);
+                    const p3 = new THREE.Vector3(...obj.p3);
+                    geometry = new THREE.BufferGeometry();
+                    const vertices = new Float32Array([
+                        p1.x, p1.y, p1.z,
+                        p2.x, p2.y, p2.z,
+                        p3.x, p3.y, p3.z
+                    ]);
+                    geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+                    geometry.computeVertexNormals();
+                }
             }
 
             // Create mesh
             if (geometry) {
                 mesh = new THREE.Mesh(geometry, material);
-                mesh.position.set(obj.position ? obj.position[0] : 0, 
-                                  obj.position ? obj.position[1] : 0, 
-                                  obj.position ? obj.position[2] : 0);
+                // Handle position for all shapes
+                if (obj.position) {
+                    mesh.position.set(obj.position[0], obj.position[1], obj.position[2]);
+                } else {
+                    mesh.position.set(0, 0, 0);
+                }
                 scene.add(mesh);
                 objects.push(mesh);
             }
@@ -187,6 +192,27 @@ function getShapeParameters(shape) {
     
     // 从键中获取参数名
     return Object.keys(params);
+}
+
+// 生成参数输入控件
+function generateParameterInput(paramName, paramType, currentValue) {
+    switch (paramType) {
+        case '1': // 单个数字
+            return `<input type="number" class="obj-param-${paramName}" value="${currentValue || 0}" step="0.1">`;
+        case 'n': // N维向量 (这里假设是3D向量)
+            const x = currentValue && currentValue[0] !== undefined ? currentValue[0] : 0;
+            const y = currentValue && currentValue[1] !== undefined ? currentValue[1] : 0;
+            const z = currentValue && currentValue[2] !== undefined ? currentValue[2] : 0;
+            return `
+                <input type="number" class="obj-${paramName}-x" value="${x}" step="0.1">
+                <input type="number" class="obj-${paramName}-y" value="${y}" step="0.1">
+                <input type="number" class="obj-${paramName}-z" value="${z}" step="0.1">
+            `;
+        case 'text': // 文本框
+            return `<textarea class="obj-param-${paramName}" rows="3" cols="30">${currentValue ? JSON.stringify(currentValue) : ''}</textarea>`;
+        default:
+            return `<input type="text" class="obj-param-${paramName}" value="${currentValue || ''}">`;
+    }
 }
 
 // Generate geometry parameters table
@@ -230,112 +256,18 @@ function generateObjectsTable() {
                 <td>
         `;
         
-        // 显示几何参数
-        const shapeParams = getShapeParameters(obj.shape);
-        shapeParams.forEach(param => {
-            switch(param) {
-                case 'position':
-                    tableHTML += `
-                        Position: 
-                        <input type="number" class="obj-pos-x" value="${obj.position ? obj.position[0] : 0}" step="10">
-                        <input type="number" class="obj-pos-y" value="${obj.position ? obj.position[1] : 0}" step="10">
-                        <input type="number" class="obj-pos-z" value="${obj.position ? obj.position[2] : 0}" step="10">
-                        <br/>
-                    `;
-                    break;
-                    
-                case 'size':
-                    tableHTML += `
-                        Size: 
-                        <input type="number" class="obj-size-w" value="${obj.size ? obj.size[0] : 100}" min="1" step="10">
-                        <input type="number" class="obj-size-h" value="${obj.size ? obj.size[1] : 100}" min="1" step="10">
-                        <input type="number" class="obj-size-d" value="${obj.size ? obj.size[2] : 100}" min="1" step="10">
-                        <br/>
-                    `;
-                    break;
-                    
-                case 'r':
-                    const radius = obj.r || obj.radius || 100;
-                    tableHTML += `
-                        Radius: 
-                        <input type="number" class="obj-radius" value="${radius}" min="1" step="10">
-                        <br/>
-                    `;
-                    break;
-                    
-                case 'p1':
-                    tableHTML += `
-                        P1: 
-                        <input type="number" class="obj-p1-x" value="${obj.p1 ? obj.p1[0] : 0}" step="0.1">
-                        <input type="number" class="obj-p1-y" value="${obj.p1 ? obj.p1[1] : 0}" step="0.1">
-                        <input type="number" class="obj-p1-z" value="${obj.p1 ? obj.p1[2] : 0}" step="0.1">
-                        <br/>
-                    `;
-                    break;
-                    
-                case 'p2':
-                    tableHTML += `
-                        P2: 
-                        <input type="number" class="obj-p2-x" value="${obj.p2 ? obj.p2[0] : 0}" step="0.1">
-                        <input type="number" class="obj-p2-y" value="${obj.p2 ? obj.p2[1] : 0}" step="0.1">
-                        <input type="number" class="obj-p2-z" value="${obj.p2 ? obj.p2[2] : 0}" step="0.1">
-                        <br/>
-                    `;
-                    break;
-                    
-                case 'p3':
-                    tableHTML += `
-                        P3: 
-                        <input type="number" class="obj-p3-x" value="${obj.p3 ? obj.p3[0] : 0}" step="0.1">
-                        <input type="number" class="obj-p3-y" value="${obj.p3 ? obj.p3[1] : 0}" step="0.1">
-                        <input type="number" class="obj-p3-z" value="${obj.p3 ? obj.p3[2] : 0}" step="0.1">
-                        <br/>
-                    `;
-                    break;
-                    
-                case 'A':
-                    tableHTML += `
-                        A: 
-                        <input type="number" class="obj-A-x" value="${obj.A ? obj.A[0] : 0}" step="0.1">
-                        <input type="number" class="obj-A-y" value="${obj.A ? obj.A[1] : 0}" step="0.1">
-                        <input type="number" class="obj-A-z" value="${obj.A ? obj.A[2] : 0}" step="0.1">
-                        <br/>
-                    `;
-                    break;
-                    
-                case 'b':
-                    tableHTML += `
-                        b: 
-                        <input type="number" class="obj-b" value="${obj.b || 0}" step="0.1">
-                        <br/>
-                    `;
-                    break;
-                    
-                case 'a':
-                    if (obj.shape === 'quadratic equation') {
-                        tableHTML += `
-                            a (3x3 matrix): 
-                            <textarea class="obj-a-quadratic" rows="3" cols="30">${obj.a ? JSON.stringify(obj.a) : '[[0,0,0],[0,0,0],[0,0,0]]'}</textarea>
-                            <br/>
-                        `;
-                    } else if (obj.shape === 'four-order equation') {
-                        tableHTML += `
-                            a (coefficients): 
-                            <textarea class="obj-a-fourth" rows="3" cols="30">${obj.a ? JSON.stringify(obj.a) : '[]'}</textarea>
-                            <br/>
-                        `;
-                    }
-                    break;
-                    
-                case 'c':
-                    tableHTML += `
-                        c: 
-                        <input type="number" class="obj-c" value="${obj.c || 0}" step="0.1">
-                        <br/>
-                    `;
-                    break;
-            }
-        });
+        // 显示几何参数 (完全基于JSON配置)
+        const shapeParams = SHAPE_PARAMETERS[obj.shape];
+        if (shapeParams) {
+            Object.keys(shapeParams).forEach(param => {
+                const paramType = shapeParams[param];
+                tableHTML += `${param}: `;
+                
+                // 通用处理方式
+                tableHTML += generateParameterInput(param, paramType, obj[param]);
+                tableHTML += '<br/>';
+            });
+        }
 
         tableHTML += `
                 </td>
@@ -472,73 +404,32 @@ function updateAllObjects() {
         const shapeSelect = row.querySelector('.obj-shape-select');
         if (shapeSelect) obj.shape = shapeSelect.value;
         
-        // 更新位置和尺寸
-        if (obj.shape === 'cuboid') {
-            const posX = parseFloat(row.querySelector('.obj-pos-x').value) || 0;
-            const posY = parseFloat(row.querySelector('.obj-pos-y').value) || 0;
-            const posZ = parseFloat(row.querySelector('.obj-pos-z').value) || 0;
-            obj.position = [posX, posY, posZ];
-            
-            const sizeW = parseFloat(row.querySelector('.obj-size-w').value) || 1;
-            const sizeH = parseFloat(row.querySelector('.obj-size-h').value) || 1;
-            const sizeD = parseFloat(row.querySelector('.obj-size-d').value) || 1;
-            obj.size = [sizeW, sizeH, sizeD];
-        } else if (obj.shape === 'sphere') {
-            const posX = parseFloat(row.querySelector('.obj-pos-x').value) || 0;
-            const posY = parseFloat(row.querySelector('.obj-pos-y').value) || 0;
-            const posZ = parseFloat(row.querySelector('.obj-pos-z').value) || 0;
-            obj.position = [posX, posY, posZ];
-            
-            const radius = parseFloat(row.querySelector('.obj-radius').value) || 1;
-            obj.r = radius;
-            if (obj.radius !== undefined) {
-                obj.radius = radius;
-            }
-        } else if (obj.shape === 'triangle') {
-            const p1x = parseFloat(row.querySelector('.obj-p1-x').value) || 0;
-            const p1y = parseFloat(row.querySelector('.obj-p1-y').value) || 0;
-            const p1z = parseFloat(row.querySelector('.obj-p1-z').value) || 0;
-            obj.p1 = [p1x, p1y, p1z];
-            
-            const p2x = parseFloat(row.querySelector('.obj-p2-x').value) || 0;
-            const p2y = parseFloat(row.querySelector('.obj-p2-y').value) || 0;
-            const p2z = parseFloat(row.querySelector('.obj-p2-z').value) || 0;
-            obj.p2 = [p2x, p2y, p2z];
-            
-            const p3x = parseFloat(row.querySelector('.obj-p3-x').value) || 0;
-            const p3y = parseFloat(row.querySelector('.obj-p3-y').value) || 0;
-            const p3z = parseFloat(row.querySelector('.obj-p3-z').value) || 0;
-            obj.p3 = [p3x, p3y, p3z];
-        } else if (obj.shape === 'plane') {
-            const ax = parseFloat(row.querySelector('.obj-A-x').value) || 0;
-            const ay = parseFloat(row.querySelector('.obj-A-y').value) || 0;
-            const az = parseFloat(row.querySelector('.obj-A-z').value) || 0;
-            obj.A = [ax, ay, az];
-            
-            const b = parseFloat(row.querySelector('.obj-b').value) || 0;
-            obj.b = b;
-        } else if (obj.shape === 'quadratic equation') {
-            const posX = parseFloat(row.querySelector('.obj-pos-x').value) || 0;
-            const posY = parseFloat(row.querySelector('.obj-pos-y').value) || 0;
-            const posZ = parseFloat(row.querySelector('.obj-pos-z').value) || 0;
-            obj.position = [posX, posY, posZ];
-            
-            try {
-                const aText = row.querySelector('.obj-a-quadratic').value;
-                obj.a = JSON.parse(aText);
-            } catch (e) {
-                console.warn("Failed to parse quadratic equation coefficients");
-            }
-            
-            const c = parseFloat(row.querySelector('.obj-c').value) || 0;
-            obj.c = c;
-        } else if (obj.shape === 'four-order equation') {
-            try {
-                const aText = row.querySelector('.obj-a-fourth').value;
-                obj.a = JSON.parse(aText);
-            } catch (e) {
-                console.warn("Failed to parse fourth-order equation coefficients");
-            }
+        // 通用参数更新方法 (完全基于JSON配置)
+        const shapeParams = SHAPE_PARAMETERS[obj.shape];
+        if (shapeParams) {
+            Object.keys(shapeParams).forEach(param => {
+                const paramType = shapeParams[param];
+                switch (paramType) {
+                    case '1':
+                        const value = parseFloat(row.querySelector(`.obj-param-${param}`).value) || 0;
+                        obj[param] = value;
+                        break;
+                    case 'n':
+                        const x = parseFloat(row.querySelector(`.obj-${param}-x`).value) || 0;
+                        const y = parseFloat(row.querySelector(`.obj-${param}-y`).value) || 0;
+                        const z = parseFloat(row.querySelector(`.obj-${param}-z`).value) || 0;
+                        obj[param] = [x, y, z];
+                        break;
+                    case 'text':
+                        try {
+                            const text = row.querySelector(`.obj-param-${param}`).value;
+                            obj[param] = JSON.parse(text);
+                        } catch (e) {
+                            console.warn(`Failed to parse parameter ${param} as JSON`);
+                        }
+                        break;
+                }
+            });
         }
         
         // 更新材质ID
