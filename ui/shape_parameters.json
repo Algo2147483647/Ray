@@ -19,6 +19,7 @@
   "quadratic equation": {
     "position": "n",
     "a": "text",
+    "b": "n",
     "c": "1"
   },
   "four-order equation": {
