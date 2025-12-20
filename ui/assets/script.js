@@ -6,33 +6,8 @@ let renderer = null;
 let controls = null;
 const objects = [];
 
-// 定义形状及其参数的映射关系
-const SHAPE_PARAMETERS = {
-    'cuboid': {
-        icon: '◼',
-        params: ['position', 'size']
-    },
-    'sphere': {
-        icon: '●',
-        params: ['position', 'r']
-    },
-    'triangle': {
-        icon: '△',
-        params: ['p1', 'p2', 'p3']
-    },
-    'plane': {
-        icon: '▭',
-        params: ['A', 'b']
-    },
-    'quadratic equation': {
-        icon: 'QE',
-        params: ['a', 'b', 'c']
-    },
-    'four-order equation': {
-        icon: 'FE',
-        params: ['a']
-    }
-};
+// 形状参数配置将在初始化时从外部文件加载
+let SHAPE_PARAMETERS = {};
 
 // DOM elements
 const jsonInput = document.getElementById('json-input');
@@ -96,8 +71,24 @@ function animate() {
     renderer.render(scene, camera);
 }
 
+// 加载形状参数配置
+async function loadShapeParameters() {
+    try {
+        const response = await fetch('shape_parameters.json');
+        SHAPE_PARAMETERS = await response.json();
+        console.log('Shape parameters loaded:', SHAPE_PARAMETERS);
+    } catch (error) {
+        console.error('Failed to load shape parameters:', error);
+    }
+}
+
 // Parse JSON and render the scene
-function parseAndRender() {
+async function parseAndRender() {
+    // 确保形状参数已加载
+    if (Object.keys(SHAPE_PARAMETERS).length === 0) {
+        await loadShapeParameters();
+    }
+    
     try {
         // 解析JSON
         sceneData = JSON.parse(jsonInput.value);
@@ -189,6 +180,15 @@ function parseAndRender() {
     }
 }
 
+// 获取形状的参数列表
+function getShapeParameters(shape) {
+    const params = SHAPE_PARAMETERS[shape];
+    if (!params) return [];
+    
+    // 从键中获取参数名
+    return Object.keys(params);
+}
+
 // Generate geometry parameters table
 function generateObjectsTable() {
     if (!sceneData || !sceneData.objects) return;
@@ -207,6 +207,15 @@ function generateObjectsTable() {
         `;
 
     sceneData.objects.forEach((obj, index) => {
+        // 根据形状类型获取图标
+        let icon = '◆'; // 默认图标
+        if (obj.shape === 'cuboid') icon = '◼';
+        else if (obj.shape === 'sphere') icon = '●';
+        else if (obj.shape === 'triangle') icon = '△';
+        else if (obj.shape === 'plane') icon = '▭';
+        else if (obj.shape === 'quadratic equation') icon = 'QE';
+        else if (obj.shape === 'four-order equation') icon = 'FE';
+
         tableHTML += `
             <tr data-index="${index}" class="object-row">
                 <td><input type="text" class="obj-id" value="${obj.id || ''}"></td>
@@ -216,13 +225,13 @@ function generateObjectsTable() {
                             `<option value="${shape}" ${obj.shape === shape ? 'selected' : ''}>${shape}</option>`
                         ).join('')}
                     </select>
-                    <span class="shape-icon">${SHAPE_PARAMETERS[obj.shape]?.icon || '◆'}</span>
+                    <span class="shape-icon">${icon}</span>
                 </td>
                 <td>
         `;
         
         // 显示几何参数
-        const shapeParams = SHAPE_PARAMETERS[obj.shape] ? SHAPE_PARAMETERS[obj.shape].params : [];
+        const shapeParams = getShapeParameters(obj.shape);
         shapeParams.forEach(param => {
             switch(param) {
                 case 'position':
@@ -641,7 +650,8 @@ window.addEventListener('resize', function() {
 });
 
 // 初始化
-window.addEventListener('load', function() {
+window.addEventListener('load', async function() {
+    await loadShapeParameters(); // 首先加载形状参数
     initScene();
     parseAndRender();
 
