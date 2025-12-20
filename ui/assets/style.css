@@ -494,6 +494,16 @@ input:focus, textarea:focus {
     transform: translateY(-1px);
 }
 
+/* 新增：选中行的样式 */
+.object-row.selected {
+    background-color: #ffebee !important;
+    border-left: 4px solid #f44336;
+}
+
+.object-row.selected td:first-child {
+    font-weight: bold;
+}
+
 /* Footer */
 footer {
     text-align: center;

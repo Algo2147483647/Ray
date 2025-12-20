@@ -5,6 +5,7 @@ let camera = null;
 let renderer = null;
 let controls = null;
 const objects = [];
+let selectedObjectIndex = -1; // 新增：跟踪选中的对象索引
 
 // 形状参数配置将在初始化时从外部文件加载
 let SHAPE_PARAMETERS = {};
@@ -105,20 +106,27 @@ async function parseAndRender() {
         sceneData.objects.forEach(obj => {
             let geometry, material, mesh;
 
-            // Set color based on material
-            let color = 0xffffff;
-            const materialInfo = sceneData.materials.find(m => m.id === obj.material_id);
-            if (materialInfo) {
-                // Convert color values from 0-1 range to 0-255 and combine to hex
-                if (materialInfo.color) {
-                    const r = Math.min(255, Math.floor(materialInfo.color[0] * 255));
-                    const g = Math.min(255, Math.floor(materialInfo.color[1] * 255));
-                    const b = Math.min(255, Math.floor(materialInfo.color[2] * 255));
-                    color = (r << 16) | (g << 8) | b;
-                }
-                
-                if (materialInfo.radiate) {
-                    lights++;
+            // Set color based on material or selection state
+            let color = 0xffffff; // 默认白色
+            
+            // 如果有选中的对象且当前对象是选中的对象，则设为红色
+            if (selectedObjectIndex !== -1 && sceneData.objects[selectedObjectIndex] === obj) {
+                color = 0xff0000; // 红色
+            } else {
+                // 否则根据材质设置颜色
+                const materialInfo = sceneData.materials.find(m => m.id === obj.material_id);
+                if (materialInfo) {
+                    // Convert color values from 0-1 range to 0-255 and combine to hex
+                    if (materialInfo.color) {
+                        const r = Math.min(255, Math.floor(materialInfo.color[0] * 255));
+                        const g = Math.min(255, Math.floor(materialInfo.color[1] * 255));
+                        const b = Math.min(255, Math.floor(materialInfo.color[2] * 255));
+                        color = (r << 16) | (g << 8) | b;
+                    }
+                    
+                    if (materialInfo.radiate) {
+                        lights++;
+                    }
                 }
             }
 
@@ -242,8 +250,12 @@ function generateObjectsTable() {
         else if (obj.shape === 'quadratic equation') icon = 'QE';
         else if (obj.shape === 'four-order equation') icon = 'FE';
 
+        // 添加选中状态的类
+        const isSelected = index === selectedObjectIndex;
+        const rowClass = isSelected ? 'object-row selected' : 'object-row';
+
         tableHTML += `
-            <tr data-index="${index}" class="object-row">
+            <tr data-index="${index}" class="${rowClass}">
                 <td><input type="text" class="obj-id" value="${obj.id || ''}"></td>
                 <td>
                     <select class="obj-shape-select">
@@ -294,6 +306,14 @@ function generateObjectsTable() {
     document.querySelectorAll('.object-row').forEach(row => {
         const index = parseInt(row.getAttribute('data-index'));
         
+        // 添加行点击事件监听器
+        row.addEventListener('click', function(e) {
+            // 阻止事件冒泡到子元素
+            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT' && e.target.tagName !== 'BUTTON') {
+                selectObject(index);
+            }
+        });
+        
         // 为形状选择器添加事件监听
         const shapeSelect = row.querySelector('.obj-shape-select');
         shapeSelect.addEventListener('change', function() {
@@ -339,6 +359,25 @@ function generateObjectsTable() {
     });
 
     document.getElementById('update-all-btn').addEventListener('click', updateAllObjects);
+}
+
+// 新增：选中对象函数
+function selectObject(index) {
+    // 更新选中索引
+    selectedObjectIndex = index;
+    
+    // 重新渲染场景以应用颜色变化
+    parseAndRender();
+    
+    // 更新表格行的选中状态
+    document.querySelectorAll('.object-row').forEach(row => {
+        const rowIndex = parseInt(row.getAttribute('data-index'));
+        if (rowIndex === index) {
+            row.classList.add('selected');
+        } else {
+            row.classList.remove('selected');
+        }
+    });
 }
 
 // Move object
