@@ -6,6 +6,7 @@ let renderer = null;
 let controls = null;
 const objects = [];
 let selectedObjectIndex = -1; // 新增：跟踪选中的对象索引
+let isJsonPanelCollapsed = false; // 新增：跟踪JSON面板是否折叠
 
 // 形状参数配置将在初始化时从外部文件加载
 let SHAPE_PARAMETERS = {};
@@ -19,6 +20,11 @@ const cuboidCount = document.getElementById('cuboid-count');
 const sphereCount = document.getElementById('sphere-count');
 const totalCount = document.getElementById('total-count');
 const lightCount = document.getElementById('light-count');
+const toggleJsonBtn = document.getElementById('toggle-json-btn'); // 新增：切换按钮
+const jsonPanel = document.getElementById('json-panel'); // 新增：JSON面板
+const scenePanel = document.getElementById('scene-panel'); // 新增：场景面板
+const contentContainer = document.querySelector('.content'); // 新增：内容容器
+const jsonPanelToggle = document.getElementById('json-panel-toggle'); // 新增：书签按钮
 
 // Initialize Three.js scene
 function initScene() {
@@ -81,6 +87,32 @@ async function loadShapeParameters() {
     } catch (error) {
         console.error('Failed to load shape parameters:', error);
     }
+}
+
+// Toggle JSON panel visibility
+function toggleJsonPanel() {
+    isJsonPanelCollapsed = !isJsonPanelCollapsed;
+    
+    if (isJsonPanelCollapsed) {
+        jsonPanel.classList.add('collapsed');
+        contentContainer.classList.add('full-width-scene');
+        toggleJsonBtn.textContent = '→';
+    } else {
+        jsonPanel.classList.remove('collapsed');
+        contentContainer.classList.remove('full-width-scene');
+        toggleJsonBtn.textContent = '←→';
+    }
+    
+    // 更新渲染器尺寸
+    setTimeout(() => {
+        camera.aspect = document.getElementById('scene-container').clientWidth /
+            document.getElementById('scene-container').clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(
+            document.getElementById('scene-container').clientWidth,
+            document.getElementById('scene-container').clientHeight
+        );
+    }, 300); // 等待过渡动画完成
 }
 
 // Parse JSON and render the scene
@@ -590,4 +622,6 @@ window.addEventListener('load', async function() {
     // 添加事件监听
     confirmBtn.addEventListener('click', parseAndRender);
     resetBtn.addEventListener('click', resetConfig);
+    toggleJsonBtn.addEventListener('click', toggleJsonPanel); // 新增：切换按钮事件监听
+    jsonPanelToggle.addEventListener('click', toggleJsonPanel); // 新增：书签按钮事件监听
 });

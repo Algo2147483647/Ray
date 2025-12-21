@@ -49,6 +49,10 @@ h1 {
     margin-bottom: 30px;
 }
 
+.content.full-width-scene {
+    grid-template-columns: 1fr;
+}
+
 @media (max-width: 1200px) {
     .content {
         grid-template-columns: 1fr;
@@ -62,6 +66,10 @@ h1 {
     overflow: hidden;
     margin-bottom: 30px;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.panel.collapsed {
+    display: none;
 }
 
 .panel:hover {
@@ -513,6 +521,34 @@ footer {
     background: #f1f7fd;
     border-radius: 10px;
     margin-top: 20px;
+}
+
+/* JSON Panel Toggle Bookmark */
+.json-panel-toggle {
+    position: fixed;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 60px;
+    background: linear-gradient(to right, #a3c9ff, #70a3f2);
+    border-radius: 0 5px 5px 0;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+}
+
+.json-panel-toggle:hover {
+    background: linear-gradient(to right, #3a9cea 0%, #00d9e9 100%);
+}
+
+.content.full-width-scene .json-panel-toggle {
+    display: flex;
 }
 
 /* Responsive design */

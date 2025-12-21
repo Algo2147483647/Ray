@@ -15,10 +15,12 @@
     </header>
 
     <div class="content">
-        <div class="panel">
+        <div class="json-panel-toggle" id="json-panel-toggle">≡</div>
+        <div class="panel" id="json-panel">
             <div class="panel-header">
                 <h2 class="panel-title">JSON Configuration</h2>
                 <div class="panel-controls">
+                    <button id="toggle-json-btn" class="btn btn-small">←→</button>
                     <button id="confirm-btn" class="btn btn-small">Confirm</button>
                     <button id="reset-btn" class="btn btn-small btn-secondary">Reset</button>
                 </div>
@@ -105,7 +107,7 @@
 }</textarea>
         </div>
 
-        <div class="panel">
+        <div class="panel" id="scene-panel">
             <div class="panel-header">
                 <h2 class="panel-title">3D Scene Preview</h2>
                 <div class="scene-info">Drag with mouse to rotate the scene, scroll to zoom</div>
