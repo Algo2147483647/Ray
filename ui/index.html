@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Scene Geometry Editor</title>
+    <title>Geometry Editor</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
     <link rel="stylesheet" href="assets/style.css">
@@ -11,7 +11,7 @@
 <body>
 <div class="container">
     <header>
-        <h1>3D Scene Geometry Editor</h1>
+        <h1>Geometry Editor</h1>
     </header>
 
     <div class="content">
@@ -108,10 +108,6 @@
         </div>
 
         <div class="panel" id="scene-panel">
-            <div class="panel-header">
-                <h2 class="panel-title">3D Scene Preview</h2>
-                <div class="scene-info">Drag with mouse to rotate the scene, scroll to zoom</div>
-            </div>
             <div id="scene-container">
                 <canvas id="scene-canvas"></canvas>
             </div>
@@ -119,9 +115,6 @@
     </div>
 
     <div class="panel">
-        <div class="panel-header">
-            <h2 class="panel-title">Geometry Parameter List</h2>
-        </div>
         <div id="objects-table"></div>
 
         <div class="stats">
@@ -145,7 +138,6 @@
     </div>
 
     <footer>
-        <p>3D Scene Geometry Editor &copy; 2023 | Built with Three.js</p>
     </footer>
 </div>
 
