@@ -96,7 +96,7 @@ h1 {
     font-size: 0.9rem;
 }
 
-/* 圆形按钮样式 */
+/* Circular button style */
 .panel-controls .btn {
     border-radius: 50%;
     width: 36px;
@@ -508,7 +508,7 @@ input:focus, textarea:focus {
     transform: translateY(-1px);
 }
 
-/* 新增：选中行的样式 */
+/* Added: Selected row style */
 .object-row.selected {
     background-color: #ffebee !important;
     border-left: 4px solid #f44336;

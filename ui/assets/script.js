@@ -5,10 +5,10 @@ let camera = null;
 let renderer = null;
 let controls = null;
 const objects = [];
-let selectedObjectIndex = -1; // 新增：跟踪选中的对象索引
-let isJsonPanelCollapsed = false; // 新增：跟踪JSON面板是否折叠
+let selectedObjectIndex = -1; // Added: Track selected object index
+let isJsonPanelCollapsed = false; // Added: Track if JSON panel is collapsed
 
-// 形状参数配置将在初始化时从外部文件加载
+// Shape parameter configuration will be loaded from external file during initialization
 let SHAPE_PARAMETERS = {};
 
 // DOM elements
@@ -20,26 +20,26 @@ const cuboidCount = document.getElementById('cuboid-count');
 const sphereCount = document.getElementById('sphere-count');
 const totalCount = document.getElementById('total-count');
 const lightCount = document.getElementById('light-count');
-const toggleJsonBtn = document.getElementById('toggle-json-btn'); // 新增：切换按钮
-const jsonPanel = document.getElementById('json-panel'); // 新增：JSON面板
-const scenePanel = document.getElementById('scene-panel'); // 新增：场景面板
-const contentContainer = document.querySelector('.content'); // 新增：内容容器
-const jsonPanelToggle = document.getElementById('json-panel-toggle'); // 新增：书签按钮
+const toggleJsonBtn = document.getElementById('toggle-json-btn'); // Added: Toggle button
+const jsonPanel = document.getElementById('json-panel'); // Added: JSON panel
+const scenePanel = document.getElementById('scene-panel'); // Added: Scene panel
+const contentContainer = document.querySelector('.content'); // Added: Content container
+const jsonPanelToggle = document.getElementById('json-panel-toggle'); // Added: Bookmark button
 
 // Initialize Three.js scene
 function initScene() {
-    // 创建场景
+    // Create scene
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0a0a1a);
 
-    // 创建相机
+    // Create camera
     camera = new THREE.PerspectiveCamera(75,
         document.getElementById('scene-container').clientWidth /
         document.getElementById('scene-container').clientHeight,
         0.1, 10000);
     camera.position.set(0, 0, 3000);
 
-    // 创建渲染器
+    // Create renderer
     renderer = new THREE.WebGLRenderer({
         canvas: document.getElementById('scene-canvas'),
         antialias: true
@@ -49,25 +49,25 @@ function initScene() {
         document.getElementById('scene-container').clientHeight
     );
 
-    // 添加轨道控制器
+    // Add orbit controls
     controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
 
-    // 添加环境光
+    // Add ambient light
     const ambientLight = new THREE.AmbientLight(0x404040, 1.5);
     scene.add(ambientLight);
 
-    // 添加方向光
+    // Add directional light
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(1, 1, 1);
     scene.add(directionalLight);
 
-    // 添加坐标轴辅助
+    // Add axis helper
     const axesHelper = new THREE.AxesHelper(1000);
     scene.add(axesHelper);
 
-    // 开始动画循环
+    // Start animation loop
     animate();
 }
 
@@ -78,7 +78,7 @@ function animate() {
     renderer.render(scene, camera);
 }
 
-// 加载形状参数配置
+// Load shape parameter configuration
 async function loadShapeParameters() {
     try {
         const response = await fetch('shape_parameters.json');
@@ -103,7 +103,7 @@ function toggleJsonPanel() {
         jsonPanelToggle.textContent = '❮';
     }
     
-    // 更新渲染器尺寸
+    // Update renderer size
     setTimeout(() => {
         camera.aspect = document.getElementById('scene-container').clientWidth /
             document.getElementById('scene-container').clientHeight;
@@ -112,24 +112,24 @@ function toggleJsonPanel() {
             document.getElementById('scene-container').clientWidth,
             document.getElementById('scene-container').clientHeight
         );
-    }, 300); // 等待过渡动画完成
+    }, 300); // Wait for transition animation to complete
 }
 
 // Parse JSON and render the scene
 async function parseAndRender() {
-    // 确保形状参数已加载
+    // Ensure shape parameters are loaded
     if (Object.keys(SHAPE_PARAMETERS).length === 0) {
         await loadShapeParameters();
     }
     
     try {
-        // 解析JSON
+        // Parse JSON
         sceneData = JSON.parse(jsonInput.value);
 
-        // 更新场景
+        // Update scene
         updateSceneOnly();
 
-        // 生成参数表格
+        // Generate parameter table
         generateObjectsTable();
 
     } catch (e) {
@@ -138,21 +138,21 @@ async function parseAndRender() {
     }
 }
 
-// 获取形状的参数列表
+// Get parameter list for a shape
 function getShapeParameters(shape) {
     const params = SHAPE_PARAMETERS[shape];
     if (!params) return [];
     
-    // 从键中获取参数名
+    // Get parameter names from keys
     return Object.keys(params);
 }
 
-// 生成参数输入控件
+// Generate parameter input controls
 function generateParameterInput(paramName, paramType, currentValue) {
     switch (paramType) {
-        case '1': // 单个数字
+        case '1': // Single number
             return `<input type="number" class="obj-param-${paramName}" value="${currentValue || 0}" step="0.1">`;
-        case 'n': // N维向量 (这里假设是3D向量)
+        case 'n': // N-dimensional vector (assuming 3D vector here)
             const x = currentValue && currentValue[0] !== undefined ? currentValue[0] : 0;
             const y = currentValue && currentValue[1] !== undefined ? currentValue[1] : 0;
             const z = currentValue && currentValue[2] !== undefined ? currentValue[2] : 0;
@@ -161,7 +161,7 @@ function generateParameterInput(paramName, paramType, currentValue) {
                 <input type="number" class="obj-${paramName}-y" value="${y}" step="0.1">
                 <input type="number" class="obj-${paramName}-z" value="${z}" step="0.1">
             `;
-        case 'text': // 文本框
+        case 'text': // Text box
             return `<textarea class="obj-param-${paramName}" rows="3" cols="30">${currentValue ? JSON.stringify(currentValue) : ''}</textarea>`;
         default:
             return `<input type="text" class="obj-param-${paramName}" value="${currentValue || ''}">`;
@@ -186,8 +186,8 @@ function generateObjectsTable() {
         `;
 
     sceneData.objects.forEach((obj, index) => {
-        // 根据形状类型获取图标
-        let icon = '◆'; // 默认图标
+        // Get icon based on shape type
+        let icon = '◆'; // Default icon
         if (obj.shape === 'cuboid') icon = '◼';
         else if (obj.shape === 'sphere') icon = '●';
         else if (obj.shape === 'triangle') icon = '△';
@@ -195,7 +195,7 @@ function generateObjectsTable() {
         else if (obj.shape === 'quadratic equation') icon = 'QE';
         else if (obj.shape === 'four-order equation') icon = 'FE';
 
-        // 添加选中状态的类
+        // Add class for selected state
         const isSelected = index === selectedObjectIndex;
         const rowClass = isSelected ? 'object-row selected' : 'object-row';
 
@@ -213,7 +213,7 @@ function generateObjectsTable() {
                 <td class="geometry-parameters">
         `;
         
-        // 显示几何参数 (完全基于JSON配置)
+        // Display geometry parameters (fully based on JSON configuration)
         const shapeParams = SHAPE_PARAMETERS[obj.shape];
         if (shapeParams) {
             Object.keys(shapeParams).forEach(param => {
@@ -222,7 +222,7 @@ function generateObjectsTable() {
                 tableHTML += `<span class="geometry-parameter-name">${param}:</span>`;
                 tableHTML += `<span class="geometry-parameter-inputs">`;
                 
-                // 通用处理方式
+                // Generic handling
                 tableHTML += generateParameterInput(param, paramType, obj[param]);
                 tableHTML += `</span></div>`;
             });
@@ -247,39 +247,39 @@ function generateObjectsTable() {
 
     objectsTable.innerHTML = tableHTML;
 
-    // 添加事件监听器
+    // Add event listeners
     document.querySelectorAll('.object-row').forEach(row => {
         const index = parseInt(row.getAttribute('data-index'));
         
-        // 添加行点击事件监听器
+        // Add row click event listener
         row.addEventListener('click', function(e) {
-            // 阻止事件冒泡到子元素
+            // Prevent event from bubbling to child elements
             if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT' && e.target.tagName !== 'BUTTON') {
                 selectObject(index);
             }
         });
         
-        // 为形状选择器添加事件监听
+        // Add event listener for shape selector
         const shapeSelect = row.querySelector('.obj-shape-select');
         shapeSelect.addEventListener('change', function() {
-            // 先保存当前表单数据
+            // Save current form data first
             saveCurrentFormData();
             
             const newShape = this.value;
             const obj = sceneData.objects[index];
             obj.shape = newShape;
             
-            // 更新JSON输入框
+            // Update JSON input box
             jsonInput.value = JSON.stringify(sceneData, null, 2);
             
-            // 重新生成表格
+            // Regenerate table
             generateObjectsTable();
             
-            // 重新渲染场景
+            // Re-render scene
             parseAndRender();
         });
         
-        // 创建悬停操作框
+        // Create hover action box
         const actionBox = document.createElement('div');
         actionBox.className = 'action-box';
         actionBox.innerHTML = `
@@ -289,24 +289,24 @@ function generateObjectsTable() {
         `;
         row.appendChild(actionBox);
         
-        // 为每个操作按钮添加事件监听器
+        // Add event listeners for each action button
         actionBox.querySelector('.move-up-btn').addEventListener('click', function(e) {
             e.stopPropagation();
-            // 先保存当前表单数据
+            // Save current form data first
             saveCurrentFormData();
             moveObject(index, -1);
         });
         
         actionBox.querySelector('.move-down-btn').addEventListener('click', function(e) {
             e.stopPropagation();
-            // 先保存当前表单数据
+            // Save current form data first
             saveCurrentFormData();
             moveObject(index, 1);
         });
         
         actionBox.querySelector('.delete-btn').addEventListener('click', function(e) {
             e.stopPropagation();
-            // 先保存当前表单数据
+            // Save current form data first
             saveCurrentFormData();
             deleteObject(index);
         });
@@ -315,7 +315,7 @@ function generateObjectsTable() {
     document.getElementById('update-all-btn').addEventListener('click', updateAllObjects);
 }
 
-// 新增：保存当前表单数据的函数
+// Added: Function to save current form data
 function saveCurrentFormData() {
     if (!sceneData || !sceneData.objects) return;
     
@@ -326,15 +326,15 @@ function saveCurrentFormData() {
         
         if (!obj) return;
         
-        // 更新ID
+        // Update ID
         const idInput = row.querySelector('.obj-id');
         if (idInput) obj.id = idInput.value;
         
-        // 更新形状
+        // Update shape
         const shapeSelect = row.querySelector('.obj-shape-select');
         if (shapeSelect) obj.shape = shapeSelect.value;
         
-        // 通用参数更新方法 (完全基于JSON配置)
+        // Generic parameter update method (fully based on JSON configuration)
         const shapeParams = SHAPE_PARAMETERS[obj.shape];
         if (shapeParams) {
             Object.keys(shapeParams).forEach(param => {
@@ -365,7 +365,7 @@ function saveCurrentFormData() {
                             try {
                                 obj[param] = JSON.parse(textInput.value);
                             } catch (e) {
-                                // 如果不是有效的JSON，就保存为字符串
+                                // If not valid JSON, save as string
                                 obj[param] = textInput.value;
                             }
                         }
@@ -374,13 +374,13 @@ function saveCurrentFormData() {
             });
         }
         
-        // 更新材质ID
+        // Update material ID
         const materialIdInput = row.querySelector('.obj-material-id');
         if (materialIdInput) obj.material_id = materialIdInput.value;
     });
 }
 
-// 新增：仅更新场景而不重新生成表格的函数
+// Added: Function to update scene without regenerating table
 function updateSceneOnly() {
     if (!sceneData || !sceneData.objects) return;
 
@@ -388,7 +388,7 @@ function updateSceneOnly() {
     objects.forEach(obj => scene.remove(obj));
     objects.length = 0;
 
-    // 创建几何体
+    // Create geometries
     let cuboids = 0;
     let spheres = 0;
     let lights = 0;
@@ -397,13 +397,13 @@ function updateSceneOnly() {
         let geometry, material, mesh;
 
         // Set color based on material or selection state
-        let color = 0xffffff; // 默认白色
+        let color = 0xffffff; // Default white
         
-        // 如果有选中的对象且当前对象是选中的对象，则设为红色
+        // If there is a selected object and current object is the selected one, set to red
         if (selectedObjectIndex !== -1 && sceneData.objects[selectedObjectIndex] === obj) {
-            color = 0xff0000; // 红色
+            color = 0xff0000; // Red
         } else {
-            // 否则根据材质设置颜色
+            // Otherwise set color based on material
             const materialInfo = sceneData.materials.find(m => m.id === obj.material_id);
             if (materialInfo) {
                 // Convert color values from 0-1 range to 0-255 and combine to hex
@@ -475,21 +475,21 @@ function updateSceneOnly() {
     lightCount.textContent = lights;
 }
 
-// 新增：选中对象函数
+// Added: Function to select object
 function selectObject(index) {
-    // 保存当前表单数据
+    // Save current form data
     saveCurrentFormData();
     
-    // 更新选中索引
+    // Update selected index
     selectedObjectIndex = index;
     
-    // 更新JSON输入框以保持与sceneData同步
+    // Update JSON input box to keep in sync with sceneData
     jsonInput.value = JSON.stringify(sceneData, null, 2);
     
-    // 只更新场景而不重新生成表格
+    // Update scene only without regenerating table
     updateSceneOnly();
     
-    // 更新表格行的选中状态
+    // Update selected state of table rows
     document.querySelectorAll('.object-row').forEach(row => {
         const rowIndex = parseInt(row.getAttribute('data-index'));
         if (rowIndex === index) {
@@ -506,21 +506,21 @@ function moveObject(index, direction) {
     
     const newIndex = index + direction;
     
-    // 检查边界
+    // Check boundaries
     if (newIndex < 0 || newIndex >= sceneData.objects.length) return;
     
-    // 交换对象位置
+    // Swap object positions
     const temp = sceneData.objects[index];
     sceneData.objects[index] = sceneData.objects[newIndex];
     sceneData.objects[newIndex] = temp;
     
-    // 更新JSON输入框
+    // Update JSON input box
     jsonInput.value = JSON.stringify(sceneData, null, 2);
     
-    // 重新生成表格
+    // Regenerate table
     generateObjectsTable();
     
-    // 只更新场景
+    // Update scene only
     updateSceneOnly();
 }
 
@@ -534,16 +534,16 @@ function deleteObject(index) {
         return;
     }
     
-    // 从数组中移除对象
+    // Remove object from array
     sceneData.objects.splice(index, 1);
     
-    // 更新JSON输入框
+    // Update JSON input box
     jsonInput.value = JSON.stringify(sceneData, null, 2);
     
-    // 重新生成表格
+    // Regenerate table
     generateObjectsTable();
     
-    // 只更新场景
+    // Update scene only
     updateSceneOnly();
 }
 
@@ -551,19 +551,19 @@ function deleteObject(index) {
 function updateAllObjects() {
     if (!sceneData || !sceneData.objects) return;
     
-    // 直接从表单中获取最新数据
+    // Directly get latest data from form
     saveCurrentFormData();
     
-    // 更新JSON输入框
+    // Update JSON input box
     jsonInput.value = JSON.stringify(sceneData, null, 2);
     
-    // 只更新场景
+    // Update scene only
     updateSceneOnly();
 }
 
 // Reset configuration
 function resetConfig() {
-    // 重置选中索引
+    // Reset selected index
     selectedObjectIndex = -1;
     
     jsonInput.value = `{
@@ -649,7 +649,7 @@ function resetConfig() {
     parseAndRender();
 }
 
-// 窗口大小调整时更新渲染器
+// Update renderer when window size changes
 window.addEventListener('resize', function() {
     camera.aspect = document.getElementById('scene-container').clientWidth /
         document.getElementById('scene-container').clientHeight;
@@ -660,15 +660,15 @@ window.addEventListener('resize', function() {
     );
 });
 
-// 初始化
+// Initialize
 window.addEventListener('load', async function() {
-    await loadShapeParameters(); // 首先加载形状参数
+    await loadShapeParameters(); // First load shape parameters
     initScene();
     parseAndRender();
 
-    // 添加事件监听
+    // Add event listeners
     confirmBtn.addEventListener('click', parseAndRender);
     resetBtn.addEventListener('click', resetConfig);
-    toggleJsonBtn.addEventListener('click', toggleJsonPanel); // 新增：切换按钮事件监听
-    jsonPanelToggle.addEventListener('click', toggleJsonPanel); // 新增：书签按钮事件监听
+    toggleJsonBtn.addEventListener('click', toggleJsonPanel); // Added: Toggle button event listener
+    jsonPanelToggle.addEventListener('click', toggleJsonPanel); // Added: Bookmark button event listener
 });
