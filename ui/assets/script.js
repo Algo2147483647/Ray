@@ -96,11 +96,11 @@ function toggleJsonPanel() {
     if (isJsonPanelCollapsed) {
         jsonPanel.classList.add('collapsed');
         contentContainer.classList.add('full-width-scene');
-        toggleJsonBtn.textContent = '→';
+        jsonPanelToggle.textContent = '❯';
     } else {
         jsonPanel.classList.remove('collapsed');
         contentContainer.classList.remove('full-width-scene');
-        toggleJsonBtn.textContent = '←→';
+        jsonPanelToggle.textContent = '❮';
     }
     
     // 更新渲染器尺寸
