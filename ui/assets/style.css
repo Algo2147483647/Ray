@@ -19,27 +19,27 @@ body {
 
 header {
     text-align: center;
-    margin-bottom: 30px;
-    padding: 30px;
+    margin-bottom: 20px;
+    padding: 15px;
     background: linear-gradient(135deg, #d1e8ff, #cce5ff);
     color: #333;
-    border-radius: 15px;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 h1 {
-    font-size: 2.2rem;
-    margin-bottom: 15px;
+    font-size: 1.8rem;
+    margin-bottom: 10px;
     color: #333;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 .subtitle {
-    font-size: 1.2rem;
-    opacity: 0.95;
+    font-size: 1rem;
+    opacity: 0.9;
     max-width: 900px;
     margin: 0 auto;
-    line-height: 1.7;
+    line-height: 1.5;
 }
 
 .content {
