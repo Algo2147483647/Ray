@@ -126,95 +126,8 @@ async function parseAndRender() {
         // 解析JSON
         sceneData = JSON.parse(jsonInput.value);
 
-        // Remove previous objects
-        objects.forEach(obj => scene.remove(obj));
-        objects.length = 0;
-
-        // 创建几何体
-        let cuboids = 0;
-        let spheres = 0;
-        let lights = 0;
-
-        sceneData.objects.forEach(obj => {
-            let geometry, material, mesh;
-
-            // Set color based on material or selection state
-            let color = 0xffffff; // 默认白色
-            
-            // 如果有选中的对象且当前对象是选中的对象，则设为红色
-            if (selectedObjectIndex !== -1 && sceneData.objects[selectedObjectIndex] === obj) {
-                color = 0xff0000; // 红色
-            } else {
-                // 否则根据材质设置颜色
-                const materialInfo = sceneData.materials.find(m => m.id === obj.material_id);
-                if (materialInfo) {
-                    // Convert color values from 0-1 range to 0-255 and combine to hex
-                    if (materialInfo.color) {
-                        const r = Math.min(255, Math.floor(materialInfo.color[0] * 255));
-                        const g = Math.min(255, Math.floor(materialInfo.color[1] * 255));
-                        const b = Math.min(255, Math.floor(materialInfo.color[2] * 255));
-                        color = (r << 16) | (g << 8) | b;
-                    }
-                    
-                    if (materialInfo.radiate) {
-                        lights++;
-                    }
-                }
-            }
-
-            // Create material
-            material = new THREE.MeshPhongMaterial({
-                color: color,
-                transparent: obj.material_id === 'Glass',
-                opacity: obj.material_id === 'Glass' ? 0.7 : 1.0,
-                wireframe: obj.id === 'WorldBox'
-            });
-
-            // Create geometry based on shape parameters configuration
-            const shapeParams = SHAPE_PARAMETERS[obj.shape];
-            if (shapeParams) {
-                if (obj.shape === 'cuboid' && obj.size) {
-                    geometry = new THREE.BoxGeometry(obj.size[0], obj.size[1], obj.size[2]);
-                    cuboids++;
-                } else if (obj.shape === 'sphere') {
-                    const radius = obj.r || obj.radius || 100;
-                    geometry = new THREE.SphereGeometry(radius, 32, 32);
-                    spheres++;
-                } else if (obj.shape === 'triangle' && obj.p1 && obj.p2 && obj.p3) {
-                    // Create triangle geometry
-                    const p1 = new THREE.Vector3(...obj.p1);
-                    const p2 = new THREE.Vector3(...obj.p2);
-                    const p3 = new THREE.Vector3(...obj.p3);
-                    geometry = new THREE.BufferGeometry();
-                    const vertices = new Float32Array([
-                        p1.x, p1.y, p1.z,
-                        p2.x, p2.y, p2.z,
-                        p3.x, p3.y, p3.z
-                    ]);
-                    geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-                    geometry.computeVertexNormals();
-                }
-            }
-
-            // Create mesh
-            if (geometry) {
-                mesh = new THREE.Mesh(geometry, material);
-                // Handle position for all shapes
-                if (obj.position) {
-                    mesh.position.set(obj.position[0], obj.position[1], obj.position[2]);
-                } else {
-                    mesh.position.set(0, 0, 0);
-                }
-                scene.add(mesh);
-                objects.push(mesh);
-            }
-        });
-
-        // Update statistics (only count cuboids and spheres)
-        cuboidCount.textContent = cuboids;
-        sphereCount.textContent = spheres;
-        totalCount.textContent = cuboids + spheres;
-        lightCount.textContent = lights;
+        // 更新场景
+        updateSceneOnly();
 
         // 生成参数表格
         generateObjectsTable();
@@ -349,6 +262,9 @@ function generateObjectsTable() {
         // 为形状选择器添加事件监听
         const shapeSelect = row.querySelector('.obj-shape-select');
         shapeSelect.addEventListener('change', function() {
+            // 先保存当前表单数据
+            saveCurrentFormData();
+            
             const newShape = this.value;
             const obj = sceneData.objects[index];
             obj.shape = newShape;
@@ -376,16 +292,22 @@ function generateObjectsTable() {
         // 为每个操作按钮添加事件监听器
         actionBox.querySelector('.move-up-btn').addEventListener('click', function(e) {
             e.stopPropagation();
+            // 先保存当前表单数据
+            saveCurrentFormData();
             moveObject(index, -1);
         });
         
         actionBox.querySelector('.move-down-btn').addEventListener('click', function(e) {
             e.stopPropagation();
+            // 先保存当前表单数据
+            saveCurrentFormData();
             moveObject(index, 1);
         });
         
         actionBox.querySelector('.delete-btn').addEventListener('click', function(e) {
             e.stopPropagation();
+            // 先保存当前表单数据
+            saveCurrentFormData();
             deleteObject(index);
         });
     });
@@ -393,13 +315,179 @@ function generateObjectsTable() {
     document.getElementById('update-all-btn').addEventListener('click', updateAllObjects);
 }
 
+// 新增：保存当前表单数据的函数
+function saveCurrentFormData() {
+    if (!sceneData || !sceneData.objects) return;
+    
+    const rows = objectsTable.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        const index = parseInt(row.getAttribute('data-index'));
+        const obj = sceneData.objects[index];
+        
+        if (!obj) return;
+        
+        // 更新ID
+        const idInput = row.querySelector('.obj-id');
+        if (idInput) obj.id = idInput.value;
+        
+        // 更新形状
+        const shapeSelect = row.querySelector('.obj-shape-select');
+        if (shapeSelect) obj.shape = shapeSelect.value;
+        
+        // 通用参数更新方法 (完全基于JSON配置)
+        const shapeParams = SHAPE_PARAMETERS[obj.shape];
+        if (shapeParams) {
+            Object.keys(shapeParams).forEach(param => {
+                const paramType = shapeParams[param];
+                switch (paramType) {
+                    case '1':
+                        const input = row.querySelector(`.obj-param-${param}`);
+                        if (input) {
+                            const value = parseFloat(input.value);
+                            if (!isNaN(value)) obj[param] = value;
+                        }
+                        break;
+                    case 'n':
+                        const xInput = row.querySelector(`.obj-${param}-x`);
+                        const yInput = row.querySelector(`.obj-${param}-y`);
+                        const zInput = row.querySelector(`.obj-${param}-z`);
+                        
+                        if (xInput && yInput && zInput) {
+                            const x = parseFloat(xInput.value) || 0;
+                            const y = parseFloat(yInput.value) || 0;
+                            const z = parseFloat(zInput.value) || 0;
+                            obj[param] = [x, y, z];
+                        }
+                        break;
+                    case 'text':
+                        const textInput = row.querySelector(`.obj-param-${param}`);
+                        if (textInput) {
+                            try {
+                                obj[param] = JSON.parse(textInput.value);
+                            } catch (e) {
+                                // 如果不是有效的JSON，就保存为字符串
+                                obj[param] = textInput.value;
+                            }
+                        }
+                        break;
+                }
+            });
+        }
+        
+        // 更新材质ID
+        const materialIdInput = row.querySelector('.obj-material-id');
+        if (materialIdInput) obj.material_id = materialIdInput.value;
+    });
+}
+
+// 新增：仅更新场景而不重新生成表格的函数
+function updateSceneOnly() {
+    if (!sceneData || !sceneData.objects) return;
+
+    // Remove previous objects
+    objects.forEach(obj => scene.remove(obj));
+    objects.length = 0;
+
+    // 创建几何体
+    let cuboids = 0;
+    let spheres = 0;
+    let lights = 0;
+
+    sceneData.objects.forEach(obj => {
+        let geometry, material, mesh;
+
+        // Set color based on material or selection state
+        let color = 0xffffff; // 默认白色
+        
+        // 如果有选中的对象且当前对象是选中的对象，则设为红色
+        if (selectedObjectIndex !== -1 && sceneData.objects[selectedObjectIndex] === obj) {
+            color = 0xff0000; // 红色
+        } else {
+            // 否则根据材质设置颜色
+            const materialInfo = sceneData.materials.find(m => m.id === obj.material_id);
+            if (materialInfo) {
+                // Convert color values from 0-1 range to 0-255 and combine to hex
+                if (materialInfo.color) {
+                    const r = Math.min(255, Math.floor(materialInfo.color[0] * 255));
+                    const g = Math.min(255, Math.floor(materialInfo.color[1] * 255));
+                    const b = Math.min(255, Math.floor(materialInfo.color[2] * 255));
+                    color = (r << 16) | (g << 8) | b;
+                }
+                
+                if (materialInfo.radiate) {
+                    lights++;
+                }
+            }
+        }
+
+        // Create material
+        material = new THREE.MeshPhongMaterial({
+            color: color,
+            transparent: obj.material_id === 'Glass',
+            opacity: obj.material_id === 'Glass' ? 0.7 : 1.0,
+            wireframe: obj.id === 'WorldBox'
+        });
+
+        // Create geometry based on shape parameters configuration
+        const shapeParams = SHAPE_PARAMETERS[obj.shape];
+        if (shapeParams) {
+            if (obj.shape === 'cuboid' && obj.size) {
+                geometry = new THREE.BoxGeometry(obj.size[0], obj.size[1], obj.size[2]);
+                cuboids++;
+            } else if (obj.shape === 'sphere') {
+                const radius = obj.r || obj.radius || 100;
+                geometry = new THREE.SphereGeometry(radius, 32, 32);
+                spheres++;
+            } else if (obj.shape === 'triangle' && obj.p1 && obj.p2 && obj.p3) {
+                // Create triangle geometry
+                const p1 = new THREE.Vector3(...obj.p1);
+                const p2 = new THREE.Vector3(...obj.p2);
+                const p3 = new THREE.Vector3(...obj.p3);
+                geometry = new THREE.BufferGeometry();
+                const vertices = new Float32Array([
+                    p1.x, p1.y, p1.z,
+                    p2.x, p2.y, p2.z,
+                    p3.x, p3.y, p3.z
+                ]);
+                geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+                geometry.computeVertexNormals();
+            }
+        }
+
+        // Create mesh
+        if (geometry) {
+            mesh = new THREE.Mesh(geometry, material);
+            // Handle position for all shapes
+            if (obj.position) {
+                mesh.position.set(obj.position[0], obj.position[1], obj.position[2]);
+            } else {
+                mesh.position.set(0, 0, 0);
+            }
+            scene.add(mesh);
+            objects.push(mesh);
+        }
+    });
+
+    // Update statistics (only count cuboids and spheres)
+    cuboidCount.textContent = cuboids;
+    sphereCount.textContent = spheres;
+    totalCount.textContent = cuboids + spheres;
+    lightCount.textContent = lights;
+}
+
 // 新增：选中对象函数
 function selectObject(index) {
+    // 保存当前表单数据
+    saveCurrentFormData();
+    
     // 更新选中索引
     selectedObjectIndex = index;
     
-    // 重新渲染场景以应用颜色变化
-    parseAndRender();
+    // 更新JSON输入框以保持与sceneData同步
+    jsonInput.value = JSON.stringify(sceneData, null, 2);
+    
+    // 只更新场景而不重新生成表格
+    updateSceneOnly();
     
     // 更新表格行的选中状态
     document.querySelectorAll('.object-row').forEach(row => {
@@ -432,8 +520,8 @@ function moveObject(index, direction) {
     // 重新生成表格
     generateObjectsTable();
     
-    // 重新渲染场景
-    parseAndRender();
+    // 只更新场景
+    updateSceneOnly();
 }
 
 // Delete object
@@ -455,70 +543,29 @@ function deleteObject(index) {
     // 重新生成表格
     generateObjectsTable();
     
-    // 重新渲染场景
-    parseAndRender();
+    // 只更新场景
+    updateSceneOnly();
 }
 
 // Update all objects
 function updateAllObjects() {
     if (!sceneData || !sceneData.objects) return;
     
-    const rows = objectsTable.querySelectorAll('tbody tr');
-    
-    rows.forEach(row => {
-        const index = parseInt(row.getAttribute('data-index'));
-        const obj = sceneData.objects[index];
-        
-        // 更新ID
-        const idInput = row.querySelector('.obj-id');
-        if (idInput) obj.id = idInput.value;
-        
-        // 更新形状
-        const shapeSelect = row.querySelector('.obj-shape-select');
-        if (shapeSelect) obj.shape = shapeSelect.value;
-        
-        // 通用参数更新方法 (完全基于JSON配置)
-        const shapeParams = SHAPE_PARAMETERS[obj.shape];
-        if (shapeParams) {
-            Object.keys(shapeParams).forEach(param => {
-                const paramType = shapeParams[param];
-                switch (paramType) {
-                    case '1':
-                        const value = parseFloat(row.querySelector(`.obj-param-${param}`).value) || 0;
-                        obj[param] = value;
-                        break;
-                    case 'n':
-                        const x = parseFloat(row.querySelector(`.obj-${param}-x`).value) || 0;
-                        const y = parseFloat(row.querySelector(`.obj-${param}-y`).value) || 0;
-                        const z = parseFloat(row.querySelector(`.obj-${param}-z`).value) || 0;
-                        obj[param] = [x, y, z];
-                        break;
-                    case 'text':
-                        try {
-                            const text = row.querySelector(`.obj-param-${param}`).value;
-                            obj[param] = JSON.parse(text);
-                        } catch (e) {
-                            console.warn(`Failed to parse parameter ${param} as JSON`);
-                        }
-                        break;
-                }
-            });
-        }
-        
-        // 更新材质ID
-        const materialIdInput = row.querySelector('.obj-material-id');
-        if (materialIdInput) obj.material_id = materialIdInput.value;
-    });
+    // 直接从表单中获取最新数据
+    saveCurrentFormData();
     
     // 更新JSON输入框
     jsonInput.value = JSON.stringify(sceneData, null, 2);
     
-    // 重新渲染场景
-    parseAndRender();
+    // 只更新场景
+    updateSceneOnly();
 }
 
 // Reset configuration
 function resetConfig() {
+    // 重置选中索引
+    selectedObjectIndex = -1;
+    
     jsonInput.value = `{
     "materials": [
         {
