@@ -1,10 +1,11 @@
 package optics
 
 import (
+	"github.com/Algo2147483647/golang_toolkit/image"
+	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
 	"gonum.org/v1/gonum/mat"
 	"math"
 	"math/rand/v2"
-	"src-golang/math_lib"
 	"src-golang/utils"
 )
 
@@ -16,6 +17,11 @@ type Ray struct {
 	RefractionIndex float64       `json:"refraction_index"`
 	DebugSwitch     bool          `json:"debug_switch"`
 }
+
+const (
+	WavelengthMin = 380.0 // 最小波长(nm)
+	WavelengthMax = 750.0 // 最大波长(nm)
+)
 
 var DebugRayTraces []map[string]interface{}
 
@@ -42,7 +48,7 @@ func (r *Ray) Init() {
 }
 
 func (ray *Ray) ConvertToMonochrome() {
-	ray.WaveLength = math_lib.WavelengthMin + rand.Float64()*(math_lib.WavelengthMax-math_lib.WavelengthMin)
+	ray.WaveLength = WavelengthMin + rand.Float64()*(WavelengthMax-WavelengthMin)
 
 	baseColor := math_lib.Normalize(WaveLengthToRGB(ray.WaveLength))
 	math_lib.ScaleVec(baseColor, 2, baseColor)
@@ -53,11 +59,11 @@ func (ray *Ray) ConvertToMonochrome() {
 }
 
 func WaveLengthToRGB(wavelength float64) *mat.VecDense {
-	if wavelength >= math_lib.WavelengthMax || wavelength <= math_lib.WavelengthMin {
+	if wavelength >= WavelengthMax || wavelength <= WavelengthMin {
 		return mat.NewVecDense(3, nil)
 	}
-	t := (wavelength - math_lib.WavelengthMin) / (math_lib.WavelengthMax - math_lib.WavelengthMin)
-	r, g, b := math_lib.SpectrumFiveDivided(t)
+	t := (wavelength - WavelengthMin) / (WavelengthMax - WavelengthMin)
+	r, g, b := image.SpectrumFiveDivided(t)
 	return mat.NewVecDense(3, []float64{
 		math.Max(0, math.Min(1, r)),
 		math.Max(0, math.Min(1, g)),

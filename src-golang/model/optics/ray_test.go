@@ -11,7 +11,6 @@ import (
 	"image/png"
 	"math"
 	"os"
-	"src-golang/math_lib"
 	"testing"
 )
 
@@ -55,9 +54,9 @@ func validateDistribution(t *testing.T, wavelengths, red, green, blue []float64)
 		}
 	}
 
-	if minWavelength < math_lib.WavelengthMin || maxWavelength > math_lib.WavelengthMax {
+	if minWavelength < WavelengthMin || maxWavelength > WavelengthMax {
 		t.Errorf("Wavelength out of range: [%f, %f], expected range: [%f, %f]",
-			minWavelength, maxWavelength, math_lib.WavelengthMin, math_lib.WavelengthMax)
+			minWavelength, maxWavelength, WavelengthMin, WavelengthMax)
 	}
 
 	// 检查颜色值是否合理
@@ -116,14 +115,14 @@ func TestWaveLengthToRGB(t *testing.T) {
 	// 创建数据点
 	var rData, gData, bData plotter.XYs
 	step := 1.0
-	count := int((math_lib.WavelengthMax - math_lib.WavelengthMin) / step)
+	count := int((WavelengthMax - WavelengthMin) / step)
 
 	rData = make(plotter.XYs, count)
 	gData = make(plotter.XYs, count)
 	bData = make(plotter.XYs, count)
 
 	for i := 0; i < count; i++ {
-		wavelength := math_lib.WavelengthMin + float64(i)*step
+		wavelength := WavelengthMin + float64(i)*step
 		rgb := WaveLengthToRGB(wavelength)
 
 		rData[i].X = wavelength
@@ -183,11 +182,11 @@ func generateSpectrumImage(filename string) {
 	)
 
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
-	step := (math_lib.WavelengthMax - math_lib.WavelengthMin) / float64(width)
+	step := (WavelengthMax - WavelengthMin) / float64(width)
 
 	// 绘制渐变光谱
 	for x := 0; x < width; x++ {
-		wavelength := math_lib.WavelengthMin + float64(x)*step
+		wavelength := WavelengthMin + float64(x)*step
 		rgb := WaveLengthToRGB(wavelength).RawVector().Data
 		c := color.RGBA{
 			R: uint8(rgb[0] * 255),

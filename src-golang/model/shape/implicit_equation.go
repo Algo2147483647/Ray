@@ -1,9 +1,9 @@
 package shape
 
 import (
+	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
 	"gonum.org/v1/gonum/mat"
 	"math"
-	"src-golang/math_lib"
 )
 
 type ImplicitEquation struct {

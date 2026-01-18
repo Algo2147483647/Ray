@@ -1,20 +1,15 @@
-package math_lib
+package utils
 
 import (
+	"github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
 	"gonum.org/v1/gonum/mat"
 	"math"
 	"math/rand/v2"
-	"src-golang/utils"
-)
-
-const (
-	WavelengthMin = 380.0 // 最小波长(nm)
-	WavelengthMax = 750.0 // 最大波长(nm)
 )
 
 // Reflect 计算光线的反射方向
 func Reflect(incidentRay, normal *mat.VecDense) *mat.VecDense {
-	return Normalize(SubVec(incidentRay, incidentRay, ScaleVec2(2*mat.Dot(normal, incidentRay), normal)))
+	return linear_algebra.Normalize(linear_algebra.SubVec(incidentRay, incidentRay, linear_algebra.ScaleVec2(2*mat.Dot(normal, incidentRay), normal)))
 }
 
 // Refract 计算光线的折射方向, n = n_I / n_T, normal 与入射光线方向相反
@@ -26,7 +21,7 @@ func Refract(incidentRay, normal *mat.VecDense, eta float64) *mat.VecDense {
 	}
 	cosT := math.Sqrt(1.0 - sin2T)
 
-	return Normalize(AddVec(incidentRay, ScaleVec(incidentRay, eta, incidentRay), ScaleVec2(-cosT+eta*cosI, normal)))
+	return linear_algebra.Normalize(linear_algebra.AddVec(incidentRay, linear_algebra.ScaleVec(incidentRay, eta, incidentRay), linear_algebra.ScaleVec2(-cosT+eta*cosI, normal)))
 }
 
 // DiffuseReflect 计算漫反射方向
@@ -35,15 +30,15 @@ func DiffuseReflect(incidentRay, normal *mat.VecDense) *mat.VecDense {
 		return DiffuseReflect4D(incidentRay, normal)
 	}
 
-	u := utils.VectorPool.Get().(*mat.VecDense)
-	v := utils.VectorPool.Get().(*mat.VecDense)
-	t := utils.VectorPool.Get().(*mat.VecDense)
-	tangent := utils.VectorPool.Get().(*mat.VecDense)
+	u := VectorPool.Get().(*mat.VecDense)
+	v := VectorPool.Get().(*mat.VecDense)
+	t := VectorPool.Get().(*mat.VecDense)
+	tangent := VectorPool.Get().(*mat.VecDense)
 	defer func() {
-		utils.VectorPool.Put(u)
-		utils.VectorPool.Put(v)
-		utils.VectorPool.Put(t)
-		utils.VectorPool.Put(tangent)
+		VectorPool.Put(u)
+		VectorPool.Put(v)
+		VectorPool.Put(t)
+		VectorPool.Put(tangent)
 	}()
 
 	angle := 2 * math.Pi * rand.Float64()
@@ -56,9 +51,9 @@ func DiffuseReflect(incidentRay, normal *mat.VecDense) *mat.VecDense {
 		tangent.SetVec(0, 1) // UnitX
 	}
 
-	ScaleVec(u, math.Cos(angle)*math.Sqrt(r), Normalize(Cross(t, tangent, normal)))
-	ScaleVec(v, math.Sin(angle)*math.Sqrt(r), Normalize(Cross(t, normal, u)))
-	return Normalize(AddVecs(incidentRay, ScaleVec(t, math.Sqrt(1-r), normal), u, v))
+	linear_algebra.ScaleVec(u, math.Cos(angle)*math.Sqrt(r), linear_algebra.Normalize(linear_algebra.Cross(t, tangent, normal)))
+	linear_algebra.ScaleVec(v, math.Sin(angle)*math.Sqrt(r), linear_algebra.Normalize(linear_algebra.Cross(t, normal, u)))
+	return linear_algebra.Normalize(linear_algebra.AddVecs(incidentRay, linear_algebra.ScaleVec(t, math.Sqrt(1-r), normal), u, v))
 }
 
 func DiffuseReflect4D(incidentRay, normal *mat.VecDense) *mat.VecDense {
@@ -71,18 +66,18 @@ func DiffuseReflect4D(incidentRay, normal *mat.VecDense) *mat.VecDense {
 	for i := 0; i < u.Len(); i++ {
 		u.SetVec(i, rand.NormFloat64())
 	}
-	Normalize(u)
+	linear_algebra.Normalize(u)
 
 	// 确保u与法线正交
 	dot := mat.Dot(u, normal)
 	u.AddScaledVec(u, -dot, normal)
-	Normalize(u)
+	linear_algebra.Normalize(u)
 
 	// 组合最终方向
 	res := mat.NewVecDense(4, nil)
 	res.AddScaledVec(res, invSqrt, normal)
 	res.AddScaledVec(res, rsqrt, u)
-	return Normalize(res)
+	return linear_algebra.Normalize(res)
 }
 
 // CauchyDispersion Cauchy 公式, 计算给定波长下的折射率

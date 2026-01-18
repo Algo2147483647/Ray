@@ -3,7 +3,6 @@ package optics
 import (
 	"gonum.org/v1/gonum/mat"
 	"math/rand"
-	"src-golang/math_lib"
 	"src-golang/utils"
 )
 
@@ -41,17 +40,17 @@ func (m *Material) DielectricSurfacePropagation(ray *Ray, norm *mat.VecDense) bo
 	randNum := rand.Float64()
 	switch {
 	case randNum <= m.Reflectivity:
-		ray.Direction = math_lib.Reflect(ray.Direction, norm)
+		ray.Direction = utils.Reflect(ray.Direction, norm)
 		ray.Color.ScaleVec(m.ReflectLoss, ray.Color)
 
 	case randNum <= m.Reflectivity+m.Refractivity:
 		refractionIndex := m.GetRefractionIndex(ray)
-		ray.Direction = math_lib.Refract(ray.Direction, norm, ray.RefractionIndex/refractionIndex)
+		ray.Direction = utils.Refract(ray.Direction, norm, ray.RefractionIndex/refractionIndex)
 		ray.Color.ScaleVec(m.RefractLoss, ray.Color)
 		ray.RefractionIndex = refractionIndex
 
 	default:
-		ray.Direction = math_lib.DiffuseReflect(ray.Direction, norm)
+		ray.Direction = utils.DiffuseReflect(ray.Direction, norm)
 		ray.Color.ScaleVec(m.DiffuseLoss, ray.Color)
 	}
 
@@ -67,11 +66,11 @@ func (m *Material) GetRefractionIndex(ray *Ray) (res float64) {
 		res = m.RefractiveIndex.AtVec(0)
 
 	} else if m.RefractiveIndex.Len() == 3 {
-		if ray.WaveLength < math_lib.WavelengthMin {
+		if ray.WaveLength < WavelengthMin {
 			ray.ConvertToMonochrome()
 		}
 
-		res = math_lib.CauchyDispersion(ray.WaveLength,
+		res = utils.CauchyDispersion(ray.WaveLength,
 			m.RefractiveIndex.AtVec(0),
 			m.RefractiveIndex.AtVec(1),
 			m.RefractiveIndex.AtVec(2),

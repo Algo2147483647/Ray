@@ -1,11 +1,12 @@
 module src-golang
 
-go 1.24.0
+go 1.24.6
 
-toolchain go1.24.6
+toolchain go1.24.10
 
 require (
-	github.com/spf13/cast v1.9.2
+	github.com/Algo2147483647/golang_toolkit v0.0.8
+	github.com/spf13/cast v1.10.0
 	gonum.org/v1/gonum v0.16.0
 	gonum.org/v1/plot v0.16.0
 )

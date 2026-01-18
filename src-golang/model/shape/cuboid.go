@@ -3,7 +3,6 @@ package shape
 import (
 	"gonum.org/v1/gonum/mat"
 	"math"
-	"src-golang/math_lib"
 	"src-golang/utils"
 )
 
@@ -51,7 +50,7 @@ func (c *Cuboid) IntersectPure(raySt, rayDir *mat.VecDense) float64 {
 		pminDim := c.Pmin.AtVec(dim)
 		pmaxDim := c.Pmax.AtVec(dim)
 
-		if math.Abs(rayDirDim) < math_lib.EPS && (rayStDim < pminDim || rayStDim > pmaxDim) {
+		if math.Abs(rayDirDim) < utils.EPS && (rayStDim < pminDim || rayStDim > pmaxDim) {
 			return math.MaxFloat64
 		}
 
@@ -63,12 +62,12 @@ func (c *Cuboid) IntersectPure(raySt, rayDir *mat.VecDense) float64 {
 
 		t0 = math.Max(t0, t0t)
 		t1 = math.Min(t1, t1t)
-		if t0 > t1 || t1 < math_lib.EPS {
+		if t0 > t1 || t1 < utils.EPS {
 			return math.MaxFloat64
 		}
 	}
 
-	if t0 > math_lib.EPS {
+	if t0 > utils.EPS {
 		return t0
 	}
 	return t1
@@ -90,7 +89,7 @@ func (c *Cuboid) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {
 	b.SubVec(intersect, c.Pmax)
 
 	for i := 0; i < intersect.Len(); i++ {
-		if math.Abs(a.AtVec(i)) < math_lib.EPS || math.Abs(b.AtVec(i)) < math_lib.EPS {
+		if math.Abs(a.AtVec(i)) < utils.EPS || math.Abs(b.AtVec(i)) < utils.EPS {
 			res.SetVec(i, 1)
 			return res
 		}

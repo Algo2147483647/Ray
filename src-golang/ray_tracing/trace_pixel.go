@@ -1,8 +1,8 @@
 package ray_tracing
 
 import (
+	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
 	"gonum.org/v1/gonum/mat"
-	"src-golang/math_lib"
 	"src-golang/model/camera"
 	"src-golang/model/object"
 	"src-golang/model/optics"

@@ -1,9 +1,9 @@
 package shape
 
 import (
+	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
 	"gonum.org/v1/gonum/mat"
 	"math"
-	"src-golang/math_lib"
 	"src-golang/utils"
 )
 
@@ -76,7 +76,7 @@ func (f *Triangle) IntersectPure(raySt, rayDir *mat.VecDense) float64 {
 		t.SubVec(f.P1, raySt) // T = P1 - O
 		a = -a
 	}
-	if a < math_lib.EPS { // 检查平行
+	if a < utils.EPS { // 检查平行
 		return math.MaxFloat64
 	}
 

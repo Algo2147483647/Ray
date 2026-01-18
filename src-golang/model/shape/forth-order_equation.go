@@ -1,9 +1,11 @@
 package shape
 
 import (
+	"github.com/Algo2147483647/golang_toolkit/math/basic_algebra"
+	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
 	"gonum.org/v1/gonum/mat"
 	"math"
-	"src-golang/math_lib"
+	"src-golang/utils"
 )
 
 type FourOrderEquation struct {
@@ -79,10 +81,10 @@ func (p *FourOrderEquation) Intersect(raySt, rayDir *mat.VecDense) float64 {
 		}
 	}
 
-	roots := math_lib.SolveQuarticEquation(coeffs[4], coeffs[3], coeffs[2], coeffs[1], coeffs[0]) // 解四次方程：a*t^4 + b*t^3 + c*t^2 + d*t + e = 0
-	res := math.MaxFloat64                                                                        // 寻找最小的正实数根
+	roots := basic_algebra.SolveQuarticEquation(coeffs[4], coeffs[3], coeffs[2], coeffs[1], coeffs[0]) // 解四次方程：a*t^4 + b*t^3 + c*t^2 + d*t + e = 0
+	res := math.MaxFloat64                                                                             // 寻找最小的正实数根
 	for _, root := range roots {
-		if math.Abs(imag(root)) < math_lib.EPS && real(root) > math_lib.EPS && real(root) < res {
+		if math.Abs(imag(root)) < utils.EPS && real(root) > utils.EPS && real(root) < res {
 			res = real(root)
 		}
 	}

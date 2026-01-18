@@ -1,9 +1,10 @@
 package shape
 
 import (
+	"github.com/Algo2147483647/golang_toolkit/math/basic_algebra"
+	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
 	"gonum.org/v1/gonum/mat"
 	"math"
-	"src-golang/math_lib"
 )
 
 type ParametricEquation struct {
@@ -41,8 +42,8 @@ func (f *ParametricEquation) IntersectPure(raySt, rayDir *mat.VecDense, u0, v0, 
 		return result
 	}
 
-	x := []float64{0.0, u0, v0}                                             // 初始猜测
-	solution, success := math_lib.NewtonRaphson(equations, x, tol, maxIter) // 使用牛顿迭代法求解
+	x := []float64{0.0, u0, v0}                                                  // 初始猜测
+	solution, success := basic_algebra.NewtonRaphson(equations, x, tol, maxIter) // 使用牛顿迭代法求解
 	if success {
 		t, u, v := solution[0], solution[1], solution[2]
 		if f.URange[0] <= u && u <= f.URange[1] && // 检查参数是否在有效范围内

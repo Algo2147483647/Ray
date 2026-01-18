@@ -1,10 +1,10 @@
 package camera
 
 import (
+	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
 	"gonum.org/v1/gonum/mat"
 	"math"
-	"math/rand"
-	"src-golang/math_lib"
+	"math/rand/v2"
 	"src-golang/model/optics"
 )
 

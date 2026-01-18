@@ -2,11 +2,12 @@ package object
 
 import (
 	"fmt"
+	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
 	"gonum.org/v1/gonum/mat"
 	"math"
 	"sort"
-	"src-golang/math_lib"
 	"src-golang/model/shape"
+	"src-golang/utils"
 	"strings"
 )
 
@@ -153,10 +154,10 @@ func (t *ObjectTree) GetIntersection(raySt, rayDir *mat.VecDense, node *ObjectNo
 	dis2, obj2 := t.GetIntersection(raySt, rayDir, node.Children[1])
 
 	// Avoid the emitted light hitting oneself back and forth within the precision of the contact surface.
-	if dis1 < math_lib.EPS {
+	if dis1 < utils.EPS {
 		dis1 = math.MaxFloat64
 	}
-	if dis2 < math_lib.EPS {
+	if dis2 < utils.EPS {
 		dis2 = math.MaxFloat64
 	}
 

@@ -1,9 +1,9 @@
 package shape
 
 import (
+	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
 	"gonum.org/v1/gonum/mat"
 	"math"
-	"src-golang/math_lib"
 	"src-golang/utils"
 )
 
@@ -59,9 +59,9 @@ func (s *Sphere) IntersectPure(raySt, rayDir *mat.VecDense) float64 {
 	root2 := (-B + Delta) / (2 * A)
 
 	switch {
-	case root1 > math_lib.EPS && root2 > math_lib.EPS:
+	case root1 > utils.EPS && root2 > utils.EPS:
 		return math.Min(root1, root2)
-	case root1 > math_lib.EPS || root2 > math_lib.EPS:
+	case root1 > utils.EPS || root2 > utils.EPS:
 		return math.Max(root1, root2)
 	default:
 		return math.MaxFloat64

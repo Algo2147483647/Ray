@@ -1,9 +1,10 @@
 package shape
 
 import (
+	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
 	"gonum.org/v1/gonum/mat"
 	"math"
-	"src-golang/math_lib"
+	"src-golang/utils"
 )
 
 type Plane struct {
@@ -18,12 +19,12 @@ func (p *Plane) Name() string {
 
 func (p *Plane) Intersect(raySt, rayDir *mat.VecDense) float64 {
 	t := mat.Dot(p.A, rayDir)
-	if math.Abs(t) < math_lib.EPS {
+	if math.Abs(t) < utils.EPS {
 		return math.MaxFloat64
 	}
 
 	d := -(mat.Dot(p.A, raySt) + p.B) / t
-	if d > math_lib.EPS {
+	if d > utils.EPS {
 		return d
 	}
 	return math.MaxFloat64

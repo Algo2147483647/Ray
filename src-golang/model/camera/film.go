@@ -2,11 +2,11 @@ package camera
 
 import (
 	"encoding/binary"
+	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
 	"image"
 	"image/color"
 	"os"
 	"reflect"
-	"src-golang/math_lib"
 )
 
 type Film struct {

@@ -2,7 +2,7 @@ package object
 
 import (
 	"fmt"
-	"src-golang/math_lib"
+	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
 	"src-golang/model/shape"
 	"strings"
 )
