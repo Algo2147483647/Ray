@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	scriptPath := "C:/Algo/Projects/Ray/src-golang/test.json"
+	scriptPath := "test.json"
 
 	if len(os.Args) > 1 {
 		scriptPath = os.Args[1]
