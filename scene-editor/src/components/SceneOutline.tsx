@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { shapeLabels } from "../data/shapeSchemas";
 import type { SceneDocument, ShapeType } from "../types/scene";
 import { getPreviewSupport } from "../lib/scene-utils";
@@ -6,6 +7,7 @@ interface SceneOutlineProps {
   scene: SceneDocument;
   selectedObjectId: string | null;
   selectedMaterialId: string | null;
+  collapsed: boolean;
   disableMutations: boolean;
   onSelectObject: (objectId: string) => void;
   onSelectMaterial: (materialId: string) => void;
@@ -14,12 +16,14 @@ interface SceneOutlineProps {
   onMoveObject: (objectId: string, direction: -1 | 1) => void;
   onRemoveObject: (objectId: string) => void;
   onRemoveMaterial: (materialId: string) => void;
+  onToggleCollapsed: () => void;
 }
 
 export function SceneOutline({
   scene,
   selectedObjectId,
   selectedMaterialId,
+  collapsed,
   disableMutations,
   onSelectObject,
   onSelectMaterial,
@@ -27,36 +31,57 @@ export function SceneOutline({
   onAddMaterial,
   onMoveObject,
   onRemoveObject,
-  onRemoveMaterial
+  onRemoveMaterial,
+  onToggleCollapsed
 }: SceneOutlineProps) {
+  const [nextShape, setNextShape] = useState<ShapeType>("cuboid");
+
+  if (collapsed) {
+    return (
+      <div className="panel-card navigator-card collapsed-card">
+        <div className="collapsed-rail">
+          <button className="collapse-toggle" type="button" onClick={onToggleCollapsed}>
+            »
+          </button>
+          <span className="rail-label">Objects</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="panel-card navigator-card">
       <div className="panel-heading">
         <div>
-          <p className="eyebrow">Scene Graph</p>
-          <h2>Objects & Materials</h2>
+          <p className="eyebrow">Objects & Materials</p>
         </div>
+        <button className="collapse-toggle" type="button" onClick={onToggleCollapsed}>
+          «
+        </button>
       </div>
 
       <section className="outline-section">
         <div className="section-title-row">
           <h3>Objects</h3>
-          <div className="action-cluster">
+          <div className="action-cluster add-shape-cluster">
+            <select
+              value={nextShape}
+              onChange={(event) => setNextShape(event.target.value as ShapeType)}
+              disabled={disableMutations}
+            >
+              {Object.entries(shapeLabels).map(([shape, label]) => (
+                <option key={shape} value={shape}>
+                  {label}
+                </option>
+              ))}
+            </select>
             <button
               className="button ghost"
               type="button"
-              onClick={() => onAddObject("cuboid")}
+              onClick={() => onAddObject(nextShape)}
               disabled={disableMutations}
             >
-              Add cuboid
-            </button>
-            <button
-              className="button ghost"
-              type="button"
-              onClick={() => onAddObject("sphere")}
-              disabled={disableMutations}
-            >
-              Add sphere
+              Add object
             </button>
           </div>
         </div>

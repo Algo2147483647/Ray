@@ -2,10 +2,9 @@ import { startTransition, useMemo, useReducer, useState } from "react";
 import { SceneOutline } from "./components/SceneOutline";
 import { InspectorPanel } from "./components/InspectorPanel";
 import { SceneViewport } from "./components/SceneViewport";
-import { StatsPanel } from "./components/StatsPanel";
 import { defaultScene } from "./data/defaultScene";
 import { createInitialState, editorReducer } from "./lib/scene-editor-state";
-import { getSceneStats, parseSceneText } from "./lib/scene-utils";
+import { parseSceneText } from "./lib/scene-utils";
 import type { ShapeType } from "./types/scene";
 
 export default function App() {
@@ -15,6 +14,8 @@ export default function App() {
     createInitialState
   );
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
+  const [leftCollapsed, setLeftCollapsed] = useState(false);
+  const [rightCollapsed, setRightCollapsed] = useState(false);
 
   const selectedObject = useMemo(
     () => state.scene.objects.find((object) => object.id === state.selectedObjectId) ?? null,
@@ -25,8 +26,6 @@ export default function App() {
       state.scene.materials.find((material) => material.id === state.selectedMaterialId) ?? null,
     [state.scene.materials, state.selectedMaterialId]
   );
-  const stats = useMemo(() => getSceneStats(state.scene), [state.scene]);
-
   const handleApplyJson = () => {
     try {
       const nextScene = parseSceneText(state.jsonDraft);
@@ -57,15 +56,8 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <header className="hero">
-        <div>
-          <p className="eyebrow">Ray Project</p>
-          <h1>Scene Editor</h1>
-          <p className="hero-copy">
-            A React/TypeScript workbench for scene scripts, preview integrity,
-            and reliable object/material editing.
-          </p>
-        </div>
+      <header className="toolbar">
+        <h1>Scene Editor</h1>
         <div className="hero-actions">
           <button
             className="button primary"
@@ -113,12 +105,17 @@ export default function App() {
         </div>
       )}
 
-      <main className="workspace">
-        <aside className="navigator-pane">
+      <main
+        className={`workspace ${leftCollapsed ? "left-collapsed" : ""} ${
+          rightCollapsed ? "right-collapsed" : ""
+        }`}
+      >
+        <aside className={`navigator-pane ${leftCollapsed ? "collapsed" : ""}`}>
           <SceneOutline
             scene={state.scene}
             selectedObjectId={state.selectedObjectId}
             selectedMaterialId={state.selectedMaterialId}
+            collapsed={leftCollapsed}
             disableMutations={state.jsonDirty}
             onSelectObject={(objectId) => dispatch({ type: "select-object", objectId })}
             onSelectMaterial={(materialId) =>
@@ -133,18 +130,20 @@ export default function App() {
             onRemoveMaterial={(materialId) =>
               dispatch({ type: "remove-material", materialId })
             }
+            onToggleCollapsed={() => setLeftCollapsed((value) => !value)}
           />
-          <StatsPanel {...stats} />
         </aside>
 
         <section className="viewport-pane">
           <SceneViewport
             scene={state.scene}
             selectedObjectId={state.selectedObjectId}
+            leftCollapsed={leftCollapsed}
+            rightCollapsed={rightCollapsed}
           />
         </section>
 
-        <section className="inspector-pane">
+        <section className={`inspector-pane ${rightCollapsed ? "collapsed" : ""}`}>
           <InspectorPanel
             scene={state.scene}
             selectedTab={state.selectedTab}
@@ -153,6 +152,7 @@ export default function App() {
             jsonDraft={state.jsonDraft}
             jsonDirty={state.jsonDirty}
             jsonError={state.jsonError}
+            collapsed={rightCollapsed}
             disableMutations={state.jsonDirty}
             onSelectTab={(tab) => dispatch({ type: "select-tab", tab })}
             onUpdateObject={(objectId, patch) =>
@@ -170,6 +170,7 @@ export default function App() {
             }
             onApplyJson={handleApplyJson}
             onDiscardJson={() => dispatch({ type: "discard-json-draft" })}
+            onToggleCollapsed={() => setRightCollapsed((value) => !value)}
           />
         </section>
       </main>

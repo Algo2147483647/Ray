@@ -15,6 +15,8 @@ import {
 interface SceneViewportProps {
   scene: SceneDocument;
   selectedObjectId: string | null;
+  leftCollapsed: boolean;
+  rightCollapsed: boolean;
 }
 
 interface ViewportRuntime {
@@ -27,7 +29,12 @@ interface ViewportRuntime {
   frameId: number | null;
 }
 
-export function SceneViewport({ scene, selectedObjectId }: SceneViewportProps) {
+export function SceneViewport({
+  scene,
+  selectedObjectId,
+  leftCollapsed,
+  rightCollapsed
+}: SceneViewportProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const runtimeRef = useRef<ViewportRuntime | null>(null);
 
@@ -175,16 +182,19 @@ export function SceneViewport({ scene, selectedObjectId }: SceneViewportProps) {
       <div className="panel-heading viewport-heading">
         <div>
           <p className="eyebrow">Viewport</p>
-          <h2>Preview honors camera and material semantics</h2>
         </div>
         <div className="viewport-legend">
           <span className="support-badge exact">Exact</span>
           <span className="support-badge proxy">Proxy</span>
         </div>
       </div>
-      <div ref={hostRef} className="viewport-canvas" />
+      <div
+        ref={hostRef}
+        className={`viewport-canvas ${
+          leftCollapsed && rightCollapsed ? "wide" : ""
+        }`}
+      />
       <div className="viewport-footer">
-        <p>Orbit to inspect the scene. Selecting an object recenters the target.</p>
         {previewWarnings.length > 0 && (
           <ul className="warning-list">
             {previewWarnings.map((warning) => (

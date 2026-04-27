@@ -54,42 +54,32 @@ select:focus {
 }
 
 .app-shell {
-  width: min(1800px, calc(100vw - 32px));
+  width: 100vw;
   margin: 0 auto;
-  padding: 28px 0 32px;
+  padding: 0;
+  overflow: hidden;
 }
 
-.hero {
+.toolbar {
   display: flex;
   justify-content: space-between;
-  gap: 24px;
-  align-items: flex-start;
-  padding: 28px 30px;
-  margin-bottom: 20px;
-  border-radius: 28px;
-  background:
-    linear-gradient(135deg, rgba(248, 177, 82, 0.14), rgba(39, 82, 96, 0.32)),
-    rgba(12, 17, 28, 0.86);
-  border: 1px solid rgba(248, 214, 163, 0.12);
-  box-shadow: 0 32px 80px rgba(3, 5, 12, 0.36);
+  gap: 16px;
+  align-items: center;
+  padding: 10px 18px;
+  margin-bottom: 10px;
+  background: rgba(10, 15, 24, 0.92);
+  border-bottom: 1px solid rgba(234, 223, 199, 0.08);
 }
 
-.hero h1,
+.toolbar h1,
 .panel-heading h2 {
   margin: 0;
   font-family: "Space Grotesk", "Aptos Display", sans-serif;
   letter-spacing: -0.03em;
 }
 
-.hero h1 {
-  font-size: clamp(2.2rem, 4vw, 3.5rem);
-}
-
-.hero-copy {
-  max-width: 720px;
-  margin: 0.9rem 0 0;
-  color: #c7d0de;
-  line-height: 1.6;
+.toolbar h1 {
+  font-size: 1.2rem;
 }
 
 .eyebrow {
@@ -152,15 +142,34 @@ select:focus {
 
 .workspace {
   display: grid;
-  grid-template-columns: 320px minmax(0, 1fr) 360px;
-  gap: 20px;
-  align-items: start;
+  grid-template-columns: 420px minmax(0, 1fr) 420px;
+  gap: 0;
+  align-items: stretch;
+  min-height: calc(100vh - 57px);
 }
 
 .navigator-pane,
 .inspector-pane {
   display: grid;
-  gap: 20px;
+  gap: 0;
+  padding: 12px;
+}
+
+.workspace.left-collapsed {
+  grid-template-columns: 72px minmax(0, 1fr) 420px;
+}
+
+.workspace.right-collapsed {
+  grid-template-columns: 420px minmax(0, 1fr) 72px;
+}
+
+.workspace.left-collapsed.right-collapsed {
+  grid-template-columns: 72px minmax(0, 1fr) 72px;
+}
+
+.navigator-pane.collapsed,
+.inspector-pane.collapsed {
+  padding: 12px 8px;
 }
 
 .panel-card {
@@ -183,7 +192,7 @@ select:focus {
 }
 
 .panel-heading {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .outline-section + .outline-section,
@@ -320,14 +329,18 @@ select:focus {
 }
 
 .viewport-card {
-  min-height: 760px;
+  min-height: calc(100vh - 81px);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
 }
 
 .viewport-canvas {
-  height: 620px;
-  border-radius: 20px;
+  height: calc(100vh - 81px);
+  border-radius: 0;
   overflow: hidden;
-  border: 1px solid rgba(234, 223, 199, 0.08);
   background: #0b1220;
 }
 
@@ -339,6 +352,7 @@ select:focus {
   display: grid;
   gap: 10px;
   margin-top: 14px;
+  padding: 0 18px 18px;
 }
 
 .warning-list {
@@ -363,6 +377,14 @@ select:focus {
   background: rgba(245, 166, 66, 0.16);
   color: #fff4db;
   border: 1px solid rgba(245, 166, 66, 0.3);
+}
+
+.add-shape-cluster {
+  align-items: center;
+}
+
+.add-shape-cluster select {
+  width: 170px;
 }
 
 .detail-stack {
@@ -412,9 +434,46 @@ select:focus {
   color: #ffb7a2;
 }
 
+.collapse-toggle {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #f8f3e7;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.collapsed-card {
+  height: 100%;
+  padding: 10px 8px;
+}
+
+.collapsed-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  height: 100%;
+}
+
+.collapsed-rail.right {
+  justify-content: flex-start;
+}
+
+.rail-label {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  letter-spacing: 0.16em;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  color: #f6b04a;
+}
+
 @media (max-width: 1320px) {
   .workspace {
-    grid-template-columns: 300px minmax(0, 1fr);
+    grid-template-columns: 360px minmax(0, 1fr);
   }
 
   .inspector-pane {
@@ -425,20 +484,22 @@ select:focus {
 @media (max-width: 980px) {
   .app-shell {
     width: min(100vw - 16px, 100%);
-    padding-top: 16px;
+    padding-top: 0;
   }
 
-  .hero,
+  .toolbar,
   .workspace {
     grid-template-columns: 1fr;
   }
 
-  .hero {
+  .toolbar {
     flex-direction: column;
+    align-items: stretch;
   }
 
   .workspace {
     display: grid;
+    min-height: auto;
   }
 
   .viewport-canvas {
@@ -449,5 +510,16 @@ select:focus {
   .vector-grid,
   .tab-strip {
     grid-template-columns: 1fr;
+  }
+
+  .workspace.left-collapsed,
+  .workspace.right-collapsed,
+  .workspace.left-collapsed.right-collapsed {
+    grid-template-columns: 1fr;
+  }
+
+  .navigator-pane,
+  .inspector-pane {
+    padding: 8px;
   }
 }

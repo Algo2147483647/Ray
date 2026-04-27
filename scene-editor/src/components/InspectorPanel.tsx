@@ -17,6 +17,7 @@ interface InspectorPanelProps {
   jsonDraft: string;
   jsonDirty: boolean;
   jsonError: string | null;
+  collapsed: boolean;
   disableMutations: boolean;
   onSelectTab: (tab: InspectorTab) => void;
   onUpdateObject: (objectId: string, patch: Partial<SceneObject>) => void;
@@ -26,6 +27,7 @@ interface InspectorPanelProps {
   onJsonDraftChange: (value: string) => void;
   onApplyJson: () => void;
   onDiscardJson: () => void;
+  onToggleCollapsed: () => void;
 }
 
 export function InspectorPanel({
@@ -36,6 +38,7 @@ export function InspectorPanel({
   jsonDraft,
   jsonDirty,
   jsonError,
+  collapsed,
   disableMutations,
   onSelectTab,
   onUpdateObject,
@@ -44,17 +47,33 @@ export function InspectorPanel({
   onUpdateCamera,
   onJsonDraftChange,
   onApplyJson,
-  onDiscardJson
+  onDiscardJson,
+  onToggleCollapsed
 }: InspectorPanelProps) {
   const camera = scene.cameras[0];
+
+  if (collapsed) {
+    return (
+      <div className="panel-card inspector-card collapsed-card">
+        <div className="collapsed-rail right">
+          <button className="collapse-toggle" type="button" onClick={onToggleCollapsed}>
+            «
+          </button>
+          <span className="rail-label">Inspector</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="panel-card inspector-card">
       <div className="panel-heading">
         <div>
           <p className="eyebrow">Inspector</p>
-          <h2>Edit one truth source</h2>
         </div>
+        <button className="collapse-toggle" type="button" onClick={onToggleCollapsed}>
+          »
+        </button>
       </div>
 
       <div className="tab-strip">
