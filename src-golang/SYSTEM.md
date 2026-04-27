@@ -30,7 +30,7 @@ src-golang/
 ├── model/               # Optical models (shapes, materials, scenes, etc.)
 ├── ray_tracing/         # Core ray tracing logic
 ├── utils/               # Utility functions and object pools
-├── ui/                  # User interface and rendering scripts
+├── scene-editor/        # React/TypeScript scene editor and visualization tools
 ├── main.go              # System entry point
 └── handler.go           # Main processing logic
 ```
@@ -57,8 +57,8 @@ Implements ray tracing algorithms, including ray generation, propagation, and pi
 #### utils (Utilities)
 Provides general utility functions, object pools, and file processing capabilities.
 
-#### ui (User Interface)
-Contains HTML interface and Python scripts for visualizing rendering results.
+#### scene-editor (User Interface)
+Contains the React/TypeScript scene editor and auxiliary Python visualization scripts under `tools/`.
 
 ## 3. Core Components Detailed
 

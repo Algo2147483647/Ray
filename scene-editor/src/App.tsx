@@ -1,0 +1,178 @@
+import { startTransition, useMemo, useReducer, useState } from "react";
+import { SceneOutline } from "./components/SceneOutline";
+import { InspectorPanel } from "./components/InspectorPanel";
+import { SceneViewport } from "./components/SceneViewport";
+import { StatsPanel } from "./components/StatsPanel";
+import { defaultScene } from "./data/defaultScene";
+import { createInitialState, editorReducer } from "./lib/scene-editor-state";
+import { getSceneStats, parseSceneText } from "./lib/scene-utils";
+import type { ShapeType } from "./types/scene";
+
+export default function App() {
+  const [state, dispatch] = useReducer(
+    editorReducer,
+    defaultScene,
+    createInitialState
+  );
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
+
+  const selectedObject = useMemo(
+    () => state.scene.objects.find((object) => object.id === state.selectedObjectId) ?? null,
+    [state.scene.objects, state.selectedObjectId]
+  );
+  const selectedMaterial = useMemo(
+    () =>
+      state.scene.materials.find((material) => material.id === state.selectedMaterialId) ?? null,
+    [state.scene.materials, state.selectedMaterialId]
+  );
+  const stats = useMemo(() => getSceneStats(state.scene), [state.scene]);
+
+  const handleApplyJson = () => {
+    try {
+      const nextScene = parseSceneText(state.jsonDraft);
+      startTransition(() => {
+        dispatch({ type: "apply-json-scene", scene: nextScene });
+      });
+    } catch (error) {
+      dispatch({
+        type: "set-json-error",
+        error: error instanceof Error ? error.message : "Failed to parse JSON."
+      });
+    }
+  };
+
+  const handleCopyJson = async () => {
+    try {
+      await navigator.clipboard.writeText(state.committedJson);
+      setCopyState("copied");
+      window.setTimeout(() => setCopyState("idle"), 1800);
+    } catch {
+      setCopyState("failed");
+    }
+  };
+
+  const handleAddObject = (shape: ShapeType) => {
+    dispatch({ type: "add-object", shape });
+  };
+
+  return (
+    <div className="app-shell">
+      <header className="hero">
+        <div>
+          <p className="eyebrow">Ray Project</p>
+          <h1>Scene Editor</h1>
+          <p className="hero-copy">
+            A React/TypeScript workbench for scene scripts, preview integrity,
+            and reliable object/material editing.
+          </p>
+        </div>
+        <div className="hero-actions">
+          <button
+            className="button primary"
+            type="button"
+            onClick={() => dispatch({ type: "select-tab", tab: "json" })}
+          >
+            Open JSON
+          </button>
+          <button className="button ghost" type="button" onClick={handleCopyJson}>
+            {copyState === "copied"
+              ? "Copied"
+              : copyState === "failed"
+                ? "Copy failed"
+                : "Copy JSON"}
+          </button>
+          <button
+            className="button ghost"
+            type="button"
+            onClick={() => dispatch({ type: "reset-scene", scene: defaultScene })}
+          >
+            Reset sample
+          </button>
+        </div>
+      </header>
+
+      {state.jsonDirty && (
+        <div className="status-banner">
+          <strong>Raw JSON has unapplied changes.</strong>
+          <span>
+            Inspector mutations are temporarily locked so the scene never drifts
+            out of sync. Apply or discard the JSON draft to continue.
+          </span>
+          <div className="action-row">
+            <button className="button primary" type="button" onClick={handleApplyJson}>
+              Apply JSON
+            </button>
+            <button
+              className="button ghost"
+              type="button"
+              onClick={() => dispatch({ type: "discard-json-draft" })}
+            >
+              Discard draft
+            </button>
+          </div>
+        </div>
+      )}
+
+      <main className="workspace">
+        <aside className="navigator-pane">
+          <SceneOutline
+            scene={state.scene}
+            selectedObjectId={state.selectedObjectId}
+            selectedMaterialId={state.selectedMaterialId}
+            disableMutations={state.jsonDirty}
+            onSelectObject={(objectId) => dispatch({ type: "select-object", objectId })}
+            onSelectMaterial={(materialId) =>
+              dispatch({ type: "select-material", materialId })
+            }
+            onAddObject={handleAddObject}
+            onAddMaterial={() => dispatch({ type: "add-material" })}
+            onMoveObject={(objectId, direction) =>
+              dispatch({ type: "move-object", objectId, direction })
+            }
+            onRemoveObject={(objectId) => dispatch({ type: "remove-object", objectId })}
+            onRemoveMaterial={(materialId) =>
+              dispatch({ type: "remove-material", materialId })
+            }
+          />
+          <StatsPanel {...stats} />
+        </aside>
+
+        <section className="viewport-pane">
+          <SceneViewport
+            scene={state.scene}
+            selectedObjectId={state.selectedObjectId}
+          />
+        </section>
+
+        <section className="inspector-pane">
+          <InspectorPanel
+            scene={state.scene}
+            selectedTab={state.selectedTab}
+            selectedObject={selectedObject}
+            selectedMaterial={selectedMaterial}
+            jsonDraft={state.jsonDraft}
+            jsonDirty={state.jsonDirty}
+            jsonError={state.jsonError}
+            disableMutations={state.jsonDirty}
+            onSelectTab={(tab) => dispatch({ type: "select-tab", tab })}
+            onUpdateObject={(objectId, patch) =>
+              dispatch({ type: "update-object", objectId, patch })
+            }
+            onChangeShape={(objectId, shape) =>
+              dispatch({ type: "change-object-shape", objectId, shape })
+            }
+            onUpdateMaterial={(materialId, patch) =>
+              dispatch({ type: "update-material", materialId, patch })
+            }
+            onUpdateCamera={(patch) => dispatch({ type: "update-camera", patch })}
+            onJsonDraftChange={(value) =>
+              dispatch({ type: "set-json-draft", value })
+            }
+            onApplyJson={handleApplyJson}
+            onDiscardJson={() => dispatch({ type: "discard-json-draft" })}
+          />
+        </section>
+      </main>
+    </div>
+  );
+}

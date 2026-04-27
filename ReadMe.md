@@ -141,7 +141,7 @@ src-golang/
 │   └── scene/           # Scene composition
 ├── ray_tracing/         # Core ray tracing logic
 ├── utils/               # Utility functions and object pools
-├── ui/                  # User interface and rendering scripts
+├── scene-editor/        # React/TypeScript scene editor and visualization tools
 ├── main.go              # System entry point
 └── handler.go           # Main processing logic
 ```
@@ -171,7 +171,8 @@ src-golang/
 ### Environment Requirements
 
 - Go 1.23.0
-- Python 3.x (for visualization)
+- Node.js 16+
+- Python 3.x (for auxiliary visualization scripts)
 
 ### Scene Script Format
 
@@ -213,6 +214,14 @@ go run main.go [scene_script.json]
 ./src-golang [scene_script.json]
 ```
 
+### Scene Editor
+
+```bash
+cd scene-editor
+npm install
+npm run dev
+```
+
 
 - output.png: Rendered result image
 - debug_traces.json: Debug information (when debug mode is enabled)
@@ -220,10 +229,10 @@ go run main.go [scene_script.json]
 
 ### Visualization Interface
 
-The system provides a WebGL-based 3D visualization interface that allows:
-- Real-time viewing of rendering results
-- Adjustment of viewing angles
-- Analysis of light paths
+The system provides a React/TypeScript-based scene editor that allows:
+- Real-time 3D preview driven by scene camera and material data
+- Structured editing for objects, materials, and camera settings
+- Raw JSON editing with explicit apply/discard flow to keep scene state consistent
 
 ### Development Guide
 
