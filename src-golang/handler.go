@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"gonum.org/v1/gonum/mat"
 	"image/png"
 	"os"
 	"src-golang/controller"
@@ -16,27 +15,35 @@ import (
 )
 
 type Handler struct {
-	err   error
-	Scene *model.Scene
-	Film  *camera.Film
+	err          error
+	Scene        *model.Scene
+	Script       *controller.Script
+	Film         *camera.Film
+	ActiveCamera camera.Camera
+	Config       RenderConfig
 }
 
 func NewHandler() *Handler {
-	h := &Handler{
+	return &Handler{
 		Scene: model.NewScene(),
 	}
-
-	return h
 }
 
-func (h *Handler) LoadScript(ScriptPath string) *Handler {
+func (h *Handler) LoadScript(scriptPath string) *Handler {
 	if h.err != nil {
 		return h
 	}
 
-	fmt.Printf("Loading scene from: %s\n", ScriptPath)
-	err := controller.LoadSceneFromScript(controller.ReadScriptFile(ScriptPath), h.Scene)
+	fmt.Printf("Loading scene from: %s\n", scriptPath)
+
+	script, err := controller.ReadScriptFile(scriptPath)
 	if err != nil {
+		h.err = err
+		return h
+	}
+
+	h.Script = script
+	if err := controller.LoadSceneFromScript(script, h.Scene); err != nil {
 		h.err = err
 		return h
 	}
@@ -44,37 +51,64 @@ func (h *Handler) LoadScript(ScriptPath string) *Handler {
 	return h
 }
 
-func (h *Handler) BuildCamera(Width ...int) *Handler {
+func (h *Handler) ConfigureRender(overrides RenderOverrides) *Handler {
 	if h.err != nil {
 		return h
 	}
 
-	camera := &camera.Camera3D{
-		Position:    mat.NewVecDense(utils.Dimension, []float64{-1.7, 0.1, 0.5}),
-		Up:          mat.NewVecDense(utils.Dimension, []float64{0, 0, 1}),
-		Width:       Width[0],
-		Height:      Width[1],
-		AspectRatio: 1,
-		FieldOfView: 100,
+	config := ResolveRenderConfig(h.Script, overrides)
+	renderCamera, width, height, err := h.selectRenderCamera(config.CameraIndex, config.Width, config.Height)
+	if err != nil {
+		h.err = err
+		return h
 	}
-	camera.SetLookAt(mat.NewVecDense(utils.Dimension, []float64{2, 0, 0}))
-	h.Scene.Cameras = append(h.Scene.Cameras, camera)
 
+	config.Width = width
+	config.Height = height
+	h.Config = config
+	h.ActiveCamera = renderCamera
+	h.Film = camera.NewFilm(width, height)
 	return h
 }
 
-func (h *Handler) BuildFilm(Width ...int) *Handler {
+func (h *Handler) selectRenderCamera(cameraIndex, width, height int) (camera.Camera, int, int, error) {
+	if len(h.Scene.Cameras) == 0 {
+		defaultCamera, err := controller.BuildCamera3DFromScript(controller.DefaultCameraScript())
+		if err != nil {
+			return nil, 0, 0, err
+		}
+		h.Scene.Cameras = append(h.Scene.Cameras, defaultCamera)
+	}
+
+	if cameraIndex < 0 || cameraIndex >= len(h.Scene.Cameras) {
+		return nil, 0, 0, fmt.Errorf("camera index %d out of range (available: %d)", cameraIndex, len(h.Scene.Cameras))
+	}
+
+	selectedCamera := h.Scene.Cameras[cameraIndex]
+	switch c := selectedCamera.(type) {
+	case *camera.Camera3D:
+		resolvedWidth := firstPositiveInt(width, c.Width, defaultRenderWidth)
+		resolvedHeight := firstPositiveInt(height, c.Height, defaultRenderHeight)
+		c.Width = resolvedWidth
+		c.Height = resolvedHeight
+		c.AspectRatio = float64(resolvedWidth) / float64(resolvedHeight)
+		return c, resolvedWidth, resolvedHeight, nil
+	default:
+		return selectedCamera, firstPositiveInt(width, defaultRenderWidth), firstPositiveInt(height, defaultRenderHeight), nil
+	}
+}
+
+func (h *Handler) Render() *Handler {
 	if h.err != nil {
 		return h
 	}
 
-	h.Film = camera.NewFilm(Width...)
-
-	return h
-}
-
-func (h *Handler) Render(samples int64) *Handler {
-	if h.err != nil {
+	if h.ActiveCamera == nil {
+		h.err = fmt.Errorf("render camera is not configured")
+		return h
+	}
+	if h.Film == nil {
+		h.err = fmt.Errorf("film is not initialized")
 		return h
 	}
 
@@ -82,10 +116,36 @@ func (h *Handler) Render(samples int64) *Handler {
 	start := time.Now()
 
 	renderHandler := ray_tracing.NewHandler()
-	renderHandler.TraceScene(h.Scene, h.Film, samples)
+	renderHandler.TraceScene(h.ActiveCamera, h.Scene.ObjectTree, h.Film, h.Config.Samples)
 
 	elapsed := time.Since(start)
 	fmt.Printf("Rendering completed in %v\n", elapsed)
+	return h
+}
+
+func (h *Handler) SaveOutputs() *Handler {
+	if h.err != nil {
+		return h
+	}
+
+	if h.Config.OutputFilm != "" {
+		h.SaveFilm(h.Config.OutputFilm)
+	}
+	if h.err != nil {
+		return h
+	}
+
+	if h.Config.OutputImage != "" {
+		h.SaveImg(h.Config.OutputImage)
+	}
+	if h.err != nil {
+		return h
+	}
+
+	if h.Config.DebugOutput != "" {
+		h.SaveDebugInfo(h.Config.DebugOutput)
+	}
+
 	return h
 }
 
@@ -104,8 +164,7 @@ func (h *Handler) SaveDebugInfo(filename string) *Handler {
 
 		encoder := json.NewEncoder(file)
 		encoder.SetIndent("", "  ")
-		err = encoder.Encode(optics.DebugRayTraces)
-		if err != nil {
+		if err := encoder.Encode(optics.DebugRayTraces); err != nil {
 			h.err = err
 			return h
 		}
@@ -128,8 +187,7 @@ func (h *Handler) SaveImg(filename string) *Handler {
 	}
 	defer file.Close()
 
-	err = png.Encode(file, h.Film.ToImage()) // 使用 PNG 编码器直接写入整个图像
-	if err != nil {
+	if err := png.Encode(file, h.Film.ToImage()); err != nil {
 		h.err = err
 	}
 
@@ -141,8 +199,7 @@ func (h *Handler) SaveFilm(filename string) *Handler {
 		return h
 	}
 
-	err := h.Film.SaveToFile(filename)
-	if err != nil {
+	if err := h.Film.SaveToFile(filename); err != nil {
 		h.err = err
 		return h
 	}
@@ -156,8 +213,7 @@ func (h *Handler) MergeFilm(filename string) *Handler {
 	}
 
 	t := camera.NewFilm(h.Film.Data[0].Shape...)
-	err := t.LoadFromFile(filename)
-	if err != nil {
+	if err := t.LoadFromFile(filename); err != nil {
 		h.err = err
 		return h
 	}

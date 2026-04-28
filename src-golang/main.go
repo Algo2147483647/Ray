@@ -6,25 +6,21 @@ import (
 )
 
 func main() {
-	scriptPath := "test.json"
-
-	if len(os.Args) > 1 {
-		scriptPath = os.Args[1]
-	} else {
-		fmt.Printf("Using default script: %s\n", scriptPath)
+	overrides, err := ParseRenderOverrides(os.Args[1:])
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		os.Exit(1)
 	}
 
-	width := 400
+	if overrides.ScriptPath == defaultScriptPath {
+		fmt.Printf("Using default script: %s\n", overrides.ScriptPath)
+	}
 
 	h := NewHandler().
-		LoadScript(scriptPath).
-		BuildCamera(width, width).
-		BuildFilm(width, width).
-		Render(20).
-		//MergeFilm("img.bin").
-		SaveFilm("img.bin").
-		SaveImg("output.png").
-		SaveDebugInfo("debug_traces.json")
+		LoadScript(overrides.ScriptPath).
+		ConfigureRender(overrides).
+		Render().
+		SaveOutputs()
 
 	if h.err != nil {
 		fmt.Printf("Error: %v\n", h.err)

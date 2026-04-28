@@ -2,21 +2,21 @@ package ray_tracing
 
 import (
 	"fmt"
-	"src-golang/model"
 	"src-golang/model/camera"
+	"src-golang/model/object"
 	"sync"
 	"sync/atomic"
 	"time"
 )
 
-// TraceScene 追踪整个场景
-func (h *Handler) TraceScene(scene *model.Scene, film *camera.Film, samples int64) {
+// TraceScene renders the object tree from the supplied camera into the film.
+func (h *Handler) TraceScene(renderCamera camera.Camera, objectTree *object.ObjectTree, film *camera.Film, samples int64) {
 	var (
-		progress    int64 // 原子进度计数器
+		progress    int64
 		totalPixels = len(film.Data[0].Data)
 		wg          sync.WaitGroup
 		taskChan    = make(chan int, totalPixels)
-		done        = make(chan bool) // 启动进度显示goroutine
+		done        = make(chan bool)
 	)
 
 	go func() {
@@ -39,32 +39,30 @@ func (h *Handler) TraceScene(scene *model.Scene, film *camera.Film, samples int6
 		}
 	}()
 
-	// 创建任务队列
 	for i := 0; i < len(film.Data[0].Data); i++ {
 		taskChan <- i
 	}
 	close(taskChan)
 
-	// 启动工作线程
 	for i := 0; i < h.ThreadNum; i++ {
 		wg.Add(1)
 		go func(seed int64) {
 			defer wg.Done()
 			for pixel := range taskChan {
 				x := film.Data[0].GetCoordinates(pixel)
-				color := h.TracePixel(scene.Cameras[0], scene.ObjectTree, samples, x...)
+				color := h.TracePixel(renderCamera, objectTree, samples, x...)
 				for ch := 0; ch < 3; ch++ {
 					film.Data[ch].Data[pixel] = color.AtVec(ch)
 				}
 
-				atomic.AddInt64(&progress, 1) // 原子更新进度
+				atomic.AddInt64(&progress, 1)
 			}
 		}(int64(i))
 	}
 
 	wg.Wait()
-	close(done)                        // 通知进度条关闭
-	time.Sleep(100 * time.Millisecond) // 确保最后进度信息被覆盖
+	close(done)
+	time.Sleep(100 * time.Millisecond)
 
 	film.Samples = samples
 }

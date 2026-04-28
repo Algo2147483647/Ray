@@ -47,6 +47,26 @@
             "refractive_index": [0.4, 50000, 0]
         }
     ],
+    "render": {
+        "samples": 20,
+        "width": 400,
+        "height": 400,
+        "camera_index": 0,
+        "output_image": "output.png",
+        "output_film": "img.bin",
+        "debug_output": "debug_traces.json"
+    },
+    "cameras": [
+        {
+            "id": "main",
+            "position": [-1.7, 0.1, 0.5],
+            "look_at": [2, 0, 0],
+            "up": [0, 0, 1],
+            "width": 400,
+            "height": 400,
+            "field_of_view": 100
+        }
+    ],
     "objects": [
         {
             "id": "WorldBox",
