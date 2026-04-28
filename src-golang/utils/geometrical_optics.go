@@ -7,12 +7,10 @@ import (
 	"math/rand/v2"
 )
 
-// Reflect 计算光线的反射方向
 func Reflect(incidentRay, normal *mat.VecDense) *mat.VecDense {
 	return linear_algebra.Normalize(linear_algebra.SubVec(incidentRay, incidentRay, linear_algebra.ScaleVec2(2*mat.Dot(normal, incidentRay), normal)))
 }
 
-// Refract 计算光线的折射方向, n = n_I / n_T, normal 与入射光线方向相反
 func Refract(incidentRay, normal *mat.VecDense, eta float64) *mat.VecDense {
 	cosI := math.Abs(mat.Dot(normal, incidentRay))
 	sin2T := eta * eta * (1.0 - cosI*cosI) // sin^2 T
@@ -24,36 +22,49 @@ func Refract(incidentRay, normal *mat.VecDense, eta float64) *mat.VecDense {
 	return linear_algebra.Normalize(linear_algebra.AddVec(incidentRay, linear_algebra.ScaleVec(incidentRay, eta, incidentRay), linear_algebra.ScaleVec2(-cosT+eta*cosI, normal)))
 }
 
-// DiffuseReflect 计算漫反射方向
 func DiffuseReflect(incidentRay, normal *mat.VecDense) *mat.VecDense {
 	if normal.Len() == 4 {
 		return DiffuseReflect4D(incidentRay, normal)
 	}
 
-	u := VectorPool.Get().(*mat.VecDense)
-	v := VectorPool.Get().(*mat.VecDense)
-	t := VectorPool.Get().(*mat.VecDense)
 	tangent := VectorPool.Get().(*mat.VecDense)
+	bitangent := VectorPool.Get().(*mat.VecDense)
+	helper := VectorPool.Get().(*mat.VecDense)
+	surfaceNormal := VectorPool.Get().(*mat.VecDense)
+	res := VectorPool.Get().(*mat.VecDense)
 	defer func() {
-		VectorPool.Put(u)
-		VectorPool.Put(v)
-		VectorPool.Put(t)
 		VectorPool.Put(tangent)
+		VectorPool.Put(bitangent)
+		VectorPool.Put(helper)
+		VectorPool.Put(surfaceNormal)
+		VectorPool.Put(res)
 	}()
 
-	angle := 2 * math.Pi * rand.Float64()
-	r := rand.Float64() // 余弦加权采样
+	r1 := rand.Float64()
+	r2 := rand.Float64()
+	phi := 2 * math.Pi * r1
+	x := math.Cos(phi) * math.Sqrt(r2)
+	y := math.Sin(phi) * math.Sqrt(r2)
+	z := math.Sqrt(1 - r2)
 
-	tangent.Zero()
-	if math.Abs(normal.AtVec(0)) > EPS {
-		tangent.SetVec(1, 1) // UnitY
+	surfaceNormal.CloneFromVec(normal)
+	linear_algebra.Normalize(surfaceNormal)
+
+	helper.Zero()
+	if math.Abs(surfaceNormal.AtVec(0)) < 0.9 {
+		helper.SetVec(0, 1)
 	} else {
-		tangent.SetVec(0, 1) // UnitX
+		helper.SetVec(1, 1)
 	}
 
-	linear_algebra.ScaleVec(u, math.Cos(angle)*math.Sqrt(r), linear_algebra.Normalize(linear_algebra.Cross(t, tangent, normal)))
-	linear_algebra.ScaleVec(v, math.Sin(angle)*math.Sqrt(r), linear_algebra.Normalize(linear_algebra.Cross(t, normal, u)))
-	return linear_algebra.Normalize(linear_algebra.AddVecs(incidentRay, linear_algebra.ScaleVec(t, math.Sqrt(1-r), normal), u, v))
+	linear_algebra.Normalize(linear_algebra.Cross(tangent, helper, surfaceNormal))
+	linear_algebra.Normalize(linear_algebra.Cross(bitangent, surfaceNormal, tangent))
+
+	res.Zero()
+	res.AddScaledVec(res, x, tangent)
+	res.AddScaledVec(res, y, bitangent)
+	res.AddScaledVec(res, z, surfaceNormal)
+	return linear_algebra.Normalize(res)
 }
 
 func DiffuseReflect4D(incidentRay, normal *mat.VecDense) *mat.VecDense {
@@ -61,26 +72,26 @@ func DiffuseReflect4D(incidentRay, normal *mat.VecDense) *mat.VecDense {
 	rsqrt := math.Sqrt(r)
 	invSqrt := math.Sqrt(1 - r)
 
-	// 在4维超球面上生成均匀随机方向, 生成4个独立的高斯随机数
+	// 鍦?缁磋秴鐞冮潰涓婄敓鎴愬潎鍖€闅忔満鏂瑰悜, 鐢熸垚4涓嫭绔嬬殑楂樻柉闅忔満鏁?
 	u := mat.NewVecDense(4, nil)
 	for i := 0; i < u.Len(); i++ {
 		u.SetVec(i, rand.NormFloat64())
 	}
 	linear_algebra.Normalize(u)
 
-	// 确保u与法线正交
+	// 纭繚u涓庢硶绾挎浜?
 	dot := mat.Dot(u, normal)
 	u.AddScaledVec(u, -dot, normal)
 	linear_algebra.Normalize(u)
 
-	// 组合最终方向
+	// 缁勫悎鏈€缁堟柟鍚?
 	res := mat.NewVecDense(4, nil)
 	res.AddScaledVec(res, invSqrt, normal)
 	res.AddScaledVec(res, rsqrt, u)
 	return linear_algebra.Normalize(res)
 }
 
-// CauchyDispersion Cauchy 公式, 计算给定波长下的折射率
+// CauchyDispersion Cauchy 鍏紡, 璁＄畻缁欏畾娉㈤暱涓嬬殑鎶樺皠鐜?
 func CauchyDispersion(wavelength, A, B, C float64) float64 {
 	wl2 := wavelength * wavelength
 	res := A + B/wl2 + C/(wl2*wl2)
