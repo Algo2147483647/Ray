@@ -1,0 +1,10 @@
+{
+  "name": "ray-workspace",
+  "private": true,
+  "scripts": {
+    "ui": "npm --prefix scene-editor run dev",
+    "ui:install": "npm --prefix scene-editor install",
+    "ui:build": "npm --prefix scene-editor run build",
+    "ui:preview": "npm --prefix scene-editor run preview"
+  }
+}
