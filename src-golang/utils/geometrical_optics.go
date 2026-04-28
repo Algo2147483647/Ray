@@ -22,6 +22,19 @@ func Refract(incidentRay, normal *mat.VecDense, eta float64) *mat.VecDense {
 	return linear_algebra.Normalize(linear_algebra.AddVec(incidentRay, linear_algebra.ScaleVec(incidentRay, eta, incidentRay), linear_algebra.ScaleVec2(-cosT+eta*cosI, normal)))
 }
 
+func HasTotalInternalReflection(incidentRay, normal *mat.VecDense, eta float64) bool {
+	cosI := math.Abs(mat.Dot(normal, incidentRay))
+	sin2T := eta * eta * (1.0 - cosI*cosI)
+	return sin2T > 1.0
+}
+
+func FresnelSchlick(cosTheta, n1, n2 float64) float64 {
+	cosTheta = math.Max(0, math.Min(1, cosTheta))
+	r0 := (n1 - n2) / (n1 + n2)
+	r0 *= r0
+	return r0 + (1-r0)*math.Pow(1-cosTheta, 5)
+}
+
 func DiffuseReflect(incidentRay, normal *mat.VecDense) *mat.VecDense {
 	if normal.Len() == 4 {
 		return DiffuseReflect4D(incidentRay, normal)

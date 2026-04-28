@@ -2,6 +2,7 @@ package optics
 
 import (
 	"gonum.org/v1/gonum/mat"
+	"math"
 	"math/rand"
 	"src-golang/utils"
 )
@@ -44,10 +45,20 @@ func (m *Material) DielectricSurfacePropagation(ray *Ray, norm *mat.VecDense) bo
 		ray.Color.ScaleVec(m.ReflectLoss, ray.Color)
 
 	case randNum <= m.Reflectivity+m.Refractivity:
+		currentRefractionIndex := ray.RefractionIndex
 		refractionIndex := m.GetRefractionIndex(ray)
-		ray.Direction = utils.Refract(ray.Direction, norm, ray.RefractionIndex/refractionIndex)
-		ray.Color.ScaleVec(m.RefractLoss, ray.Color)
-		ray.RefractionIndex = refractionIndex
+		eta := currentRefractionIndex / refractionIndex
+		cosTheta := math.Abs(mat.Dot(norm, ray.Direction))
+		reflectProbability := utils.FresnelSchlick(cosTheta, currentRefractionIndex, refractionIndex)
+
+		if utils.HasTotalInternalReflection(ray.Direction, norm, eta) || rand.Float64() < reflectProbability {
+			ray.Direction = utils.Reflect(ray.Direction, norm)
+			ray.Color.ScaleVec(m.ReflectLoss, ray.Color)
+		} else {
+			ray.Direction = utils.Refract(ray.Direction, norm, eta)
+			ray.Color.ScaleVec(m.RefractLoss, ray.Color)
+			ray.RefractionIndex = refractionIndex
+		}
 
 	default:
 		ray.Direction = utils.DiffuseReflect(ray.Direction, norm)
