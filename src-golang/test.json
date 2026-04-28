@@ -49,6 +49,7 @@
     ],
     "render": {
         "samples": 20,
+        "thread_num": 0,
         "width": 400,
         "height": 400,
         "camera_index": 0,
