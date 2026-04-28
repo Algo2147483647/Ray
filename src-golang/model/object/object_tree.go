@@ -102,7 +102,7 @@ func selectSplitDimension(nodes []*ObjectNode, size *mat.VecDense) int {
 	var maxVariance = -math.MaxFloat64
 	var bestDim = 0
 
-	for dim := 0; dim < 3; dim++ {
+	for dim := 0; dim < utils.Dimension; dim++ {
 		if size.AtVec(dim) < 1e-8 { // 跳过坍缩维度
 			continue
 		}
