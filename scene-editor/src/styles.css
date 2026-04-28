@@ -201,6 +201,31 @@ select:focus {
   margin-bottom: 10px;
 }
 
+.outline-switcher {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  padding: 4px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.outline-switcher button {
+  border: 0;
+  border-radius: 10px;
+  padding: 0.58rem 0.9rem;
+  background: transparent;
+  color: #bcc6d8;
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+
+.outline-switcher button.active {
+  background: rgba(245, 166, 66, 0.16);
+  color: #fff0d0;
+  box-shadow: inset 0 0 0 1px rgba(245, 166, 66, 0.18);
+}
+
 .outline-section + .outline-section,
 .detail-stack,
 .json-stack {
@@ -565,6 +590,12 @@ select:focus {
 .outline-item.selected .outline-inline-actions {
   opacity: 1;
   transform: translateX(0);
+  pointer-events: auto;
+}
+
+.action-chip.always-visible {
+  opacity: 1;
+  transform: none;
   pointer-events: auto;
 }
 
