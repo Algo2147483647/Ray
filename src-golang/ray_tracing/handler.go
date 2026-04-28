@@ -2,6 +2,7 @@ package ray_tracing
 
 import (
 	"gonum.org/v1/gonum/mat"
+	"runtime"
 	"src-golang/model/optics"
 	"src-golang/utils"
 	"sync"
@@ -18,7 +19,7 @@ type Handler struct {
 func NewHandler() *Handler {
 	return &Handler{
 		MaxRayLevel: 6,
-		ThreadNum:   30,
+		ThreadNum:   runtime.NumCPU(),
 		BlockCols:   8,
 		BlockRows:   8,
 		RayPool: sync.Pool{

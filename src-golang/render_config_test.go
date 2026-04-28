@@ -1,6 +1,7 @@
 package main
 
 import (
+	"runtime"
 	"src-golang/controller"
 	"testing"
 )
@@ -9,6 +10,7 @@ func TestResolveRenderConfigMergesScriptAndCLI(t *testing.T) {
 	script := &controller.Script{
 		Render: controller.RenderScript{
 			Samples:     12,
+			ThreadNum:   3,
 			CameraIndex: 1,
 			Width:       800,
 			Height:      600,
@@ -21,6 +23,7 @@ func TestResolveRenderConfigMergesScriptAndCLI(t *testing.T) {
 	config := ResolveRenderConfig(script, RenderOverrides{
 		ScriptPath:  "custom.json",
 		CameraIndex: 2,
+		ThreadNum:   6,
 		Width:       1024,
 		Samples:     32,
 		OutputImage: "override.png",
@@ -31,6 +34,9 @@ func TestResolveRenderConfigMergesScriptAndCLI(t *testing.T) {
 	}
 	if config.CameraIndex != 2 {
 		t.Fatalf("expected CLI camera index override, got %d", config.CameraIndex)
+	}
+	if config.ThreadNum != 6 {
+		t.Fatalf("expected CLI thread override, got %d", config.ThreadNum)
 	}
 	if config.Width != 1024 || config.Height != 600 {
 		t.Fatalf("unexpected dimensions: %dx%d", config.Width, config.Height)
@@ -43,5 +49,12 @@ func TestResolveRenderConfigMergesScriptAndCLI(t *testing.T) {
 	}
 	if config.OutputFilm != "scene.bin" || config.DebugOutput != "scene-debug.json" {
 		t.Fatalf("unexpected output fallback: film=%s debug=%s", config.OutputFilm, config.DebugOutput)
+	}
+}
+
+func TestResolveRenderConfigDefaultsThreadNumToNumCPU(t *testing.T) {
+	config := ResolveRenderConfig(nil, RenderOverrides{ScriptPath: "test.json"})
+	if config.ThreadNum != runtime.NumCPU() {
+		t.Fatalf("expected default thread count %d, got %d", runtime.NumCPU(), config.ThreadNum)
 	}
 }

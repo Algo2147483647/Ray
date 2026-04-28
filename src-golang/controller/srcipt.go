@@ -26,6 +26,7 @@ type CameraScript struct {
 
 type RenderScript struct {
 	Samples     int64  `json:"samples"`
+	ThreadNum   int    `json:"thread_num"`
 	CameraIndex int    `json:"camera_index"`
 	Width       int    `json:"width"`
 	Height      int    `json:"height"`

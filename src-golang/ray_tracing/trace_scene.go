@@ -12,10 +12,10 @@ import (
 // TraceScene renders the object tree from the supplied camera into the film.
 func (h *Handler) TraceScene(renderCamera camera.Camera, objectTree *object.ObjectTree, film *camera.Film, samples int64) {
 	var (
+		nextPixel   int64
 		progress    int64
 		totalPixels = len(film.Data[0].Data)
 		wg          sync.WaitGroup
-		taskChan    = make(chan int, totalPixels)
 		done        = make(chan bool)
 	)
 
@@ -39,16 +39,16 @@ func (h *Handler) TraceScene(renderCamera camera.Camera, objectTree *object.Obje
 		}
 	}()
 
-	for i := 0; i < len(film.Data[0].Data); i++ {
-		taskChan <- i
-	}
-	close(taskChan)
-
 	for i := 0; i < h.ThreadNum; i++ {
 		wg.Add(1)
-		go func(seed int64) {
+		go func() {
 			defer wg.Done()
-			for pixel := range taskChan {
+			for {
+				pixel := int(atomic.AddInt64(&nextPixel, 1) - 1)
+				if pixel >= totalPixels {
+					return
+				}
+
 				x := film.Data[0].GetCoordinates(pixel)
 				color := h.TracePixel(renderCamera, objectTree, samples, x...)
 				for ch := 0; ch < 3; ch++ {
@@ -57,7 +57,7 @@ func (h *Handler) TraceScene(renderCamera camera.Camera, objectTree *object.Obje
 
 				atomic.AddInt64(&progress, 1)
 			}
-		}(int64(i))
+		}()
 	}
 
 	wg.Wait()

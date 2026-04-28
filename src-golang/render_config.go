@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"runtime"
 	"src-golang/controller"
 )
 
@@ -20,6 +21,7 @@ const (
 type RenderOverrides struct {
 	ScriptPath  string
 	CameraIndex int
+	ThreadNum   int
 	Width       int
 	Height      int
 	Samples     int64
@@ -31,6 +33,7 @@ type RenderOverrides struct {
 type RenderConfig struct {
 	ScriptPath  string
 	CameraIndex int
+	ThreadNum   int
 	Width       int
 	Height      int
 	Samples     int64
@@ -48,6 +51,7 @@ func ParseRenderOverrides(args []string) (RenderOverrides, error) {
 	flagSet.SetOutput(io.Discard)
 	flagSet.StringVar(&overrides.ScriptPath, "script", "", "path to the scene script")
 	flagSet.IntVar(&overrides.CameraIndex, "camera-index", -1, "camera index to render")
+	flagSet.IntVar(&overrides.ThreadNum, "threads", 0, "worker thread count")
 	flagSet.IntVar(&overrides.Width, "width", 0, "output width")
 	flagSet.IntVar(&overrides.Height, "height", 0, "output height")
 	flagSet.Int64Var(&overrides.Samples, "samples", 0, "samples per pixel")
@@ -68,6 +72,9 @@ func ParseRenderOverrides(args []string) (RenderOverrides, error) {
 	if overrides.CameraIndex < -1 {
 		return RenderOverrides{}, fmt.Errorf("camera-index must be >= -1")
 	}
+	if overrides.ThreadNum < 0 {
+		return RenderOverrides{}, fmt.Errorf("threads must be >= 0")
+	}
 	if overrides.Width < 0 || overrides.Height < 0 {
 		return RenderOverrides{}, fmt.Errorf("width and height must be >= 0")
 	}
@@ -82,6 +89,7 @@ func ResolveRenderConfig(script *controller.Script, overrides RenderOverrides) R
 	config := RenderConfig{
 		ScriptPath:  overrides.ScriptPath,
 		CameraIndex: 0,
+		ThreadNum:   runtime.NumCPU(),
 		Samples:     defaultSamples,
 		OutputImage: defaultOutputImage,
 		OutputFilm:  defaultOutputFilm,
@@ -91,6 +99,9 @@ func ResolveRenderConfig(script *controller.Script, overrides RenderOverrides) R
 	if script != nil {
 		if script.Render.CameraIndex >= 0 {
 			config.CameraIndex = script.Render.CameraIndex
+		}
+		if script.Render.ThreadNum > 0 {
+			config.ThreadNum = script.Render.ThreadNum
 		}
 		if script.Render.Width > 0 {
 			config.Width = script.Render.Width
@@ -114,6 +125,9 @@ func ResolveRenderConfig(script *controller.Script, overrides RenderOverrides) R
 
 	if overrides.CameraIndex >= 0 {
 		config.CameraIndex = overrides.CameraIndex
+	}
+	if overrides.ThreadNum > 0 {
+		config.ThreadNum = overrides.ThreadNum
 	}
 	if overrides.Width > 0 {
 		config.Width = overrides.Width

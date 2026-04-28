@@ -116,6 +116,7 @@ func (h *Handler) Render() *Handler {
 	start := time.Now()
 
 	renderHandler := ray_tracing.NewHandler()
+	renderHandler.ThreadNum = h.Config.ThreadNum
 	renderHandler.TraceScene(h.ActiveCamera, h.Scene.ObjectTree, h.Film, h.Config.Samples)
 
 	elapsed := time.Since(start)
