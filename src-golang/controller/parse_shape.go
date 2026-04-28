@@ -5,202 +5,275 @@ import (
 	"encoding/binary"
 	"fmt"
 	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
-	"github.com/spf13/cast"
 	"gonum.org/v1/gonum/mat"
 	"os"
 	"src-golang/model/shape"
+	"src-golang/utils"
 	"src-golang/utils/example_lib"
 	"strings"
 )
 
 func GetFloat64SliceForScript(req interface{}) (int, []float64) {
-	return len(cast.ToFloat64Slice(req)), cast.ToFloat64Slice(req)
+	values, _ := toFloat64Slice(req)
+	return len(values), values
 }
 
-func ParseShape(objDef map[string]interface{}) (res []shape.Shape) {
-	switch objDef["shape"] {
+func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
+	shapeName, err := requiredStringField(objDef, "shape")
+	if err != nil {
+		return nil, err
+	}
+
+	switch shapeName {
 	case "cuboid":
-		var c *shape.Cuboid
-		if _, ok := objDef["position"]; ok {
-			position := mat.NewVecDense(GetFloat64SliceForScript(objDef["position"]))
-			halfSize := math_lib.ScaleVec2(0.5, mat.NewVecDense(GetFloat64SliceForScript(objDef["size"])))
-			pmax := mat.NewVecDense(position.Len(), nil)
-			pmin := mat.NewVecDense(position.Len(), nil)
-			c = shape.NewCuboid(
-				math_lib.SubVec(pmin, position, halfSize),
-				math_lib.AddVec(pmax, position, halfSize),
+		if position, hasPosition, err := optionalFloat64SliceField(objDef, "position", utils.Dimension); err != nil {
+			return nil, err
+		} else if hasPosition {
+			size, err := requiredFloat64SliceField(objDef, "size", utils.Dimension)
+			if err != nil {
+				return nil, err
+			}
+
+			positionVec := mat.NewVecDense(len(position), position)
+			halfSize := math_lib.ScaleVec2(0.5, mat.NewVecDense(len(size), size))
+			pmax := mat.NewVecDense(positionVec.Len(), nil)
+			pmin := mat.NewVecDense(positionVec.Len(), nil)
+			cuboid := shape.NewCuboid(
+				math_lib.SubVec(pmin, positionVec, halfSize),
+				math_lib.AddVec(pmax, positionVec, halfSize),
 			)
-		} else if _, ok := objDef["pmax"]; ok {
-			c = shape.NewCuboid(
-				mat.NewVecDense(GetFloat64SliceForScript(objDef["pmin"])),
-				mat.NewVecDense(GetFloat64SliceForScript(objDef["pmax"])),
-			)
+			if err := applyEngravingFunc(cuboid, objDef); err != nil {
+				return nil, err
+			}
+			return []shape.Shape{cuboid}, nil
 		}
 
-		if c == nil {
-			return []shape.Shape{}
+		pmin, err := requiredFloat64SliceField(objDef, "pmin", utils.Dimension)
+		if err != nil {
+			return nil, fmt.Errorf("cuboid requires either position+size or pmin+pmax: %w", err)
+		}
+		pmax, err := requiredFloat64SliceField(objDef, "pmax", utils.Dimension)
+		if err != nil {
+			return nil, fmt.Errorf("cuboid requires either position+size or pmin+pmax: %w", err)
 		}
 
-		if _, ok := objDef["engraving_func"]; ok {
-			c.EngravingFunc = example_lib.EngravingFuncMap[cast.ToString(objDef["engraving_func"])]
+		cuboid := shape.NewCuboid(
+			mat.NewVecDense(len(pmin), pmin),
+			mat.NewVecDense(len(pmax), pmax),
+		)
+		if err := applyEngravingFunc(cuboid, objDef); err != nil {
+			return nil, err
 		}
-		return []shape.Shape{c}
+		return []shape.Shape{cuboid}, nil
 
 	case "sphere":
-		sphere := shape.NewSphere(
-			mat.NewVecDense(GetFloat64SliceForScript(objDef["position"])),
-			cast.ToFloat64(objDef["r"]),
-		)
-		if _, ok := objDef["engraving_func"]; ok {
-			sphere.EngravingFunc = example_lib.EngravingFuncMap[cast.ToString(objDef["engraving_func"])]
+		position, err := requiredFloat64SliceField(objDef, "position", utils.Dimension)
+		if err != nil {
+			return nil, err
 		}
-		return []shape.Shape{sphere}
+		radius, err := requiredFloat64Field(objDef, "r")
+		if err != nil {
+			return nil, err
+		}
+		if radius <= 0 {
+			return nil, fmt.Errorf("field %q must be > 0", "r")
+		}
+
+		sphere := shape.NewSphere(mat.NewVecDense(len(position), position), radius)
+		if err := applyEngravingFunc(sphere, objDef); err != nil {
+			return nil, err
+		}
+		return []shape.Shape{sphere}, nil
 
 	case "triangle":
+		p1, err := requiredFloat64SliceField(objDef, "p1", utils.Dimension)
+		if err != nil {
+			return nil, err
+		}
+		p2, err := requiredFloat64SliceField(objDef, "p2", utils.Dimension)
+		if err != nil {
+			return nil, err
+		}
+		p3, err := requiredFloat64SliceField(objDef, "p3", utils.Dimension)
+		if err != nil {
+			return nil, err
+		}
+
 		triangle := shape.NewTriangle(
-			mat.NewVecDense(GetFloat64SliceForScript(objDef["p1"])),
-			mat.NewVecDense(GetFloat64SliceForScript(objDef["p2"])),
-			mat.NewVecDense(GetFloat64SliceForScript(objDef["p3"])),
+			mat.NewVecDense(len(p1), p1),
+			mat.NewVecDense(len(p2), p2),
+			mat.NewVecDense(len(p3), p3),
 		)
-		return []shape.Shape{triangle}
+		return []shape.Shape{triangle}, nil
 
 	case "plane":
+		return nil, fmt.Errorf("shape %q is declared but not implemented", shapeName)
+
 	case "quadratic equation":
-		e := shape.NewQuadraticEquation(
-			mat.NewDense(3, 3, cast.ToFloat64Slice(objDef["a"])),
-			mat.NewVecDense(GetFloat64SliceForScript(objDef["b"])),
-			cast.ToFloat64(objDef["c"]),
+		a, err := requiredFloat64SliceField(objDef, "a", 9)
+		if err != nil {
+			return nil, err
+		}
+		b, err := requiredFloat64SliceField(objDef, "b", utils.Dimension)
+		if err != nil {
+			return nil, err
+		}
+		c, err := requiredFloat64Field(objDef, "c")
+		if err != nil {
+			return nil, err
+		}
+
+		equation := shape.NewQuadraticEquation(
+			mat.NewDense(3, 3, a),
+			mat.NewVecDense(len(b), b),
+			c,
 		)
-		return []shape.Shape{e}
+		return []shape.Shape{equation}, nil
 
 	case "four-order equation":
-		e := shape.NewFourOrderEquation(
-			cast.ToFloat64Slice(objDef["a"]),
-		)
-		return []shape.Shape{e}
+		a, err := requiredFloat64SliceField(objDef, "a", 256)
+		if err != nil {
+			return nil, err
+		}
+		equation := shape.NewFourOrderEquation(a)
+		return []shape.Shape{equation}, nil
 
 	case "stl":
 		return ParseShapeForSTL(objDef)
-	}
 
-	return []shape.Shape{}
+	default:
+		return nil, fmt.Errorf("unsupported shape %q", shapeName)
+	}
 }
 
-func ParseShapeForSTL(objDef map[string]interface{}) []shape.Shape {
-	file_path := cast.ToString(objDef["file"])
-	position := mat.NewVecDense(GetFloat64SliceForScript(objDef["position"]))
-	z_dir := mat.NewVecDense(GetFloat64SliceForScript(objDef["z_dir"]))
-	x_dir := mat.NewVecDense(GetFloat64SliceForScript(objDef["x_dir"]))
-	scale := mat.NewVecDense(GetFloat64SliceForScript(objDef["scale"]))
-
-	// 读取 STL 文件中的数据
-	file, err := os.Open(file_path)
+func ParseShapeForSTL(objDef map[string]interface{}) ([]shape.Shape, error) {
+	filePath, err := requiredStringField(objDef, "file")
 	if err != nil {
-		panic(err)
+		return nil, err
+	}
+	position, err := requiredFloat64SliceField(objDef, "position", utils.Dimension)
+	if err != nil {
+		return nil, err
+	}
+	zDir, err := requiredFloat64SliceField(objDef, "z_dir", utils.Dimension)
+	if err != nil {
+		return nil, err
+	}
+	xDir, err := requiredFloat64SliceField(objDef, "x_dir", utils.Dimension)
+	if err != nil {
+		return nil, err
+	}
+	scale, err := requiredFloat64SliceField(objDef, "scale", utils.Dimension)
+	if err != nil {
+		return nil, err
+	}
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("open STL file %q: %w", filePath, err)
 	}
 	defer file.Close()
 
-	// 创建变换矩阵, 构建4x4统一变换矩阵
+	positionVec := mat.NewVecDense(len(position), position)
+	zDirVec := math_lib.Normalize(mat.NewVecDense(len(zDir), zDir))
+	xDirVec := math_lib.Normalize(mat.NewVecDense(len(xDir), xDir))
+	scaleVec := mat.NewVecDense(len(scale), scale)
+
 	transformMatrix := mat.NewDense(4, 4, []float64{
-		1, 0, 0, position.AtVec(0),
-		0, 1, 0, position.AtVec(1),
-		0, 0, 1, position.AtVec(2),
+		1, 0, 0, positionVec.AtVec(0),
+		0, 1, 0, positionVec.AtVec(1),
+		0, 0, 1, positionVec.AtVec(2),
 		0, 0, 0, 1,
 	})
 
-	// 首先根据z_dir和x_dir计算旋转矩阵
-	z_dir = math_lib.Normalize(z_dir)
-	x_dir = math_lib.Normalize(x_dir)
-	y_dir := math_lib.Normalize(math_lib.Cross2(z_dir, x_dir))
+	yDir := math_lib.Normalize(math_lib.Cross2(zDirVec, xDirVec))
 
 	for i := 0; i < 3; i++ {
-		// 构建旋转矩阵
-		transformMatrix.Set(i, 0, x_dir.AtVec(i))
-		transformMatrix.Set(i, 1, y_dir.AtVec(i))
-		transformMatrix.Set(i, 2, z_dir.AtVec(i))
-		// 应用缩放
+		transformMatrix.Set(i, 0, xDirVec.AtVec(i))
+		transformMatrix.Set(i, 1, yDir.AtVec(i))
+		transformMatrix.Set(i, 2, zDirVec.AtVec(i))
 		for j := 0; j < 3; j++ {
-			transformMatrix.Set(i, j, transformMatrix.At(i, j)*scale.AtVec(j))
+			transformMatrix.Set(i, j, transformMatrix.At(i, j)*scaleVec.AtVec(j))
 		}
 	}
 
 	var triangles []shape.Shape
 
-	// 判断STL文件类型（ASCII还是二进制）
 	scanner := bufio.NewScanner(file)
-	scanner.Scan()
+	if !scanner.Scan() {
+		if err := scanner.Err(); err != nil {
+			return nil, fmt.Errorf("read STL file %q: %w", filePath, err)
+		}
+		return nil, fmt.Errorf("STL file %q is empty", filePath)
+	}
 	firstLine := scanner.Text()
-	file.Seek(0, 0) // 重置文件指针
+	if _, err := file.Seek(0, 0); err != nil {
+		return nil, fmt.Errorf("seek STL file %q: %w", filePath, err)
+	}
 
 	if strings.HasPrefix(firstLine, "solid") {
-		// ASCII STL文件
 		scanner := bufio.NewScanner(file)
 		var p1, p2, p3 *mat.VecDense
 
 		for scanner.Scan() {
 			line := strings.TrimSpace(scanner.Text())
-			if strings.HasPrefix(line, "vertex") {
-				// 解析顶点
-				var x, y, z float64
-				_, err := fmt.Sscanf(line, "vertex %f %f %f", &x, &y, &z)
-				if err != nil {
-					panic(err)
-				}
+			if !strings.HasPrefix(line, "vertex") {
+				continue
+			}
 
-				if p1 == nil {
-					p1 = mat.NewVecDense(3, []float64{x, y, z})
-				} else if p2 == nil {
-					p2 = mat.NewVecDense(3, []float64{x, y, z})
-				} else if p3 == nil {
-					p3 = mat.NewVecDense(3, []float64{x, y, z})
-				}
+			var x, y, z float64
+			if _, err := fmt.Sscanf(line, "vertex %f %f %f", &x, &y, &z); err != nil {
+				return nil, fmt.Errorf("parse STL vertex %q: %w", line, err)
+			}
 
-				if p3 != nil {
-					triangle := shape.NewTriangle(
-						transformVertexWithMatrix(p1, transformMatrix),
-						transformVertexWithMatrix(p2, transformMatrix),
-						transformVertexWithMatrix(p3, transformMatrix),
-					)
-					triangles = append(triangles, triangle)
-					p1, p2, p3 = nil, nil, nil
-				}
+			if p1 == nil {
+				p1 = mat.NewVecDense(3, []float64{x, y, z})
+			} else if p2 == nil {
+				p2 = mat.NewVecDense(3, []float64{x, y, z})
+			} else if p3 == nil {
+				p3 = mat.NewVecDense(3, []float64{x, y, z})
+			}
+
+			if p3 != nil {
+				triangle := shape.NewTriangle(
+					transformVertexWithMatrix(p1, transformMatrix),
+					transformVertexWithMatrix(p2, transformMatrix),
+					transformVertexWithMatrix(p3, transformMatrix),
+				)
+				triangles = append(triangles, triangle)
+				p1, p2, p3 = nil, nil, nil
 			}
 		}
+		if err := scanner.Err(); err != nil {
+			return nil, fmt.Errorf("scan STL file %q: %w", filePath, err)
+		}
 	} else {
-		// 二进制STL文件处理
-		header := make([]byte, 80) // 跳过文件头（80字节）
-		_, err := file.Read(header)
-		if err != nil {
-			panic(err)
+		header := make([]byte, 80)
+		if _, err := file.Read(header); err != nil {
+			return nil, fmt.Errorf("read STL header %q: %w", filePath, err)
 		}
 
 		var numTriangles uint32
-		err = binary.Read(file, binary.LittleEndian, &numTriangles) // 读取三角形数量（4字节，小端序）
-		if err != nil {
-			panic(err)
+		if err := binary.Read(file, binary.LittleEndian, &numTriangles); err != nil {
+			return nil, fmt.Errorf("read STL triangle count %q: %w", filePath, err)
 		}
 
-		// 读取每个三角形的数据
 		for i := uint32(0); i < numTriangles; i++ {
-			normal := make([]byte, 12) // 跳过法向量（12字节，3个float32）
-			_, err := file.Read(normal)
-			if err != nil {
-				panic(err)
+			normal := make([]byte, 12)
+			if _, err := file.Read(normal); err != nil {
+				return nil, fmt.Errorf("read STL normal %q triangle %d: %w", filePath, i, err)
 			}
 
-			var vertices [9]float32 // 读取三个顶点的坐标（36字节，9个float32）
-			err = binary.Read(file, binary.LittleEndian, &vertices)
-			if err != nil {
-				panic(err)
+			var vertices [9]float32
+			if err := binary.Read(file, binary.LittleEndian, &vertices); err != nil {
+				return nil, fmt.Errorf("read STL vertices %q triangle %d: %w", filePath, i, err)
 			}
 
-			var attrByteCount uint16 // 读取属性字节数（2字节），并跳过
-			err = binary.Read(file, binary.LittleEndian, &attrByteCount)
-			if err != nil {
-				panic(err)
+			var attrByteCount uint16
+			if err := binary.Read(file, binary.LittleEndian, &attrByteCount); err != nil {
+				return nil, fmt.Errorf("read STL attribute count %q triangle %d: %w", filePath, i, err)
 			}
 
-			// 创建三角形
 			p1 := mat.NewVecDense(3, []float64{float64(vertices[0]), float64(vertices[1]), float64(vertices[2])})
 			p2 := mat.NewVecDense(3, []float64{float64(vertices[3]), float64(vertices[4]), float64(vertices[5])})
 			p3 := mat.NewVecDense(3, []float64{float64(vertices[6]), float64(vertices[7]), float64(vertices[8])})
@@ -213,12 +286,36 @@ func ParseShapeForSTL(objDef map[string]interface{}) []shape.Shape {
 		}
 	}
 
-	return triangles
+	if len(triangles) == 0 {
+		return nil, fmt.Errorf("STL file %q produced no triangles", filePath)
+	}
+
+	return triangles, nil
 }
 
-// 使用4x4变换矩阵变换顶点
+func applyEngravingFunc(target interface{ shape.Shape }, objDef map[string]interface{}) error {
+	value, ok, err := optionalStringField(objDef, "engraving_func")
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return nil
+	}
+
+	engravingFunc, exists := example_lib.EngravingFuncMap[value]
+	if !exists {
+		return fmt.Errorf("unknown engraving_func %q", value)
+	}
+	switch shaped := target.(type) {
+	case *shape.Cuboid:
+		shaped.EngravingFunc = engravingFunc
+	case *shape.Sphere:
+		shaped.EngravingFunc = engravingFunc
+	}
+	return nil
+}
+
 func transformVertexWithMatrix(vertex *mat.VecDense, transformMatrix *mat.Dense) *mat.VecDense {
-	// 将3D顶点转换为齐次坐标（4D）
 	vertexHomogeneous := mat.NewVecDense(vertex.Len()+1, []float64{
 		vertex.AtVec(0),
 		vertex.AtVec(1),
@@ -226,16 +323,12 @@ func transformVertexWithMatrix(vertex *mat.VecDense, transformMatrix *mat.Dense)
 		1.0,
 	})
 
-	// 应用变换矩阵
 	transformed := new(mat.VecDense)
 	transformed.MulVec(transformMatrix, vertexHomogeneous)
 
-	// 转换回3D坐标
-	result := mat.NewVecDense(vertex.Len(), []float64{
+	return mat.NewVecDense(vertex.Len(), []float64{
 		transformed.AtVec(0),
 		transformed.AtVec(1),
 		transformed.AtVec(2),
 	})
-
-	return result
 }

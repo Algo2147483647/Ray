@@ -73,21 +73,47 @@ func LoadSceneFromScript(script *Script, scene *model.Scene) error {
 	if script == nil {
 		return errors.New("script is nil")
 	}
+	if scene == nil {
+		return errors.New("scene is nil")
+	}
 
 	scene.ObjectTree = &object.ObjectTree{}
 	scene.Cameras = nil
 
-	materials := ParseMaterials(script)
+	materials, err := ParseMaterials(script)
+	if err != nil {
+		return err
+	}
 
-	for _, item := range script.Objects {
-		materialID, _ := item["material_id"].(string)
-		material, exists := materials[materialID]
-		if !exists {
+	var parseErrors []error
+
+	for idx, item := range script.Objects {
+		objectLabel := fmt.Sprintf("object[%d]", idx)
+		if objectID, ok, err := optionalStringField(item, "id"); err == nil && ok && objectID != "" {
+			objectLabel = fmt.Sprintf("object[%d] id=%q", idx, objectID)
+		} else if err != nil {
+			parseErrors = append(parseErrors, fmt.Errorf("%s: %w", objectLabel, err))
 			continue
 		}
 
-		shapes := ParseShape(item)
+		materialID, err := requiredStringField(item, "material_id")
+		if err != nil {
+			parseErrors = append(parseErrors, fmt.Errorf("%s: %w", objectLabel, err))
+			continue
+		}
+		material, exists := materials[materialID]
+		if !exists {
+			parseErrors = append(parseErrors, fmt.Errorf("%s: undefined material %q", objectLabel, materialID))
+			continue
+		}
+
+		shapes, err := ParseShape(item)
+		if err != nil {
+			parseErrors = append(parseErrors, fmt.Errorf("%s: %w", objectLabel, err))
+			continue
+		}
 		if len(shapes) == 0 {
+			parseErrors = append(parseErrors, fmt.Errorf("%s: shape parser produced no geometry", objectLabel))
 			continue
 		}
 
@@ -101,7 +127,11 @@ func LoadSceneFromScript(script *Script, scene *model.Scene) error {
 
 	cameras, err := ParseCameras(script)
 	if err != nil {
-		return err
+		parseErrors = append(parseErrors, err)
+	}
+
+	if len(parseErrors) > 0 {
+		return errors.Join(parseErrors...)
 	}
 	scene.Cameras = append(scene.Cameras, cameras...)
 	scene.ObjectTree.Build()
