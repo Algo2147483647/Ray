@@ -46,10 +46,17 @@ func (f *Film) Merge(a *Film) *Film {
 		panic("Dimension of a and b is not matched ")
 	}
 
-	for i := range f.Data[0].Data {
-		f.Data[0].Data[i] = (f.Data[0].Data[i]*float64(f.Samples) + a.Data[0].Data[i]*float64(a.Samples)) / float64(f.Samples+a.Samples)
+	totalSamples := f.Samples + a.Samples
+	if totalSamples == 0 {
+		return f
 	}
-	f.Samples += a.Samples
+
+	for ch := 0; ch < 3; ch++ {
+		for i := range f.Data[ch].Data {
+			f.Data[ch].Data[i] = (f.Data[ch].Data[i]*float64(f.Samples) + a.Data[ch].Data[i]*float64(a.Samples)) / float64(totalSamples)
+		}
+	}
+	f.Samples = totalSamples
 	return f
 }
 
