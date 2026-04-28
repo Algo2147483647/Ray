@@ -4,10 +4,10 @@ This directory organizes the mathematical and physical ideas embedded in the Go 
 
 ## Document Map
 
-- [`01-mathematical-foundations.md`](./01-mathematical-foundations.md): linear algebra, coordinate systems, root solving, gradients, and Monte Carlo estimation.
-- [`02-geometry-and-intersection.md`](./02-geometry-and-intersection.md): geometric primitives, implicit surfaces, mesh handling, and the bounding-volume hierarchy.
-- [`03-optics-and-materials.md`](./03-optics-and-materials.md): reflection, refraction, Fresnel effects, total internal reflection, diffuse scattering, wavelength, and dispersion.
-- [`04-cameras-rendering-and-scene.md`](./04-cameras-rendering-and-scene.md): camera projection, N-dimensional imaging, recursive ray tracing, film accumulation, concurrency, and scene scripts.
+- [`01-mathematical-foundations.md`](01-mathematical-foundations.md): linear algebra, coordinate systems, root solving, gradients, and Monte Carlo estimation.
+- [`02-geometry-and-intersection.md`](02-geometry-and-intersection.md): geometric primitives, implicit surfaces, mesh handling, and the bounding-volume hierarchy.
+- [`03-optics-and-materials.md`](03-optics-and-materials.md): reflection, refraction, Fresnel effects, total internal reflection, diffuse scattering, wavelength, and dispersion.
+- [`04-cameras-rendering-and-scene.md`](04-cameras-rendering-and-scene.md): camera projection, N-dimensional imaging, recursive ray tracing, film accumulation, concurrency, and scene scripts.
 
 ## Knowledge Map
 
