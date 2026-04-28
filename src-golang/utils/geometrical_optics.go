@@ -40,19 +40,6 @@ func DiffuseReflect(incidentRay, normal *mat.VecDense) *mat.VecDense {
 		return DiffuseReflect4D(incidentRay, normal)
 	}
 
-	tangent := VectorPool.Get().(*mat.VecDense)
-	bitangent := VectorPool.Get().(*mat.VecDense)
-	helper := VectorPool.Get().(*mat.VecDense)
-	surfaceNormal := VectorPool.Get().(*mat.VecDense)
-	res := VectorPool.Get().(*mat.VecDense)
-	defer func() {
-		VectorPool.Put(tangent)
-		VectorPool.Put(bitangent)
-		VectorPool.Put(helper)
-		VectorPool.Put(surfaceNormal)
-		VectorPool.Put(res)
-	}()
-
 	r1 := rand.Float64()
 	r2 := rand.Float64()
 	phi := 2 * math.Pi * r1
@@ -60,20 +47,19 @@ func DiffuseReflect(incidentRay, normal *mat.VecDense) *mat.VecDense {
 	y := math.Sin(phi) * math.Sqrt(r2)
 	z := math.Sqrt(1 - r2)
 
-	surfaceNormal.CloneFromVec(normal)
+	surfaceNormal := mat.VecDenseCopyOf(normal)
 	linear_algebra.Normalize(surfaceNormal)
 
-	helper.Zero()
-	if math.Abs(surfaceNormal.AtVec(0)) < 0.9 {
-		helper.SetVec(0, 1)
+	var tangent, bitangent *mat.VecDense
+	if math.Abs(surfaceNormal.AtVec(2)) < 0.999999 {
+		tangent = mat.NewVecDense(3, []float64{-surfaceNormal.AtVec(1), surfaceNormal.AtVec(0), 0})
 	} else {
-		helper.SetVec(1, 1)
+		tangent = mat.NewVecDense(3, []float64{0, 1, 0})
 	}
+	linear_algebra.Normalize(tangent)
+	bitangent = linear_algebra.Normalize(linear_algebra.Cross2(surfaceNormal, tangent))
 
-	linear_algebra.Normalize(linear_algebra.Cross(tangent, helper, surfaceNormal))
-	linear_algebra.Normalize(linear_algebra.Cross(bitangent, surfaceNormal, tangent))
-
-	res.Zero()
+	res := mat.NewVecDense(3, nil)
 	res.AddScaledVec(res, x, tangent)
 	res.AddScaledVec(res, y, bitangent)
 	res.AddScaledVec(res, z, surfaceNormal)

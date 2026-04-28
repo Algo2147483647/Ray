@@ -50,3 +50,21 @@ func TestHasTotalInternalReflection(t *testing.T) {
 		t.Fatal("expected total internal reflection for steep inside-to-air ray")
 	}
 }
+
+func TestDiffuseReflectDoesNotReturnPooledVector(t *testing.T) {
+	normal := mat.NewVecDense(3, []float64{0, 0, 1})
+	incident := mat.NewVecDense(3, []float64{0, 0, -1})
+
+	first := DiffuseReflect(incident, normal)
+	firstSnapshot := append([]float64(nil), first.RawVector().Data...)
+
+	for i := 0; i < 32; i++ {
+		_ = DiffuseReflect(incident, normal)
+	}
+
+	for i, want := range firstSnapshot {
+		if got := first.AtVec(i); math.Abs(got-want) > 1e-12 {
+			t.Fatalf("sample was mutated after later calls at index %d: got %v want %v", i, got, want)
+		}
+	}
+}
