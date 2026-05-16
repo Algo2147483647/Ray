@@ -1,0 +1,43 @@
+package ray_tracing
+
+import (
+	"github.com/Algo2147483647/ray/engine/go/internal/model/optics"
+	"github.com/Algo2147483647/ray/engine/go/internal/utils"
+	"gonum.org/v1/gonum/mat"
+	"runtime"
+	"sync"
+)
+
+type Handler struct {
+	MaxRayLevel int64     `json:"max_ray_level"` // 最大光线递归深度
+	ThreadNum   int       `json:"thread_num"`    // 并发线程数
+	BlockCols   int       `json:"block_cols"`
+	BlockRows   int       `json:"block_rows"`
+	RayPool     sync.Pool `json:"ray_pool"` // RayPool 光线对象池
+}
+
+func NewHandler() *Handler {
+	return &Handler{
+		MaxRayLevel: 6,
+		ThreadNum:   runtime.NumCPU(),
+		BlockCols:   8,
+		BlockRows:   8,
+		RayPool: sync.Pool{
+			New: func() interface{} {
+				return &optics.Ray{
+					Origin:    mat.NewVecDense(utils.Dimension, nil),
+					Direction: mat.NewVecDense(utils.Dimension, nil),
+					Color:     mat.NewVecDense(3, nil),
+				}
+			},
+		},
+	}
+}
+
+func DebugIsRecordRay(ray *optics.Ray, row, col, sample int) {
+	if row%100 == 1 && col%100 == 1 && sample == 0 {
+		ray.DebugSwitch = true
+	} else {
+		ray.DebugSwitch = false
+	}
+}

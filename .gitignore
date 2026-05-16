@@ -11,6 +11,8 @@
 /out/
 */build/
 */out/
+outputs/
+tmp/
 *.test
 
 # Vendor directories (optional if using Go modules)
@@ -37,10 +39,10 @@ go.work.sum
 *.swn
 
 # Frontend workspace outputs
-scene-editor/node_modules/
-scene-editor/dist/
-scene-editor/.npm-cache/
-scene-editor/*shot*.png
+apps/scene-editor/node_modules/
+apps/scene-editor/dist/
+apps/scene-editor/.npm-cache/
+apps/scene-editor/*shot*.png
 
 # Logs and temporary files
 *.log
@@ -48,6 +50,9 @@ scene-editor/*shot*.png
 *.temp
 *.out
 *.trace
+debug_traces.json
+img.bin
+output.png
 
 # Test and coverage output
 *.coverprofile

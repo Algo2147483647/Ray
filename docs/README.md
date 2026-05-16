@@ -1,4 +1,4 @@
-# Math and Physics in `src-golang`
+# Math and Physics in `engine/go`
 
 This directory organizes the mathematical and physical ideas embedded in the Go ray tracing project. The goal is not only to describe the code, but to explain the theory that the code is implementing and where each idea appears in the codebase.
 

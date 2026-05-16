@@ -1,0 +1,72 @@
+package optics
+
+import (
+	"github.com/Algo2147483647/golang_toolkit/image"
+	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
+	"github.com/Algo2147483647/ray/engine/go/internal/utils"
+	"gonum.org/v1/gonum/mat"
+	"math"
+	"math/rand/v2"
+)
+
+type Ray struct {
+	Origin          *mat.VecDense `json:"origin"`
+	Direction       *mat.VecDense `json:"direction"`
+	Color           *mat.VecDense `json:"color"`
+	WaveLength      float64       `json:"wave_length"` // (nm)
+	RefractionIndex float64       `json:"refraction_index"`
+	DebugSwitch     bool          `json:"debug_switch"`
+}
+
+const (
+	WavelengthMin = 380.0 // 最小波长(nm)
+	WavelengthMax = 750.0 // 最大波长(nm)
+)
+
+var DebugRayTraces []map[string]interface{}
+
+func (r *Ray) Init() {
+	if r.Origin == nil {
+		r.Origin = mat.NewVecDense(utils.Dimension, nil)
+	} else {
+		r.Origin.Zero()
+	}
+
+	if r.Direction == nil {
+		r.Direction = mat.NewVecDense(utils.Dimension, nil)
+	} else {
+		r.Direction.Zero()
+	}
+
+	if r.Color == nil {
+		r.Color = mat.NewVecDense(3, []float64{1, 1, 1})
+	}
+
+	r.RefractionIndex = 1
+	r.WaveLength = 0
+	r.DebugSwitch = false
+}
+
+func (ray *Ray) ConvertToMonochrome() {
+	ray.WaveLength = WavelengthMin + rand.Float64()*(WavelengthMax-WavelengthMin)
+
+	baseColor := math_lib.Normalize(WaveLengthToRGB(ray.WaveLength))
+	math_lib.ScaleVec(baseColor, 2, baseColor)
+
+	ray.Color.SetVec(0, baseColor.AtVec(0)*ray.Color.AtVec(0))
+	ray.Color.SetVec(1, baseColor.AtVec(1)*ray.Color.AtVec(1))
+	ray.Color.SetVec(2, baseColor.AtVec(2)*ray.Color.AtVec(2))
+}
+
+func WaveLengthToRGB(wavelength float64) *mat.VecDense {
+	if wavelength >= WavelengthMax || wavelength <= WavelengthMin {
+		return mat.NewVecDense(3, nil)
+	}
+	t := (wavelength - WavelengthMin) / (WavelengthMax - WavelengthMin)
+	r, g, b := image.SpectrumFiveDivided(t)
+	return mat.NewVecDense(3, []float64{
+		math.Max(0, math.Min(1, r)),
+		math.Max(0, math.Min(1, g)),
+		math.Max(0, math.Min(1, b)),
+	})
+}
