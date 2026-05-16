@@ -19,14 +19,14 @@ func DefaultOptions() Options {
 	}
 }
 
-func CheckNonNegative(bxdf core.BxDF, ctx core.ShadingContext, opts Options) error {
+func CheckNonNegative(scattering core.Scattering, ctx core.ShadingContext, opts Options) error {
 	opts = normalizeOptions(opts)
 	wo := core.NewDirection(0, 0, 1)
 
 	for i := 0; i < opts.DirectionSamples; i++ {
 		wi := core.UniformHemisphereDirection(i, opts.DirectionSamples)
-		f := bxdf.Eval(ctx, wi, wo)
-		pdf := bxdf.PDF(ctx, wi, wo)
+		f := scattering.Eval(ctx, wi, wo)
+		pdf := scattering.PDF(ctx, wi, wo)
 		if !f.IsFinite() || !f.IsNonNegative() {
 			return fmt.Errorf("eval must be finite and non-negative for sample %d: %+v", i, f)
 		}
@@ -38,8 +38,8 @@ func CheckNonNegative(bxdf core.BxDF, ctx core.ShadingContext, opts Options) err
 	return nil
 }
 
-func CheckReciprocity(bxdf core.BxDF, ctx core.ShadingContext, opts Options) error {
-	if bxdf.DeltaFlags()&core.NonReciprocal != 0 {
+func CheckReciprocity(scattering core.Scattering, ctx core.ShadingContext, opts Options) error {
+	if scattering.DeltaFlags()&core.NonReciprocal != 0 {
 		return nil
 	}
 
@@ -47,8 +47,8 @@ func CheckReciprocity(bxdf core.BxDF, ctx core.ShadingContext, opts Options) err
 	for i := 0; i < opts.DirectionSamples; i++ {
 		wi := core.UniformHemisphereDirection(i, opts.DirectionSamples)
 		wo := core.UniformHemisphereDirection(opts.DirectionSamples-1-i, opts.DirectionSamples)
-		fForward := bxdf.Eval(ctx, wi, wo)
-		fReverse := bxdf.Eval(ctx, wo, wi)
+		fForward := scattering.Eval(ctx, wi, wo)
+		fReverse := scattering.Eval(ctx, wo, wi)
 		if !fForward.AlmostEqual(fReverse, opts.Tolerance) {
 			return fmt.Errorf("reciprocity failed for sample %d: f(wi,wo)=%+v f(wo,wi)=%+v", i, fForward, fReverse)
 		}
@@ -57,14 +57,14 @@ func CheckReciprocity(bxdf core.BxDF, ctx core.ShadingContext, opts Options) err
 	return nil
 }
 
-func CheckEnergyConservation(bxdf core.BxDF, ctx core.ShadingContext, opts Options) error {
+func CheckEnergyConservation(scattering core.Scattering, ctx core.ShadingContext, opts Options) error {
 	opts = normalizeOptions(opts)
 	wo := core.NewDirection(0, 0, 1)
 	sum := core.Spectrum{}
 
 	for i := 0; i < opts.DirectionSamples; i++ {
 		wi := core.UniformHemisphereDirection(i, opts.DirectionSamples)
-		f := bxdf.Eval(ctx, wi, wo)
+		f := scattering.Eval(ctx, wi, wo)
 		weight := core.AbsCosTheta(wi) * 2 * math.Pi / float64(opts.DirectionSamples)
 		sum = sum.Add(f.MulScalar(weight))
 	}
@@ -76,7 +76,7 @@ func CheckEnergyConservation(bxdf core.BxDF, ctx core.ShadingContext, opts Optio
 	return nil
 }
 
-func CheckSamplePDFConsistency(bxdf core.BxDF, ctx core.ShadingContext, opts Options) error {
+func CheckSamplePDFConsistency(scattering core.Scattering, ctx core.ShadingContext, opts Options) error {
 	opts = normalizeOptions(opts)
 	wo := core.NewDirection(0, 0, 1)
 
@@ -85,7 +85,7 @@ func CheckSamplePDFConsistency(bxdf core.BxDF, ctx core.ShadingContext, opts Opt
 			U: (float64(i) + 0.5) / float64(opts.DirectionSamples),
 			V: math.Mod(float64(i)*0.6180339887498949, 1),
 		}
-		sample := bxdf.Sample(ctx, wo, u)
+		sample := scattering.Sample(ctx, wo, u)
 		if !sample.Wi.IsFinite() || !sample.F.IsFinite() || !isFinite(sample.PDF) {
 			return fmt.Errorf("sample must be finite for sample %d: %+v", i, sample)
 		}
@@ -93,11 +93,11 @@ func CheckSamplePDFConsistency(bxdf core.BxDF, ctx core.ShadingContext, opts Opt
 			return fmt.Errorf("sample pdf must be non-negative for sample %d: %f", i, sample.PDF)
 		}
 
-		expectedPDF := bxdf.PDF(ctx, sample.Wi, wo)
+		expectedPDF := scattering.PDF(ctx, sample.Wi, wo)
 		if math.Abs(sample.PDF-expectedPDF) > opts.Tolerance {
 			return fmt.Errorf("sample/pdf mismatch for sample %d: sample=%f pdf()=%f", i, sample.PDF, expectedPDF)
 		}
-		expectedF := bxdf.Eval(ctx, sample.Wi, wo)
+		expectedF := scattering.Eval(ctx, sample.Wi, wo)
 		if !sample.F.AlmostEqual(expectedF, opts.Tolerance) {
 			return fmt.Errorf("sample/eval mismatch for sample %d: sample=%+v eval()=%+v", i, sample.F, expectedF)
 		}
@@ -106,10 +106,10 @@ func CheckSamplePDFConsistency(bxdf core.BxDF, ctx core.ShadingContext, opts Opt
 	return nil
 }
 
-func CheckBasicPhysicalValidity(bxdf core.BxDF, ctx core.ShadingContext, opts Options) error {
+func CheckBasicPhysicalValidity(scattering core.Scattering, ctx core.ShadingContext, opts Options) error {
 	checks := []struct {
 		name string
-		fn   func(core.BxDF, core.ShadingContext, Options) error
+		fn   func(core.Scattering, core.ShadingContext, Options) error
 	}{
 		{name: "non-negativity", fn: CheckNonNegative},
 		{name: "reciprocity", fn: CheckReciprocity},
@@ -118,7 +118,7 @@ func CheckBasicPhysicalValidity(bxdf core.BxDF, ctx core.ShadingContext, opts Op
 	}
 
 	for _, check := range checks {
-		if err := check.fn(bxdf, ctx, opts); err != nil {
+		if err := check.fn(scattering, ctx, opts); err != nil {
 			return fmt.Errorf("%s: %w", check.name, err)
 		}
 	}

@@ -437,7 +437,7 @@ The existing `model/optics/material.go` can remain during migration and later be
 
 ### Phase 1: Interfaces And Lambert
 
-Deliver:
+Delivered:
 
 ```text
 Spectrum
@@ -448,34 +448,40 @@ Lambert BxDF
 basic validation harness
 ```
 
-No renderer rewrite is required yet beyond isolated tests.
+The initial implementation lives under `engine/go/internal/material` and is intentionally isolated from the current renderer.
 
-### Phase 2: Legacy Adapter
+### Phase 2: BSDF Containers
 
-Wrap existing material fields into a compatibility BxDF/BSDF.
-
-Goals:
+Delivered:
 
 ```text
-old JSON still loads
-old scenes still render
-new material code can be tested independently
+core.Scattering
+core.BSDF
+core.Material container
+bsdf.Single
+bsdf.WeightedMixture
+validation over Scattering instead of only BxDF
 ```
+
+This phase does not include a compatibility adapter for the old `model/optics.Material`. The new material system is allowed to move independently of the existing material representation.
 
 ### Phase 3: Renderer Sampling Path
 
-Change surface interaction to use:
-
 ```text
-Sample
-Eval
-PDF
-throughput update
+hit surface
+build ShadingContext
+sample Material.Surface
+throughput *= f * abs_cos_theta / pdf
+spawn next ray
 ```
 
-This is the point where material sampling becomes part of actual rendering.
+This is the first phase that should modify the existing tracing loop.
 
-### Phase 4: Microfacet
+### Phase 4: Material Schema
+
+Define a new JSON material schema around BSDF primitives rather than translating old fields.
+
+### Phase 5: Microfacet
 
 Implement:
 
@@ -491,7 +497,7 @@ RoughConductor
 
 Add stress tests for roughness, IOR, and grazing angles.
 
-### Phase 5: Textures, Emission, Volume
+### Phase 6: Textures, Emission, Volume
 
 Add these after the surface model is stable:
 

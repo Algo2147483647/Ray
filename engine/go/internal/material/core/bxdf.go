@@ -43,7 +43,7 @@ type BxDFSample struct {
 	Eta   float64
 }
 
-type BxDF interface {
+type Scattering interface {
 	Eval(ctx ShadingContext, wi, wo Direction) Spectrum
 	Sample(ctx ShadingContext, wo Direction, u Sample2D) BxDFSample
 	PDF(ctx ShadingContext, wi, wo Direction) float64
@@ -51,6 +51,14 @@ type BxDF interface {
 	AlbedoBound(ctx ShadingContext) Spectrum
 	RoughnessInfo(ctx ShadingContext) RoughnessInfo
 	DeltaFlags() DeltaFlags
+}
+
+type BxDF interface {
+	Scattering
+}
+
+type BSDF interface {
+	Scattering
 }
 
 type ParameterGradients struct {
