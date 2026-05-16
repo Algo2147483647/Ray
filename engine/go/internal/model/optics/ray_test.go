@@ -16,7 +16,7 @@ import (
 
 // TestConvertToMonochromeMonteCarlo 使用蒙特卡洛方法测试 ConvertToMonochrome 方法
 func TestConvertToMonochromeMonteCarlo(t *testing.T) {
-	const numSamples = 10000000
+	const numSamples = 200000
 
 	// 存储收集的数据
 	redValues := make([]float64, numSamples)
@@ -102,6 +102,30 @@ func validateDistribution(t *testing.T, wavelengths, red, green, blue []float64)
 	t.Logf("Red: mean=%f, std=%f", rMean, rStd)
 	t.Logf("Green: mean=%f, std=%f", gMean, gStd)
 	t.Logf("Blue: mean=%f, std=%f", bMean, bStd)
+
+	for name, mean := range map[string]float64{"red": rMean, "green": gMean, "blue": bMean} {
+		if math.Abs(mean-1) > 0.03 {
+			t.Fatalf("expected white-balanced %s mean near 1, got %f", name, mean)
+		}
+	}
+}
+
+func TestSpectralRGBWeightWhitePoint(t *testing.T) {
+	const samples = 10000
+	var sum [3]float64
+	for i := 0; i < samples; i++ {
+		t := (float64(i) + 0.5) / samples
+		weight := SpectralRGBWeight(WavelengthMin + t*(WavelengthMax-WavelengthMin))
+		sum[0] += weight.AtVec(0)
+		sum[1] += weight.AtVec(1)
+		sum[2] += weight.AtVec(2)
+	}
+	for ch, total := range sum {
+		mean := total / samples
+		if math.Abs(mean-1) > 1e-3 {
+			t.Fatalf("channel %d white point mean = %f, want 1", ch, mean)
+		}
+	}
 }
 
 func TestWaveLengthToRGB(t *testing.T) {

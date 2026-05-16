@@ -83,7 +83,7 @@ func (s SpecularDielectric) Sample(ctx core.ShadingContext, wo core.Direction, u
 	}
 
 	insideIOR := s.insideIOR()
-	wavelengthNM, spectralSample := s.resolveWavelength(ctx, u)
+	wavelengthNM, spectralSample := s.resolveWavelength(ctx)
 	etaInside := insideIOR.Evaluate(wavelengthNM)
 	if !ior.IsValidEta(s.EtaOutside) || !ior.IsValidEta(etaInside) {
 		return core.BxDFSample{}
@@ -169,13 +169,9 @@ func (s SpecularDielectric) DeltaFlags() core.DeltaFlags {
 	return core.DeltaReflection | core.DeltaTransmission
 }
 
-func (s SpecularDielectric) resolveWavelength(ctx core.ShadingContext, u core.Sample2D) (float64, bool) {
+func (s SpecularDielectric) resolveWavelength(ctx core.ShadingContext) (float64, bool) {
 	if ctx.WavelengthNM > 0 {
 		return ctx.WavelengthNM, true
-	}
-	if s.insideIOR().IsDispersive() {
-		t := clamp(u.V, 1e-6, 1-1e-6)
-		return ior.WavelengthMinNM + t*(ior.WavelengthMaxNM-ior.WavelengthMinNM), true
 	}
 	return ior.DefaultWavelengthNM, false
 }

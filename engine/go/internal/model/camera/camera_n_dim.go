@@ -72,6 +72,7 @@ func (c *CameraNDim) GenerateRay(res *optics.Ray, x ...int) *optics.Ray {
 	}
 
 	res.Color = mat.NewVecDense(3, []float64{1, 1, 1})
+	res.SampleWavelength(rand.Float64())
 	res.Origin.CloneFromVec(c.Position)
 	res.Direction.CloneFromVec(c.orthonormalCoordinates[0])
 	for i := 0; i < len(x); i++ {

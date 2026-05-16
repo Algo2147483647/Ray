@@ -43,6 +43,7 @@ func (c *Camera3D) GenerateRay(res *optics.Ray, index ...int) *optics.Ray {
 	)
 
 	res.Color = mat.NewVecDense(3, []float64{1, 1, 1})
+	res.SampleWavelength(rand.Float64())
 	res.Origin.CloneFromVec(c.Position)
 	res.Direction.CloneFromVec(dir)
 	res.Direction.AddScaledVec(res.Direction, u*halfWidth, right)

@@ -4,6 +4,7 @@ import (
 	"math"
 	"testing"
 
+	"github.com/Algo2147483647/ray/engine/go/internal/model/optics"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -28,9 +29,16 @@ func TestCameraNDimGenerateRay3D(t *testing.T) {
 	if norm := mat.Norm(ray.Direction, 2); math.Abs(norm-1.0) > 1e-10 {
 		t.Fatalf("expected normalized direction, got norm %f", norm)
 	}
-	expectedColor := mat.NewVecDense(3, []float64{1, 1, 1})
-	if !mat.Equal(ray.Color, expectedColor) {
-		t.Fatal("expected default ray color [1,1,1]")
+	if ray.WaveLength <= optics.WavelengthMin || ray.WaveLength >= optics.WavelengthMax {
+		t.Fatalf("expected camera ray wavelength inside visible range, got %f", ray.WaveLength)
+	}
+	if math.Abs(ray.WavelengthPDF-optics.UniformWavelengthPDF()) > 1e-12 {
+		t.Fatalf("unexpected wavelength pdf: got %f", ray.WavelengthPDF)
+	}
+	for i := 0; i < 3; i++ {
+		if math.IsNaN(ray.Color.AtVec(i)) || math.IsInf(ray.Color.AtVec(i), 0) || ray.Color.AtVec(i) < 0 {
+			t.Fatalf("expected finite non-negative spectral reconstruction color, got %v", ray.Color.RawVector().Data)
+		}
 	}
 }
 

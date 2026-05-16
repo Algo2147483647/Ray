@@ -623,11 +623,19 @@ material/ior model interface
 constant IOR model
 Cauchy dispersion model
 specular dielectric wavelength-aware eta evaluation
+renderer-level wavelength sampling on camera rays
+lambda PDF propagation through ShadingContext
+white-point normalized spectral-to-RGB reconstruction
 ray wavelength propagation through ShadingContext and BxDFSample
-first-hit spectral tinting for dispersive paths
 ```
 
-Dispersive BxDFs may select a wavelength when the incoming ray has none. The renderer then locks that wavelength on the ray and applies the existing wavelength-to-RGB response, so later dielectric boundaries evaluate the same spectral path instead of resampling per interface.
+The camera samples one wavelength per path at ray generation time. The ray records both `WaveLength` and `WavelengthPDF`, and the initial throughput is multiplied by a white-point normalized reconstruction weight:
+
+```text
+throughput_rgb *= wavelength_to_rgb(lambda) / mean_visible_wavelength_to_rgb
+```
+
+BxDFs do not sample wavelengths. Dispersive BxDFs only evaluate their IOR model at the wavelength already carried by the renderer context. If no wavelength is present, they fall back to a deterministic 550nm value for non-renderer tests and compatibility paths.
 
 ## Open Design Questions
 

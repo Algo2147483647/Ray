@@ -60,7 +60,7 @@ func TestSpecularDielectricChoosesReflectionAndTransmission(t *testing.T) {
 	}
 }
 
-func TestSpecularDielectricSamplesDispersiveWavelength(t *testing.T) {
+func TestSpecularDielectricUsesRendererWavelengthForDispersion(t *testing.T) {
 	bxdf := NewSpecularDielectric(
 		core.ConstantSpectrum(1),
 		core.ConstantSpectrum(1),
@@ -69,18 +69,21 @@ func TestSpecularDielectricSamplesDispersiveWavelength(t *testing.T) {
 	)
 	wo := core.NewDirection(0, 0, 1)
 
-	sample := bxdf.Sample(core.ShadingContext{}, wo, core.Sample2D{U: 1, V: 0.25})
-	expectedWavelength := ior.WavelengthMinNM + 0.25*(ior.WavelengthMaxNM-ior.WavelengthMinNM)
-	expectedEta := ior.NewCauchy(1.5, 0.004, 0).Evaluate(expectedWavelength)
-	if math.Abs(sample.WavelengthNM-expectedWavelength) > 1e-12 {
-		t.Fatalf("unexpected sampled wavelength: got %f want %f", sample.WavelengthNM, expectedWavelength)
+	fallback := bxdf.Sample(core.ShadingContext{}, wo, core.Sample2D{U: 1, V: 0.25})
+	expectedFallbackEta := ior.NewCauchy(1.5, 0.004, 0).Evaluate(ior.DefaultWavelengthNM)
+	if fallback.WavelengthNM != 0 {
+		t.Fatalf("expected bxdf not to sample wavelength on its own, got %f", fallback.WavelengthNM)
 	}
-	if math.Abs(sample.Eta-expectedEta) > 1e-12 {
-		t.Fatalf("unexpected dispersive eta: got %f want %f", sample.Eta, expectedEta)
+	if math.Abs(fallback.Eta-expectedFallbackEta) > 1e-12 {
+		t.Fatalf("unexpected fallback eta: got %f want %f", fallback.Eta, expectedFallbackEta)
 	}
 
 	continued := bxdf.Sample(core.ShadingContext{WavelengthNM: 610}, wo, core.Sample2D{U: 1, V: 0})
+	expectedEta := ior.NewCauchy(1.5, 0.004, 0).Evaluate(610)
 	if math.Abs(continued.WavelengthNM-610) > 1e-12 {
 		t.Fatalf("expected existing wavelength to be preserved, got %f", continued.WavelengthNM)
+	}
+	if math.Abs(continued.Eta-expectedEta) > 1e-12 {
+		t.Fatalf("unexpected dispersive eta: got %f want %f", continued.Eta, expectedEta)
 	}
 }

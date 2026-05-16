@@ -35,6 +35,7 @@ type ShadingContext struct {
 	SpectrumMode  SpectrumMode
 	CurrentIOR    float64
 	WavelengthNM  float64
+	WavelengthPDF float64
 }
 
 type BxDFSample struct {
