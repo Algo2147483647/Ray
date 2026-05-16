@@ -92,6 +92,39 @@ func parseSurface(def map[string]interface{}) (core.BSDF, error) {
 			return nil, err
 		}
 		return bsdf.NewSingle(bxdf.NewLambert(albedo)), nil
+	case "specular_reflection":
+		reflectance, err := optionalSpectrumField(def, "reflectance", core.ConstantSpectrum(1))
+		if err != nil {
+			return nil, err
+		}
+		return bsdf.NewSingle(bxdf.NewSpecularReflection(reflectance)), nil
+	case "specular_dielectric":
+		reflectance, err := optionalSpectrumField(def, "reflectance", core.ConstantSpectrum(1))
+		if err != nil {
+			return nil, err
+		}
+		transmittance, err := optionalSpectrumField(def, "transmittance", core.ConstantSpectrum(1))
+		if err != nil {
+			return nil, err
+		}
+		etaOutside, ok, err := optionalFloat64Field(def, "eta_outside")
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			etaOutside = 1
+		}
+		etaInside, ok, err := optionalFloat64Field(def, "eta_inside")
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			etaInside = 1.5
+		}
+		if etaOutside <= 0 || etaInside <= 0 {
+			return nil, fmt.Errorf("eta values must be > 0")
+		}
+		return bsdf.NewSingle(bxdf.NewSpecularDielectric(reflectance, transmittance, etaOutside, etaInside)), nil
 	default:
 		return nil, fmt.Errorf("unsupported surface type %q", surfaceType)
 	}
@@ -119,6 +152,22 @@ func requiredSpectrumField(data map[string]interface{}, key string) (core.Spectr
 	values, err := requiredFloat64SliceField(data, key, 3)
 	if err != nil {
 		return core.Spectrum{}, err
+	}
+	for i, value := range values {
+		if value < 0 {
+			return core.Spectrum{}, fmt.Errorf("field %q index %d must be >= 0", key, i)
+		}
+	}
+	return core.NewSpectrum(values[0], values[1], values[2]), nil
+}
+
+func optionalSpectrumField(data map[string]interface{}, key string, fallback core.Spectrum) (core.Spectrum, error) {
+	values, ok, err := optionalFloat64SliceField(data, key, 3)
+	if err != nil {
+		return core.Spectrum{}, err
+	}
+	if !ok {
+		return fallback, nil
 	}
 	for i, value := range values {
 		if value < 0 {

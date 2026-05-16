@@ -33,6 +33,7 @@ type RoughnessInfo struct {
 type ShadingContext struct {
 	TransportMode TransportMode
 	SpectrumMode  SpectrumMode
+	CurrentIOR    float64
 }
 
 type BxDFSample struct {

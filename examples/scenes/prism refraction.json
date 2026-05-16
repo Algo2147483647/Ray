@@ -25,12 +25,19 @@
     {
       "id": "glass3",
       "surface": {
-        "type": "lambert",
-        "albedo": [
+        "type": "specular_dielectric",
+        "reflectance": [
           1,
           1,
           1
-        ]
+        ],
+        "transmittance": [
+          1,
+          1,
+          1
+        ],
+        "eta_outside": 1,
+        "eta_inside": 1.5
       }
     }
   ],

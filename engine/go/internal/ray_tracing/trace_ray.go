@@ -68,6 +68,7 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level in
 	ctx := core.ShadingContext{
 		TransportMode: core.TransportRadiance,
 		SpectrumMode:  core.SpectrumRGB,
+		CurrentIOR:    ray.RefractionIndex,
 	}
 	woWorld := negateVec(ray.Direction)
 	woLocal, frameOK := worldToLocal(woWorld, normal)
@@ -98,6 +99,9 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level in
 
 	weight := core.AbsCosTheta(sample.Wi) / sample.PDF
 	applySpectrum(ray.Color, sample.F.MulScalar(weight))
+	if sample.Flags&core.DeltaTransmission != 0 && sample.Eta > 0 {
+		ray.RefractionIndex = sample.Eta
+	}
 	ray.Direction = localToWorld(sample.Wi, normal)
 	math_lib.Normalize(ray.Direction)
 

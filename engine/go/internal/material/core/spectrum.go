@@ -40,6 +40,17 @@ func (s Spectrum) Mul(other Spectrum) Spectrum {
 	}
 }
 
+func (s Spectrum) DivScalar(v float64) Spectrum {
+	if v == 0 {
+		return Spectrum{}
+	}
+	return Spectrum{
+		R: s.R / v,
+		G: s.G / v,
+		B: s.B / v,
+	}
+}
+
 func (s Spectrum) MaxComponent() float64 {
 	return math.Max(s.R, math.Max(s.G, s.B))
 }

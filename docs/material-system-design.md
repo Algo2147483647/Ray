@@ -505,6 +505,33 @@ Emissive material:
 }
 ```
 
+Ideal mirror:
+
+```json
+{
+  "id": "mirror",
+  "surface": {
+    "type": "specular_reflection",
+    "reflectance": [1, 1, 1]
+  }
+}
+```
+
+Ideal dielectric:
+
+```json
+{
+  "id": "glass",
+  "surface": {
+    "type": "specular_dielectric",
+    "reflectance": [1, 1, 1],
+    "transmittance": [1, 1, 1],
+    "eta_outside": 1,
+    "eta_inside": 1.5
+  }
+}
+```
+
 Old fields such as `color`, `reflectivity`, `refractivity`, `radiate`, and `diffuse_loss` are not part of the new material schema. They are intentionally not translated in the new parser.
 
 ### Phase 5: Microfacet
