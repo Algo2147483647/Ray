@@ -53,8 +53,11 @@ func TestLoadSceneFromScriptReportsUnsupportedShape(t *testing.T) {
 	script := &Script{
 		Materials: []map[string]interface{}{
 			{
-				"id":    "mat",
-				"color": []interface{}{1.0, 1.0, 1.0},
+				"id": "mat",
+				"surface": map[string]interface{}{
+					"type":   "lambert",
+					"albedo": []interface{}{1.0, 1.0, 1.0},
+				},
 			},
 		},
 		Objects: []map[string]interface{}{
@@ -78,8 +81,20 @@ func TestLoadSceneFromScriptReportsUnsupportedShape(t *testing.T) {
 func TestParseMaterialsRejectsDuplicateID(t *testing.T) {
 	script := &Script{
 		Materials: []map[string]interface{}{
-			{"id": "dup", "color": []interface{}{1.0, 1.0, 1.0}},
-			{"id": "dup", "color": []interface{}{0.0, 0.0, 0.0}},
+			{
+				"id": "dup",
+				"surface": map[string]interface{}{
+					"type":   "lambert",
+					"albedo": []interface{}{1.0, 1.0, 1.0},
+				},
+			},
+			{
+				"id": "dup",
+				"surface": map[string]interface{}{
+					"type":   "lambert",
+					"albedo": []interface{}{0.0, 0.0, 0.0},
+				},
+			},
 		},
 	}
 

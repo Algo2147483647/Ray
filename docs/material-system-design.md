@@ -467,6 +467,8 @@ This phase does not include a compatibility adapter for the old `model/optics.Ma
 
 ### Phase 3: Renderer Sampling Path
 
+Delivered:
+
 ```text
 hit surface
 build ShadingContext
@@ -475,11 +477,35 @@ throughput *= f * abs_cos_theta / pdf
 spawn next ray
 ```
 
-This is the first phase that should modify the existing tracing loop.
+The tracing loop now uses `Material.Surface.Sample/Eval/PDF` for non-emissive surface interaction. Emissive materials terminate the path and multiply the current throughput by emitted radiance.
 
 ### Phase 4: Material Schema
 
-Define a new JSON material schema around BSDF primitives rather than translating old fields.
+Delivered initial schema:
+
+```json
+{
+  "id": "matte-red",
+  "surface": {
+    "type": "lambert",
+    "albedo": [0.8, 0.1, 0.1]
+  }
+}
+```
+
+Emissive material:
+
+```json
+{
+  "id": "light",
+  "emission": {
+    "type": "constant",
+    "color": [7, 7, 7]
+  }
+}
+```
+
+Old fields such as `color`, `reflectivity`, `refractivity`, `radiate`, and `diffuse_loss` are not part of the new material schema. They are intentionally not translated in the new parser.
 
 ### Phase 5: Microfacet
 

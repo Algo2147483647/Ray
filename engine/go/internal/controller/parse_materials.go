@@ -3,16 +3,19 @@ package controller
 import (
 	"errors"
 	"fmt"
-	"github.com/Algo2147483647/ray/engine/go/internal/model/optics"
-	"gonum.org/v1/gonum/mat"
+
+	"github.com/Algo2147483647/ray/engine/go/internal/material/bsdf"
+	"github.com/Algo2147483647/ray/engine/go/internal/material/bxdf"
+	"github.com/Algo2147483647/ray/engine/go/internal/material/core"
+	"github.com/Algo2147483647/ray/engine/go/internal/material/emission"
 )
 
-func ParseMaterials(script *Script) (map[string]*optics.Material, error) {
+func ParseMaterials(script *Script) (map[string]*core.Material, error) {
 	if script == nil {
 		return nil, errors.New("script is nil")
 	}
 
-	materials := make(map[string]*optics.Material, len(script.Materials))
+	materials := make(map[string]*core.Material, len(script.Materials))
 	var parseErrors []error
 
 	for idx, matDef := range script.Materials {
@@ -30,96 +33,40 @@ func ParseMaterials(script *Script) (map[string]*optics.Material, error) {
 			continue
 		}
 
-		color, err := requiredFloat64SliceField(matDef, "color", 3)
-		if err != nil {
-			parseErrors = append(parseErrors, fmt.Errorf("%s: %w", context, err))
-			continue
+		material := &core.Material{
+			Metadata: core.MaterialMetadata{
+				Name:         id,
+				SpectrumMode: core.SpectrumRGB,
+			},
 		}
 
-		material := optics.NewMaterial(mat.NewVecDense(len(color), color))
-
-		if value, ok, err := optionalBoolField(matDef, "radiate"); err != nil {
-			parseErrors = append(parseErrors, fmt.Errorf("%s: %w", context, err))
-			continue
-		} else if ok {
-			material.Radiation = value
-		}
-
-		if value, ok, err := optionalStringField(matDef, "radiation_type"); err != nil {
+		if surfaceDef, ok, err := optionalMapField(matDef, "surface"); err != nil {
 			parseErrors = append(parseErrors, fmt.Errorf("%s: %w", context, err))
 			continue
 		} else if ok {
-			material.RadiationType = value
-		}
-
-		if value, ok, err := optionalFloat64Field(matDef, "reflectivity"); err != nil {
-			parseErrors = append(parseErrors, fmt.Errorf("%s: %w", context, err))
-			continue
-		} else if ok {
-			material.Reflectivity = value
-		}
-
-		if value, ok, err := optionalFloat64Field(matDef, "refractivity"); err != nil {
-			parseErrors = append(parseErrors, fmt.Errorf("%s: %w", context, err))
-			continue
-		} else if ok {
-			material.Refractivity = value
-		}
-
-		if value, exists := matDef["refractive_index"]; exists {
-			switch typed := value.(type) {
-			case []interface{}, []float64:
-				values, err := toFloat64Slice(typed)
-				if err != nil {
-					parseErrors = append(parseErrors, fmt.Errorf("%s: field %q: %w", context, "refractive_index", err))
-					continue
-				}
-				if err := requireSliceLength("refractive_index", values, 1, 3); err != nil {
-					parseErrors = append(parseErrors, fmt.Errorf("%s: %w", context, err))
-					continue
-				}
-				material.RefractiveIndex = mat.NewVecDense(len(values), values)
-			default:
-				number, err := toFloat64(value)
-				if err != nil {
-					parseErrors = append(parseErrors, fmt.Errorf("%s: field %q: %w", context, "refractive_index", err))
-					continue
-				}
-				material.RefractiveIndex = mat.NewVecDense(1, []float64{number})
-			}
-		}
-
-		if value, ok, err := optionalFloat64Field(matDef, "diffuse_loss"); err != nil {
-			parseErrors = append(parseErrors, fmt.Errorf("%s: %w", context, err))
-			continue
-		} else if ok {
-			material.DiffuseLoss = value
-		}
-
-		if value, ok, err := optionalFloat64Field(matDef, "reflect_loss"); err != nil {
-			parseErrors = append(parseErrors, fmt.Errorf("%s: %w", context, err))
-			continue
-		} else if ok {
-			material.ReflectLoss = value
-		}
-
-		if value, ok, err := optionalFloat64Field(matDef, "refract_loss"); err != nil {
-			parseErrors = append(parseErrors, fmt.Errorf("%s: %w", context, err))
-			continue
-		} else if ok {
-			material.RefractLoss = value
-		}
-
-		if value, ok, err := optionalStringField(matDef, "color_func"); err != nil {
-			parseErrors = append(parseErrors, fmt.Errorf("%s: %w", context, err))
-			continue
-		} else if ok {
-			colorFunc, exists := optics.ColorFuncMap[value]
-			if !exists {
-				parseErrors = append(parseErrors, fmt.Errorf("%s: unknown color_func %q", context, value))
+			surface, err := parseSurface(surfaceDef)
+			if err != nil {
+				parseErrors = append(parseErrors, fmt.Errorf("%s surface: %w", context, err))
 				continue
 			}
-			material.ColorFunc = colorFunc
+			material.Surface = surface
+		}
+
+		if emissionDef, ok, err := optionalMapField(matDef, "emission"); err != nil {
+			parseErrors = append(parseErrors, fmt.Errorf("%s: %w", context, err))
+			continue
+		} else if ok {
+			emitter, err := parseEmission(emissionDef)
+			if err != nil {
+				parseErrors = append(parseErrors, fmt.Errorf("%s emission: %w", context, err))
+				continue
+			}
+			material.Emission = emitter
+		}
+
+		if !material.HasSurface() && !material.HasEmission() {
+			parseErrors = append(parseErrors, fmt.Errorf("%s: material requires surface or emission", context))
+			continue
 		}
 
 		materials[id] = material
@@ -130,4 +77,65 @@ func ParseMaterials(script *Script) (map[string]*optics.Material, error) {
 	}
 
 	return materials, nil
+}
+
+func parseSurface(def map[string]interface{}) (core.BSDF, error) {
+	surfaceType, err := requiredStringField(def, "type")
+	if err != nil {
+		return nil, err
+	}
+
+	switch surfaceType {
+	case "lambert":
+		albedo, err := requiredSpectrumField(def, "albedo")
+		if err != nil {
+			return nil, err
+		}
+		return bsdf.NewSingle(bxdf.NewLambert(albedo)), nil
+	default:
+		return nil, fmt.Errorf("unsupported surface type %q", surfaceType)
+	}
+}
+
+func parseEmission(def map[string]interface{}) (core.Emitter, error) {
+	emissionType, err := requiredStringField(def, "type")
+	if err != nil {
+		return nil, err
+	}
+
+	switch emissionType {
+	case "constant":
+		color, err := requiredSpectrumField(def, "color")
+		if err != nil {
+			return nil, err
+		}
+		return emission.NewConstant(color), nil
+	default:
+		return nil, fmt.Errorf("unsupported emission type %q", emissionType)
+	}
+}
+
+func requiredSpectrumField(data map[string]interface{}, key string) (core.Spectrum, error) {
+	values, err := requiredFloat64SliceField(data, key, 3)
+	if err != nil {
+		return core.Spectrum{}, err
+	}
+	for i, value := range values {
+		if value < 0 {
+			return core.Spectrum{}, fmt.Errorf("field %q index %d must be >= 0", key, i)
+		}
+	}
+	return core.NewSpectrum(values[0], values[1], values[2]), nil
+}
+
+func optionalMapField(data map[string]interface{}, key string) (map[string]interface{}, bool, error) {
+	value, ok := data[key]
+	if !ok {
+		return nil, false, nil
+	}
+	mapped, ok := value.(map[string]interface{})
+	if !ok {
+		return nil, true, fmt.Errorf("field %q: expected object, got %T", key, value)
+	}
+	return mapped, true, nil
 }
