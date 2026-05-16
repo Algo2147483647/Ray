@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/Algo2147483647/ray/engine/go/internal/material/core"
+	"github.com/Algo2147483647/ray/engine/go/internal/material/ior"
 )
 
 func TestSpecularReflectionSampleThroughputWeight(t *testing.T) {
@@ -27,7 +28,7 @@ func TestSpecularReflectionSampleThroughputWeight(t *testing.T) {
 }
 
 func TestSpecularDielectricChoosesReflectionAndTransmission(t *testing.T) {
-	bxdf := NewSpecularDielectric(core.ConstantSpectrum(1), core.ConstantSpectrum(1), 1, 1.5)
+	bxdf := NewSpecularDielectricConstant(core.ConstantSpectrum(1), core.ConstantSpectrum(1), 1, 1.5)
 	wo := core.NewDirection(0, 0, 1)
 	f := FresnelDielectric(1, 1, 1.5)
 
@@ -56,5 +57,30 @@ func TestSpecularDielectricChoosesReflectionAndTransmission(t *testing.T) {
 	}
 	if math.Abs(exit.Eta-1) > 1e-12 {
 		t.Fatalf("expected exited medium eta 1, got %f", exit.Eta)
+	}
+}
+
+func TestSpecularDielectricSamplesDispersiveWavelength(t *testing.T) {
+	bxdf := NewSpecularDielectric(
+		core.ConstantSpectrum(1),
+		core.ConstantSpectrum(1),
+		1,
+		ior.NewCauchy(1.5, 0.004, 0),
+	)
+	wo := core.NewDirection(0, 0, 1)
+
+	sample := bxdf.Sample(core.ShadingContext{}, wo, core.Sample2D{U: 1, V: 0.25})
+	expectedWavelength := ior.WavelengthMinNM + 0.25*(ior.WavelengthMaxNM-ior.WavelengthMinNM)
+	expectedEta := ior.NewCauchy(1.5, 0.004, 0).Evaluate(expectedWavelength)
+	if math.Abs(sample.WavelengthNM-expectedWavelength) > 1e-12 {
+		t.Fatalf("unexpected sampled wavelength: got %f want %f", sample.WavelengthNM, expectedWavelength)
+	}
+	if math.Abs(sample.Eta-expectedEta) > 1e-12 {
+		t.Fatalf("unexpected dispersive eta: got %f want %f", sample.Eta, expectedEta)
+	}
+
+	continued := bxdf.Sample(core.ShadingContext{WavelengthNM: 610}, wo, core.Sample2D{U: 1, V: 0})
+	if math.Abs(continued.WavelengthNM-610) > 1e-12 {
+		t.Fatalf("expected existing wavelength to be preserved, got %f", continued.WavelengthNM)
 	}
 }

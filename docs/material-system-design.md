@@ -207,11 +207,12 @@ Conceptual shape:
 
 ```go
 type BxDFSample struct {
-    Wi    Direction
-    F     Spectrum
-    PDF   float64
-    Flags DeltaFlags
-    Eta   float64
+    Wi           Direction
+    F            Spectrum
+    PDF          float64
+    Flags        DeltaFlags
+    Eta          float64
+    WavelengthNM float64
 }
 ```
 
@@ -527,10 +528,41 @@ Ideal dielectric:
     "reflectance": [1, 1, 1],
     "transmittance": [1, 1, 1],
     "eta_outside": 1,
-    "eta_inside": 1.5
+    "ior": {
+      "type": "constant",
+      "eta": 1.5
+    }
   }
 }
 ```
+
+Dispersive dielectric:
+
+```json
+{
+  "id": "crown-glass",
+  "surface": {
+    "type": "specular_dielectric",
+    "reflectance": [1, 1, 1],
+    "transmittance": [1, 1, 1],
+    "eta_outside": 1,
+    "ior": {
+      "type": "cauchy",
+      "a": 1.5046,
+      "b": 0.0042,
+      "c": 0
+    }
+  }
+}
+```
+
+`cauchy` coefficients use wavelengths in micrometers:
+
+```text
+eta(lambda_nm) = A + B / lambda_um^2 + C / lambda_um^4
+```
+
+`eta_inside` remains accepted as a shorthand for constant IOR while scenes move to the explicit `ior` block.
 
 Rough conductor:
 
@@ -544,6 +576,12 @@ Rough conductor:
     "roughness": 0.25
   }
 }
+```
+
+Example render command:
+
+```bash
+go -C engine/go run ./cmd/ray --script ../../examples/scenes/rough-conductor.json --samples 64 --width 256 --height 256 --output-image ../../outputs/rough-conductor.png
 ```
 
 Old fields such as `color`, `reflectivity`, `refractivity`, `radiate`, and `diffuse_loss` are not part of the new material schema. They are intentionally not translated in the new parser.
@@ -575,6 +613,21 @@ phase functions
 homogeneous volume
 heterogeneous volume
 ```
+
+### Phase 6.0: IOR And Dispersion Wiring
+
+Delivered:
+
+```text
+material/ior model interface
+constant IOR model
+Cauchy dispersion model
+specular dielectric wavelength-aware eta evaluation
+ray wavelength propagation through ShadingContext and BxDFSample
+first-hit spectral tinting for dispersive paths
+```
+
+Dispersive BxDFs may select a wavelength when the incoming ray has none. The renderer then locks that wavelength on the ray and applies the existing wavelength-to-RGB response, so later dielectric boundaries evaluate the same spectral path instead of resampling per interface.
 
 ## Open Design Questions
 

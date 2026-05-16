@@ -130,3 +130,33 @@ func TestParseMaterialsSupportsRoughConductor(t *testing.T) {
 		t.Fatal("expected parsed rough conductor surface")
 	}
 }
+
+func TestParseMaterialsSupportsCauchyIOR(t *testing.T) {
+	script := &Script{
+		Materials: []map[string]interface{}{
+			{
+				"id": "dispersion-glass",
+				"surface": map[string]interface{}{
+					"type":          "specular_dielectric",
+					"reflectance":   []interface{}{1.0, 1.0, 1.0},
+					"transmittance": []interface{}{1.0, 1.0, 1.0},
+					"eta_outside":   1.0,
+					"ior": map[string]interface{}{
+						"type": "cauchy",
+						"a":    1.5046,
+						"b":    0.0042,
+						"c":    0.0,
+					},
+				},
+			},
+		},
+	}
+
+	materials, err := ParseMaterials(script)
+	if err != nil {
+		t.Fatalf("parse cauchy ior: %v", err)
+	}
+	if materials["dispersion-glass"] == nil || materials["dispersion-glass"].Surface == nil {
+		t.Fatal("expected parsed dielectric surface")
+	}
+}

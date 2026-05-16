@@ -8,6 +8,7 @@ import (
 	"github.com/Algo2147483647/ray/engine/go/internal/material/bxdf"
 	"github.com/Algo2147483647/ray/engine/go/internal/material/core"
 	"github.com/Algo2147483647/ray/engine/go/internal/material/emission"
+	"github.com/Algo2147483647/ray/engine/go/internal/material/ior"
 )
 
 func ParseMaterials(script *Script) (map[string]*core.Material, error) {
@@ -114,17 +115,14 @@ func parseSurface(def map[string]interface{}) (core.BSDF, error) {
 		if !ok {
 			etaOutside = 1
 		}
-		etaInside, ok, err := optionalFloat64Field(def, "eta_inside")
+		if !ior.IsValidEta(etaOutside) {
+			return nil, fmt.Errorf("eta_outside must be > 0")
+		}
+		insideIOR, err := parseIORModel(def)
 		if err != nil {
 			return nil, err
 		}
-		if !ok {
-			etaInside = 1.5
-		}
-		if etaOutside <= 0 || etaInside <= 0 {
-			return nil, fmt.Errorf("eta values must be > 0")
-		}
-		return bsdf.NewSingle(bxdf.NewSpecularDielectric(reflectance, transmittance, etaOutside, etaInside)), nil
+		return bsdf.NewSingle(bxdf.NewSpecularDielectric(reflectance, transmittance, etaOutside, insideIOR)), nil
 	case "rough_conductor":
 		eta, err := requiredSpectrumField(def, "eta")
 		if err != nil {
@@ -167,6 +165,65 @@ func parseEmission(def map[string]interface{}) (core.Emitter, error) {
 	default:
 		return nil, fmt.Errorf("unsupported emission type %q", emissionType)
 	}
+}
+
+func parseIORModel(def map[string]interface{}) (ior.Model, error) {
+	if iorDef, ok, err := optionalMapField(def, "ior"); err != nil {
+		return nil, err
+	} else if ok {
+		iorType, err := requiredStringField(iorDef, "type")
+		if err != nil {
+			return nil, fmt.Errorf("ior: %w", err)
+		}
+		switch iorType {
+		case "constant":
+			eta, err := requiredFloat64Field(iorDef, "eta")
+			if err != nil {
+				return nil, fmt.Errorf("ior: %w", err)
+			}
+			if !ior.IsValidEta(eta) {
+				return nil, fmt.Errorf("ior eta must be > 0")
+			}
+			return ior.NewConstant(eta), nil
+		case "cauchy":
+			a, err := requiredFloat64Field(iorDef, "a")
+			if err != nil {
+				return nil, fmt.Errorf("ior: %w", err)
+			}
+			b, err := requiredFloat64Field(iorDef, "b")
+			if err != nil {
+				return nil, fmt.Errorf("ior: %w", err)
+			}
+			c, ok, err := optionalFloat64Field(iorDef, "c")
+			if err != nil {
+				return nil, fmt.Errorf("ior: %w", err)
+			}
+			if !ok {
+				c = 0
+			}
+			model := ior.NewCauchy(a, b, c)
+			if !ior.IsValidEta(model.Evaluate(ior.WavelengthMinNM)) ||
+				!ior.IsValidEta(model.Evaluate(ior.DefaultWavelengthNM)) ||
+				!ior.IsValidEta(model.Evaluate(ior.WavelengthMaxNM)) {
+				return nil, fmt.Errorf("ior cauchy coefficients produce invalid eta")
+			}
+			return model, nil
+		default:
+			return nil, fmt.Errorf("unsupported ior type %q", iorType)
+		}
+	}
+
+	etaInside, ok, err := optionalFloat64Field(def, "eta_inside")
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		etaInside = 1.5
+	}
+	if !ior.IsValidEta(etaInside) {
+		return nil, fmt.Errorf("eta_inside must be > 0")
+	}
+	return ior.NewConstant(etaInside), nil
 }
 
 func requiredSpectrumField(data map[string]interface{}, key string) (core.Spectrum, error) {

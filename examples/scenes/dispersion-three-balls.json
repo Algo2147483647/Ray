@@ -70,7 +70,12 @@
           1
         ],
         "eta_outside": 1,
-        "eta_inside": 1.5
+        "ior": {
+          "type": "cauchy",
+          "a": 1.5046,
+          "b": 0.0042,
+          "c": 0
+        }
       }
     },
     {
@@ -88,7 +93,10 @@
           1
         ],
         "eta_outside": 1,
-        "eta_inside": 1.5
+        "ior": {
+          "type": "constant",
+          "eta": 1.5
+        }
       }
     }
   ],

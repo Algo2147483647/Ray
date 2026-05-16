@@ -34,14 +34,16 @@ type ShadingContext struct {
 	TransportMode TransportMode
 	SpectrumMode  SpectrumMode
 	CurrentIOR    float64
+	WavelengthNM  float64
 }
 
 type BxDFSample struct {
-	Wi    Direction
-	F     Spectrum
-	PDF   float64
-	Flags DeltaFlags
-	Eta   float64
+	Wi           Direction
+	F            Spectrum
+	PDF          float64
+	Flags        DeltaFlags
+	Eta          float64
+	WavelengthNM float64
 }
 
 type Scattering interface {

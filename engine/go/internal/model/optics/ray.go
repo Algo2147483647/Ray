@@ -48,9 +48,13 @@ func (r *Ray) Init() {
 }
 
 func (ray *Ray) ConvertToMonochrome() {
-	ray.WaveLength = WavelengthMin + rand.Float64()*(WavelengthMax-WavelengthMin)
+	ray.SetMonochrome(WavelengthMin + rand.Float64()*(WavelengthMax-WavelengthMin))
+}
 
-	baseColor := math_lib.Normalize(WaveLengthToRGB(ray.WaveLength))
+func (ray *Ray) SetMonochrome(wavelength float64) {
+	ray.WaveLength = wavelength
+
+	baseColor := math_lib.Normalize(WaveLengthToRGB(wavelength))
 	math_lib.ScaleVec(baseColor, 2, baseColor)
 
 	ray.Color.SetVec(0, baseColor.AtVec(0)*ray.Color.AtVec(0))

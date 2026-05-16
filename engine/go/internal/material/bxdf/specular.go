@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"github.com/Algo2147483647/ray/engine/go/internal/material/core"
+	"github.com/Algo2147483647/ray/engine/go/internal/material/ior"
 )
 
 type SpecularReflection struct {
@@ -53,16 +54,23 @@ type SpecularDielectric struct {
 	Reflectance   core.Spectrum
 	Transmittance core.Spectrum
 	EtaOutside    float64
-	EtaInside     float64
+	InsideIOR     ior.Model
 }
 
-func NewSpecularDielectric(reflectance, transmittance core.Spectrum, etaOutside, etaInside float64) SpecularDielectric {
+func NewSpecularDielectric(reflectance, transmittance core.Spectrum, etaOutside float64, insideIOR ior.Model) SpecularDielectric {
+	if insideIOR == nil {
+		insideIOR = ior.NewConstant(1.5)
+	}
 	return SpecularDielectric{
 		Reflectance:   reflectance,
 		Transmittance: transmittance,
 		EtaOutside:    etaOutside,
-		EtaInside:     etaInside,
+		InsideIOR:     insideIOR,
 	}
+}
+
+func NewSpecularDielectricConstant(reflectance, transmittance core.Spectrum, etaOutside, etaInside float64) SpecularDielectric {
+	return NewSpecularDielectric(reflectance, transmittance, etaOutside, ior.NewConstant(etaInside))
 }
 
 func (s SpecularDielectric) Eval(core.ShadingContext, core.Direction, core.Direction) core.Spectrum {
@@ -74,14 +82,21 @@ func (s SpecularDielectric) Sample(ctx core.ShadingContext, wo core.Direction, u
 		return core.BxDFSample{}
 	}
 
+	insideIOR := s.insideIOR()
+	wavelengthNM, spectralSample := s.resolveWavelength(ctx, u)
+	etaInside := insideIOR.Evaluate(wavelengthNM)
+	if !ior.IsValidEta(s.EtaOutside) || !ior.IsValidEta(etaInside) {
+		return core.BxDFSample{}
+	}
+
 	etaI := s.EtaOutside
-	etaT := s.EtaInside
+	etaT := etaInside
 	if ctx.CurrentIOR > 0 {
 		etaI = ctx.CurrentIOR
-		if almostEqualIOR(ctx.CurrentIOR, s.EtaInside) {
+		if almostEqualIOR(ctx.CurrentIOR, etaInside) {
 			etaT = s.EtaOutside
 		} else {
-			etaT = s.EtaInside
+			etaT = etaInside
 		}
 	}
 
@@ -89,13 +104,17 @@ func (s SpecularDielectric) Sample(ctx core.ShadingContext, wo core.Direction, u
 	if u.U < fresnel {
 		wi := reflectLocal(wo)
 		cos := core.AbsCosTheta(wi)
-		return core.BxDFSample{
+		sample := core.BxDFSample{
 			Wi:    wi,
 			F:     s.Reflectance.MulScalar(fresnel).DivScalar(cos),
 			PDF:   fresnel,
 			Flags: core.DeltaReflection,
 			Eta:   etaI,
 		}
+		if spectralSample {
+			sample.WavelengthNM = wavelengthNM
+		}
+		return sample
 	}
 
 	eta := etaI / etaT
@@ -103,23 +122,31 @@ func (s SpecularDielectric) Sample(ctx core.ShadingContext, wo core.Direction, u
 	if !ok {
 		wi := reflectLocal(wo)
 		cos := core.AbsCosTheta(wi)
-		return core.BxDFSample{
+		sample := core.BxDFSample{
 			Wi:    wi,
 			F:     s.Reflectance.DivScalar(cos),
 			PDF:   1,
 			Flags: core.DeltaReflection,
 			Eta:   etaI,
 		}
+		if spectralSample {
+			sample.WavelengthNM = wavelengthNM
+		}
+		return sample
 	}
 
 	cos := core.AbsCosTheta(wi)
-	return core.BxDFSample{
+	sample := core.BxDFSample{
 		Wi:    wi,
 		F:     s.Transmittance.MulScalar(1 - fresnel).DivScalar(cos),
 		PDF:   1 - fresnel,
 		Flags: core.DeltaTransmission,
 		Eta:   etaT,
 	}
+	if spectralSample {
+		sample.WavelengthNM = wavelengthNM
+	}
+	return sample
 }
 
 func (s SpecularDielectric) PDF(core.ShadingContext, core.Direction, core.Direction) float64 {
@@ -140,6 +167,24 @@ func (s SpecularDielectric) RoughnessInfo(core.ShadingContext) core.RoughnessInf
 
 func (s SpecularDielectric) DeltaFlags() core.DeltaFlags {
 	return core.DeltaReflection | core.DeltaTransmission
+}
+
+func (s SpecularDielectric) resolveWavelength(ctx core.ShadingContext, u core.Sample2D) (float64, bool) {
+	if ctx.WavelengthNM > 0 {
+		return ctx.WavelengthNM, true
+	}
+	if s.insideIOR().IsDispersive() {
+		t := clamp(u.V, 1e-6, 1-1e-6)
+		return ior.WavelengthMinNM + t*(ior.WavelengthMaxNM-ior.WavelengthMinNM), true
+	}
+	return ior.DefaultWavelengthNM, false
+}
+
+func (s SpecularDielectric) insideIOR() ior.Model {
+	if s.InsideIOR == nil {
+		return ior.NewConstant(1.5)
+	}
+	return s.InsideIOR
 }
 
 func FresnelDielectric(cosThetaI, etaI, etaT float64) float64 {
