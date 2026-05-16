@@ -532,6 +532,20 @@ Ideal dielectric:
 }
 ```
 
+Rough conductor:
+
+```json
+{
+  "id": "brushed-metal",
+  "surface": {
+    "type": "rough_conductor",
+    "eta": [0.2, 0.9, 1.5],
+    "k": [3.9, 2.5, 1.9],
+    "roughness": 0.25
+  }
+}
+```
+
 Old fields such as `color`, `reflectivity`, `refractivity`, `radiate`, and `diffuse_loss` are not part of the new material schema. They are intentionally not translated in the new parser.
 
 ### Phase 5: Microfacet

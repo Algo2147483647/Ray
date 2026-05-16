@@ -125,6 +125,27 @@ func parseSurface(def map[string]interface{}) (core.BSDF, error) {
 			return nil, fmt.Errorf("eta values must be > 0")
 		}
 		return bsdf.NewSingle(bxdf.NewSpecularDielectric(reflectance, transmittance, etaOutside, etaInside)), nil
+	case "rough_conductor":
+		eta, err := requiredSpectrumField(def, "eta")
+		if err != nil {
+			return nil, err
+		}
+		k, err := requiredSpectrumField(def, "k")
+		if err != nil {
+			return nil, err
+		}
+		roughness, ok, err := optionalFloat64Field(def, "roughness")
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			roughness = 0.25
+		}
+		if roughness < 0 || roughness > 1 {
+			return nil, fmt.Errorf("roughness must be in [0, 1]")
+		}
+		alpha := roughness * roughness
+		return bsdf.NewSingle(bxdf.NewRoughConductor(eta, k, alpha)), nil
 	default:
 		return nil, fmt.Errorf("unsupported surface type %q", surfaceType)
 	}

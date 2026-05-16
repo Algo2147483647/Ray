@@ -106,3 +106,27 @@ func TestParseMaterialsRejectsDuplicateID(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
+
+func TestParseMaterialsSupportsRoughConductor(t *testing.T) {
+	script := &Script{
+		Materials: []map[string]interface{}{
+			{
+				"id": "metal",
+				"surface": map[string]interface{}{
+					"type":      "rough_conductor",
+					"eta":       []interface{}{0.2, 0.9, 1.5},
+					"k":         []interface{}{3.9, 2.5, 1.9},
+					"roughness": 0.25,
+				},
+			},
+		},
+	}
+
+	materials, err := ParseMaterials(script)
+	if err != nil {
+		t.Fatalf("parse rough conductor: %v", err)
+	}
+	if materials["metal"] == nil || materials["metal"].Surface == nil {
+		t.Fatal("expected parsed rough conductor surface")
+	}
+}
