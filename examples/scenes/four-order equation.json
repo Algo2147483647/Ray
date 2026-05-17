@@ -5,9 +5,9 @@
       "emission": {
         "type": "constant",
         "color": [
-          7,
-          7,
-          7
+          6,
+          5.8,
+          5.4
         ]
       }
     },
@@ -16,9 +16,9 @@
       "surface": {
         "type": "lambert",
         "albedo": [
-          1,
-          1,
-          1
+          0.76,
+          0.75,
+          0.7
         ]
       }
     },
@@ -27,10 +27,27 @@
       "surface": {
         "type": "specular_reflection",
         "reflectance": [
-          1,
-          1,
-          1
+          0.9,
+          0.92,
+          0.96
         ]
+      }
+    },
+    {
+      "id": "brushed-silver",
+      "surface": {
+        "type": "rough_conductor",
+        "eta": [
+          1.35,
+          0.95,
+          0.62
+        ],
+        "k": [
+          7.5,
+          6.3,
+          5.2
+        ],
+        "roughness": 0.16
       }
     },
     {
@@ -38,9 +55,9 @@
       "surface": {
         "type": "lambert",
         "albedo": [
-          1,
-          0.68,
-          0.75
+          0.78,
+          0.36,
+          0.26
         ]
       }
     },
@@ -49,9 +66,9 @@
       "surface": {
         "type": "lambert",
         "albedo": [
-          0.65,
-          0.62,
-          1
+          0.22,
+          0.32,
+          0.7
         ]
       }
     },
@@ -65,12 +82,15 @@
           1
         ],
         "transmittance": [
-          1,
-          1,
+          0.96,
+          0.98,
           1
         ],
         "eta_outside": 1,
-        "eta_inside": 1.5
+        "ior": {
+          "type": "constant",
+          "eta": 1.5
+        }
       }
     },
     {
@@ -83,13 +103,52 @@
           1
         ],
         "transmittance": [
-          1,
-          1,
+          0.98,
+          0.99,
           1
         ],
         "eta_outside": 1,
-        "eta_inside": 1.5
+        "ior": {
+          "type": "constant",
+          "eta": 1.5
+        }
       }
+    }
+  ],
+  "render": {
+    "samples": 400,
+    "thread_num": 0,
+    "width": 200,
+    "height": 200,
+    "camera_index": 0,
+    "output_image": "../../outputs/four-order-equation-200x200-400spp.png",
+    "output_film": "../../outputs/four-order-equation-200x200-400spp.bin",
+    "debug_output": "../../outputs/four-order-equation-debug.json",
+    "exposure": 1.8,
+    "tone_mapping": "reinhard",
+    "gamma": 2.2
+  },
+  "cameras": [
+    {
+      "id": "main",
+      "position": [
+        -2.1,
+        0.12,
+        0.62
+      ],
+      "look_at": [
+        1.55,
+        0,
+        0.02
+      ],
+      "up": [
+        0,
+        0,
+        1
+      ],
+      "width": 200,
+      "height": 200,
+      "field_of_view": 78
     }
   ],
   "objects": [
@@ -391,7 +450,7 @@
         0,
         1
       ],
-      "material_id": "mirror"
+      "material_id": "brushed-silver"
     },
     {
       "id": "four-order equation",
@@ -660,18 +719,18 @@
       "id": "MainLight",
       "shape": "triangle",
       "p1": [
-        1.5,
-        1.5,
+        1.05,
+        1.05,
         2.49
       ],
       "p2": [
-        1.5,
-        -1.5,
+        1.05,
+        -1.05,
         2.49
       ],
       "p3": [
-        -1.5,
-        1.5,
+        -1.05,
+        1.05,
         2.49
       ],
       "material_id": "LightSource"
@@ -680,18 +739,18 @@
       "id": "MainLight",
       "shape": "triangle",
       "p1": [
-        -1.5,
-        -1.5,
+        -1.05,
+        -1.05,
         2.49
       ],
       "p2": [
-        1.5,
-        -1.5,
+        1.05,
+        -1.05,
         2.49
       ],
       "p3": [
-        -1.5,
-        1.5,
+        -1.05,
+        1.05,
         2.49
       ],
       "material_id": "LightSource"

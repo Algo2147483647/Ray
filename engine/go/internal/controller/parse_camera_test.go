@@ -41,14 +41,3 @@ func TestParseCamerasSupportsConfiguredCamera(t *testing.T) {
 		t.Fatal("expected camera direction to be set from look_at")
 	}
 }
-
-func TestGetCamerasFallsBackToLegacyField(t *testing.T) {
-	script := &Script{
-		LegacyCameras: []CameraScript{{Position: []float64{0, 0, 0}, LookAt: []float64{1, 0, 0}}},
-	}
-
-	cameras := script.GetCameras()
-	if len(cameras) != 1 {
-		t.Fatalf("expected legacy camera fallback, got %d cameras", len(cameras))
-	}
-}

@@ -39,18 +39,10 @@ type RenderScript struct {
 }
 
 type Script struct {
-	Materials     []map[string]interface{} `json:"materials"`
-	Objects       []map[string]interface{} `json:"objects"`
-	Cameras       []CameraScript           `json:"cameras"`
-	LegacyCameras []CameraScript           `json:"camera"`
-	Render        RenderScript             `json:"render"`
-}
-
-func (s *Script) GetCameras() []CameraScript {
-	if len(s.Cameras) > 0 {
-		return s.Cameras
-	}
-	return s.LegacyCameras
+	Materials []map[string]interface{} `json:"materials"`
+	Objects   []map[string]interface{} `json:"objects"`
+	Cameras   []CameraScript           `json:"cameras"`
+	Render    RenderScript             `json:"render"`
 }
 
 func ReadScriptFile(filepath string) (*Script, error) {
@@ -143,7 +135,7 @@ func LoadSceneFromScript(script *Script, scene *model.Scene) error {
 }
 
 func ParseCameras(script *Script) ([]camera.Camera, error) {
-	cameraDefs := script.GetCameras()
+	cameraDefs := script.Cameras
 	if len(cameraDefs) == 0 {
 		return nil, nil
 	}

@@ -131,9 +131,6 @@ func encodeOutputChannel(v float64, options ImageOptions) uint8 {
 		v = v / (1 + v)
 	case ToneMappingACES:
 		v = acesToneMap(v)
-	case ToneMappingLinear:
-	default:
-		v = v
 	}
 
 	v = clamp01(v)
