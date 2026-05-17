@@ -1,0 +1,324 @@
+{
+  "materials": [
+    {
+      "id": "ceiling-light",
+      "emission": {
+        "type": "constant",
+        "color": [9, 8.7, 8.2]
+      }
+    },
+    {
+      "id": "slit-light",
+      "emission": {
+        "type": "constant",
+        "color": [1.4, 1.4, 1.4]
+      }
+    },
+    {
+      "id": "matte-floor",
+      "surface": {
+        "type": "lambert",
+        "albedo": [0.72, 0.71, 0.68]
+      }
+    },
+    {
+      "id": "matte-back",
+      "surface": {
+        "type": "lambert",
+        "albedo": [0.62, 0.64, 0.62]
+      }
+    },
+    {
+      "id": "matte-red",
+      "surface": {
+        "type": "lambert",
+        "albedo": [0.78, 0.18, 0.14]
+      }
+    },
+    {
+      "id": "matte-blue",
+      "surface": {
+        "type": "lambert",
+        "albedo": [0.16, 0.25, 0.78]
+      }
+    },
+    {
+      "id": "matte-green",
+      "surface": {
+        "type": "lambert",
+        "albedo": [0.24, 0.58, 0.32]
+      }
+    },
+    {
+      "id": "mirror",
+      "surface": {
+        "type": "specular_reflection",
+        "reflectance": [0.96, 0.96, 0.96]
+      }
+    },
+    {
+      "id": "clear-glass",
+      "surface": {
+        "type": "specular_dielectric",
+        "reflectance": [1, 1, 1],
+        "transmittance": [1, 1, 1],
+        "eta_outside": 1,
+        "eta_inside": 1.5
+      }
+    },
+    {
+      "id": "high-dispersion-glass",
+      "surface": {
+        "type": "specular_dielectric",
+        "reflectance": [1, 1, 1],
+        "transmittance": [1, 1, 1],
+        "eta_outside": 1,
+        "ior": {
+          "type": "cauchy",
+          "a": 1.35,
+          "b": 0.08,
+          "c": 0
+        }
+      }
+    },
+    {
+      "id": "gold-rough-conductor",
+      "surface": {
+        "type": "rough_conductor",
+        "eta": [0.17, 0.35, 1.5],
+        "k": [3.1, 2.7, 1.9],
+        "roughness": 0.2
+      }
+    }
+  ],
+  "objects": [
+    {
+      "id": "floor-0",
+      "shape": "triangle",
+      "p1": [-1.85, -1.45, 0],
+      "p2": [1.6, -1.45, 0],
+      "p3": [-1.85, 1.45, 0],
+      "material_id": "matte-floor"
+    },
+    {
+      "id": "floor-1",
+      "shape": "triangle",
+      "p1": [1.6, 1.45, 0],
+      "p2": [-1.85, 1.45, 0],
+      "p3": [1.6, -1.45, 0],
+      "material_id": "matte-floor"
+    },
+    {
+      "id": "back-wall-0",
+      "shape": "triangle",
+      "p1": [1.6, -1.45, 0],
+      "p2": [1.6, 1.45, 0],
+      "p3": [1.6, -1.45, 2.25],
+      "material_id": "matte-back"
+    },
+    {
+      "id": "back-wall-1",
+      "shape": "triangle",
+      "p1": [1.6, 1.45, 2.25],
+      "p2": [1.6, -1.45, 2.25],
+      "p3": [1.6, 1.45, 0],
+      "material_id": "matte-back"
+    },
+    {
+      "id": "left-wall-0",
+      "shape": "triangle",
+      "p1": [-1.85, -1.45, 0],
+      "p2": [1.6, -1.45, 0],
+      "p3": [-1.85, -1.45, 2.25],
+      "material_id": "matte-red"
+    },
+    {
+      "id": "left-wall-1",
+      "shape": "triangle",
+      "p1": [1.6, -1.45, 2.25],
+      "p2": [-1.85, -1.45, 2.25],
+      "p3": [1.6, -1.45, 0],
+      "material_id": "matte-red"
+    },
+    {
+      "id": "right-wall-0",
+      "shape": "triangle",
+      "p1": [-1.85, 1.45, 0],
+      "p2": [-1.85, 1.45, 2.25],
+      "p3": [1.6, 1.45, 0],
+      "material_id": "matte-blue"
+    },
+    {
+      "id": "right-wall-1",
+      "shape": "triangle",
+      "p1": [1.6, 1.45, 2.25],
+      "p2": [1.6, 1.45, 0],
+      "p3": [-1.85, 1.45, 2.25],
+      "material_id": "matte-blue"
+    },
+    {
+      "id": "ceiling-0",
+      "shape": "triangle",
+      "p1": [-1.85, -1.45, 2.25],
+      "p2": [-1.85, 1.45, 2.25],
+      "p3": [1.6, -1.45, 2.25],
+      "material_id": "matte-back"
+    },
+    {
+      "id": "ceiling-1",
+      "shape": "triangle",
+      "p1": [1.6, 1.45, 2.25],
+      "p2": [1.6, -1.45, 2.25],
+      "p3": [-1.85, 1.45, 2.25],
+      "material_id": "matte-back"
+    },
+    {
+      "id": "main-light-0",
+      "shape": "triangle",
+      "p1": [-0.85, -0.52, 2.235],
+      "p2": [0.55, -0.52, 2.235],
+      "p3": [-0.85, 0.52, 2.235],
+      "material_id": "ceiling-light"
+    },
+    {
+      "id": "main-light-1",
+      "shape": "triangle",
+      "p1": [0.55, 0.52, 2.235],
+      "p2": [-0.85, 0.52, 2.235],
+      "p3": [0.55, -0.52, 2.235],
+      "material_id": "ceiling-light"
+    },
+    {
+      "id": "green-pedestal",
+      "shape": "cuboid",
+      "position": [-0.05, -0.02, 0.16],
+      "size": [0.62, 0.5, 0.32],
+      "material_id": "matte-green"
+    },
+    {
+      "id": "rough-gold-sphere",
+      "shape": "sphere",
+      "position": [-0.82, -0.47, 0.42],
+      "r": 0.42,
+      "material_id": "gold-rough-conductor"
+    },
+    {
+      "id": "clear-glass-sphere",
+      "shape": "sphere",
+      "position": [0.03, 0.08, 0.68],
+      "r": 0.36,
+      "material_id": "clear-glass"
+    },
+    {
+      "id": "mirror-sphere",
+      "shape": "sphere",
+      "position": [0.73, -0.35, 0.34],
+      "r": 0.34,
+      "material_id": "mirror"
+    },
+    {
+      "id": "dispersion-slit-0",
+      "shape": "triangle",
+      "p1": [1.585, 0.38, 1.23],
+      "p2": [1.585, 0.38, 1.29],
+      "p3": [1.585, 1.32, 1.23],
+      "material_id": "slit-light"
+    },
+    {
+      "id": "dispersion-slit-1",
+      "shape": "triangle",
+      "p1": [1.585, 1.32, 1.29],
+      "p2": [1.585, 1.32, 1.23],
+      "p3": [1.585, 0.38, 1.29],
+      "material_id": "slit-light"
+    },
+    {
+      "id": "prism-end-front",
+      "shape": "triangle",
+      "p1": [-0.94, 0.5, 0.88],
+      "p2": [-0.34, 0.5, 1.68],
+      "p3": [0.26, 0.5, 0.88],
+      "material_id": "high-dispersion-glass"
+    },
+    {
+      "id": "prism-end-back",
+      "shape": "triangle",
+      "p1": [-0.94, 1.22, 0.88],
+      "p2": [0.26, 1.22, 0.88],
+      "p3": [-0.34, 1.22, 1.68],
+      "material_id": "high-dispersion-glass"
+    },
+    {
+      "id": "prism-face-left-0",
+      "shape": "triangle",
+      "p1": [-0.94, 0.5, 0.88],
+      "p2": [-0.94, 1.22, 0.88],
+      "p3": [-0.34, 1.22, 1.68],
+      "material_id": "high-dispersion-glass"
+    },
+    {
+      "id": "prism-face-left-1",
+      "shape": "triangle",
+      "p1": [-0.94, 0.5, 0.88],
+      "p2": [-0.34, 1.22, 1.68],
+      "p3": [-0.34, 0.5, 1.68],
+      "material_id": "high-dispersion-glass"
+    },
+    {
+      "id": "prism-face-right-0",
+      "shape": "triangle",
+      "p1": [-0.34, 0.5, 1.68],
+      "p2": [-0.34, 1.22, 1.68],
+      "p3": [0.26, 1.22, 0.88],
+      "material_id": "high-dispersion-glass"
+    },
+    {
+      "id": "prism-face-right-1",
+      "shape": "triangle",
+      "p1": [-0.34, 0.5, 1.68],
+      "p2": [0.26, 1.22, 0.88],
+      "p3": [0.26, 0.5, 0.88],
+      "material_id": "high-dispersion-glass"
+    },
+    {
+      "id": "prism-face-bottom-0",
+      "shape": "triangle",
+      "p1": [0.26, 0.5, 0.88],
+      "p2": [0.26, 1.22, 0.88],
+      "p3": [-0.94, 1.22, 0.88],
+      "material_id": "high-dispersion-glass"
+    },
+    {
+      "id": "prism-face-bottom-1",
+      "shape": "triangle",
+      "p1": [0.26, 0.5, 0.88],
+      "p2": [-0.94, 1.22, 0.88],
+      "p3": [-0.94, 0.5, 0.88],
+      "material_id": "high-dispersion-glass"
+    }
+  ],
+  "cameras": [
+    {
+      "id": "main",
+      "position": [-3.15, -0.12, 1.08],
+      "look_at": [0.12, 0.05, 0.88],
+      "up": [0, 0, 1],
+      "field_of_view": 45,
+      "width": 192,
+      "height": 192
+    }
+  ],
+  "render": {
+    "samples": 1000,
+    "thread_num": 0,
+    "width": 192,
+    "height": 192,
+    "camera_index": 0,
+    "output_image": "../../outputs/feature-showcase-1000spp.png",
+    "output_film": "../../outputs/feature-showcase-1000spp.bin",
+    "debug_output": "../../outputs/feature-showcase-debug.json",
+    "exposure": 2.1,
+    "tone_mapping": "reinhard",
+    "gamma": 2.2
+  }
+}
