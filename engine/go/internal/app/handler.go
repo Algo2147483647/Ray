@@ -226,7 +226,12 @@ func (h *Handler) SaveImg(filename string) *Handler {
 	}
 	defer file.Close()
 
-	if err := png.Encode(file, h.Film.ToImage()); err != nil {
+	img := h.Film.ToImageWithOptions(camera.ImageOptions{
+		Exposure:    h.Config.Exposure,
+		ToneMapping: camera.ToneMapping(h.Config.ToneMapping),
+		Gamma:       h.Config.Gamma,
+	})
+	if err := png.Encode(file, img); err != nil {
 		h.err = err
 	}
 

@@ -7,6 +7,7 @@ import (
 	"runtime"
 
 	"github.com/Algo2147483647/ray/engine/go/internal/controller"
+	"github.com/Algo2147483647/ray/engine/go/internal/model/camera"
 )
 
 const (
@@ -29,6 +30,9 @@ type RenderOverrides struct {
 	OutputImage string
 	OutputFilm  string
 	DebugOutput string
+	Exposure    float64
+	ToneMapping string
+	Gamma       float64
 }
 
 type RenderConfig struct {
@@ -41,6 +45,9 @@ type RenderConfig struct {
 	OutputImage string
 	OutputFilm  string
 	DebugOutput string
+	Exposure    float64
+	ToneMapping string
+	Gamma       float64
 }
 
 func ParseRenderOverrides(args []string) (RenderOverrides, error) {
@@ -59,6 +66,9 @@ func ParseRenderOverrides(args []string) (RenderOverrides, error) {
 	flagSet.StringVar(&overrides.OutputImage, "output-image", "", "output image path")
 	flagSet.StringVar(&overrides.OutputFilm, "output-film", "", "output film path")
 	flagSet.StringVar(&overrides.DebugOutput, "debug-output", "", "debug output path")
+	flagSet.Float64Var(&overrides.Exposure, "exposure", 0, "output exposure multiplier")
+	flagSet.StringVar(&overrides.ToneMapping, "tone-mapping", "", "output tone mapping: linear, reinhard, aces")
+	flagSet.Float64Var(&overrides.Gamma, "gamma", 0, "output gamma, for example 2.2")
 
 	if err := flagSet.Parse(args); err != nil {
 		return RenderOverrides{}, err
@@ -82,6 +92,15 @@ func ParseRenderOverrides(args []string) (RenderOverrides, error) {
 	if overrides.Samples < 0 {
 		return RenderOverrides{}, fmt.Errorf("samples must be >= 0")
 	}
+	if overrides.Exposure < 0 {
+		return RenderOverrides{}, fmt.Errorf("exposure must be >= 0")
+	}
+	if overrides.Gamma < 0 {
+		return RenderOverrides{}, fmt.Errorf("gamma must be >= 0")
+	}
+	if overrides.ToneMapping != "" && !isSupportedToneMapping(overrides.ToneMapping) {
+		return RenderOverrides{}, fmt.Errorf("unsupported tone-mapping %q", overrides.ToneMapping)
+	}
 
 	return overrides, nil
 }
@@ -95,6 +114,9 @@ func ResolveRenderConfig(script *controller.Script, overrides RenderOverrides) R
 		OutputImage: defaultOutputImage,
 		OutputFilm:  defaultOutputFilm,
 		DebugOutput: defaultDebugOutput,
+		Exposure:    1,
+		ToneMapping: string(camera.ToneMappingLinear),
+		Gamma:       1,
 	}
 
 	if script != nil {
@@ -122,6 +144,15 @@ func ResolveRenderConfig(script *controller.Script, overrides RenderOverrides) R
 		if script.Render.DebugOutput != "" {
 			config.DebugOutput = script.Render.DebugOutput
 		}
+		if script.Render.Exposure > 0 {
+			config.Exposure = script.Render.Exposure
+		}
+		if script.Render.ToneMapping != "" {
+			config.ToneMapping = script.Render.ToneMapping
+		}
+		if script.Render.Gamma > 0 {
+			config.Gamma = script.Render.Gamma
+		}
 	}
 
 	if overrides.CameraIndex >= 0 {
@@ -148,8 +179,26 @@ func ResolveRenderConfig(script *controller.Script, overrides RenderOverrides) R
 	if overrides.DebugOutput != "" {
 		config.DebugOutput = overrides.DebugOutput
 	}
+	if overrides.Exposure > 0 {
+		config.Exposure = overrides.Exposure
+	}
+	if overrides.ToneMapping != "" {
+		config.ToneMapping = overrides.ToneMapping
+	}
+	if overrides.Gamma > 0 {
+		config.Gamma = overrides.Gamma
+	}
 
 	return config
+}
+
+func isSupportedToneMapping(value string) bool {
+	switch camera.ToneMapping(value) {
+	case camera.ToneMappingLinear, camera.ToneMappingReinhard, camera.ToneMappingACES:
+		return true
+	default:
+		return false
+	}
 }
 
 func firstPositiveInt(values ...int) int {

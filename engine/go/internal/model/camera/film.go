@@ -5,6 +5,7 @@ import (
 	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
 	"image"
 	"image/color"
+	"math"
 	"os"
 	"reflect"
 )
@@ -12,6 +13,20 @@ import (
 type Film struct {
 	Data    [3]math_lib.Tensor[float64] `json:"data"`
 	Samples int64                       `json:"samples"`
+}
+
+type ToneMapping string
+
+const (
+	ToneMappingLinear   ToneMapping = "linear"
+	ToneMappingReinhard ToneMapping = "reinhard"
+	ToneMappingACES     ToneMapping = "aces"
+)
+
+type ImageOptions struct {
+	Exposure    float64
+	ToneMapping ToneMapping
+	Gamma       float64
 }
 
 func NewFilm(width ...int) *Film {
@@ -61,12 +76,17 @@ func (f *Film) Merge(a *Film) *Film {
 }
 
 func (f *Film) ToImage() *image.RGBA {
+	return f.ToImageWithOptions(ImageOptions{})
+}
+
+func (f *Film) ToImageWithOptions(options ImageOptions) *image.RGBA {
+	options = normalizeImageOptions(options)
 	if len(f.Data[0].Shape) == 2 {
 		imgout := image.NewRGBA(image.Rect(0, 0, f.Data[0].Shape[0], f.Data[0].Shape[1]))
 		for i := 0; i < len(f.Data[0].Data); i++ {
-			r := uint8(min(f.Data[0].Data[i]*255, 255))
-			g := uint8(min(f.Data[1].Data[i]*255, 255))
-			b := uint8(min(f.Data[2].Data[i]*255, 255))
+			r := encodeOutputChannel(f.Data[0].Data[i], options)
+			g := encodeOutputChannel(f.Data[1].Data[i], options)
+			b := encodeOutputChannel(f.Data[2].Data[i], options)
 			ind := f.Data[0].GetCoordinates(i)
 			imgout.Set(ind[0], ind[1], color.RGBA{r, g, b, 255})
 		}
@@ -75,9 +95,9 @@ func (f *Film) ToImage() *image.RGBA {
 	} else if len(f.Data[0].Shape) == 3 {
 		imgout := image.NewRGBA(image.Rect(0, 0, f.Data[0].Shape[0], f.Data[0].Shape[1]*f.Data[0].Shape[2]))
 		for i := 0; i < len(f.Data[0].Data); i++ {
-			r := uint8(min(f.Data[0].Data[i]*255, 255))
-			g := uint8(min(f.Data[1].Data[i]*255, 255))
-			b := uint8(min(f.Data[2].Data[i]*255, 255))
+			r := encodeOutputChannel(f.Data[0].Data[i], options)
+			g := encodeOutputChannel(f.Data[1].Data[i], options)
+			b := encodeOutputChannel(f.Data[2].Data[i], options)
 			ind := f.Data[0].GetCoordinates(i)
 			imgout.Set(ind[0], ind[1]+ind[2]*f.Data[0].Shape[1], color.RGBA{r, g, b, 255})
 		}
@@ -85,6 +105,56 @@ func (f *Film) ToImage() *image.RGBA {
 		return imgout
 	}
 	return nil
+}
+
+func normalizeImageOptions(options ImageOptions) ImageOptions {
+	if options.Exposure == 0 {
+		options.Exposure = 1
+	}
+	if options.ToneMapping == "" {
+		options.ToneMapping = ToneMappingLinear
+	}
+	if options.Gamma == 0 {
+		options.Gamma = 1
+	}
+	return options
+}
+
+func encodeOutputChannel(v float64, options ImageOptions) uint8 {
+	if math.IsNaN(v) || math.IsInf(v, 0) || v <= 0 {
+		return 0
+	}
+
+	v *= options.Exposure
+	switch options.ToneMapping {
+	case ToneMappingReinhard:
+		v = v / (1 + v)
+	case ToneMappingACES:
+		v = acesToneMap(v)
+	case ToneMappingLinear:
+	default:
+		v = v
+	}
+
+	v = clamp01(v)
+	if options.Gamma > 0 && options.Gamma != 1 {
+		v = math.Pow(v, 1/options.Gamma)
+	}
+	return uint8(clamp01(v)*255 + 0.5)
+}
+
+func acesToneMap(v float64) float64 {
+	return (v * (2.51*v + 0.03)) / (v*(2.43*v+0.59) + 0.14)
+}
+
+func clamp01(v float64) float64 {
+	if v < 0 {
+		return 0
+	}
+	if v > 1 {
+		return 1
+	}
+	return v
 }
 
 func (f *Film) LoadFromFile(filename string) error {

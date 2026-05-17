@@ -1,0 +1,275 @@
+{
+  "materials": [
+    {
+      "id": "neutral-light",
+      "emission": {
+        "type": "constant",
+        "color": [
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    {
+      "id": "neutral-boundary",
+      "surface": {
+        "type": "lambert",
+        "albedo": [
+          0.65,
+          0.65,
+          0.65
+        ]
+      }
+    },
+    {
+      "id": "cauchy-crown-glass",
+      "surface": {
+        "type": "specular_dielectric",
+        "reflectance": [
+          1,
+          1,
+          1
+        ],
+        "transmittance": [
+          1,
+          1,
+          1
+        ],
+        "eta_outside": 1,
+        "ior": {
+          "type": "cauchy",
+          "a": 1.5046,
+          "b": 0.0042,
+          "c": 0
+        }
+      }
+    }
+  ],
+  "objects": [
+    {
+      "id": "dispersion-prism-0",
+      "shape": "triangle",
+      "p1": [
+        2.49,
+        0,
+        1.2
+      ],
+      "p2": [
+        2.49,
+        0.8,
+        2
+      ],
+      "p3": [
+        2.49,
+        -0.8,
+        2
+      ],
+      "material_id": "cauchy-crown-glass"
+    },
+    {
+      "id": "dispersion-prism-1",
+      "shape": "triangle",
+      "p1": [
+        -2.49,
+        0,
+        1.2
+      ],
+      "p2": [
+        -2.49,
+        -0.8,
+        2
+      ],
+      "p3": [
+        -2.49,
+        0.8,
+        2
+      ],
+      "material_id": "cauchy-crown-glass"
+    },
+    {
+      "id": "dispersion-prism-2",
+      "shape": "triangle",
+      "p1": [
+        2.49,
+        0,
+        1.2
+      ],
+      "p2": [
+        -2.49,
+        0,
+        1.2
+      ],
+      "p3": [
+        -2.49,
+        0.8,
+        2
+      ],
+      "material_id": "cauchy-crown-glass"
+    },
+    {
+      "id": "dispersion-prism-3",
+      "shape": "triangle",
+      "p1": [
+        2.49,
+        0,
+        1.2
+      ],
+      "p2": [
+        -2.49,
+        0.8,
+        2
+      ],
+      "p3": [
+        2.49,
+        0.8,
+        2
+      ],
+      "material_id": "cauchy-crown-glass"
+    },
+    {
+      "id": "dispersion-prism-4",
+      "shape": "triangle",
+      "p1": [
+        2.49,
+        0.8,
+        2
+      ],
+      "p2": [
+        -2.49,
+        0.8,
+        2
+      ],
+      "p3": [
+        -2.49,
+        -0.8,
+        2
+      ],
+      "material_id": "cauchy-crown-glass"
+    },
+    {
+      "id": "dispersion-prism-5",
+      "shape": "triangle",
+      "p1": [
+        2.49,
+        0.8,
+        2
+      ],
+      "p2": [
+        -2.49,
+        -0.8,
+        2
+      ],
+      "p3": [
+        2.49,
+        -0.8,
+        2
+      ],
+      "material_id": "cauchy-crown-glass"
+    },
+    {
+      "id": "dispersion-prism-6",
+      "shape": "triangle",
+      "p1": [
+        2.49,
+        -0.8,
+        2
+      ],
+      "p2": [
+        -2.49,
+        -0.8,
+        2
+      ],
+      "p3": [
+        -2.49,
+        0,
+        1.2
+      ],
+      "material_id": "cauchy-crown-glass"
+    },
+    {
+      "id": "dispersion-prism-7",
+      "shape": "triangle",
+      "p1": [
+        2.49,
+        -0.8,
+        2
+      ],
+      "p2": [
+        -2.49,
+        0,
+        1.2
+      ],
+      "p3": [
+        2.49,
+        0,
+        1.2
+      ],
+      "material_id": "cauchy-crown-glass"
+    },
+    {
+      "id": "neutral-box",
+      "shape": "cuboid",
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        5,
+        5,
+        5
+      ],
+      "material_id": "neutral-boundary"
+    },
+    {
+      "id": "area-light-0",
+      "shape": "triangle",
+      "p1": [
+        2.5,
+        0.8,
+        2.5
+      ],
+      "p2": [
+        -2.5,
+        0.8,
+        2.5
+      ],
+      "p3": [
+        2.5,
+        -0.8,
+        2
+      ],
+      "material_id": "neutral-light"
+    },
+    {
+      "id": "area-light-1",
+      "shape": "triangle",
+      "p1": [
+        -2.5,
+        -0.8,
+        2
+      ],
+      "p2": [
+        -2.5,
+        0.8,
+        2.5
+      ],
+      "p3": [
+        2.5,
+        -0.8,
+        2
+      ],
+      "material_id": "neutral-light"
+    }
+  ],
+  "render": {
+    "samples": 1000,
+    "width": 192,
+    "height": 192,
+    "output_image": "../../outputs/neutral-dispersion-test-1000spp.png",
+    "exposure": 1.5,
+    "tone_mapping": "reinhard",
+    "gamma": 2.2
+  }
+}

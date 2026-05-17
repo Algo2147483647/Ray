@@ -1,0 +1,142 @@
+{
+  "materials": [
+    {
+      "id": "white-slit",
+      "emission": {
+        "type": "constant",
+          "color": [0.8, 0.8, 0.8]
+      }
+    },
+    {
+      "id": "dark-neutral-boundary",
+      "surface": {
+        "type": "lambert",
+        "albedo": [0.03, 0.03, 0.03]
+      }
+    },
+    {
+      "id": "high-dispersion-glass",
+      "surface": {
+        "type": "specular_dielectric",
+        "reflectance": [1, 1, 1],
+        "transmittance": [1, 1, 1],
+        "eta_outside": 1,
+        "ior": {
+          "type": "cauchy",
+          "a": 1.35,
+          "b": 0.08,
+          "c": 0
+        }
+      }
+    }
+  ],
+  "objects": [
+    {
+      "id": "dark-box",
+      "shape": "cuboid",
+      "position": [0, 0, 0],
+      "size": [5, 5, 5],
+      "material_id": "dark-neutral-boundary"
+    },
+    {
+      "id": "horizontal-slit-0",
+      "shape": "triangle",
+      "p1": [2.48, -1.2, -0.03],
+      "p2": [2.48, -1.2, 0.03],
+      "p3": [2.48, 1.2, -0.03],
+      "material_id": "white-slit"
+    },
+    {
+      "id": "horizontal-slit-1",
+      "shape": "triangle",
+      "p1": [2.48, 1.2, 0.03],
+      "p2": [2.48, 1.2, -0.03],
+      "p3": [2.48, -1.2, 0.03],
+      "material_id": "white-slit"
+    },
+    {
+      "id": "prism-end-left",
+      "shape": "triangle",
+      "p1": [-1.0, -0.75, -0.55],
+      "p2": [-0.35, -0.75, 0.65],
+      "p3": [0.3, -0.75, -0.55],
+      "material_id": "high-dispersion-glass"
+    },
+    {
+      "id": "prism-end-right",
+      "shape": "triangle",
+      "p1": [-1.0, 0.75, -0.55],
+      "p2": [0.3, 0.75, -0.55],
+      "p3": [-0.35, 0.75, 0.65],
+      "material_id": "high-dispersion-glass"
+    },
+    {
+      "id": "prism-face-ab-0",
+      "shape": "triangle",
+      "p1": [-1.0, -0.75, -0.55],
+      "p2": [-1.0, 0.75, -0.55],
+      "p3": [-0.35, 0.75, 0.65],
+      "material_id": "high-dispersion-glass"
+    },
+    {
+      "id": "prism-face-ab-1",
+      "shape": "triangle",
+      "p1": [-1.0, -0.75, -0.55],
+      "p2": [-0.35, 0.75, 0.65],
+      "p3": [-0.35, -0.75, 0.65],
+      "material_id": "high-dispersion-glass"
+    },
+    {
+      "id": "prism-face-bc-0",
+      "shape": "triangle",
+      "p1": [-0.35, -0.75, 0.65],
+      "p2": [-0.35, 0.75, 0.65],
+      "p3": [0.3, 0.75, -0.55],
+      "material_id": "high-dispersion-glass"
+    },
+    {
+      "id": "prism-face-bc-1",
+      "shape": "triangle",
+      "p1": [-0.35, -0.75, 0.65],
+      "p2": [0.3, 0.75, -0.55],
+      "p3": [0.3, -0.75, -0.55],
+      "material_id": "high-dispersion-glass"
+    },
+    {
+      "id": "prism-face-ca-0",
+      "shape": "triangle",
+      "p1": [0.3, -0.75, -0.55],
+      "p2": [0.3, 0.75, -0.55],
+      "p3": [-1.0, 0.75, -0.55],
+      "material_id": "high-dispersion-glass"
+    },
+    {
+      "id": "prism-face-ca-1",
+      "shape": "triangle",
+      "p1": [0.3, -0.75, -0.55],
+      "p2": [-1.0, 0.75, -0.55],
+      "p3": [-1.0, -0.75, -0.55],
+      "material_id": "high-dispersion-glass"
+    }
+  ],
+  "cameras": [
+    {
+      "id": "main",
+      "position": [-2.25, 0, 0],
+      "look_at": [0.65, 0, 0],
+      "up": [0, 0, 1],
+      "field_of_view": 48,
+      "width": 256,
+      "height": 256
+    }
+  ],
+  "render": {
+    "samples": 1000,
+    "width": 256,
+    "height": 256,
+    "output_image": "../../outputs/neutral-dispersion-slit-test-1000spp.png",
+    "exposure": 3,
+    "tone_mapping": "reinhard",
+    "gamma": 2.2
+  }
+}

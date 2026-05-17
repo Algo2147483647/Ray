@@ -18,6 +18,9 @@ func TestResolveRenderConfigMergesScriptAndCLI(t *testing.T) {
 			OutputImage: "scene.png",
 			OutputFilm:  "scene.bin",
 			DebugOutput: "scene-debug.json",
+			Exposure:    1.5,
+			ToneMapping: "reinhard",
+			Gamma:       2.2,
 		},
 	}
 
@@ -28,6 +31,9 @@ func TestResolveRenderConfigMergesScriptAndCLI(t *testing.T) {
 		Width:       1024,
 		Samples:     32,
 		OutputImage: "override.png",
+		Exposure:    0.75,
+		ToneMapping: "aces",
+		Gamma:       1.8,
 	})
 
 	if config.ScriptPath != "custom.json" {
@@ -51,11 +57,23 @@ func TestResolveRenderConfigMergesScriptAndCLI(t *testing.T) {
 	if config.OutputFilm != "scene.bin" || config.DebugOutput != "scene-debug.json" {
 		t.Fatalf("unexpected output fallback: film=%s debug=%s", config.OutputFilm, config.DebugOutput)
 	}
+	if config.Exposure != 0.75 || config.ToneMapping != "aces" || config.Gamma != 1.8 {
+		t.Fatalf("unexpected output transform: exposure=%f tone=%s gamma=%f", config.Exposure, config.ToneMapping, config.Gamma)
+	}
 }
 
 func TestResolveRenderConfigDefaultsThreadNumToNumCPU(t *testing.T) {
 	config := ResolveRenderConfig(nil, RenderOverrides{ScriptPath: defaultScriptPath})
 	if config.ThreadNum != runtime.NumCPU() {
 		t.Fatalf("expected default thread count %d, got %d", runtime.NumCPU(), config.ThreadNum)
+	}
+	if config.Exposure != 1 || config.ToneMapping != "linear" || config.Gamma != 1 {
+		t.Fatalf("unexpected default output transform: exposure=%f tone=%s gamma=%f", config.Exposure, config.ToneMapping, config.Gamma)
+	}
+}
+
+func TestParseRenderOverridesRejectsUnsupportedToneMapping(t *testing.T) {
+	if _, err := ParseRenderOverrides([]string{"--tone-mapping", "magic"}); err == nil {
+		t.Fatal("expected unsupported tone mapping to fail")
 	}
 }

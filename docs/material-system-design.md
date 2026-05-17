@@ -395,6 +395,30 @@ This change is required for BSDF sampling, multiple importance sampling, physica
 
 Legacy material behavior should be preserved through an adapter during migration.
 
+### Output Transform
+
+Film data remains linear radiance. PNG export may apply an output transform without changing the stored film:
+
+```json
+{
+  "render": {
+    "exposure": 1.5,
+    "tone_mapping": "reinhard",
+    "gamma": 2.2
+  }
+}
+```
+
+Supported tone mappers:
+
+```text
+linear
+reinhard
+aces
+```
+
+CLI overrides use `--exposure`, `--tone-mapping`, and `--gamma`.
+
 ## Suggested Package Layout
 
 ```text
