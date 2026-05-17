@@ -62,6 +62,56 @@ Material
 
 The first implementation phase should focus on `Surface` and `BxDF`. Subsurface, volume, advanced texture graphs, and differentiability should be designed for but not implemented first.
 
+## Current Implementation Status
+
+The current renderer no longer uses the old probability-style material model for normal scene objects. Scene materials are parsed into `engine/go/internal/material/core.Material`, and the path tracer samples the material surface through the BSDF/BxDF interface.
+
+Implemented packages:
+
+```text
+engine/go/internal/material/
+  core/
+  bsdf/
+  bxdf/
+  emission/
+  ior/
+  microfacet/
+  validation/
+```
+
+Implemented surface and emission primitives:
+
+```text
+lambert
+specular_reflection
+specular_dielectric
+rough_conductor
+constant emission
+```
+
+Implemented spectral and output features:
+
+```text
+renderer-level wavelength sampling on camera rays
+Ray.WaveLength and Ray.WavelengthPDF propagation
+white-point normalized spectral-to-RGB reconstruction weight
+constant and Cauchy IOR models
+wavelength-aware specular dielectric eta evaluation
+PNG output exposure
+linear / reinhard / aces tone mapping
+gamma encoding
+```
+
+Current limitations:
+
+```text
+rough dielectric is not implemented yet
+Beckmann distribution is not implemented yet
+full spectral material databases are not implemented yet
+Lambert and conductor parameters are still RGB spectra
+subsurface, volume, texture graphs, MIS, and caustic-focused integrators are not implemented yet
+```
+
 ## Core Concepts
 
 ### Material
@@ -612,19 +662,35 @@ Old fields such as `color`, `reflectivity`, `refractivity`, `radiate`, and `diff
 
 ### Phase 5: Microfacet
 
-Implement:
+Delivered:
 
 ```text
 GGX distribution
 Smith masking-shadowing
-dielectric Fresnel
 conductor Fresnel
 VNDF sampling
-RoughDielectric
 RoughConductor
 ```
 
-Add stress tests for roughness, IOR, and grazing angles.
+Also delivered:
+
+```text
+GGX distribution tests
+Fresnel conductor evaluation through RoughConductor
+RoughConductor Eval/Sample/PDF integration
+roughness parsing as user-facing roughness with internal alpha = roughness^2
+```
+
+Not delivered in this phase:
+
+```text
+RoughDielectric
+Beckmann distribution
+dielectric microfacet transmission
+microfacet layering/coating
+```
+
+Remaining stress tests should cover more IOR, grazing-angle, and roughness edge cases across future microfacet BxDFs.
 
 ### Phase 6: Textures, Emission, Volume
 
@@ -660,6 +726,34 @@ throughput_rgb *= wavelength_to_rgb(lambda) / mean_visible_wavelength_to_rgb
 ```
 
 BxDFs do not sample wavelengths. Dispersive BxDFs only evaluate their IOR model at the wavelength already carried by the renderer context. If no wavelength is present, they fall back to a deterministic 550nm value for non-renderer tests and compatibility paths.
+
+### Showcase Scenes
+
+Current material and spectral behavior can be exercised with:
+
+```text
+examples/scenes/neutral-dispersion-slit-test.json
+examples/scenes/feature-showcase.json
+```
+
+The showcase scene covers:
+
+```text
+Lambert color bleeding
+constant emission area lights
+specular reflection
+constant-IOR specular dielectric
+Cauchy-IOR dispersive dielectric
+GGX rough conductor
+renderer-level spectral sampling
+tone mapping / exposure / gamma output
+```
+
+Example high-quality render:
+
+```bash
+go -C engine/go run ./cmd/ray --script ../../examples/scenes/feature-showcase.json --width 800 --height 800 --samples 2000 --output-image ../../outputs/feature-showcase-800x800-2000spp.png
+```
 
 ## Open Design Questions
 

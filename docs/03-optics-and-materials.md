@@ -1,5 +1,7 @@
 # Optics and Materials
 
+> Status note: parts of this document describe the legacy optics-material implementation. Current scene materials are parsed into the BSDF/BxDF system under `engine/go/internal/material`. For the up-to-date material schema, validation requirements, IOR/dispersion wiring, microfacet status, and tone mapping controls, see [`material-system-design.md`](material-system-design.md).
+
 This document describes the physical ideas used when a ray reaches a surface. The code is primarily based on geometrical optics with a stochastic surface-interaction model.
 
 ## 1. What a Ray Represents

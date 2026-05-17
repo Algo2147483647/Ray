@@ -228,14 +228,40 @@ The render configuration controls:
 - thread count,
 - output resolution,
 - samples per pixel,
-- output paths.
+- output paths,
+- PNG exposure,
+- tone mapping,
+- gamma encoding.
 
 This can be interpreted as the numerical setup of the simulation:
 
 - resolution controls spatial discretization,
 - sample count controls estimator variance,
 - recursion depth controls path complexity,
-- thread count controls computational throughput.
+- thread count controls computational throughput,
+- exposure, tone mapping, and gamma control the display transform applied when writing PNG output.
+
+Film accumulation remains linear radiance. The output transform is applied only when exporting display images. The supported tone mappers are:
+
+```text
+linear
+reinhard
+aces
+```
+
+Scene JSON can set:
+
+```json
+{
+  "render": {
+    "exposure": 2.1,
+    "tone_mapping": "reinhard",
+    "gamma": 2.2
+  }
+}
+```
+
+The same values can be overridden from the CLI with `--exposure`, `--tone-mapping`, and `--gamma`.
 
 Relevant code:
 

@@ -2,6 +2,12 @@
 
 A Go-based ray tracing engine for optical simulation and physically inspired rendering. The project includes a renderer, scene JSON examples, documentation, and a React scene editor.
 
+
+![feature-showcase-800x800-2000spp.png](docs%2Fassets%2Ffeature-showcase-800x800-2000spp.png)
+![four-order_equation-2400.png](docs%2Fassets%2Ffour-order_equation-2400.png)
+![RayTracingTest.png](docs%2Fassets%2FRayTracingTest.png)
+![4D.png](docs%2Fassets%2F4D.png)
+
 ## Project Structure
 
 ```text
