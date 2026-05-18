@@ -55,10 +55,27 @@
       "surface": {
         "type": "lambert",
         "albedo": [
-          0.78,
-          0.36,
-          0.26
+          0.72,
+          0.18,
+          0.16
         ]
+      }
+    },
+    {
+      "id": "center-ellipsoid",
+      "surface": {
+        "type": "rough_conductor",
+        "eta": [
+          0.42,
+          0.62,
+          1.4
+        ],
+        "k": [
+          2.2,
+          1.75,
+          1.2
+        ],
+        "roughness": 0.34
       }
     },
     {
@@ -90,7 +107,7 @@
         "ior": {
           "type": "cauchy",
           "a": 1.35,
-          "b": 0.08,
+          "b": 0.14,
           "c": 0
         }
       }
@@ -113,20 +130,20 @@
         "ior": {
           "type": "cauchy",
           "a": 1.35,
-          "b": 0.08,
+          "b": 0.14,
           "c": 0
         }
       }
     }
   ],
   "render": {
-    "samples": 200,
+    "samples": 400,
     "thread_num": 0,
-    "width": 800,
-    "height": 800,
+    "width": 200,
+    "height": 200,
     "camera_index": 0,
-    "output_image": "../../outputs/four-order-equation-800x800-dispersion.png",
-    "output_film": "../../outputs/four-order-equation-800x800-dispersion.bin",
+    "output_image": "../../outputs/four-order-equation-soft-gold-ellipsoid-200x200-400spp.png",
+    "output_film": "../../outputs/four-order-equation-soft-gold-ellipsoid-200x200-400spp.bin",
     "debug_output": "../../outputs/four-order-equation-debug.json",
     "exposure": 1.8,
     "tone_mapping": "reinhard",
@@ -152,7 +169,7 @@
       ],
       "width": 200,
       "height": 200,
-      "field_of_view": 78
+      "field_of_view": 92
     }
   ],
   "objects": [
@@ -191,7 +208,7 @@
         0
       ],
       "c": -10,
-      "material_id": "wallpaper2"
+      "material_id": "center-ellipsoid"
     },
     {
       "id": "four-order equation",
