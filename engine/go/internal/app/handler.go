@@ -46,6 +46,7 @@ func Run(args []string) int {
 		LoadScript(overrides.ScriptPath).
 		ConfigureRender(overrides).
 		Render().
+		ResumeFilm().
 		SaveOutputs()
 
 	if h.err != nil {
@@ -176,6 +177,18 @@ func (h *Handler) SaveOutputs() *Handler {
 	}
 
 	return h
+}
+
+func (h *Handler) ResumeFilm() *Handler {
+	if h.err != nil {
+		return h
+	}
+	if h.Config.ResumeFilm == "" {
+		return h
+	}
+
+	fmt.Printf("Merging existing film: %s\n", h.Config.ResumeFilm)
+	return h.MergeFilm(h.Config.ResumeFilm)
 }
 
 func (h *Handler) SaveDebugInfo(filename string) *Handler {

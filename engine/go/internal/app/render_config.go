@@ -29,6 +29,7 @@ type RenderOverrides struct {
 	Samples     int64
 	OutputImage string
 	OutputFilm  string
+	ResumeFilm  string
 	DebugOutput string
 	Exposure    float64
 	ToneMapping string
@@ -44,6 +45,7 @@ type RenderConfig struct {
 	Samples     int64
 	OutputImage string
 	OutputFilm  string
+	ResumeFilm  string
 	DebugOutput string
 	Exposure    float64
 	ToneMapping string
@@ -65,6 +67,7 @@ func ParseRenderOverrides(args []string) (RenderOverrides, error) {
 	flagSet.Int64Var(&overrides.Samples, "samples", 0, "samples per pixel")
 	flagSet.StringVar(&overrides.OutputImage, "output-image", "", "output image path")
 	flagSet.StringVar(&overrides.OutputFilm, "output-film", "", "output film path")
+	flagSet.StringVar(&overrides.ResumeFilm, "resume-film", "", "existing film path to merge before saving outputs")
 	flagSet.StringVar(&overrides.DebugOutput, "debug-output", "", "debug output path")
 	flagSet.Float64Var(&overrides.Exposure, "exposure", 0, "output exposure multiplier")
 	flagSet.StringVar(&overrides.ToneMapping, "tone-mapping", "", "output tone mapping: linear, reinhard, aces")
@@ -141,6 +144,9 @@ func ResolveRenderConfig(script *controller.Script, overrides RenderOverrides) R
 		if script.Render.OutputFilm != "" {
 			config.OutputFilm = script.Render.OutputFilm
 		}
+		if script.Render.ResumeFilm != "" {
+			config.ResumeFilm = script.Render.ResumeFilm
+		}
 		if script.Render.DebugOutput != "" {
 			config.DebugOutput = script.Render.DebugOutput
 		}
@@ -175,6 +181,9 @@ func ResolveRenderConfig(script *controller.Script, overrides RenderOverrides) R
 	}
 	if overrides.OutputFilm != "" {
 		config.OutputFilm = overrides.OutputFilm
+	}
+	if overrides.ResumeFilm != "" {
+		config.ResumeFilm = overrides.ResumeFilm
 	}
 	if overrides.DebugOutput != "" {
 		config.DebugOutput = overrides.DebugOutput

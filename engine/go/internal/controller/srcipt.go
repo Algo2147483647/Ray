@@ -32,6 +32,7 @@ type RenderScript struct {
 	Height      int     `json:"height"`
 	OutputImage string  `json:"output_image"`
 	OutputFilm  string  `json:"output_film"`
+	ResumeFilm  string  `json:"resume_film"`
 	DebugOutput string  `json:"debug_output"`
 	Exposure    float64 `json:"exposure"`
 	ToneMapping string  `json:"tone_mapping"`
