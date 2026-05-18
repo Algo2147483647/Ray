@@ -128,6 +128,22 @@ func TestSpectralRGBWeightWhitePoint(t *testing.T) {
 	}
 }
 
+func TestWavelengthToXYZHasExpectedPrimaryRegions(t *testing.T) {
+	blue := WavelengthToXYZ(450)
+	green := WavelengthToXYZ(555)
+	red := WavelengthToXYZ(610)
+
+	if blue.AtVec(2) <= blue.AtVec(0) || blue.AtVec(2) <= blue.AtVec(1) {
+		t.Fatalf("expected 450nm to be dominated by Z, got %v", blue.RawVector().Data)
+	}
+	if green.AtVec(1) <= green.AtVec(0) || green.AtVec(1) <= green.AtVec(2) {
+		t.Fatalf("expected 555nm to be dominated by Y, got %v", green.RawVector().Data)
+	}
+	if red.AtVec(0) <= red.AtVec(1) || red.AtVec(0) <= red.AtVec(2) {
+		t.Fatalf("expected 610nm to be dominated by X, got %v", red.RawVector().Data)
+	}
+}
+
 func TestWaveLengthToRGB(t *testing.T) {
 	// 创建新的图表
 	p := plot.New()

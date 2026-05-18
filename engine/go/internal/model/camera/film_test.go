@@ -60,3 +60,22 @@ func TestFilmToImageWithACESCompressesHighlights(t *testing.T) {
 		t.Fatalf("expected green channel to remain above blue, got %+v", got)
 	}
 }
+
+func TestFilmToImageConvertsXYZWorkingSpace(t *testing.T) {
+	film := NewFilm(1, 1)
+	film.WorkingSpace = WorkingSpaceXYZ
+	film.Data[0].Data[0] = 0.95047
+	film.Data[1].Data[0] = 1
+	film.Data[2].Data[0] = 1.08883
+
+	img := film.ToImageWithOptions(ImageOptions{
+		Exposure:    1,
+		ToneMapping: ToneMappingLinear,
+		Gamma:       1,
+	})
+
+	got := img.RGBAAt(0, 0)
+	if got.R < 250 || got.G < 250 || got.B < 250 {
+		t.Fatalf("expected D65-like XYZ white to convert near display white, got %+v", got)
+	}
+}

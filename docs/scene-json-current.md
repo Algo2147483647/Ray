@@ -203,7 +203,8 @@ Supported object forms:
     "exposure": 2.1,
     "tone_mapping": "reinhard",
     "gamma": 2.2,
-    "spectrum_mode": "hero_wavelength"
+    "spectrum_mode": "hero_wavelength",
+    "working_space": "linear_srgb"
   }
 }
 ```
@@ -225,6 +226,8 @@ sampled
 ```
 
 `hero_wavelength` is the default to preserve the renderer's current behavior. `rgb` disables camera wavelength sampling for fast compatibility renders. `sampled` is reserved for the multi-wavelength spectrum pipeline and currently maps to the mixed RGB/spectral execution path.
+
+Film currently stores three channels in `linear_srgb` by default. Hero-wavelength reconstruction uses a CIE 1931 XYZ approximation converted to linear sRGB and white-point normalized before the contribution reaches the Film. The Film also has an `xyz` working-space path for future spectral accumulation, but the active renderer keeps `linear_srgb` until BSDF throughput is fully spectral.
 
 CLI overrides:
 

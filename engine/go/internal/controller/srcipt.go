@@ -38,6 +38,7 @@ type RenderScript struct {
 	ToneMapping  string  `json:"tone_mapping"`
 	Gamma        float64 `json:"gamma"`
 	SpectrumMode string  `json:"spectrum_mode"`
+	WorkingSpace string  `json:"working_space"`
 }
 
 type Script struct {

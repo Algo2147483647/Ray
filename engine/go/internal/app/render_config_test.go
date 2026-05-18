@@ -23,6 +23,7 @@ func TestResolveRenderConfigMergesScriptAndCLI(t *testing.T) {
 			ToneMapping:  "reinhard",
 			Gamma:        2.2,
 			SpectrumMode: "rgb",
+			WorkingSpace: "linear_srgb",
 		},
 	}
 
@@ -37,6 +38,7 @@ func TestResolveRenderConfigMergesScriptAndCLI(t *testing.T) {
 		ToneMapping:  "aces",
 		Gamma:        1.8,
 		SpectrumMode: "hero_wavelength",
+		WorkingSpace: "linear_srgb",
 	})
 
 	if config.ScriptPath != "custom.json" {
@@ -66,6 +68,9 @@ func TestResolveRenderConfigMergesScriptAndCLI(t *testing.T) {
 	if config.SpectrumMode != "hero_wavelength" {
 		t.Fatalf("expected CLI spectrum mode override, got %s", config.SpectrumMode)
 	}
+	if config.WorkingSpace != "linear_srgb" {
+		t.Fatalf("unexpected working space: %s", config.WorkingSpace)
+	}
 }
 
 func TestResolveRenderConfigDefaultsThreadNumToNumCPU(t *testing.T) {
@@ -79,6 +84,9 @@ func TestResolveRenderConfigDefaultsThreadNumToNumCPU(t *testing.T) {
 	if config.SpectrumMode != "hero_wavelength" {
 		t.Fatalf("unexpected default spectrum mode: %s", config.SpectrumMode)
 	}
+	if config.WorkingSpace != "linear_srgb" {
+		t.Fatalf("unexpected default working space: %s", config.WorkingSpace)
+	}
 }
 
 func TestParseRenderOverridesRejectsUnsupportedToneMapping(t *testing.T) {
@@ -90,5 +98,11 @@ func TestParseRenderOverridesRejectsUnsupportedToneMapping(t *testing.T) {
 func TestParseRenderOverridesRejectsUnsupportedSpectrumMode(t *testing.T) {
 	if _, err := ParseRenderOverrides([]string{"--spectrum-mode", "magic"}); err == nil {
 		t.Fatal("expected unsupported spectrum mode to fail")
+	}
+}
+
+func TestParseRenderOverridesRejectsUnsupportedWorkingSpace(t *testing.T) {
+	if _, err := ParseRenderOverrides([]string{"--working-space", "xyz"}); err == nil {
+		t.Fatal("expected unsupported working space to fail until XYZ film accumulation is active")
 	}
 }

@@ -35,6 +35,7 @@ type RenderOverrides struct {
 	ToneMapping  string
 	Gamma        float64
 	SpectrumMode string
+	WorkingSpace string
 }
 
 type RenderConfig struct {
@@ -52,6 +53,7 @@ type RenderConfig struct {
 	ToneMapping  string
 	Gamma        float64
 	SpectrumMode string
+	WorkingSpace string
 }
 
 func ParseRenderOverrides(args []string) (RenderOverrides, error) {
@@ -75,6 +77,7 @@ func ParseRenderOverrides(args []string) (RenderOverrides, error) {
 	flagSet.StringVar(&overrides.ToneMapping, "tone-mapping", "", "output tone mapping: linear, reinhard, aces")
 	flagSet.Float64Var(&overrides.Gamma, "gamma", 0, "output gamma, for example 2.2")
 	flagSet.StringVar(&overrides.SpectrumMode, "spectrum-mode", "", "spectrum mode: rgb, hero_wavelength, sampled")
+	flagSet.StringVar(&overrides.WorkingSpace, "working-space", "", "film working space: linear_srgb")
 
 	if err := flagSet.Parse(args); err != nil {
 		return RenderOverrides{}, err
@@ -110,6 +113,9 @@ func ParseRenderOverrides(args []string) (RenderOverrides, error) {
 	if overrides.SpectrumMode != "" && !isSupportedSpectrumMode(overrides.SpectrumMode) {
 		return RenderOverrides{}, fmt.Errorf("unsupported spectrum-mode %q", overrides.SpectrumMode)
 	}
+	if overrides.WorkingSpace != "" && !isSupportedWorkingSpace(overrides.WorkingSpace) {
+		return RenderOverrides{}, fmt.Errorf("unsupported working-space %q", overrides.WorkingSpace)
+	}
 
 	return overrides, nil
 }
@@ -127,6 +133,7 @@ func ResolveRenderConfig(script *controller.Script, overrides RenderOverrides) R
 		ToneMapping:  string(camera.ToneMappingLinear),
 		Gamma:        1,
 		SpectrumMode: "hero_wavelength",
+		WorkingSpace: "linear_srgb",
 	}
 
 	if script != nil {
@@ -169,6 +176,9 @@ func ResolveRenderConfig(script *controller.Script, overrides RenderOverrides) R
 		if script.Render.SpectrumMode != "" {
 			config.SpectrumMode = script.Render.SpectrumMode
 		}
+		if script.Render.WorkingSpace != "" {
+			config.WorkingSpace = script.Render.WorkingSpace
+		}
 	}
 
 	if overrides.CameraIndex >= 0 {
@@ -210,6 +220,9 @@ func ResolveRenderConfig(script *controller.Script, overrides RenderOverrides) R
 	if overrides.SpectrumMode != "" {
 		config.SpectrumMode = overrides.SpectrumMode
 	}
+	if overrides.WorkingSpace != "" {
+		config.WorkingSpace = overrides.WorkingSpace
+	}
 
 	return config
 }
@@ -221,6 +234,10 @@ func isSupportedSpectrumMode(value string) bool {
 	default:
 		return false
 	}
+}
+
+func isSupportedWorkingSpace(value string) bool {
+	return value == "linear_srgb"
 }
 
 func isSupportedToneMapping(value string) bool {

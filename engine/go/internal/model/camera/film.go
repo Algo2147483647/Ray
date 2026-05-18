@@ -11,9 +11,17 @@ import (
 )
 
 type Film struct {
-	Data    [3]math_lib.Tensor[float64] `json:"data"`
-	Samples int64                       `json:"samples"`
+	Data         [3]math_lib.Tensor[float64] `json:"data"`
+	Samples      int64                       `json:"samples"`
+	WorkingSpace WorkingSpace                `json:"working_space"`
 }
+
+type WorkingSpace string
+
+const (
+	WorkingSpaceLinearSRGB WorkingSpace = "linear_srgb"
+	WorkingSpaceXYZ        WorkingSpace = "xyz"
+)
 
 type ToneMapping string
 
@@ -39,7 +47,8 @@ func NewFilm(width ...int) *Film {
 			*math_lib.NewTensor[float64](shape),
 			*math_lib.NewTensor[float64](shape),
 		},
-		Samples: 0,
+		Samples:      0,
+		WorkingSpace: WorkingSpaceLinearSRGB,
 	}
 }
 
@@ -53,6 +62,7 @@ func (f *Film) Init(width ...int) *Film {
 		*math_lib.NewTensor[float64](shape),
 	}
 	f.Samples = 0
+	f.WorkingSpace = WorkingSpaceLinearSRGB
 	return f
 }
 
@@ -84,9 +94,10 @@ func (f *Film) ToImageWithOptions(options ImageOptions) *image.RGBA {
 	if len(f.Data[0].Shape) == 2 {
 		imgout := image.NewRGBA(image.Rect(0, 0, f.Data[0].Shape[0], f.Data[0].Shape[1]))
 		for i := 0; i < len(f.Data[0].Data); i++ {
-			r := encodeOutputChannel(f.Data[0].Data[i], options)
-			g := encodeOutputChannel(f.Data[1].Data[i], options)
-			b := encodeOutputChannel(f.Data[2].Data[i], options)
+			red, green, blue := f.outputRGBAt(i)
+			r := encodeOutputChannel(red, options)
+			g := encodeOutputChannel(green, options)
+			b := encodeOutputChannel(blue, options)
 			ind := f.Data[0].GetCoordinates(i)
 			imgout.Set(ind[0], ind[1], color.RGBA{r, g, b, 255})
 		}
@@ -95,9 +106,10 @@ func (f *Film) ToImageWithOptions(options ImageOptions) *image.RGBA {
 	} else if len(f.Data[0].Shape) == 3 {
 		imgout := image.NewRGBA(image.Rect(0, 0, f.Data[0].Shape[0], f.Data[0].Shape[1]*f.Data[0].Shape[2]))
 		for i := 0; i < len(f.Data[0].Data); i++ {
-			r := encodeOutputChannel(f.Data[0].Data[i], options)
-			g := encodeOutputChannel(f.Data[1].Data[i], options)
-			b := encodeOutputChannel(f.Data[2].Data[i], options)
+			red, green, blue := f.outputRGBAt(i)
+			r := encodeOutputChannel(red, options)
+			g := encodeOutputChannel(green, options)
+			b := encodeOutputChannel(blue, options)
 			ind := f.Data[0].GetCoordinates(i)
 			imgout.Set(ind[0], ind[1]+ind[2]*f.Data[0].Shape[1], color.RGBA{r, g, b, 255})
 		}
@@ -105,6 +117,16 @@ func (f *Film) ToImageWithOptions(options ImageOptions) *image.RGBA {
 		return imgout
 	}
 	return nil
+}
+
+func (f *Film) outputRGBAt(i int) (float64, float64, float64) {
+	a := f.Data[0].Data[i]
+	b := f.Data[1].Data[i]
+	c := f.Data[2].Data[i]
+	if f.WorkingSpace == WorkingSpaceXYZ {
+		return xyzToLinearSRGB(a, b, c)
+	}
+	return a, b, c
 }
 
 func normalizeImageOptions(options ImageOptions) ImageOptions {
@@ -184,6 +206,7 @@ func (f *Film) LoadFromFile(filename string) error {
 		*math_lib.NewTensor[float64](shape),
 		*math_lib.NewTensor[float64](shape),
 	}
+	f.WorkingSpace = WorkingSpaceLinearSRGB
 
 	for ch := 0; ch < 3; ch++ {
 		for i := range f.Data[ch].Data {
@@ -194,6 +217,12 @@ func (f *Film) LoadFromFile(filename string) error {
 	}
 
 	return nil
+}
+
+func xyzToLinearSRGB(x, y, z float64) (float64, float64, float64) {
+	return 3.2404542*x - 1.5371385*y - 0.4985314*z,
+		-0.9692660*x + 1.8760108*y + 0.0415560*z,
+		0.0556434*x - 0.2040259*y + 1.0572252*z
 }
 
 func (f *Film) SaveToFile(filename string) error {
