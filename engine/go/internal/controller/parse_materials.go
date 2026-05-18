@@ -88,11 +88,11 @@ func parseSurface(def map[string]interface{}) (core.BSDF, error) {
 
 	switch surfaceType {
 	case "lambert":
-		albedo, err := requiredSpectrumField(def, "albedo")
+		albedo, err := requiredSpectralParameterField(def, "albedo")
 		if err != nil {
 			return nil, err
 		}
-		return bsdf.NewSingle(bxdf.NewLambert(albedo)), nil
+		return bsdf.NewSingle(bxdf.NewLambertParameter(albedo)), nil
 	case "specular_reflection":
 		reflectance, err := optionalSpectrumField(def, "reflectance", core.ConstantSpectrum(1))
 		if err != nil {
@@ -157,11 +157,11 @@ func parseEmission(def map[string]interface{}) (core.Emitter, error) {
 
 	switch emissionType {
 	case "constant":
-		color, err := requiredSpectrumField(def, "color")
+		radiance, err := requiredEmissionRadianceField(def)
 		if err != nil {
 			return nil, err
 		}
-		return emission.NewConstant(color), nil
+		return emission.NewConstantParameter(radiance), nil
 	default:
 		return nil, fmt.Errorf("unsupported emission type %q", emissionType)
 	}
@@ -227,32 +227,184 @@ func parseIORModel(def map[string]interface{}) (ior.Model, error) {
 }
 
 func requiredSpectrumField(data map[string]interface{}, key string) (core.Spectrum, error) {
-	values, err := requiredFloat64SliceField(data, key, 3)
+	parameter, err := requiredSpectralParameterField(data, key)
 	if err != nil {
 		return core.Spectrum{}, err
 	}
-	for i, value := range values {
-		if value < 0 {
-			return core.Spectrum{}, fmt.Errorf("field %q index %d must be >= 0", key, i)
-		}
-	}
-	return core.NewSpectrum(values[0], values[1], values[2]), nil
+	return parameter.Eval(core.ShadingContext{SpectrumMode: core.SpectrumRGB}), nil
 }
 
 func optionalSpectrumField(data map[string]interface{}, key string, fallback core.Spectrum) (core.Spectrum, error) {
-	values, ok, err := optionalFloat64SliceField(data, key, 3)
+	parameter, ok, err := optionalSpectralParameterField(data, key, core.NewRGBParameter(fallback))
 	if err != nil {
 		return core.Spectrum{}, err
 	}
 	if !ok {
 		return fallback, nil
 	}
+	return parameter.Eval(core.ShadingContext{SpectrumMode: core.SpectrumRGB}), nil
+}
+
+func requiredEmissionRadianceField(data map[string]interface{}) (core.SpectralParameter, error) {
+	if _, ok := data["radiance"]; ok {
+		return requiredSpectralParameterField(data, "radiance")
+	}
+	return requiredSpectralParameterField(data, "color")
+}
+
+func requiredSpectralParameterField(data map[string]interface{}, key string) (core.SpectralParameter, error) {
+	value, ok := data[key]
+	if !ok {
+		return nil, fmt.Errorf("missing required field %q", key)
+	}
+	parameter, err := parseSpectralParameterValue(key, value)
+	if err != nil {
+		return nil, fmt.Errorf("field %q: %w", key, err)
+	}
+	return parameter, nil
+}
+
+func optionalSpectralParameterField(data map[string]interface{}, key string, fallback core.SpectralParameter) (core.SpectralParameter, bool, error) {
+	value, ok := data[key]
+	if !ok {
+		return fallback, false, nil
+	}
+	parameter, err := parseSpectralParameterValue(key, value)
+	if err != nil {
+		return nil, true, fmt.Errorf("field %q: %w", key, err)
+	}
+	return parameter, true, nil
+}
+
+func parseSpectralParameterValue(key string, value interface{}) (core.SpectralParameter, error) {
+	if mapped, ok := value.(map[string]interface{}); ok {
+		return parseSpectralParameterObject(mapped)
+	}
+
+	values, err := toFloat64Slice(value)
+	if err != nil {
+		return nil, err
+	}
+	if err := requireSliceLength(key, values, 3); err != nil {
+		return nil, err
+	}
+	if err := validateNonNegativeSlice("legacy rgb", values); err != nil {
+		return nil, err
+	}
+	return core.NewRGBParameter(core.NewSpectrum(values[0], values[1], values[2])), nil
+}
+
+func parseSpectralParameterObject(def map[string]interface{}) (core.SpectralParameter, error) {
+	parameterType, err := requiredStringField(def, "type")
+	if err != nil {
+		return nil, err
+	}
+
+	switch parameterType {
+	case "rgb":
+		values, err := requiredFloat64SliceField(def, "value", 3)
+		if err != nil {
+			return nil, err
+		}
+		if err := validateNonNegativeSlice("value", values); err != nil {
+			return nil, err
+		}
+		space, ok, err := optionalStringField(def, "space")
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			space = string(core.ColorSpaceLinearSRGB)
+		}
+		value := core.NewSpectrum(values[0], values[1], values[2])
+		switch core.ColorSpace(space) {
+		case core.ColorSpaceLinearSRGB:
+			return core.NewRGBParameter(value), nil
+		case core.ColorSpaceSRGB:
+			return core.NewSRGBParameter(value), nil
+		case core.ColorSpaceACEScg:
+			return core.NewACEScgParameter(value), nil
+		default:
+			return nil, fmt.Errorf("unsupported rgb color space %q", space)
+		}
+	case "constant":
+		value, err := requiredFloat64Field(def, "value")
+		if err != nil {
+			return nil, err
+		}
+		if value < 0 {
+			return nil, fmt.Errorf("value must be >= 0")
+		}
+		return core.NewConstantParameter(value), nil
+	case "sampled":
+		wavelengths, err := requiredFloat64SliceField(def, "wavelengths_nm")
+		if err != nil {
+			return nil, err
+		}
+		values, err := requiredFloat64SliceField(def, "values")
+		if err != nil {
+			return nil, err
+		}
+		if len(wavelengths) != len(values) {
+			return nil, fmt.Errorf("wavelengths_nm and values must have the same length")
+		}
+		if len(wavelengths) < 2 {
+			return nil, fmt.Errorf("sampled spectrum must contain at least 2 samples")
+		}
+		if err := validateStrictlyIncreasing("wavelengths_nm", wavelengths); err != nil {
+			return nil, err
+		}
+		if err := validateNonNegativeSlice("values", values); err != nil {
+			return nil, err
+		}
+		interpolation, ok, err := optionalStringField(def, "interpolation")
+		if err != nil {
+			return nil, err
+		}
+		if ok && interpolation != "linear" {
+			return nil, fmt.Errorf("unsupported interpolation %q", interpolation)
+		}
+		return core.NewSampledParameter(wavelengths, values), nil
+	case "blackbody":
+		temperature, err := requiredFloat64Field(def, "temperature")
+		if err != nil {
+			return nil, err
+		}
+		if temperature <= 0 {
+			return nil, fmt.Errorf("temperature must be > 0")
+		}
+		scale, ok, err := optionalFloat64Field(def, "scale")
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			scale = 1
+		}
+		if scale < 0 {
+			return nil, fmt.Errorf("scale must be >= 0")
+		}
+		return core.NewBlackbodyParameter(temperature, scale), nil
+	default:
+		return nil, fmt.Errorf("unsupported spectral parameter type %q", parameterType)
+	}
+}
+
+func validateNonNegativeSlice(name string, values []float64) error {
 	for i, value := range values {
 		if value < 0 {
-			return core.Spectrum{}, fmt.Errorf("field %q index %d must be >= 0", key, i)
+			return fmt.Errorf("%s index %d must be >= 0", name, i)
 		}
 	}
-	return core.NewSpectrum(values[0], values[1], values[2]), nil
+	return nil
+}
+
+func validateStrictlyIncreasing(name string, values []float64) error {
+	for i := 1; i < len(values); i++ {
+		if values[i] <= values[i-1] {
+			return fmt.Errorf("%s must be strictly increasing", name)
+		}
+	}
+	return nil
 }
 
 func optionalMapField(data map[string]interface{}, key string) (map[string]interface{}, bool, error) {

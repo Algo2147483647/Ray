@@ -137,13 +137,13 @@
     }
   ],
   "render": {
-    "samples": 400,
+    "samples": 1000,
     "thread_num": 0,
-    "width": 200,
-    "height": 200,
+    "width": 800,
+    "height": 800,
     "camera_index": 0,
-    "output_image": "../../outputs/four-order-equation-soft-gold-ellipsoid-200x200-400spp.png",
-    "output_film": "../../outputs/four-order-equation-soft-gold-ellipsoid-200x200-400spp.bin",
+    "output_image": "../../outputs/four-order-equation-wide-soft-gold-800x800-1000spp.png",
+    "output_film": "../../outputs/four-order-equation-wide-soft-gold-800x800-1000spp.bin",
     "debug_output": "../../outputs/four-order-equation-debug.json",
     "exposure": 1.8,
     "tone_mapping": "reinhard",

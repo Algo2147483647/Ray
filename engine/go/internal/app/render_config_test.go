@@ -10,31 +10,33 @@ import (
 func TestResolveRenderConfigMergesScriptAndCLI(t *testing.T) {
 	script := &controller.Script{
 		Render: controller.RenderScript{
-			Samples:     12,
-			ThreadNum:   3,
-			CameraIndex: 1,
-			Width:       800,
-			Height:      600,
-			OutputImage: "scene.png",
-			OutputFilm:  "scene.bin",
-			ResumeFilm:  "resume.bin",
-			DebugOutput: "scene-debug.json",
-			Exposure:    1.5,
-			ToneMapping: "reinhard",
-			Gamma:       2.2,
+			Samples:      12,
+			ThreadNum:    3,
+			CameraIndex:  1,
+			Width:        800,
+			Height:       600,
+			OutputImage:  "scene.png",
+			OutputFilm:   "scene.bin",
+			ResumeFilm:   "resume.bin",
+			DebugOutput:  "scene-debug.json",
+			Exposure:     1.5,
+			ToneMapping:  "reinhard",
+			Gamma:        2.2,
+			SpectrumMode: "rgb",
 		},
 	}
 
 	config := ResolveRenderConfig(script, RenderOverrides{
-		ScriptPath:  "custom.json",
-		CameraIndex: 2,
-		ThreadNum:   6,
-		Width:       1024,
-		Samples:     32,
-		OutputImage: "override.png",
-		Exposure:    0.75,
-		ToneMapping: "aces",
-		Gamma:       1.8,
+		ScriptPath:   "custom.json",
+		CameraIndex:  2,
+		ThreadNum:    6,
+		Width:        1024,
+		Samples:      32,
+		OutputImage:  "override.png",
+		Exposure:     0.75,
+		ToneMapping:  "aces",
+		Gamma:        1.8,
+		SpectrumMode: "hero_wavelength",
 	})
 
 	if config.ScriptPath != "custom.json" {
@@ -61,6 +63,9 @@ func TestResolveRenderConfigMergesScriptAndCLI(t *testing.T) {
 	if config.Exposure != 0.75 || config.ToneMapping != "aces" || config.Gamma != 1.8 {
 		t.Fatalf("unexpected output transform: exposure=%f tone=%s gamma=%f", config.Exposure, config.ToneMapping, config.Gamma)
 	}
+	if config.SpectrumMode != "hero_wavelength" {
+		t.Fatalf("expected CLI spectrum mode override, got %s", config.SpectrumMode)
+	}
 }
 
 func TestResolveRenderConfigDefaultsThreadNumToNumCPU(t *testing.T) {
@@ -71,10 +76,19 @@ func TestResolveRenderConfigDefaultsThreadNumToNumCPU(t *testing.T) {
 	if config.Exposure != 1 || config.ToneMapping != "linear" || config.Gamma != 1 {
 		t.Fatalf("unexpected default output transform: exposure=%f tone=%s gamma=%f", config.Exposure, config.ToneMapping, config.Gamma)
 	}
+	if config.SpectrumMode != "hero_wavelength" {
+		t.Fatalf("unexpected default spectrum mode: %s", config.SpectrumMode)
+	}
 }
 
 func TestParseRenderOverridesRejectsUnsupportedToneMapping(t *testing.T) {
 	if _, err := ParseRenderOverrides([]string{"--tone-mapping", "magic"}); err == nil {
 		t.Fatal("expected unsupported tone mapping to fail")
+	}
+}
+
+func TestParseRenderOverridesRejectsUnsupportedSpectrumMode(t *testing.T) {
+	if _, err := ParseRenderOverrides([]string{"--spectrum-mode", "magic"}); err == nil {
+		t.Fatal("expected unsupported spectrum mode to fail")
 	}
 }

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/Algo2147483647/ray/engine/go/internal/controller"
+	"github.com/Algo2147483647/ray/engine/go/internal/material/core"
 	"github.com/Algo2147483647/ray/engine/go/internal/model"
 	"github.com/Algo2147483647/ray/engine/go/internal/model/camera"
 	"github.com/Algo2147483647/ray/engine/go/internal/model/optics"
@@ -146,11 +147,23 @@ func (h *Handler) Render() *Handler {
 
 	renderHandler := ray_tracing.NewHandler()
 	renderHandler.ThreadNum = h.Config.ThreadNum
+	renderHandler.SpectrumMode = renderSpectrumMode(h.Config.SpectrumMode)
 	renderHandler.TraceScene(h.ActiveCamera, h.Scene.ObjectTree, h.Film, h.Config.Samples)
 
 	elapsed := time.Since(start)
 	fmt.Printf("Rendering completed in %v\n", elapsed)
 	return h
+}
+
+func renderSpectrumMode(value string) core.SpectrumMode {
+	switch value {
+	case "rgb":
+		return core.SpectrumRGB
+	case "sampled":
+		return core.SpectrumRGBAndSpectral
+	default:
+		return core.SpectrumSpectral
+	}
 }
 
 func (h *Handler) SaveOutputs() *Handler {

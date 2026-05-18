@@ -119,6 +119,74 @@ Renderer-level spectral sampling chooses one wavelength per camera path and prop
 }
 ```
 
+New scenes may also use `radiance`; `color` remains accepted as a legacy alias:
+
+```json
+{
+  "id": "warm-light",
+  "emission": {
+    "type": "constant",
+    "radiance": {
+      "type": "blackbody",
+      "temperature": 3000,
+      "scale": 8
+    }
+  }
+}
+```
+
+## Spectrum Parameters
+
+Material and emission spectrum fields accept the legacy array form:
+
+```json
+"albedo": [0.8, 0.8, 0.8]
+```
+
+This is interpreted as scene-linear sRGB and is equivalent to:
+
+```json
+"albedo": {
+  "type": "rgb",
+  "space": "linear_srgb",
+  "value": [0.8, 0.8, 0.8]
+}
+```
+
+Supported object forms:
+
+```json
+{
+  "type": "rgb",
+  "space": "srgb",
+  "value": [0.8, 0.6, 0.4]
+}
+```
+
+```json
+{
+  "type": "constant",
+  "value": 0.8
+}
+```
+
+```json
+{
+  "type": "sampled",
+  "wavelengths_nm": [400, 500, 600, 700],
+  "values": [0.1, 0.4, 0.8, 0.7],
+  "interpolation": "linear"
+}
+```
+
+```json
+{
+  "type": "blackbody",
+  "temperature": 6500,
+  "scale": 1
+}
+```
+
 ## Render Output
 
 ```json
@@ -134,7 +202,8 @@ Renderer-level spectral sampling chooses one wavelength per camera path and prop
     "debug_output": "../../outputs/debug.json",
     "exposure": 2.1,
     "tone_mapping": "reinhard",
-    "gamma": 2.2
+    "gamma": 2.2,
+    "spectrum_mode": "hero_wavelength"
   }
 }
 ```
@@ -146,6 +215,16 @@ linear
 reinhard
 aces
 ```
+
+Supported spectrum modes:
+
+```text
+rgb
+hero_wavelength
+sampled
+```
+
+`hero_wavelength` is the default to preserve the renderer's current behavior. `rgb` disables camera wavelength sampling for fast compatibility renders. `sampled` is reserved for the multi-wavelength spectrum pipeline and currently maps to the mixed RGB/spectral execution path.
 
 CLI overrides:
 

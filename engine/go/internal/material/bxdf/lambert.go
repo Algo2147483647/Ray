@@ -7,18 +7,22 @@ import (
 )
 
 type Lambert struct {
-	Albedo core.Spectrum
+	Albedo core.SpectralParameter
 }
 
 func NewLambert(albedo core.Spectrum) Lambert {
+	return NewLambertParameter(core.NewRGBParameter(albedo))
+}
+
+func NewLambertParameter(albedo core.SpectralParameter) Lambert {
 	return Lambert{Albedo: albedo}
 }
 
-func (l Lambert) Eval(_ core.ShadingContext, wi, wo core.Direction) core.Spectrum {
+func (l Lambert) Eval(ctx core.ShadingContext, wi, wo core.Direction) core.Spectrum {
 	if !core.IsUpperHemisphere(wi) || !core.IsUpperHemisphere(wo) {
 		return core.Spectrum{}
 	}
-	return l.Albedo.MulScalar(1 / math.Pi)
+	return l.Albedo.Eval(ctx).MulScalar(1 / math.Pi)
 }
 
 func (l Lambert) Sample(ctx core.ShadingContext, wo core.Direction, u core.Sample2D) core.BxDFSample {
@@ -43,7 +47,7 @@ func (l Lambert) PDF(_ core.ShadingContext, wi, wo core.Direction) float64 {
 }
 
 func (l Lambert) AlbedoBound(core.ShadingContext) core.Spectrum {
-	return l.Albedo
+	return l.Albedo.Bounds().Max
 }
 
 func (l Lambert) RoughnessInfo(core.ShadingContext) core.RoughnessInfo {

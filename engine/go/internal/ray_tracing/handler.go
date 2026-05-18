@@ -1,27 +1,31 @@
 package ray_tracing
 
 import (
+	"runtime"
+	"sync"
+
+	"github.com/Algo2147483647/ray/engine/go/internal/material/core"
 	"github.com/Algo2147483647/ray/engine/go/internal/model/optics"
 	"github.com/Algo2147483647/ray/engine/go/internal/utils"
 	"gonum.org/v1/gonum/mat"
-	"runtime"
-	"sync"
 )
 
 type Handler struct {
-	MaxRayLevel int64     `json:"max_ray_level"` // 最大光线递归深度
-	ThreadNum   int       `json:"thread_num"`    // 并发线程数
-	BlockCols   int       `json:"block_cols"`
-	BlockRows   int       `json:"block_rows"`
-	RayPool     sync.Pool `json:"ray_pool"` // RayPool 光线对象池
+	MaxRayLevel  int64             `json:"max_ray_level"`
+	ThreadNum    int               `json:"thread_num"`
+	BlockCols    int               `json:"block_cols"`
+	BlockRows    int               `json:"block_rows"`
+	SpectrumMode core.SpectrumMode `json:"spectrum_mode"`
+	RayPool      sync.Pool         `json:"ray_pool"`
 }
 
 func NewHandler() *Handler {
 	return &Handler{
-		MaxRayLevel: 6,
-		ThreadNum:   runtime.NumCPU(),
-		BlockCols:   8,
-		BlockRows:   8,
+		MaxRayLevel:  6,
+		ThreadNum:    runtime.NumCPU(),
+		BlockCols:    8,
+		BlockRows:    8,
+		SpectrumMode: core.SpectrumSpectral,
 		RayPool: sync.Pool{
 			New: func() interface{} {
 				return &optics.Ray{

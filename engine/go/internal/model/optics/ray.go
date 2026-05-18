@@ -73,6 +73,18 @@ func (ray *Ray) SetSpectralWavelength(wavelength float64) {
 	ray.Color.SetVec(2, baseColor.AtVec(2)*ray.Color.AtVec(2))
 }
 
+func (ray *Ray) DisableSpectralSampling() {
+	ray.WaveLength = 0
+	ray.WavelengthPDF = 0
+	if ray.Color == nil {
+		ray.Color = mat.NewVecDense(3, []float64{1, 1, 1})
+		return
+	}
+	ray.Color.SetVec(0, 1)
+	ray.Color.SetVec(1, 1)
+	ray.Color.SetVec(2, 1)
+}
+
 func UniformWavelengthPDF() float64 {
 	return 1 / (WavelengthMax - WavelengthMin)
 }

@@ -1,11 +1,14 @@
 package controller
 
 import (
-	"github.com/Algo2147483647/ray/engine/go/internal/model"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/Algo2147483647/ray/engine/go/internal/material/core"
+	"github.com/Algo2147483647/ray/engine/go/internal/model"
 )
 
 func TestReadScriptFileReturnsErrorForInvalidJSON(t *testing.T) {
@@ -158,5 +161,112 @@ func TestParseMaterialsSupportsCauchyIOR(t *testing.T) {
 	}
 	if materials["dispersion-glass"] == nil || materials["dispersion-glass"].Surface == nil {
 		t.Fatal("expected parsed dielectric surface")
+	}
+}
+
+func TestParseMaterialsSupportsSpectralParameterObjects(t *testing.T) {
+	script := &Script{
+		Materials: []map[string]interface{}{
+			{
+				"id": "matte",
+				"surface": map[string]interface{}{
+					"type": "lambert",
+					"albedo": map[string]interface{}{
+						"type":  "rgb",
+						"space": "linear_srgb",
+						"value": []interface{}{0.8, 0.4, 0.2},
+					},
+				},
+			},
+			{
+				"id": "warm-light",
+				"emission": map[string]interface{}{
+					"type": "constant",
+					"radiance": map[string]interface{}{
+						"type":        "blackbody",
+						"temperature": 3000.0,
+						"scale":       2.0,
+					},
+				},
+			},
+		},
+	}
+
+	materials, err := ParseMaterials(script)
+	if err != nil {
+		t.Fatalf("parse spectral parameter objects: %v", err)
+	}
+
+	ctx := core.ShadingContext{SpectrumMode: core.SpectrumRGB}
+	wi := core.NewDirection(0, 0, 1)
+	wo := core.NewDirection(0, 0, 1)
+	got := materials["matte"].Surface.Eval(ctx, wi, wo)
+	want := core.NewSpectrum(0.8/math.Pi, 0.4/math.Pi, 0.2/math.Pi)
+	if !got.AlmostEqual(want, 1e-12) {
+		t.Fatalf("unexpected lambert eval: got %+v want %+v", got, want)
+	}
+
+	emitted := materials["warm-light"].Emission.Emit(ctx, wo)
+	if !emitted.IsFinite() || !emitted.IsNonNegative() || emitted.MaxComponent() <= 0 {
+		t.Fatalf("expected finite positive blackbody emission, got %+v", emitted)
+	}
+}
+
+func TestParseMaterialsConvertsSRGBParameterToLinear(t *testing.T) {
+	script := &Script{
+		Materials: []map[string]interface{}{
+			{
+				"id": "srgb-matte",
+				"surface": map[string]interface{}{
+					"type": "lambert",
+					"albedo": map[string]interface{}{
+						"type":  "rgb",
+						"space": "srgb",
+						"value": []interface{}{0.5, 0.5, 0.5},
+					},
+				},
+			},
+		},
+	}
+
+	materials, err := ParseMaterials(script)
+	if err != nil {
+		t.Fatalf("parse srgb spectral parameter: %v", err)
+	}
+
+	ctx := core.ShadingContext{SpectrumMode: core.SpectrumRGB}
+	wi := core.NewDirection(0, 0, 1)
+	wo := core.NewDirection(0, 0, 1)
+	got := materials["srgb-matte"].Surface.Eval(ctx, wi, wo)
+	linear := math.Pow((0.5+0.055)/1.055, 2.4)
+	want := core.ConstantSpectrum(linear / math.Pi)
+	if !got.AlmostEqual(want, 1e-12) {
+		t.Fatalf("unexpected srgb conversion: got %+v want %+v", got, want)
+	}
+}
+
+func TestParseMaterialsRejectsInvalidSampledSpectrum(t *testing.T) {
+	script := &Script{
+		Materials: []map[string]interface{}{
+			{
+				"id": "bad-sampled",
+				"surface": map[string]interface{}{
+					"type": "lambert",
+					"albedo": map[string]interface{}{
+						"type":           "sampled",
+						"wavelengths_nm": []interface{}{500.0, 450.0},
+						"values":         []interface{}{0.2, 0.3},
+					},
+				},
+			},
+		},
+	}
+
+	_, err := ParseMaterials(script)
+	if err == nil {
+		t.Fatal("expected invalid sampled spectrum error")
+	}
+	if !strings.Contains(err.Error(), "wavelengths_nm must be strictly increasing") {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }

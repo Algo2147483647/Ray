@@ -67,7 +67,7 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level in
 
 	ctx := core.ShadingContext{
 		TransportMode: core.TransportRadiance,
-		SpectrumMode:  core.SpectrumRGB,
+		SpectrumMode:  h.SpectrumMode,
 		CurrentIOR:    ray.RefractionIndex,
 		WavelengthNM:  ray.WaveLength,
 		WavelengthPDF: ray.WavelengthPDF,

@@ -2,6 +2,7 @@ package ray_tracing
 
 import (
 	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
+	"github.com/Algo2147483647/ray/engine/go/internal/material/core"
 	"github.com/Algo2147483647/ray/engine/go/internal/model/camera"
 	"github.com/Algo2147483647/ray/engine/go/internal/model/object"
 	"github.com/Algo2147483647/ray/engine/go/internal/model/optics"
@@ -15,7 +16,10 @@ func (h *Handler) TracePixel(camera camera.Camera, objTree *object.ObjectTree, s
 	defer h.RayPool.Put(ray)
 
 	for s := int64(0); s < samples; s++ {
-		camera.GenerateRay(ray, index...)          // build ray
+		camera.GenerateRay(ray, index...) // build ray
+		if h.SpectrumMode == core.SpectrumRGB {
+			ray.DisableSpectralSampling()
+		}
 		sampleColor := h.TraceRay(objTree, ray, 0) // trace ray
 		color.AddVec(color, sampleColor)
 	}

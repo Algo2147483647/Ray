@@ -4,7 +4,7 @@ A Go-based ray tracing engine for optical simulation and physically inspired ren
 
 
 ![feature-showcase-800x800-2000spp.png](docs%2Fassets%2Ffeature-showcase-800x800-2000spp.png)
-![four-order_equation-2400.png](docs%2Fassets%2Ffour-order_equation-2400.png)
+![four-order-equation-wide-soft-gold-800x800-1000spp.png](docs%2Fassets%2Ffour-order-equation-wide-soft-gold-800x800-1000spp.png)
 ![RayTracingTest.png](docs%2Fassets%2FRayTracingTest.png)
 ![4D.png](docs%2Fassets%2F4D.png)
 

@@ -3,15 +3,19 @@ package emission
 import "github.com/Algo2147483647/ray/engine/go/internal/material/core"
 
 type Constant struct {
-	Color core.Spectrum
+	Radiance core.SpectralParameter
 }
 
 func NewConstant(color core.Spectrum) Constant {
-	return Constant{Color: color}
+	return NewConstantParameter(core.NewRGBParameter(color))
 }
 
-func (e Constant) Emit(core.ShadingContext, core.Direction) core.Spectrum {
-	return e.Color
+func NewConstantParameter(radiance core.SpectralParameter) Constant {
+	return Constant{Radiance: radiance}
+}
+
+func (e Constant) Emit(ctx core.ShadingContext, _ core.Direction) core.Spectrum {
+	return e.Radiance.Eval(ctx)
 }
 
 func (e Constant) IsDelta() bool {

@@ -21,35 +21,37 @@ const (
 )
 
 type RenderOverrides struct {
-	ScriptPath  string
-	CameraIndex int
-	ThreadNum   int
-	Width       int
-	Height      int
-	Samples     int64
-	OutputImage string
-	OutputFilm  string
-	ResumeFilm  string
-	DebugOutput string
-	Exposure    float64
-	ToneMapping string
-	Gamma       float64
+	ScriptPath   string
+	CameraIndex  int
+	ThreadNum    int
+	Width        int
+	Height       int
+	Samples      int64
+	OutputImage  string
+	OutputFilm   string
+	ResumeFilm   string
+	DebugOutput  string
+	Exposure     float64
+	ToneMapping  string
+	Gamma        float64
+	SpectrumMode string
 }
 
 type RenderConfig struct {
-	ScriptPath  string
-	CameraIndex int
-	ThreadNum   int
-	Width       int
-	Height      int
-	Samples     int64
-	OutputImage string
-	OutputFilm  string
-	ResumeFilm  string
-	DebugOutput string
-	Exposure    float64
-	ToneMapping string
-	Gamma       float64
+	ScriptPath   string
+	CameraIndex  int
+	ThreadNum    int
+	Width        int
+	Height       int
+	Samples      int64
+	OutputImage  string
+	OutputFilm   string
+	ResumeFilm   string
+	DebugOutput  string
+	Exposure     float64
+	ToneMapping  string
+	Gamma        float64
+	SpectrumMode string
 }
 
 func ParseRenderOverrides(args []string) (RenderOverrides, error) {
@@ -72,6 +74,7 @@ func ParseRenderOverrides(args []string) (RenderOverrides, error) {
 	flagSet.Float64Var(&overrides.Exposure, "exposure", 0, "output exposure multiplier")
 	flagSet.StringVar(&overrides.ToneMapping, "tone-mapping", "", "output tone mapping: linear, reinhard, aces")
 	flagSet.Float64Var(&overrides.Gamma, "gamma", 0, "output gamma, for example 2.2")
+	flagSet.StringVar(&overrides.SpectrumMode, "spectrum-mode", "", "spectrum mode: rgb, hero_wavelength, sampled")
 
 	if err := flagSet.Parse(args); err != nil {
 		return RenderOverrides{}, err
@@ -104,22 +107,26 @@ func ParseRenderOverrides(args []string) (RenderOverrides, error) {
 	if overrides.ToneMapping != "" && !isSupportedToneMapping(overrides.ToneMapping) {
 		return RenderOverrides{}, fmt.Errorf("unsupported tone-mapping %q", overrides.ToneMapping)
 	}
+	if overrides.SpectrumMode != "" && !isSupportedSpectrumMode(overrides.SpectrumMode) {
+		return RenderOverrides{}, fmt.Errorf("unsupported spectrum-mode %q", overrides.SpectrumMode)
+	}
 
 	return overrides, nil
 }
 
 func ResolveRenderConfig(script *controller.Script, overrides RenderOverrides) RenderConfig {
 	config := RenderConfig{
-		ScriptPath:  overrides.ScriptPath,
-		CameraIndex: 0,
-		ThreadNum:   runtime.NumCPU(),
-		Samples:     defaultSamples,
-		OutputImage: defaultOutputImage,
-		OutputFilm:  defaultOutputFilm,
-		DebugOutput: defaultDebugOutput,
-		Exposure:    1,
-		ToneMapping: string(camera.ToneMappingLinear),
-		Gamma:       1,
+		ScriptPath:   overrides.ScriptPath,
+		CameraIndex:  0,
+		ThreadNum:    runtime.NumCPU(),
+		Samples:      defaultSamples,
+		OutputImage:  defaultOutputImage,
+		OutputFilm:   defaultOutputFilm,
+		DebugOutput:  defaultDebugOutput,
+		Exposure:     1,
+		ToneMapping:  string(camera.ToneMappingLinear),
+		Gamma:        1,
+		SpectrumMode: "hero_wavelength",
 	}
 
 	if script != nil {
@@ -159,6 +166,9 @@ func ResolveRenderConfig(script *controller.Script, overrides RenderOverrides) R
 		if script.Render.Gamma > 0 {
 			config.Gamma = script.Render.Gamma
 		}
+		if script.Render.SpectrumMode != "" {
+			config.SpectrumMode = script.Render.SpectrumMode
+		}
 	}
 
 	if overrides.CameraIndex >= 0 {
@@ -197,8 +207,20 @@ func ResolveRenderConfig(script *controller.Script, overrides RenderOverrides) R
 	if overrides.Gamma > 0 {
 		config.Gamma = overrides.Gamma
 	}
+	if overrides.SpectrumMode != "" {
+		config.SpectrumMode = overrides.SpectrumMode
+	}
 
 	return config
+}
+
+func isSupportedSpectrumMode(value string) bool {
+	switch value {
+	case "rgb", "hero_wavelength", "sampled":
+		return true
+	default:
+		return false
+	}
 }
 
 func isSupportedToneMapping(value string) bool {
