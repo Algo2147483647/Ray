@@ -4,9 +4,9 @@ import (
 	renderray "github.com/Algo2147483647/ray/engine/model/optics"
 	"testing"
 
-	"github.com/Algo2147483647/ray/engine/material/core"
-	"github.com/Algo2147483647/ray/engine/material/ior"
-	"github.com/Algo2147483647/ray/engine/material/medium"
+	"github.com/Algo2147483647/ray/engine/model/material/core"
+	"github.com/Algo2147483647/ray/engine/model/material/ior"
+	"github.com/Algo2147483647/ray/engine/model/material/medium"
 )
 
 func TestPrepareMediumContextKeepsLegacyIORWithoutBoundary(t *testing.T) {

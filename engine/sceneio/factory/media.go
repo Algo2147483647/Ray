@@ -3,9 +3,9 @@ package factory
 import (
 	"fmt"
 
-	"github.com/Algo2147483647/ray/engine/material/core"
-	"github.com/Algo2147483647/ray/engine/material/ior"
-	"github.com/Algo2147483647/ray/engine/material/medium"
+	"github.com/Algo2147483647/ray/engine/model/material/core"
+	"github.com/Algo2147483647/ray/engine/model/material/ior"
+	"github.com/Algo2147483647/ray/engine/model/material/medium"
 )
 
 func ParseMediaRegistry(script *Script) (*medium.Registry, error) {

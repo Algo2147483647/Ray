@@ -3,7 +3,7 @@ package object
 import (
 	"fmt"
 	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
-	"github.com/Algo2147483647/ray/engine/material/medium"
+	"github.com/Algo2147483647/ray/engine/model/material/medium"
 	"github.com/Algo2147483647/ray/engine/model/shape"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"

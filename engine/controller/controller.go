@@ -1,10 +1,10 @@
 package controller
 
 import (
-	"github.com/Algo2147483647/ray/engine/material/core"
-	"github.com/Algo2147483647/ray/engine/material/medium"
 	"github.com/Algo2147483647/ray/engine/model"
 	"github.com/Algo2147483647/ray/engine/model/camera"
+	"github.com/Algo2147483647/ray/engine/model/material/core"
+	"github.com/Algo2147483647/ray/engine/model/material/medium"
 	"github.com/Algo2147483647/ray/engine/model/shape"
 	"github.com/Algo2147483647/ray/engine/sceneio/factory"
 	"github.com/Algo2147483647/ray/engine/sceneio/parser"

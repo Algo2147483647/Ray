@@ -4,11 +4,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Algo2147483647/ray/engine/material/bsdf"
-	"github.com/Algo2147483647/ray/engine/material/bxdf"
-	"github.com/Algo2147483647/ray/engine/material/core"
-	"github.com/Algo2147483647/ray/engine/material/emission"
-	"github.com/Algo2147483647/ray/engine/material/ior"
+	"github.com/Algo2147483647/ray/engine/model/material/bsdf"
+	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
+	"github.com/Algo2147483647/ray/engine/model/material/core"
+	"github.com/Algo2147483647/ray/engine/model/material/emission"
+	"github.com/Algo2147483647/ray/engine/model/material/ior"
 )
 
 func ParseMaterials(script *Script) (map[string]*core.Material, error) {

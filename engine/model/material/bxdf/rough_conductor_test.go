@@ -4,8 +4,8 @@ import (
 	"math"
 	"testing"
 
-	"github.com/Algo2147483647/ray/engine/material/core"
-	"github.com/Algo2147483647/ray/engine/material/validation"
+	"github.com/Algo2147483647/ray/engine/model/material/core"
+	"github.com/Algo2147483647/ray/engine/model/material/validation"
 )
 
 func TestRoughConductorEvalIsFiniteAndReciprocal(t *testing.T) {

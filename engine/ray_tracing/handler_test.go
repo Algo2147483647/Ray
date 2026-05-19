@@ -3,7 +3,7 @@ package ray_tracing
 import (
 	"testing"
 
-	"github.com/Algo2147483647/ray/engine/material/core"
+	"github.com/Algo2147483647/ray/engine/model/material/core"
 )
 
 func TestEffectiveSampleCountUsesWavelengthSubsamples(t *testing.T) {

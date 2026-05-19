@@ -1,6 +1,6 @@
 package bsdf
 
-import "github.com/Algo2147483647/ray/engine/material/core"
+import "github.com/Algo2147483647/ray/engine/model/material/core"
 
 type Single struct {
 	BxDF core.BxDF

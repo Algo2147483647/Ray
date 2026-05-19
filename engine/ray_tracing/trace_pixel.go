@@ -5,8 +5,8 @@ import (
 	"math/rand/v2"
 
 	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
-	"github.com/Algo2147483647/ray/engine/material/core"
 	"github.com/Algo2147483647/ray/engine/model/camera"
+	"github.com/Algo2147483647/ray/engine/model/material/core"
 	"github.com/Algo2147483647/ray/engine/model/object"
 	"gonum.org/v1/gonum/mat"
 )

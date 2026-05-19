@@ -5,7 +5,7 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/Algo2147483647/ray/engine/material/core"
+	"github.com/Algo2147483647/ray/engine/model/material/core"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 )

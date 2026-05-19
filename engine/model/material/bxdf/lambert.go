@@ -3,7 +3,7 @@ package bxdf
 import (
 	"math"
 
-	"github.com/Algo2147483647/ray/engine/material/core"
+	"github.com/Algo2147483647/ray/engine/model/material/core"
 )
 
 type Lambert struct {

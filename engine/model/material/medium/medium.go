@@ -3,8 +3,8 @@ package medium
 import (
 	"fmt"
 
-	"github.com/Algo2147483647/ray/engine/material/core"
-	"github.com/Algo2147483647/ray/engine/material/ior"
+	"github.com/Algo2147483647/ray/engine/model/material/core"
+	"github.com/Algo2147483647/ray/engine/model/material/ior"
 )
 
 type Medium interface {
