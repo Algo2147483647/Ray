@@ -1,76 +1,16 @@
-package controller
+package factory
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
+
 	"github.com/Algo2147483647/ray/engine/go/internal/model"
 	"github.com/Algo2147483647/ray/engine/go/internal/model/camera"
 	"github.com/Algo2147483647/ray/engine/go/internal/model/object"
-	"io"
-	"os"
+	"github.com/Algo2147483647/ray/engine/go/internal/sceneio/schema"
 )
 
-type CameraScript struct {
-	ID          string    `json:"id"`
-	Position    []float64 `json:"position"`
-	LookAt      []float64 `json:"look_at"`
-	Direction   []float64 `json:"direction"`
-	Up          []float64 `json:"up"`
-	Width       int       `json:"width"`
-	Height      int       `json:"height"`
-	FieldOfView float64   `json:"field_of_view"`
-	AspectRatio float64   `json:"aspect_ratio"`
-	Ortho       bool      `json:"ortho"`
-}
-
-type RenderScript struct {
-	Samples           int64   `json:"samples"`
-	ThreadNum         int     `json:"thread_num"`
-	CameraIndex       int     `json:"camera_index"`
-	Width             int     `json:"width"`
-	Height            int     `json:"height"`
-	OutputImage       string  `json:"output_image"`
-	OutputFilm        string  `json:"output_film"`
-	ResumeFilm        string  `json:"resume_film"`
-	DebugOutput       string  `json:"debug_output"`
-	Exposure          float64 `json:"exposure"`
-	ToneMapping       string  `json:"tone_mapping"`
-	Gamma             float64 `json:"gamma"`
-	SpectrumMode      string  `json:"spectrum_mode"`
-	WavelengthSamples int     `json:"wavelength_samples"`
-	WorkingSpace      string  `json:"working_space"`
-}
-
-type Script struct {
-	Materials []map[string]interface{}          `json:"materials"`
-	Media     map[string]map[string]interface{} `json:"media"`
-	Objects   []map[string]interface{}          `json:"objects"`
-	Cameras   []CameraScript                    `json:"cameras"`
-	Render    RenderScript                      `json:"render"`
-}
-
-func ReadScriptFile(filepath string) (*Script, error) {
-	file, err := os.Open(filepath)
-	if err != nil {
-		return nil, fmt.Errorf("open script %q: %w", filepath, err)
-	}
-	defer file.Close()
-
-	data, err := io.ReadAll(file)
-	if err != nil {
-		return nil, fmt.Errorf("read script %q: %w", filepath, err)
-	}
-
-	var script Script
-	if err := json.Unmarshal(data, &script); err != nil {
-		return nil, fmt.Errorf("parse script %q: %w", filepath, err)
-	}
-
-	return &script, nil
-}
-
-func LoadSceneFromScript(script *Script, scene *model.Scene) error {
+func LoadSceneFromScript(script *schema.Script, scene *model.Scene) error {
 	if script == nil {
 		return errors.New("script is nil")
 	}
@@ -151,7 +91,7 @@ func LoadSceneFromScript(script *Script, scene *model.Scene) error {
 	return nil
 }
 
-func ParseCameras(script *Script) ([]camera.Camera, error) {
+func ParseCameras(script *schema.Script) ([]camera.Camera, error) {
 	cameraDefs := script.Cameras
 	if len(cameraDefs) == 0 {
 		return nil, nil

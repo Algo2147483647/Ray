@@ -1,4 +1,4 @@
-package controller
+package parser
 
 import (
 	"encoding/json"
@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-func requiredStringField(data map[string]interface{}, key string) (string, error) {
+func RequiredStringField(data map[string]interface{}, key string) (string, error) {
 	value, ok := data[key]
 	if !ok {
 		return "", fmt.Errorf("missing required field %q", key)
@@ -24,7 +24,7 @@ func requiredStringField(data map[string]interface{}, key string) (string, error
 	return text, nil
 }
 
-func optionalStringField(data map[string]interface{}, key string) (string, bool, error) {
+func OptionalStringField(data map[string]interface{}, key string) (string, bool, error) {
 	value, ok := data[key]
 	if !ok {
 		return "", false, nil
@@ -37,7 +37,7 @@ func optionalStringField(data map[string]interface{}, key string) (string, bool,
 	return text, true, nil
 }
 
-func optionalBoolField(data map[string]interface{}, key string) (bool, bool, error) {
+func OptionalBoolField(data map[string]interface{}, key string) (bool, bool, error) {
 	value, ok := data[key]
 	if !ok {
 		return false, false, nil
@@ -50,7 +50,7 @@ func optionalBoolField(data map[string]interface{}, key string) (bool, bool, err
 	return boolean, true, nil
 }
 
-func optionalFloat64Field(data map[string]interface{}, key string) (float64, bool, error) {
+func OptionalFloat64Field(data map[string]interface{}, key string) (float64, bool, error) {
 	value, ok := data[key]
 	if !ok {
 		return 0, false, nil
@@ -63,7 +63,7 @@ func optionalFloat64Field(data map[string]interface{}, key string) (float64, boo
 	return number, true, nil
 }
 
-func requiredFloat64Field(data map[string]interface{}, key string) (float64, error) {
+func RequiredFloat64Field(data map[string]interface{}, key string) (float64, error) {
 	value, ok := data[key]
 	if !ok {
 		return 0, fmt.Errorf("missing required field %q", key)
@@ -76,39 +76,39 @@ func requiredFloat64Field(data map[string]interface{}, key string) (float64, err
 	return number, nil
 }
 
-func requiredFloat64SliceField(data map[string]interface{}, key string, expectedLengths ...int) ([]float64, error) {
+func RequiredFloat64SliceField(data map[string]interface{}, key string, expectedLengths ...int) ([]float64, error) {
 	value, ok := data[key]
 	if !ok {
 		return nil, fmt.Errorf("missing required field %q", key)
 	}
 
-	values, err := toFloat64Slice(value)
+	values, err := ToFloat64Slice(value)
 	if err != nil {
 		return nil, fmt.Errorf("field %q: %w", key, err)
 	}
-	if err := requireSliceLength(key, values, expectedLengths...); err != nil {
+	if err := RequireSliceLength(key, values, expectedLengths...); err != nil {
 		return nil, err
 	}
 	return values, nil
 }
 
-func optionalFloat64SliceField(data map[string]interface{}, key string, expectedLengths ...int) ([]float64, bool, error) {
+func OptionalFloat64SliceField(data map[string]interface{}, key string, expectedLengths ...int) ([]float64, bool, error) {
 	value, ok := data[key]
 	if !ok {
 		return nil, false, nil
 	}
 
-	values, err := toFloat64Slice(value)
+	values, err := ToFloat64Slice(value)
 	if err != nil {
 		return nil, true, fmt.Errorf("field %q: %w", key, err)
 	}
-	if err := requireSliceLength(key, values, expectedLengths...); err != nil {
+	if err := RequireSliceLength(key, values, expectedLengths...); err != nil {
 		return nil, true, err
 	}
 	return values, true, nil
 }
 
-func requireSliceLength(key string, values []float64, expectedLengths ...int) error {
+func RequireSliceLength(key string, values []float64, expectedLengths ...int) error {
 	if len(expectedLengths) == 0 {
 		return nil
 	}
@@ -217,7 +217,7 @@ func toFloat64(value interface{}) (float64, error) {
 	}
 }
 
-func toFloat64Slice(value interface{}) ([]float64, error) {
+func ToFloat64Slice(value interface{}) ([]float64, error) {
 	switch v := value.(type) {
 	case []float64:
 		result := make([]float64, len(v))

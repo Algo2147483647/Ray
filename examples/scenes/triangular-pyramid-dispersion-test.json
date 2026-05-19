@@ -149,13 +149,13 @@
     }
   ],
   "render": {
-    "samples": 1000,
+    "samples": 4000,
     "thread_num": 0,
-    "width": 200,
-    "height": 200,
+    "width": 100,
+    "height": 100,
     "camera_index": 0,
-    "output_image": "../../outputs/triangular-pyramid-dispersion-200x200-1000spp.png",
-    "output_film": "../../outputs/triangular-pyramid-dispersion-200x200-1000spp.bin",
+    "output_image": "../../outputs/triangular-pyramid-dispersion.png",
+    "output_film": "../../outputs/triangular-pyramid-dispersion.bin",
     "debug_output": "../../outputs/triangular-pyramid-dispersion-debug.json",
     "exposure": 1.15,
     "tone_mapping": "reinhard",
