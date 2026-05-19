@@ -1,0 +1,183 @@
+{
+  "materials": [
+    {
+      "id": "dark-matte",
+      "surface": {
+        "type": "lambert",
+        "albedo": {
+          "type": "rgb",
+          "space": "linear_srgb",
+          "value": [0.025, 0.025, 0.03]
+        }
+      }
+    },
+    {
+      "id": "neutral-screen",
+      "surface": {
+        "type": "lambert",
+        "albedo": {
+          "type": "rgb",
+          "space": "linear_srgb",
+          "value": [0.9, 0.9, 0.88]
+        }
+      }
+    },
+    {
+      "id": "white-slit",
+      "emission": {
+        "type": "constant",
+        "radiance": {
+          "type": "rgb",
+          "space": "linear_srgb",
+          "value": [90, 90, 90]
+        }
+      }
+    },
+    {
+      "id": "high-dispersion-glass",
+      "surface": {
+        "type": "specular_dielectric",
+        "reflectance": {
+          "type": "constant",
+          "value": 1
+        },
+        "transmittance": {
+          "type": "constant",
+          "value": 1
+        },
+        "eta_outside": 1,
+        "ior": {
+          "type": "cauchy",
+          "a": 1.32,
+          "b": 0.06,
+          "c": 0
+        }
+      }
+    }
+  ],
+  "objects": [
+    {
+      "id": "floor-0",
+      "shape": "triangle",
+      "p1": [-1.7, -1.1, 0],
+      "p2": [1.8, -1.1, 0],
+      "p3": [-1.7, 1.1, 0],
+      "material_id": "dark-matte"
+    },
+    {
+      "id": "floor-1",
+      "shape": "triangle",
+      "p1": [1.8, 1.1, 0],
+      "p2": [-1.7, 1.1, 0],
+      "p3": [1.8, -1.1, 0],
+      "material_id": "dark-matte"
+    },
+    {
+      "id": "back-screen-0",
+      "shape": "triangle",
+      "p1": [-1.5, -1.1, 0],
+      "p2": [-1.5, 1.1, 0],
+      "p3": [-1.5, -1.1, 1.9],
+      "material_id": "neutral-screen"
+    },
+    {
+      "id": "back-screen-1",
+      "shape": "triangle",
+      "p1": [-1.5, 1.1, 1.9],
+      "p2": [-1.5, -1.1, 1.9],
+      "p3": [-1.5, 1.1, 0],
+      "material_id": "neutral-screen"
+    },
+    {
+      "id": "white-slit-0",
+      "shape": "triangle",
+      "p1": [-1.485, -0.045, 0.72],
+      "p2": [-1.485, -0.045, 1.28],
+      "p3": [-1.485, 0.045, 0.72],
+      "material_id": "white-slit"
+    },
+    {
+      "id": "white-slit-1",
+      "shape": "triangle",
+      "p1": [-1.485, 0.045, 1.28],
+      "p2": [-1.485, 0.045, 0.72],
+      "p3": [-1.485, -0.045, 1.28],
+      "material_id": "white-slit"
+    },
+    {
+      "id": "pyramid-base",
+      "shape": "triangle",
+      "p1": [-0.42, -0.42, 0.55],
+      "p2": [0.48, -0.34, 0.55],
+      "p3": [-0.08, 0.52, 0.55],
+      "material_id": "high-dispersion-glass"
+    },
+    {
+      "id": "pyramid-side-left",
+      "shape": "triangle",
+      "p1": [-0.42, -0.42, 0.55],
+      "p2": [0.0, 0.02, 1.42],
+      "p3": [0.48, -0.34, 0.55],
+      "material_id": "high-dispersion-glass"
+    },
+    {
+      "id": "pyramid-side-right",
+      "shape": "triangle",
+      "p1": [0.48, -0.34, 0.55],
+      "p2": [0.0, 0.02, 1.42],
+      "p3": [-0.08, 0.52, 0.55],
+      "material_id": "high-dispersion-glass"
+    },
+    {
+      "id": "pyramid-side-back",
+      "shape": "triangle",
+      "p1": [-0.08, 0.52, 0.55],
+      "p2": [0.0, 0.02, 1.42],
+      "p3": [-0.42, -0.42, 0.55],
+      "material_id": "high-dispersion-glass"
+    },
+    {
+      "id": "dispersion-catch-screen-0",
+      "shape": "triangle",
+      "p1": [1.32, -0.72, 0.22],
+      "p2": [1.32, 0.72, 0.22],
+      "p3": [1.32, -0.72, 1.72],
+      "material_id": "neutral-screen"
+    },
+    {
+      "id": "dispersion-catch-screen-1",
+      "shape": "triangle",
+      "p1": [1.32, 0.72, 1.72],
+      "p2": [1.32, -0.72, 1.72],
+      "p3": [1.32, 0.72, 0.22],
+      "material_id": "neutral-screen"
+    }
+  ],
+  "cameras": [
+    {
+      "id": "main",
+      "position": [2.65, 0.05, 0.96],
+      "look_at": [-0.22, 0.0, 0.96],
+      "up": [0, 0, 1],
+      "field_of_view": 32,
+      "width": 200,
+      "height": 200
+    }
+  ],
+  "render": {
+    "samples": 1000,
+    "thread_num": 0,
+    "width": 200,
+    "height": 200,
+    "camera_index": 0,
+    "output_image": "../../outputs/triangular-pyramid-dispersion-200x200-1000spp.png",
+    "output_film": "../../outputs/triangular-pyramid-dispersion-200x200-1000spp.bin",
+    "debug_output": "../../outputs/triangular-pyramid-dispersion-debug.json",
+    "exposure": 1.15,
+    "tone_mapping": "reinhard",
+    "gamma": 2.2,
+    "spectrum_mode": "sampled",
+    "wavelength_samples": 24,
+    "working_space": "linear_srgb"
+  }
+}

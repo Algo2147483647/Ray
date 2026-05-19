@@ -48,6 +48,25 @@ func TestRoughConductorSamplePDFConsistency(t *testing.T) {
 	}
 }
 
+func TestRoughConductorSampledEtaK(t *testing.T) {
+	bxdf := NewRoughConductorParameter(
+		core.NewSampledParameter([]float64{400, 500, 600, 700}, []float64{0.2, 0.3, 0.4, 0.5}),
+		core.NewSampledParameter([]float64{400, 500, 600, 700}, []float64{3.0, 2.7, 2.4, 2.1}),
+		0.25,
+	)
+	ctx := core.ShadingContext{WavelengthsNM: []float64{450, 550, 650}}
+	wi := core.NewDirection(0.2, 0.1, 0.97).Normalize()
+	wo := core.NewDirection(-0.1, 0.3, 0.95).Normalize()
+
+	f := bxdf.Eval(ctx, wi, wo)
+	if len(f.Samples) != 3 {
+		t.Fatalf("expected sampled conductor response with 3 channels, got %+v", f)
+	}
+	if !f.IsFinite() || !f.IsNonNegative() {
+		t.Fatalf("expected finite non-negative sampled conductor response, got %+v", f)
+	}
+}
+
 func TestRoughConductorValidation(t *testing.T) {
 	bxdf := NewRoughConductor(
 		core.NewSpectrum(0.2, 0.9, 1.5),

@@ -149,6 +149,7 @@ func (h *Handler) Render() *Handler {
 	renderHandler := ray_tracing.NewHandler()
 	renderHandler.ThreadNum = h.Config.ThreadNum
 	renderHandler.SpectrumMode = renderSpectrumMode(h.Config.SpectrumMode)
+	renderHandler.WavelengthSamples = h.Config.WavelengthSamples
 	renderHandler.TraceScene(h.ActiveCamera, h.Scene.ObjectTree, h.Film, h.Config.Samples)
 
 	elapsed := time.Since(start)

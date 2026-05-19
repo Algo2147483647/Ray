@@ -35,6 +35,7 @@ type ShadingContext struct {
 	SpectrumMode  SpectrumMode
 	CurrentIOR    float64
 	WavelengthNM  float64
+	WavelengthsNM []float64
 	WavelengthPDF float64
 }
 
@@ -48,13 +49,12 @@ type BxDFSample struct {
 }
 
 type Scattering interface {
-	Eval(ctx ShadingContext, wi, wo Direction) Spectrum
-	Sample(ctx ShadingContext, wo Direction, u Sample2D) BxDFSample
-	PDF(ctx ShadingContext, wi, wo Direction) float64
-
-	AlbedoBound(ctx ShadingContext) Spectrum
-	RoughnessInfo(ctx ShadingContext) RoughnessInfo
-	DeltaFlags() DeltaFlags
+	Eval(ctx ShadingContext, wi, wo Direction) Spectrum             // Evaluates the scattering function value for an incoming direction wi and outgoing direction wo.
+	Sample(ctx ShadingContext, wo Direction, u Sample2D) BxDFSample // Samples an incoming direction given an outgoing direction and a 2D random sample.
+	PDF(ctx ShadingContext, wi, wo Direction) float64               // Returns the probability density of sampling wi given wo.
+	AlbedoBound(ctx ShadingContext) Spectrum                        // Returns an upper bound estimate of the scattering albedo.
+	RoughnessInfo(ctx ShadingContext) RoughnessInfo                 // Returns roughness-related metadata for the scattering model.
+	DeltaFlags() DeltaFlags                                         // Returns flags describing whether the scattering contains delta/discrete components.
 }
 
 type BxDF interface {

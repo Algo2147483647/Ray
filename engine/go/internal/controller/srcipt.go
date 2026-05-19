@@ -25,20 +25,21 @@ type CameraScript struct {
 }
 
 type RenderScript struct {
-	Samples      int64   `json:"samples"`
-	ThreadNum    int     `json:"thread_num"`
-	CameraIndex  int     `json:"camera_index"`
-	Width        int     `json:"width"`
-	Height       int     `json:"height"`
-	OutputImage  string  `json:"output_image"`
-	OutputFilm   string  `json:"output_film"`
-	ResumeFilm   string  `json:"resume_film"`
-	DebugOutput  string  `json:"debug_output"`
-	Exposure     float64 `json:"exposure"`
-	ToneMapping  string  `json:"tone_mapping"`
-	Gamma        float64 `json:"gamma"`
-	SpectrumMode string  `json:"spectrum_mode"`
-	WorkingSpace string  `json:"working_space"`
+	Samples           int64   `json:"samples"`
+	ThreadNum         int     `json:"thread_num"`
+	CameraIndex       int     `json:"camera_index"`
+	Width             int     `json:"width"`
+	Height            int     `json:"height"`
+	OutputImage       string  `json:"output_image"`
+	OutputFilm        string  `json:"output_film"`
+	ResumeFilm        string  `json:"resume_film"`
+	DebugOutput       string  `json:"debug_output"`
+	Exposure          float64 `json:"exposure"`
+	ToneMapping       string  `json:"tone_mapping"`
+	Gamma             float64 `json:"gamma"`
+	SpectrumMode      string  `json:"spectrum_mode"`
+	WavelengthSamples int     `json:"wavelength_samples"`
+	WorkingSpace      string  `json:"working_space"`
 }
 
 type Script struct {

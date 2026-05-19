@@ -10,35 +10,37 @@ import (
 func TestResolveRenderConfigMergesScriptAndCLI(t *testing.T) {
 	script := &controller.Script{
 		Render: controller.RenderScript{
-			Samples:      12,
-			ThreadNum:    3,
-			CameraIndex:  1,
-			Width:        800,
-			Height:       600,
-			OutputImage:  "scene.png",
-			OutputFilm:   "scene.bin",
-			ResumeFilm:   "resume.bin",
-			DebugOutput:  "scene-debug.json",
-			Exposure:     1.5,
-			ToneMapping:  "reinhard",
-			Gamma:        2.2,
-			SpectrumMode: "rgb",
-			WorkingSpace: "linear_srgb",
+			Samples:           12,
+			ThreadNum:         3,
+			CameraIndex:       1,
+			Width:             800,
+			Height:            600,
+			OutputImage:       "scene.png",
+			OutputFilm:        "scene.bin",
+			ResumeFilm:        "resume.bin",
+			DebugOutput:       "scene-debug.json",
+			Exposure:          1.5,
+			ToneMapping:       "reinhard",
+			Gamma:             2.2,
+			SpectrumMode:      "rgb",
+			WavelengthSamples: 2,
+			WorkingSpace:      "linear_srgb",
 		},
 	}
 
 	config := ResolveRenderConfig(script, RenderOverrides{
-		ScriptPath:   "custom.json",
-		CameraIndex:  2,
-		ThreadNum:    6,
-		Width:        1024,
-		Samples:      32,
-		OutputImage:  "override.png",
-		Exposure:     0.75,
-		ToneMapping:  "aces",
-		Gamma:        1.8,
-		SpectrumMode: "hero_wavelength",
-		WorkingSpace: "linear_srgb",
+		ScriptPath:        "custom.json",
+		CameraIndex:       2,
+		ThreadNum:         6,
+		Width:             1024,
+		Samples:           32,
+		OutputImage:       "override.png",
+		Exposure:          0.75,
+		ToneMapping:       "aces",
+		Gamma:             1.8,
+		SpectrumMode:      "hero_wavelength",
+		WavelengthSamples: 3,
+		WorkingSpace:      "linear_srgb",
 	})
 
 	if config.ScriptPath != "custom.json" {
@@ -68,6 +70,9 @@ func TestResolveRenderConfigMergesScriptAndCLI(t *testing.T) {
 	if config.SpectrumMode != "hero_wavelength" {
 		t.Fatalf("expected CLI spectrum mode override, got %s", config.SpectrumMode)
 	}
+	if config.WavelengthSamples != 3 {
+		t.Fatalf("expected CLI wavelength samples override, got %d", config.WavelengthSamples)
+	}
 	if config.WorkingSpace != "linear_srgb" {
 		t.Fatalf("unexpected working space: %s", config.WorkingSpace)
 	}
@@ -84,8 +89,23 @@ func TestResolveRenderConfigDefaultsThreadNumToNumCPU(t *testing.T) {
 	if config.SpectrumMode != "hero_wavelength" {
 		t.Fatalf("unexpected default spectrum mode: %s", config.SpectrumMode)
 	}
+	if config.WavelengthSamples != 1 {
+		t.Fatalf("unexpected default wavelength samples: %d", config.WavelengthSamples)
+	}
 	if config.WorkingSpace != "linear_srgb" {
 		t.Fatalf("unexpected default working space: %s", config.WorkingSpace)
+	}
+}
+
+func TestResolveRenderConfigDefaultsSampledModeToMultipleWavelengths(t *testing.T) {
+	config := ResolveRenderConfig(&controller.Script{
+		Render: controller.RenderScript{
+			SpectrumMode: "sampled",
+		},
+	}, RenderOverrides{ScriptPath: defaultScriptPath})
+
+	if config.WavelengthSamples != 4 {
+		t.Fatalf("expected sampled mode to default to 4 wavelength samples, got %d", config.WavelengthSamples)
 	}
 }
 
@@ -98,6 +118,12 @@ func TestParseRenderOverridesRejectsUnsupportedToneMapping(t *testing.T) {
 func TestParseRenderOverridesRejectsUnsupportedSpectrumMode(t *testing.T) {
 	if _, err := ParseRenderOverrides([]string{"--spectrum-mode", "magic"}); err == nil {
 		t.Fatal("expected unsupported spectrum mode to fail")
+	}
+}
+
+func TestParseRenderOverridesRejectsNegativeWavelengthSamples(t *testing.T) {
+	if _, err := ParseRenderOverrides([]string{"--wavelength-samples", "-1"}); err == nil {
+		t.Fatal("expected negative wavelength samples to fail")
 	}
 }
 

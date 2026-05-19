@@ -8,10 +8,14 @@ import (
 )
 
 type SpecularReflection struct {
-	Reflectance core.Spectrum
+	Reflectance core.SpectralParameter
 }
 
 func NewSpecularReflection(reflectance core.Spectrum) SpecularReflection {
+	return NewSpecularReflectionParameter(core.NewRGBParameter(reflectance))
+}
+
+func NewSpecularReflectionParameter(reflectance core.SpectralParameter) SpecularReflection {
 	return SpecularReflection{Reflectance: reflectance}
 }
 
@@ -19,7 +23,7 @@ func (s SpecularReflection) Eval(core.ShadingContext, core.Direction, core.Direc
 	return core.Spectrum{}
 }
 
-func (s SpecularReflection) Sample(_ core.ShadingContext, wo core.Direction, _ core.Sample2D) core.BxDFSample {
+func (s SpecularReflection) Sample(ctx core.ShadingContext, wo core.Direction, _ core.Sample2D) core.BxDFSample {
 	if !core.IsUpperHemisphere(wo) {
 		return core.BxDFSample{}
 	}
@@ -28,7 +32,7 @@ func (s SpecularReflection) Sample(_ core.ShadingContext, wo core.Direction, _ c
 	cos := core.AbsCosTheta(wi)
 	return core.BxDFSample{
 		Wi:    wi,
-		F:     s.Reflectance.DivScalar(cos),
+		F:     s.Reflectance.Eval(ctx).DivScalar(cos),
 		PDF:   1,
 		Flags: core.DeltaReflection,
 	}
@@ -39,7 +43,7 @@ func (s SpecularReflection) PDF(core.ShadingContext, core.Direction, core.Direct
 }
 
 func (s SpecularReflection) AlbedoBound(core.ShadingContext) core.Spectrum {
-	return s.Reflectance
+	return s.Reflectance.Bounds().Max
 }
 
 func (s SpecularReflection) RoughnessInfo(core.ShadingContext) core.RoughnessInfo {
@@ -51,13 +55,17 @@ func (s SpecularReflection) DeltaFlags() core.DeltaFlags {
 }
 
 type SpecularDielectric struct {
-	Reflectance   core.Spectrum
-	Transmittance core.Spectrum
+	Reflectance   core.SpectralParameter
+	Transmittance core.SpectralParameter
 	EtaOutside    float64
 	InsideIOR     ior.Model
 }
 
 func NewSpecularDielectric(reflectance, transmittance core.Spectrum, etaOutside float64, insideIOR ior.Model) SpecularDielectric {
+	return NewSpecularDielectricParameter(core.NewRGBParameter(reflectance), core.NewRGBParameter(transmittance), etaOutside, insideIOR)
+}
+
+func NewSpecularDielectricParameter(reflectance, transmittance core.SpectralParameter, etaOutside float64, insideIOR ior.Model) SpecularDielectric {
 	if insideIOR == nil {
 		insideIOR = ior.NewConstant(1.5)
 	}
@@ -106,7 +114,7 @@ func (s SpecularDielectric) Sample(ctx core.ShadingContext, wo core.Direction, u
 		cos := core.AbsCosTheta(wi)
 		sample := core.BxDFSample{
 			Wi:    wi,
-			F:     s.Reflectance.MulScalar(fresnel).DivScalar(cos),
+			F:     s.Reflectance.Eval(ctx).MulScalar(fresnel).DivScalar(cos),
 			PDF:   fresnel,
 			Flags: core.DeltaReflection,
 			Eta:   etaI,
@@ -124,7 +132,7 @@ func (s SpecularDielectric) Sample(ctx core.ShadingContext, wo core.Direction, u
 		cos := core.AbsCosTheta(wi)
 		sample := core.BxDFSample{
 			Wi:    wi,
-			F:     s.Reflectance.DivScalar(cos),
+			F:     s.Reflectance.Eval(ctx).DivScalar(cos),
 			PDF:   1,
 			Flags: core.DeltaReflection,
 			Eta:   etaI,
@@ -138,7 +146,7 @@ func (s SpecularDielectric) Sample(ctx core.ShadingContext, wo core.Direction, u
 	cos := core.AbsCosTheta(wi)
 	sample := core.BxDFSample{
 		Wi:    wi,
-		F:     s.Transmittance.MulScalar(1 - fresnel).DivScalar(cos),
+		F:     s.Transmittance.Eval(ctx).MulScalar(1 - fresnel).DivScalar(cos),
 		PDF:   1 - fresnel,
 		Flags: core.DeltaTransmission,
 		Eta:   etaT,
@@ -154,10 +162,12 @@ func (s SpecularDielectric) PDF(core.ShadingContext, core.Direction, core.Direct
 }
 
 func (s SpecularDielectric) AlbedoBound(core.ShadingContext) core.Spectrum {
+	reflectance := s.Reflectance.Bounds().Max
+	transmittance := s.Transmittance.Bounds().Max
 	return core.NewSpectrum(
-		math.Max(s.Reflectance.R, s.Transmittance.R),
-		math.Max(s.Reflectance.G, s.Transmittance.G),
-		math.Max(s.Reflectance.B, s.Transmittance.B),
+		math.Max(reflectance.R, transmittance.R),
+		math.Max(reflectance.G, transmittance.G),
+		math.Max(reflectance.B, transmittance.B),
 	)
 }
 

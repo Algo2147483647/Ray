@@ -72,6 +72,9 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level in
 		WavelengthNM:  ray.WaveLength,
 		WavelengthPDF: ray.WavelengthPDF,
 	}
+	if h.SpectrumMode == core.SpectrumRGBAndSpectral && ray.WaveLength > 0 {
+		ctx.WavelengthsNM = []float64{ray.WaveLength}
+	}
 	woWorld := negateVec(ray.Direction)
 	woLocal, frameOK := worldToLocal(woWorld, normal)
 	if !frameOK {

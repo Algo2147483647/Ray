@@ -1,6 +1,8 @@
 package ray_tracing
 
 import (
+	"math/rand/v2"
+
 	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
 	"github.com/Algo2147483647/ray/engine/go/internal/material/core"
 	"github.com/Algo2147483647/ray/engine/go/internal/model/camera"
@@ -15,13 +17,38 @@ func (h *Handler) TracePixel(camera camera.Camera, objTree *object.ObjectTree, s
 	ray := h.RayPool.Get().(*optics.Ray) // new ray
 	defer h.RayPool.Put(ray)
 
+	wavelengthSampler := NewUniformWavelengthSampler()
+	totalTraces := int64(0)
+
 	for s := int64(0); s < samples; s++ {
-		camera.GenerateRay(ray, index...) // build ray
-		if h.SpectrumMode == core.SpectrumRGB {
+		switch h.SpectrumMode {
+		case core.SpectrumRGB:
+			camera.GenerateRay(ray, index...)
 			ray.DisableSpectralSampling()
+			color.AddVec(color, h.TraceRay(objTree, ray, 0))
+			totalTraces++
+		case core.SpectrumRGBAndSpectral:
+			wavelengthSamples := h.WavelengthSamples
+			if wavelengthSamples <= 0 {
+				wavelengthSamples = 4
+			}
+			for w := 0; w < wavelengthSamples; w++ {
+				camera.GenerateRay(ray, index...)
+				sample := wavelengthSampler.Sample((float64(w) + rand.Float64()) / float64(wavelengthSamples))
+				ray.SetSpectralWavelength(sample.LambdaNM)
+				color.AddVec(color, h.TraceRay(objTree, ray, 0))
+				totalTraces++
+			}
+		default:
+			camera.GenerateRay(ray, index...)
+			sample := wavelengthSampler.Sample(rand.Float64())
+			ray.SetSpectralWavelength(sample.LambdaNM)
+			color.AddVec(color, h.TraceRay(objTree, ray, 0))
+			totalTraces++
 		}
-		sampleColor := h.TraceRay(objTree, ray, 0) // trace ray
-		color.AddVec(color, sampleColor)
 	}
-	return math_lib.ScaleVec(color, 1.0/float64(samples), color)
+	if totalTraces == 0 {
+		return color
+	}
+	return math_lib.ScaleVec(color, 1.0/float64(totalTraces), color)
 }

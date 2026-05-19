@@ -8,22 +8,26 @@ import (
 )
 
 type RoughConductor struct {
-	Eta    core.Spectrum
-	K      core.Spectrum
+	Eta    core.SpectralParameter
+	K      core.SpectralParameter
 	Alpha  float64
-	Weight core.Spectrum
+	Weight core.SpectralParameter
 }
 
 func NewRoughConductor(eta, k core.Spectrum, alpha float64) RoughConductor {
+	return NewRoughConductorParameter(core.NewRGBParameter(eta), core.NewRGBParameter(k), alpha)
+}
+
+func NewRoughConductorParameter(eta, k core.SpectralParameter, alpha float64) RoughConductor {
 	return RoughConductor{
 		Eta:    eta,
 		K:      k,
 		Alpha:  microfacet.ClampAlpha(alpha),
-		Weight: core.ConstantSpectrum(1),
+		Weight: core.NewConstantParameter(1),
 	}
 }
 
-func (r RoughConductor) Eval(_ core.ShadingContext, wi, wo core.Direction) core.Spectrum {
+func (r RoughConductor) Eval(ctx core.ShadingContext, wi, wo core.Direction) core.Spectrum {
 	if !core.IsUpperHemisphere(wi) || !core.IsUpperHemisphere(wo) {
 		return core.Spectrum{}
 	}
@@ -40,9 +44,9 @@ func (r RoughConductor) Eval(_ core.ShadingContext, wi, wo core.Direction) core.
 		return core.Spectrum{}
 	}
 
-	f := microfacet.FresnelConductor(math.Abs(wi.Dot(wh)), r.Eta, r.K)
+	f := microfacet.FresnelConductor(math.Abs(wi.Dot(wh)), r.Eta.Eval(ctx), r.K.Eval(ctx))
 	scale := distribution.D(wh) * distribution.G(wi, wo) / (4 * cosI * cosO)
-	return f.Mul(r.Weight).MulScalar(scale)
+	return f.Mul(r.Weight.Eval(ctx)).MulScalar(scale)
 }
 
 func (r RoughConductor) Sample(ctx core.ShadingContext, wo core.Direction, u core.Sample2D) core.BxDFSample {
@@ -85,10 +89,11 @@ func (r RoughConductor) PDF(_ core.ShadingContext, wi, wo core.Direction) float6
 }
 
 func (r RoughConductor) AlbedoBound(core.ShadingContext) core.Spectrum {
+	weight := r.Weight.Bounds().Max
 	return core.NewSpectrum(
-		math.Min(1, r.Weight.R),
-		math.Min(1, r.Weight.G),
-		math.Min(1, r.Weight.B),
+		math.Min(1, weight.R),
+		math.Min(1, weight.G),
+		math.Min(1, weight.B),
 	)
 }
 

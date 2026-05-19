@@ -52,7 +52,15 @@ func NewACEScgParameter(value Spectrum) RGBParameter {
 	}
 }
 
-func (p RGBParameter) Eval(ShadingContext) Spectrum {
+func (p RGBParameter) Eval(ctx ShadingContext) Spectrum {
+	if len(ctx.WavelengthsNM) > 0 {
+		values := make([]float64, len(ctx.WavelengthsNM))
+		value := p.Value.averageRGB()
+		for i := range values {
+			values[i] = value
+		}
+		return NewSampledSpectrum(values)
+	}
 	return p.Value
 }
 
@@ -68,7 +76,14 @@ func NewConstantParameter(value float64) ConstantParameter {
 	return ConstantParameter{Value: value}
 }
 
-func (p ConstantParameter) Eval(ShadingContext) Spectrum {
+func (p ConstantParameter) Eval(ctx ShadingContext) Spectrum {
+	if len(ctx.WavelengthsNM) > 0 {
+		values := make([]float64, len(ctx.WavelengthsNM))
+		for i := range values {
+			values[i] = p.Value
+		}
+		return NewSampledSpectrum(values)
+	}
 	return ConstantSpectrum(p.Value)
 }
 
@@ -94,6 +109,13 @@ func NewSampledParameter(wavelengthsNM, values []float64) SampledParameter {
 func (p SampledParameter) Eval(ctx ShadingContext) Spectrum {
 	if len(p.WavelengthsNM) == 0 || len(p.Values) == 0 {
 		return Spectrum{}
+	}
+	if len(ctx.WavelengthsNM) > 0 {
+		values := make([]float64, len(ctx.WavelengthsNM))
+		for i, wavelengthNM := range ctx.WavelengthsNM {
+			values[i] = p.valueAt(wavelengthNM)
+		}
+		return NewSampledSpectrum(values)
 	}
 	if ctx.WavelengthNM > 0 {
 		return ConstantSpectrum(p.valueAt(ctx.WavelengthNM))
@@ -157,6 +179,13 @@ func NewBlackbodyParameter(temperature, scale float64) BlackbodyParameter {
 func (p BlackbodyParameter) Eval(ctx ShadingContext) Spectrum {
 	if p.Temperature <= 0 || p.Scale <= 0 {
 		return Spectrum{}
+	}
+	if len(ctx.WavelengthsNM) > 0 {
+		values := make([]float64, len(ctx.WavelengthsNM))
+		for i, wavelengthNM := range ctx.WavelengthsNM {
+			values[i] = p.Scale * relativeBlackbody(wavelengthNM, p.Temperature)
+		}
+		return NewSampledSpectrum(values)
 	}
 	if ctx.WavelengthNM > 0 {
 		return ConstantSpectrum(p.Scale * relativeBlackbody(ctx.WavelengthNM, p.Temperature))

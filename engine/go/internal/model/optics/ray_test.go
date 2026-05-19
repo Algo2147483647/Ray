@@ -128,6 +128,25 @@ func TestSpectralRGBWeightWhitePoint(t *testing.T) {
 	}
 }
 
+func TestRayInitResetsReusedThroughput(t *testing.T) {
+	ray := &Ray{
+		Color: mat.NewVecDense(3, []float64{0.2, 0.3, 0.4}),
+	}
+	ray.WaveLength = 510
+	ray.WavelengthPDF = UniformWavelengthPDF()
+
+	ray.Init()
+
+	if ray.WaveLength != 0 || ray.WavelengthPDF != 0 {
+		t.Fatalf("expected spectral state reset, got wavelength=%f pdf=%f", ray.WaveLength, ray.WavelengthPDF)
+	}
+	for i := 0; i < 3; i++ {
+		if ray.Color.AtVec(i) != 1 {
+			t.Fatalf("expected throughput reset to white, got %v", ray.Color.RawVector().Data)
+		}
+	}
+}
+
 func TestWavelengthToXYZHasExpectedPrimaryRegions(t *testing.T) {
 	blue := WavelengthToXYZ(450)
 	green := WavelengthToXYZ(555)

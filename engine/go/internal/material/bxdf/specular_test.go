@@ -27,6 +27,21 @@ func TestSpecularReflectionSampleThroughputWeight(t *testing.T) {
 	}
 }
 
+func TestSpecularReflectionSampledReflectance(t *testing.T) {
+	bxdf := NewSpecularReflectionParameter(core.NewSampledParameter(
+		[]float64{400, 500, 600, 700},
+		[]float64{0.2, 0.4, 0.6, 0.8},
+	))
+	ctx := core.ShadingContext{WavelengthsNM: []float64{450, 550, 650}}
+	wo := core.NewDirection(0, 0, 1)
+
+	sample := bxdf.Sample(ctx, wo, core.Sample2D{})
+	expected := core.NewSampledSpectrum([]float64{0.3, 0.5, 0.7})
+	if !sample.F.AlmostEqual(expected, 1e-12) {
+		t.Fatalf("unexpected sampled specular reflectance: got %+v want %+v", sample.F, expected)
+	}
+}
+
 func TestSpecularDielectricChoosesReflectionAndTransmission(t *testing.T) {
 	bxdf := NewSpecularDielectricConstant(core.ConstantSpectrum(1), core.ConstantSpectrum(1), 1, 1.5)
 	wo := core.NewDirection(0, 0, 1)

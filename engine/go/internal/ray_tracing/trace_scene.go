@@ -64,5 +64,5 @@ func (h *Handler) TraceScene(renderCamera camera.Camera, objectTree *object.Obje
 	close(done)
 	time.Sleep(100 * time.Millisecond)
 
-	film.Samples = samples
+	film.Samples = h.EffectiveSampleCount(samples)
 }

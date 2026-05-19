@@ -11,21 +11,23 @@ import (
 )
 
 type Handler struct {
-	MaxRayLevel  int64             `json:"max_ray_level"`
-	ThreadNum    int               `json:"thread_num"`
-	BlockCols    int               `json:"block_cols"`
-	BlockRows    int               `json:"block_rows"`
-	SpectrumMode core.SpectrumMode `json:"spectrum_mode"`
-	RayPool      sync.Pool         `json:"ray_pool"`
+	MaxRayLevel       int64             `json:"max_ray_level"`
+	ThreadNum         int               `json:"thread_num"`
+	BlockCols         int               `json:"block_cols"`
+	BlockRows         int               `json:"block_rows"`
+	SpectrumMode      core.SpectrumMode `json:"spectrum_mode"`
+	WavelengthSamples int               `json:"wavelength_samples"`
+	RayPool           sync.Pool         `json:"ray_pool"`
 }
 
 func NewHandler() *Handler {
 	return &Handler{
-		MaxRayLevel:  6,
-		ThreadNum:    runtime.NumCPU(),
-		BlockCols:    8,
-		BlockRows:    8,
-		SpectrumMode: core.SpectrumSpectral,
+		MaxRayLevel:       6,
+		ThreadNum:         runtime.NumCPU(),
+		BlockCols:         8,
+		BlockRows:         8,
+		SpectrumMode:      core.SpectrumSpectral,
+		WavelengthSamples: 1,
 		RayPool: sync.Pool{
 			New: func() interface{} {
 				return &optics.Ray{
@@ -44,4 +46,18 @@ func DebugIsRecordRay(ray *optics.Ray, row, col, sample int) {
 	} else {
 		ray.DebugSwitch = false
 	}
+}
+
+func (h *Handler) EffectiveSampleCount(cameraSamples int64) int64 {
+	if cameraSamples <= 0 {
+		return 0
+	}
+	if h.SpectrumMode != core.SpectrumRGBAndSpectral {
+		return cameraSamples
+	}
+	wavelengthSamples := h.WavelengthSamples
+	if wavelengthSamples <= 0 {
+		wavelengthSamples = 4
+	}
+	return cameraSamples * int64(wavelengthSamples)
 }

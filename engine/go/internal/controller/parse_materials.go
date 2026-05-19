@@ -94,17 +94,17 @@ func parseSurface(def map[string]interface{}) (core.BSDF, error) {
 		}
 		return bsdf.NewSingle(bxdf.NewLambertParameter(albedo)), nil
 	case "specular_reflection":
-		reflectance, err := optionalSpectrumField(def, "reflectance", core.ConstantSpectrum(1))
+		reflectance, _, err := optionalSpectralParameterField(def, "reflectance", core.NewConstantParameter(1))
 		if err != nil {
 			return nil, err
 		}
-		return bsdf.NewSingle(bxdf.NewSpecularReflection(reflectance)), nil
+		return bsdf.NewSingle(bxdf.NewSpecularReflectionParameter(reflectance)), nil
 	case "specular_dielectric":
-		reflectance, err := optionalSpectrumField(def, "reflectance", core.ConstantSpectrum(1))
+		reflectance, _, err := optionalSpectralParameterField(def, "reflectance", core.NewConstantParameter(1))
 		if err != nil {
 			return nil, err
 		}
-		transmittance, err := optionalSpectrumField(def, "transmittance", core.ConstantSpectrum(1))
+		transmittance, _, err := optionalSpectralParameterField(def, "transmittance", core.NewConstantParameter(1))
 		if err != nil {
 			return nil, err
 		}
@@ -122,13 +122,13 @@ func parseSurface(def map[string]interface{}) (core.BSDF, error) {
 		if err != nil {
 			return nil, err
 		}
-		return bsdf.NewSingle(bxdf.NewSpecularDielectric(reflectance, transmittance, etaOutside, insideIOR)), nil
+		return bsdf.NewSingle(bxdf.NewSpecularDielectricParameter(reflectance, transmittance, etaOutside, insideIOR)), nil
 	case "rough_conductor":
-		eta, err := requiredSpectrumField(def, "eta")
+		eta, err := requiredSpectralParameterField(def, "eta")
 		if err != nil {
 			return nil, err
 		}
-		k, err := requiredSpectrumField(def, "k")
+		k, err := requiredSpectralParameterField(def, "k")
 		if err != nil {
 			return nil, err
 		}
@@ -143,7 +143,7 @@ func parseSurface(def map[string]interface{}) (core.BSDF, error) {
 			return nil, fmt.Errorf("roughness must be in [0, 1]")
 		}
 		alpha := roughness * roughness
-		return bsdf.NewSingle(bxdf.NewRoughConductor(eta, k, alpha)), nil
+		return bsdf.NewSingle(bxdf.NewRoughConductorParameter(eta, k, alpha)), nil
 	default:
 		return nil, fmt.Errorf("unsupported surface type %q", surfaceType)
 	}

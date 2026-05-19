@@ -204,6 +204,7 @@ Supported object forms:
     "tone_mapping": "reinhard",
     "gamma": 2.2,
     "spectrum_mode": "hero_wavelength",
+    "wavelength_samples": 1,
     "working_space": "linear_srgb"
   }
 }
@@ -225,9 +226,13 @@ hero_wavelength
 sampled
 ```
 
-`hero_wavelength` is the default to preserve the renderer's current behavior. `rgb` disables camera wavelength sampling for fast compatibility renders. `sampled` is reserved for the multi-wavelength spectrum pipeline and currently maps to the mixed RGB/spectral execution path.
+`hero_wavelength` is the default to preserve the renderer's current behavior. `rgb` disables camera wavelength sampling for fast compatibility renders. `sampled` traces multiple wavelength sub-samples per camera sample; set `wavelength_samples` to control the sub-sample count. If `sampled` is selected and `wavelength_samples` is omitted, the renderer defaults to 4 wavelength sub-samples.
+
+Camera ray generation now only creates geometric rays. Wavelength sampling is owned by the renderer/integrator so that `rgb`, `hero_wavelength`, and `sampled` modes share the same camera code.
 
 Film currently stores three channels in `linear_srgb` by default. Hero-wavelength reconstruction uses a CIE 1931 XYZ approximation converted to linear sRGB and white-point normalized before the contribution reaches the Film. The Film also has an `xyz` working-space path for future spectral accumulation, but the active renderer keeps `linear_srgb` until BSDF throughput is fully spectral.
+
+`core.Spectrum` now preserves optional sampled channels in addition to its RGB compatibility fields. Lambert, specular reflection, specular dielectric, rough conductor, and constant emission evaluate their spectral parameters from `ShadingContext` instead of collapsing all inputs to RGB at parse time. In `sampled` mode the renderer still traces wavelength sub-paths independently, which is required for dispersive paths where different wavelengths can refract in different directions. The sampled-channel `Spectrum` path is active in material evaluation and unit tests, and is the compatibility layer for a future packet-style spectral integrator.
 
 CLI overrides:
 
