@@ -73,7 +73,7 @@ func (c *Cuboid) IntersectPure(raySt, rayDir *mat.VecDense) float64 {
 	return t1
 }
 
-// GetNormalVector 计算交点的法向量
+// GetNormalVector computes the normal vector at the intersection point.
 func (c *Cuboid) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {
 	if res == nil || res.Len() != intersect.Len() {
 		res = mat.NewVecDense(intersect.Len(), nil)
@@ -98,7 +98,7 @@ func (c *Cuboid) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {
 	return res
 }
 
-// BuildBoundingBox 返回包围盒边界
+// BuildBoundingBox returns the bounding box bounds.
 func (c *Cuboid) BuildBoundingBox() (pmin, pmax *mat.VecDense) {
 	return c.Pmin, c.Pmax
 }

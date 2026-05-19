@@ -18,29 +18,30 @@ func EngravingFuncSphere1(data map[string]interface{}) bool {
 	center := data["center"].(*mat.VecDense)
 	r := data["r"].(float64)
 
-	// 计算交点位置
+	// Compute the intersection position.
 	intersection := mat.NewVecDense(raySt.Len(), nil)
 	intersection.ScaleVec(distance, rayDir)
 	intersection.AddVec(intersection, raySt)
 
-	// 转换为相对于球心的坐标
+	// Convert to coordinates relative to the sphere center.
 	relPos := mat.NewVecDense(raySt.Len(), nil)
 	relPos.SubVec(intersection, center)
 
-	// 计算球面坐标（方位角和极角）, 归一化到单位球
+	// Compute spherical coordinates (azimuth and polar angle), normalized to the unit sphere.
 	x, y, z := relPos.At(0, 0)/r, relPos.At(1, 0)/r, relPos.At(2, 0)/r
-	azimuth := math.Atan2(y, x) // 计算方位角（0到2π）
+	azimuth := math.Atan2(y, x) // Compute azimuth (0 to 2*pi).
 	if azimuth < 0 {
 		azimuth += 2 * math.Pi
 	}
-	polar := math.Acos(z) // 计算极角（0到π）
+	polar := math.Acos(z) // Compute polar angle (0 to pi).
 
-	// 螺旋条纹, 使用极角和方位角创建螺旋效果
+	// Spiral stripes, using polar angle and azimuth to create the spiral effect.
 	spiralParam := polar*5 + azimuth*3
 
-	// 使用正弦函数创建平滑的条纹图案
+	// Use a sine function to create a smooth stripe pattern.
 	patternValue := math.Sin(spiralParam)
 
-	// 如果patternValue大于0.3，则透射（true），否则相交（false）, 调整这个阈值可以改变图案的密度
+	// If patternValue is greater than 0.3, transmit (true); otherwise intersect (false).
+	// Adjust this threshold to change the pattern density.
 	return patternValue > 0.3
 }

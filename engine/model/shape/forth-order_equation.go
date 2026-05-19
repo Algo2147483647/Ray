@@ -13,7 +13,7 @@ type FourOrderEquation struct {
 	A *math_lib.Tensor[float64] `json:"a"`
 }
 
-func NewFourOrderEquation(A []float64) *FourOrderEquation { // 索引顺序: 1, x, y, z
+func NewFourOrderEquation(A []float64) *FourOrderEquation { // Index order: 1, x, y, z
 	ATensor := math_lib.NewTensorFromSlice(A, []int{4, 4, 4, 4})
 
 	return &FourOrderEquation{
@@ -27,8 +27,8 @@ func (p *FourOrderEquation) Name() string {
 
 func (p *FourOrderEquation) Intersect(raySt, rayDir *mat.VecDense) float64 {
 	var (
-		coeffs = [5]float64{0, 0, 0, 0, 0} // 初始化系数数组，索引0到4分别对应常数项到4次项
-		stx    = raySt.At(0, 0)            // 获取射线起点和方向的分量
+		coeffs = [5]float64{0, 0, 0, 0, 0} // Initialize coefficients from the constant term to the fourth-degree term.
+		stx    = raySt.At(0, 0)            // Get ray origin and direction components.
 		sty    = raySt.At(1, 0)
 		stz    = raySt.At(2, 0)
 		dirx   = rayDir.At(0, 0)
@@ -36,7 +36,7 @@ func (p *FourOrderEquation) Intersect(raySt, rayDir *mat.VecDense) float64 {
 		dirz   = rayDir.At(2, 0)
 	)
 
-	for i := 0; i < 4; i++ { // 遍历张量A的索引（0到3）
+	for i := 0; i < 4; i++ { // Iterate over tensor A indices (0 to 3).
 		for j := 0; j < 4; j++ {
 			for k := 0; k < 4; k++ {
 				for l := 0; l < 4; l++ {
@@ -45,24 +45,24 @@ func (p *FourOrderEquation) Intersect(raySt, rayDir *mat.VecDense) float64 {
 						continue
 					}
 
-					poly := [5]float64{1, 0, 0, 0, 0} // 初始化当前项的多项式系数（常数项为1）
-					indices := [4]int{i, j, k, l}     // 处理每个索引对应的因子
+					poly := [5]float64{1, 0, 0, 0, 0} // Initialize the current term polynomial coefficients (constant term is 1).
+					indices := [4]int{i, j, k, l}     // Process the factor for each index.
 					for _, idx := range indices {
 						var polyFactor [2]float64
 						switch idx {
 						case 0:
-							polyFactor = [2]float64{1, 0} // 常数因子1
+							polyFactor = [2]float64{1, 0} // Constant factor 1
 						case 1:
-							polyFactor = [2]float64{stx, dirx} // x因子
+							polyFactor = [2]float64{stx, dirx} // x factor
 						case 2:
-							polyFactor = [2]float64{sty, diry} // y因子
+							polyFactor = [2]float64{sty, diry} // y factor
 						case 3:
-							polyFactor = [2]float64{stz, dirz} // z因子
+							polyFactor = [2]float64{stz, dirz} // z factor
 						default:
-							polyFactor = [2]float64{0, 0} // 无效索引，默认为0
+							polyFactor = [2]float64{0, 0} // Invalid index, default to 0.
 						}
 
-						newPoly := [5]float64{} // 将当前多项式与因子多项式相乘
+						newPoly := [5]float64{} // Multiply the current polynomial by the factor polynomial.
 						for d1, coef1 := range poly {
 							for d2, coef2 := range polyFactor {
 								if d1+d2 < 5 {
@@ -73,7 +73,7 @@ func (p *FourOrderEquation) Intersect(raySt, rayDir *mat.VecDense) float64 {
 						poly = newPoly
 					}
 
-					for d, coef := range poly { // 将当前项的多项式系数乘以c并累加到总系数中
+					for d, coef := range poly { // Multiply the current term polynomial coefficients by c and accumulate them.
 						coeffs[d] += c * coef
 					}
 				}
@@ -81,8 +81,8 @@ func (p *FourOrderEquation) Intersect(raySt, rayDir *mat.VecDense) float64 {
 		}
 	}
 
-	roots := basic_algebra.SolveQuarticEquation(coeffs[4], coeffs[3], coeffs[2], coeffs[1], coeffs[0]) // 解四次方程：a*t^4 + b*t^3 + c*t^2 + d*t + e = 0
-	res := math.MaxFloat64                                                                             // 寻找最小的正实数根
+	roots := basic_algebra.SolveQuarticEquation(coeffs[4], coeffs[3], coeffs[2], coeffs[1], coeffs[0]) // Solve the quartic equation: a*t^4 + b*t^3 + c*t^2 + d*t + e = 0
+	res := math.MaxFloat64                                                                             // Find the smallest positive real root.
 	for _, root := range roots {
 		if math.Abs(imag(root)) < utils.EPS && real(root) > utils.EPS && real(root) < res {
 			res = real(root)
@@ -93,14 +93,14 @@ func (p *FourOrderEquation) Intersect(raySt, rayDir *mat.VecDense) float64 {
 
 func (p *FourOrderEquation) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {
 	var (
-		x       = intersect.At(0, 0) // 获取交点坐标
+		x       = intersect.At(0, 0) // Get intersection coordinates.
 		y       = intersect.At(1, 0)
 		z       = intersect.At(2, 0)
 		factors = [4]float64{1, x, y, z} // factors[0]=1, factors[1]=x, factors[2]=y, factors[3]=z
-		grad    = [3]float64{0, 0, 0}    // dx, dy, dz	// 初始化梯度向量
+		grad    = [3]float64{0, 0, 0}    // dx, dy, dz	// Initialize the gradient vector.
 	)
 
-	// 遍历张量A的索引（0到3）
+	// Iterate over tensor A indices (0 to 3).
 	for i := 0; i < 4; i++ {
 		for j := 0; j < 4; j++ {
 			for k := 0; k < 4; k++ {
@@ -110,7 +110,7 @@ func (p *FourOrderEquation) GetNormalVector(intersect, res *mat.VecDense) *mat.V
 						continue
 					}
 
-					// 计算对x的偏导贡献
+					// Compute the partial derivative contribution for x.
 					dx := 0.0
 					if i == 1 {
 						dx += factors[j] * factors[k] * factors[l]
@@ -126,7 +126,7 @@ func (p *FourOrderEquation) GetNormalVector(intersect, res *mat.VecDense) *mat.V
 					}
 					grad[0] += c * dx
 
-					// 计算对y的偏导贡献
+					// Compute the partial derivative contribution for y.
 					dy := 0.0
 					if i == 2 {
 						dy += factors[j] * factors[k] * factors[l]
@@ -142,7 +142,7 @@ func (p *FourOrderEquation) GetNormalVector(intersect, res *mat.VecDense) *mat.V
 					}
 					grad[1] += c * dy
 
-					// 计算对z的偏导贡献
+					// Compute the partial derivative contribution for z.
 					dz := 0.0
 					if i == 3 {
 						dz += factors[j] * factors[k] * factors[l]

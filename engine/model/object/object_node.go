@@ -7,14 +7,14 @@ import (
 	"strings"
 )
 
-// ObjectNode 表示对象树中的节点
+// ObjectNode represents a node in the object tree.
 type ObjectNode struct {
-	Obj      *Object        // 关联的物体
-	BoundBox *shape.Cuboid  // 包围盒
-	Children [2]*ObjectNode // 子节点
+	Obj      *Object        // Associated object
+	BoundBox *shape.Cuboid  // Bounding box
+	Children [2]*ObjectNode // Child nodes
 }
 
-// NewObjectNode 创建新节点
+// NewObjectNode creates a new node.
 func NewObjectNode(obj *Object, left, right *ObjectNode) *ObjectNode {
 	node := &ObjectNode{
 		Obj:      obj,
@@ -27,17 +27,17 @@ func NewObjectNode(obj *Object, left, right *ObjectNode) *ObjectNode {
 	return node
 }
 
-// ObjectNode的递归字符串表示
+// TreeNodeString returns the recursive string representation of an ObjectNode.
 func (node *ObjectNode) TreeNodeString(depth int) string {
 	if node == nil {
 		return ""
 	}
 
-	// 创建当前深度的缩进
+	// Create indentation for the current depth.
 	indent := strings.Repeat("│   ", depth)
 	nextIndent := strings.Repeat("│   ", depth+1)
 
-	// 组装当前节点信息
+	// Assemble the current node information.
 	var nodeInfo strings.Builder
 	if depth > 0 {
 		nodeInfo.WriteString(fmt.Sprintf("%s├── ", indent[:len(indent)-4]))
@@ -45,7 +45,7 @@ func (node *ObjectNode) TreeNodeString(depth int) string {
 		nodeInfo.WriteString("Root: ")
 	}
 
-	// 添加包围盒信息
+	// Add bounding box information.
 	if node.BoundBox != nil {
 		nodeInfo.WriteString(fmt.Sprintf("BoundBox: [%s → %s]",
 			math_lib.FormatVec(node.BoundBox.Pmin),
@@ -54,17 +54,17 @@ func (node *ObjectNode) TreeNodeString(depth int) string {
 		nodeInfo.WriteString("BoundBox: nil")
 	}
 
-	// 添加关联物体信息
+	// Add associated object information.
 	if node.Obj != nil && node.Obj.Shape != nil {
 		nodeInfo.WriteString(fmt.Sprintf("  \t[Object: %s]", node.Obj.Shape.Name()))
 	}
 
-	// 处理子节点
+	// Process child nodes.
 	children := make([]string, 0, 2)
 	for i, child := range node.Children {
 		childStr := child.TreeNodeString(depth + 1)
 		if childStr != "" {
-			// 添加子节点标记（左/右）
+			// Add child node markers (left/right).
 			marker := "L:"
 			if i == 1 {
 				marker = "R:"
@@ -73,7 +73,7 @@ func (node *ObjectNode) TreeNodeString(depth int) string {
 		}
 	}
 
-	// 组合节点和子节点信息
+	// Combine node and child information.
 	result := nodeInfo.String()
 	if len(children) > 0 {
 		result += "\n" + strings.Join(children, "\n")

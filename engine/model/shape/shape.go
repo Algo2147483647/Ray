@@ -6,7 +6,7 @@ import (
 	"math"
 )
 
-// Shape 表示几何形状的接口
+// Shape represents the interface for geometric shapes.
 type Shape interface {
 	Name() string
 	Intersect(rayStart, rayDir *mat.VecDense) float64
@@ -14,7 +14,7 @@ type Shape interface {
 	BuildBoundingBox() (pmin, pmax *mat.VecDense)
 }
 
-// BaseShape 提供形状的基础实现
+// BaseShape provides the basic shape implementation.
 type BaseShape struct {
 	EngravingFunc func(data map[string]interface{}) bool
 }
@@ -35,7 +35,7 @@ func (bs *BaseShape) BuildBoundingBox() (pmin, pmax *mat.VecDense) {
 	pmin = mat.NewVecDense(utils.Dimension, nil)
 	pmax = mat.NewVecDense(utils.Dimension, nil)
 	for i := 0; i < utils.Dimension; i++ {
-		pmin.SetVec(i, -math.MaxFloat64/2) // math.MaxFloat64 / 2  避免后续计算溢出
+		pmin.SetVec(i, -math.MaxFloat64/2) // math.MaxFloat64 / 2 prevents overflow in later calculations.
 		pmax.SetVec(i, +math.MaxFloat64/2)
 	}
 	return

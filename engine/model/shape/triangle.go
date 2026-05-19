@@ -68,21 +68,21 @@ func (f *Triangle) IntersectPure(raySt, rayDir *mat.VecDense) float64 {
 		utils.VectorPool.Put(q)
 	}()
 
-	math_lib.Cross(p, rayDir, f.Mem.Edge2) // 计算法向量和行列式 (P = D × E2)
+	math_lib.Cross(p, rayDir, f.Mem.Edge2) // Compute the normal vector and determinant (P = D × E2).
 	a := mat.Dot(f.Mem.Edge1, p)           // a = E1·P
-	if a > 0 {                             // 处理背面剔除
+	if a > 0 {                             // Handle back-face culling.
 		t.SubVec(raySt, f.P1) // T = O - P1
 	} else {
 		t.SubVec(f.P1, raySt) // T = P1 - O
 		a = -a
 	}
-	if a < utils.EPS { // 检查平行
+	if a < utils.EPS { // Check for parallel rays.
 		return math.MaxFloat64
 	}
 
 	math_lib.Cross(q, t, f.Mem.Edge1) // Q = T × E1
-	u := mat.Dot(t, p) / a            // 重心坐标 u
-	v := mat.Dot(rayDir, q) / a       // 重心坐标 v
+	u := mat.Dot(t, p) / a            // Barycentric coordinate u
+	v := mat.Dot(rayDir, q) / a       // Barycentric coordinate v
 	if u < 0 || u > 1 {
 		return math.MaxFloat64
 	}

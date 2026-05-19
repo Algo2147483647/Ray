@@ -5,7 +5,10 @@
     "children": {
       "Material": "related_to",
       "Obejct Tree": "related_to",
-      "Bidirectional Path Tracing": "related_to"
+      "Bidirectional Path Tracing": "related_to",
+      "Ray": "related_to",
+      "Camera": "related_to",
+      "Shape": "related_to"
     }
   },
   "Material": {
@@ -226,6 +229,27 @@
   },
   "Bidirectional Path Tracing": {
     "define": "Start building your graph from this root node.",
+    "parents": {
+      "Ray Tracing": "related_to"
+    },
+    "children": {}
+  },
+  "Ray": {
+    "define": "",
+    "parents": {
+      "Ray Tracing": "related_to"
+    },
+    "children": {}
+  },
+  "Camera": {
+    "define": "",
+    "parents": {
+      "Ray Tracing": "related_to"
+    },
+    "children": {}
+  },
+  "Shape": {
+    "define": "",
     "parents": {
       "Ray Tracing": "related_to"
     },

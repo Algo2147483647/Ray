@@ -10,14 +10,14 @@ import (
 
 type Camera3D struct {
 	CameraBase
-	Position    *mat.VecDense // 相机位置
-	Direction   *mat.VecDense // 观察方向
-	Up          *mat.VecDense // 上方向向量
-	Width       int           // 胶片宽 (像素)
-	Height      int           // 胶片高 (像素)
-	FieldOfView float64       // 视野角度 (度)
-	AspectRatio float64       // 宽高比
-	Ortho       bool          // 正交相机 / 透视相机
+	Position    *mat.VecDense // Camera position
+	Direction   *mat.VecDense // Viewing direction
+	Up          *mat.VecDense // Up vector
+	Width       int           // Film width (pixels)
+	Height      int           // Film height (pixels)
+	FieldOfView float64       // Field of view angle (degrees)
+	AspectRatio float64       // Aspect ratio
+	Ortho       bool          // Orthographic camera / perspective camera
 }
 
 func NewCamera3D() *Camera3D {
@@ -34,7 +34,7 @@ func (c *Camera3D) GenerateRay(res *renderray.Ray, index ...int) *renderray.Ray 
 		row, col   = index[0], index[1]
 		dir        = c.Direction
 		up         = c.Up
-		right      = math_lib.Normalize(math_lib.Cross2(dir, up))          // 计算右向量和上向量
+		right      = math_lib.Normalize(math_lib.Cross2(dir, up))          // Compute the right vector from direction and up.
 		u          = 2*(float64(row)+rand.Float64())/float64(c.Width) - 1  // [-1, 1]
 		v          = 2*(float64(col)+rand.Float64())/float64(c.Height) - 1 // [-1, 1]
 		fovRad     = c.FieldOfView * math.Pi / 180
@@ -51,7 +51,7 @@ func (c *Camera3D) GenerateRay(res *renderray.Ray, index ...int) *renderray.Ray 
 	return res
 }
 
-// SetLookAt 设置相机观察目标
+// SetLookAt sets the camera target.
 func (c *Camera3D) SetLookAt(lookAt *mat.VecDense) *Camera3D {
 	c.Direction = mat.NewVecDense(lookAt.Len(), nil)
 	c.Direction.SubVec(lookAt, c.Position)

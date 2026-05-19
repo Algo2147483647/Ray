@@ -13,7 +13,7 @@ type Sphere struct {
 	R      float64 `json:"r"`
 }
 
-// NewSphere 构造函数
+// NewSphere is the constructor.
 func NewSphere(center *mat.VecDense, R float64) *Sphere {
 	return &Sphere{center: center, R: R}
 }
@@ -45,13 +45,13 @@ func (s *Sphere) IntersectPure(raySt, rayDir *mat.VecDense) float64 {
 		utils.VectorPool.Put(t)
 	}()
 
-	// 计算系数
+	// Compute coefficients.
 	t.SubVec(raySt, s.center)
 	A := mat.Dot(rayDir, rayDir)
 	B := 2 * mat.Dot(rayDir, t)
 	Delta := B*B - 4*A*(mat.Dot(t, t)-s.R*s.R)
 	if Delta < 0 {
-		return math.MaxFloat64 // 无交点
+		return math.MaxFloat64 // No intersection.
 	}
 
 	Delta = math.Sqrt(Delta)
