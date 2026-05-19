@@ -242,15 +242,16 @@ func generateSpectrumImage(filename string) {
 
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
 	step := (WavelengthMax - WavelengthMin) / float64(width)
+	exposure := spectrumDisplayExposure(width)
 
 	// 绘制渐变光谱
 	for x := 0; x < width; x++ {
 		wavelength := WavelengthMin + float64(x)*step
 		rgb := WaveLengthToRGB(wavelength).RawVector().Data
 		c := color.RGBA{
-			R: uint8(rgb[0] * 255),
-			G: uint8(rgb[1] * 255),
-			B: uint8(rgb[2] * 255),
+			R: linearSRGBToDisplayByte(rgb[0] * exposure),
+			G: linearSRGBToDisplayByte(rgb[1] * exposure),
+			B: linearSRGBToDisplayByte(rgb[2] * exposure),
 			A: 255,
 		}
 
@@ -264,4 +265,27 @@ func generateSpectrumImage(filename string) {
 	f, _ := os.Create(filename)
 	defer f.Close()
 	png.Encode(f, img)
+}
+
+func spectrumDisplayExposure(width int) float64 {
+	step := (WavelengthMax - WavelengthMin) / float64(width)
+	maxComponent := 0.0
+	for x := 0; x < width; x++ {
+		wavelength := WavelengthMin + float64(x)*step
+		rgb := WaveLengthToRGB(wavelength).RawVector().Data
+		for _, component := range rgb {
+			maxComponent = math.Max(maxComponent, component)
+		}
+	}
+	return safeDivide(1, maxComponent)
+}
+
+func linearSRGBToDisplayByte(value float64) uint8 {
+	value = math.Max(0, math.Min(1, value))
+	if value <= 0.0031308 {
+		value *= 12.92
+	} else {
+		value = 1.055*math.Pow(value, 1.0/2.4) - 0.055
+	}
+	return uint8(math.Round(value * 255))
 }

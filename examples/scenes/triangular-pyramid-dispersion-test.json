@@ -135,22 +135,6 @@
       "p2": [0.0, 0.02, 1.42],
       "p3": [-0.42, -0.42, 0.55],
       "material_id": "high-dispersion-glass"
-    },
-    {
-      "id": "dispersion-catch-screen-0",
-      "shape": "triangle",
-      "p1": [1.32, -0.72, 0.22],
-      "p2": [1.32, 0.72, 0.22],
-      "p3": [1.32, -0.72, 1.72],
-      "material_id": "neutral-screen"
-    },
-    {
-      "id": "dispersion-catch-screen-1",
-      "shape": "triangle",
-      "p1": [1.32, 0.72, 1.72],
-      "p2": [1.32, -0.72, 1.72],
-      "p3": [1.32, 0.72, 0.22],
-      "material_id": "neutral-screen"
     }
   ],
   "cameras": [

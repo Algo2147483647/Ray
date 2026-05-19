@@ -115,9 +115,7 @@ func (m *Material) LightSource(ray *Ray, norm *mat.VecDense) {
 			ray.Color.Zero()
 			return
 		}
-		if utils.IsDebug && v > 0.98 {
-			ray.DebugSwitch = true
-		}
+
 		for i := 0; i < 3; i++ {
 			ray.Color.SetVec(i, v*ray.Color.AtVec(i)*MaterialColor.AtVec(i))
 		}

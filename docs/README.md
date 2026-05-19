@@ -10,6 +10,7 @@ This directory organizes the mathematical and physical ideas embedded in the Go 
 - [`04-cameras-rendering-and-scene.md`](04-cameras-rendering-and-scene.md): camera projection, N-dimensional imaging, recursive ray tracing, film accumulation, concurrency, and scene scripts.
 - [`material-system-design.md`](material-system-design.md): current material/BxDF architecture, schema, validation rules, IOR/dispersion wiring, microfacet status, and output transform controls.
 - [`spectral-modernization-plan.md`](spectral-modernization-plan.md): staged technical plan for moving from RGB/hero-wavelength rendering toward a modern spectral color pipeline.
+- [`medium-and-caustics-modernization-plan.md`](medium-and-caustics-modernization-plan.md): staged plan for nested dielectric media, explicit medium boundaries, absorption placeholders, and caustic-capable prism validation.
 - [`scene-json-current.md`](scene-json-current.md): current JSON schema for materials, render output controls, and showcase scenes.
 
 ## Knowledge Map

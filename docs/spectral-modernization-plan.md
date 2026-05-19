@@ -14,23 +14,23 @@ The renderer has already moved through an important material architecture migrat
 
 The spectral pipeline is still incomplete:
 
-- `core.Spectrum` is a fixed RGB triplet.
-- Lambert, rough conductor, and constant emission parameters are still parsed as RGB spectra.
-- Camera wavelength sampling is immediately reconstructed with `WaveLengthToRGB`.
-- Film accumulates only three RGB channels.
-- Scene JSON does not distinguish `srgb`, `linear_srgb`, `acescg`, or sampled spectra.
+- Film still accumulates three display/working channels, even when the path is wavelength-sampled.
+- Scene JSON does not yet expose a full display transform stack such as `display_space` or OCIO-style views.
+- Measured material libraries and metal presets are not implemented yet.
+- Packet-style multi-channel path transport is not implemented yet; sampled mode currently uses repeated wavelength subpaths.
+- Nested media, absorption, and caustic-focused integrators are not implemented yet.
 - The current `aces` output option is a fitted tone mapper, not a complete ACES/OCIO view transform.
 
 The current model should be described as:
 
 ```text
-RGB material parameters
-+ renderer-level hero wavelength propagation
-+ RGB reconstruction weight
+spectral material parameters
++ renderer-level wavelength subpaths
++ CIE-based wavelength reconstruction
 + RGB film/output
 ```
 
-This is useful for dispersion demos, but it is not yet a full spectral material and color-management system.
+This is now useful for direct-view dispersion demos, but it is not yet a complete spectral color-management, nested-medium, or caustic transport system.
 
 ## 2. Goals
 
@@ -649,3 +649,18 @@ Smallest useful first PR:
 
 After that first PR, the project has a real extension point for spectral rendering without breaking the current renderer.
 
+## 10. Next Modernization Track: Media And Caustics
+
+After the spectral material work, the next architecture boundary is the refraction state. `Ray.RefractionIndex` and `ShadingContext.CurrentIOR` should become compatibility fields, while the transport layer moves to explicit medium identities and medium boundary updates.
+
+See [`medium-and-caustics-modernization-plan.md`](medium-and-caustics-modernization-plan.md) for the staged design:
+
+```text
+medium package and stack tests
+  -> hit records with FrontFace
+  -> eta from medium boundaries
+  -> named media JSON schema
+  -> homogeneous absorption
+  -> light-traced caustic validation
+  -> photon map or BDPT
+```

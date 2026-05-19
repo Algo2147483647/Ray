@@ -4,7 +4,8 @@
     "parents": {},
     "children": {
       "Material": "related_to",
-      "Obejct Tree": "related_to"
+      "Obejct Tree": "related_to",
+      "Bidirectional Path Tracing": "related_to"
     }
   },
   "Material": {
@@ -220,6 +221,13 @@
     "define": "The Phong BRDF is a phenomenological reflectance model that approximates surface reflection as the sum of diffuse and specular components.\n\n$$\nf_r(\\omega_i, \\omega_o)\n=\nf_d(\\omega_i, \\omega_o)\n+\nf_s(\\omega_i, \\omega_o)\n$$\n\n\n\nA common Phong BRDF form is\n\n$$\nf_r(\\omega_i, \\omega_o)\n=\n\\frac{k_d}{\\pi}\n+\nk_s\n\\frac{n + 2}{2\\pi}\n\\max(R \\cdot \\omega_o, 0)^n\n$$\n\nwith\n\n$$\nR = 2(N \\cdot \\omega_i)N - \\omega_i\n$$\n\n- $\\omega_i$ is the incident light direction \n- $\\omega_o$ is the outgoing view direction.\n- $f_r(\\omega_i, \\omega_o)$: the bidirectional reflectance distribution function.\n- $k_d \\in \\left\\{ x \\in \\mathbb{R} : 0 \\le x \\le 1 \\right\\}$: diffuse reflectance coefficient.\n- $k_s \\in \\left\\{ x \\in \\mathbb{R} : 0 \\le x \\le 1 \\right\\}$: specular reflectance coefficient.\n- $N$: unit surface normal.\n- $R$: perfect mirror reflection direction of $\\omega_i$ about $N$.\n- $n$: shininess exponent controlling specular lobe width.\n- $\\frac{k_d}{\\pi}$: Lambertian diffuse term.\n- $\\max(R \\cdot \\omega_o, 0)^n$: angular falloff of the specular highlight.\n- $\\frac{n + 2}{2\\pi}$: normalization factor for approximate energy conservation.\n\nThe diffuse term models view-independent scattering, while the specular term models glossy reflection concentrated around the mirror direction $R$. Larger $n$ produces a narrower and sharper highlight; smaller $n$ produces a broader highlight.\n\nFor physical plausibility, the reflectance coefficients are usually constrained by\n\n$$\nk_d + k_s \\le 1\n$$\n\nso that the BRDF does not reflect more energy than it receives.",
     "parents": {
       "Glossy Scattering": "related_to"
+    },
+    "children": {}
+  },
+  "Bidirectional Path Tracing": {
+    "define": "Start building your graph from this root node.",
+    "parents": {
+      "Ray Tracing": "related_to"
     },
     "children": {}
   }

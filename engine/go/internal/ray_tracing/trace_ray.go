@@ -6,6 +6,7 @@ import (
 
 	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
 	"github.com/Algo2147483647/ray/engine/go/internal/material/core"
+	"github.com/Algo2147483647/ray/engine/go/internal/material/medium"
 	"github.com/Algo2147483647/ray/engine/go/internal/model/object"
 	"github.com/Algo2147483647/ray/engine/go/internal/model/optics"
 	"github.com/Algo2147483647/ray/engine/go/internal/utils"
@@ -31,38 +32,35 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level in
 		DebugRayTrace["end"] = append([]float64(nil), normal.RawVector().Data...)
 	}
 
-	defer func() {
-		if utils.IsDebug && ray.DebugSwitch {
-			optics.DebugRayTraces = append(optics.DebugRayTraces, DebugRayTrace)
-		}
-	}()
-
 	if level > h.MaxRayLevel {
 		ray.Color.ScaleVec(0, ray.Color)
 		return ray.Color
 	}
 
-	distance, obj := objTree.GetIntersection(ray.Origin, ray.Direction, objTree.Root)
-	if distance >= math.MaxFloat64 {
+	hit, ok := objTree.GetSurfaceHit(ray.Origin, ray.Direction)
+	if !ok {
 		return math_lib.ScaleVec(ray.Color, 0, ray.Color)
 	}
 
-	ray.Origin.AddVec(ray.Origin, math_lib.ScaleVec2(distance, ray.Direction))
-	normal = obj.Shape.GetNormalVector(ray.Origin, normal)
-	if dot := mat.Dot(normal, ray.Direction); dot > 0 {
-		normal.ScaleVec(-1, normal)
-	}
-	math_lib.Normalize(normal)
+	ray.Origin.CopyVec(hit.Point)
+	normal = hit.ShadingNormal
+	obj := hit.Object
 
 	if utils.IsDebug {
 		DebugRayTrace["hit_object"] = obj.Shape.Name()
 		DebugRayTrace["end"] = append([]float64(nil), ray.Origin.RawVector().Data...)
-		DebugRayTrace["distance"] = distance
+		DebugRayTrace["distance"] = hit.Distance
+		DebugRayTrace["front_face"] = hit.FrontFace
 	}
 
 	if obj.Material == nil {
 		ray.Color.ScaleVec(0, ray.Color)
 		return ray.Color
+	}
+
+	media := objTree.Media
+	if media == nil {
+		media = medium.NewRegistry()
 	}
 
 	ctx := core.ShadingContext{
@@ -72,23 +70,22 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level in
 		WavelengthNM:  ray.WaveLength,
 		WavelengthPDF: ray.WavelengthPDF,
 	}
+
 	if h.SpectrumMode == core.SpectrumRGBAndSpectral && ray.WaveLength > 0 {
 		ctx.WavelengthsNM = []float64{ray.WaveLength}
 	}
+	prepareMediumContext(&ctx, media, ray, obj.MediumBoundary, hit.FrontFace)
+
 	woWorld := negateVec(ray.Direction)
 	woLocal, frameOK := worldToLocal(woWorld, normal)
 	if !frameOK {
 		ray.Color.ScaleVec(0, ray.Color)
 		return ray.Color
-	}
-
-	if obj.Material.HasEmission() {
+	} else if obj.Material.HasEmission() {
 		emitted := obj.Material.Emission.Emit(ctx, woLocal)
 		applySpectrum(ray.Color, emitted)
 		return ray.Color
-	}
-
-	if !obj.Material.HasSurface() {
+	} else if !obj.Material.HasSurface() {
 		ray.Color.ScaleVec(0, ray.Color)
 		return ray.Color
 	}
@@ -104,13 +101,61 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level in
 
 	weight := core.AbsCosTheta(sample.Wi) / sample.PDF
 	applySpectrum(ray.Color, sample.F.MulScalar(weight))
-	if sample.Flags&core.DeltaTransmission != 0 && sample.Eta > 0 {
-		ray.RefractionIndex = sample.Eta
+	if sample.Flags&core.DeltaTransmission != 0 {
+		applyMediumTransmission(media, ray, ctx, obj.MediumBoundary, sample)
 	}
+
 	ray.Direction = localToWorld(sample.Wi, normal)
 	math_lib.Normalize(ray.Direction)
 
 	return h.TraceRay(objTree, ray, level+1)
+}
+
+func prepareMediumContext(ctx *core.ShadingContext, media *medium.Registry, ray *optics.Ray, boundary medium.Boundary, frontFace bool) {
+	incident := ray.MediumStack.Current()
+	transmit := incident
+	entering := false
+
+	ctx.IncidentMedium = incident
+	ctx.TransmitMedium = transmit
+	ctx.Entering = entering
+
+	if !boundary.Active() {
+		return
+	}
+
+	entering = frontFace
+	if entering {
+		transmit = boundary.Inside
+	} else if boundary.Outside != core.MediumNone {
+		transmit = boundary.Outside
+	} else {
+		transmit = core.MediumAir
+	}
+
+	ctx.IncidentMedium = incident
+	ctx.TransmitMedium = transmit
+	ctx.Entering = entering
+	ctx.EtaIncident = media.IOR(incident, *ctx)
+	ctx.EtaTransmit = media.IOR(transmit, *ctx)
+	ctx.CurrentIOR = ctx.EtaIncident
+	ray.RefractionIndex = ctx.EtaIncident
+}
+
+func applyMediumTransmission(media *medium.Registry, ray *optics.Ray, ctx core.ShadingContext, boundary medium.Boundary, sample core.BxDFSample) {
+	if boundary.Active() && sample.TransmitMedium != core.MediumNone {
+		if ctx.Entering {
+			ray.MediumStack.Push(sample.TransmitMedium)
+		} else {
+			ray.MediumStack.Remove(boundary.Inside)
+		}
+		ray.RefractionIndex = media.IOR(ray.MediumStack.Current(), ctx)
+		return
+	}
+
+	if sample.Eta > 0 {
+		ray.RefractionIndex = sample.Eta
+	}
 }
 
 func applySpectrum(color *mat.VecDense, spectrum core.Spectrum) {

@@ -3,6 +3,7 @@ package object
 import (
 	"fmt"
 	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
+	"github.com/Algo2147483647/ray/engine/go/internal/material/medium"
 	"github.com/Algo2147483647/ray/engine/go/internal/model/shape"
 	"github.com/Algo2147483647/ray/engine/go/internal/utils"
 	"gonum.org/v1/gonum/mat"
@@ -15,6 +16,16 @@ type ObjectTree struct {
 	Root        *ObjectNode
 	Objects     []*Object
 	ObjectNodes []*ObjectNode
+	Media       *medium.Registry
+}
+
+type SurfaceHit struct {
+	Distance        float64
+	Point           *mat.VecDense
+	GeometricNormal *mat.VecDense
+	ShadingNormal   *mat.VecDense
+	FrontFace       bool
+	Object          *Object
 }
 
 func (t *ObjectTree) AddObject(object *Object) *Object {
@@ -165,6 +176,34 @@ func (t *ObjectTree) GetIntersection(raySt, rayDir *mat.VecDense, node *ObjectNo
 		return dis1, obj1
 	}
 	return dis2, obj2
+}
+
+func (t *ObjectTree) GetSurfaceHit(raySt, rayDir *mat.VecDense) (*SurfaceHit, bool) {
+	distance, obj := t.GetIntersection(raySt, rayDir, t.Root)
+	if distance >= math.MaxFloat64 || obj == nil {
+		return nil, false
+	}
+
+	point := mat.NewVecDense(raySt.Len(), nil)
+	point.AddVec(raySt, math_lib.ScaleVec2(distance, rayDir))
+
+	geometricNormal := obj.Shape.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
+	math_lib.Normalize(geometricNormal)
+
+	frontFace := mat.Dot(geometricNormal, rayDir) < 0
+	shadingNormal := mat.VecDenseCopyOf(geometricNormal)
+	if !frontFace {
+		shadingNormal.ScaleVec(-1, shadingNormal)
+	}
+
+	return &SurfaceHit{
+		Distance:        distance,
+		Point:           point,
+		GeometricNormal: geometricNormal,
+		ShadingNormal:   shadingNormal,
+		FrontFace:       frontFace,
+		Object:          obj,
+	}, true
 }
 
 func (ot *ObjectTree) TreeString() string {

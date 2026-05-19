@@ -102,3 +102,26 @@ func TestSpecularDielectricUsesRendererWavelengthForDispersion(t *testing.T) {
 		t.Fatalf("unexpected dispersive eta: got %f want %f", continued.Eta, expectedEta)
 	}
 }
+
+func TestSpecularDielectricUsesContextBoundaryEta(t *testing.T) {
+	bxdf := NewSpecularDielectricConstant(core.ConstantSpectrum(1), core.ConstantSpectrum(1), 1, 1.5)
+	wo := core.NewDirection(0, 0, 1)
+
+	sample := bxdf.Sample(core.ShadingContext{
+		EtaIncident:    1.5,
+		EtaTransmit:    1.33,
+		IncidentMedium: core.MediumID(2),
+		TransmitMedium: core.MediumID(3),
+		Entering:       true,
+	}, wo, core.Sample2D{U: 1})
+
+	if sample.Flags&core.DeltaTransmission == 0 {
+		t.Fatalf("expected transmission sample, got flags %v", sample.Flags)
+	}
+	if math.Abs(sample.Eta-1.33) > 1e-12 {
+		t.Fatalf("expected context eta 1.33, got %f", sample.Eta)
+	}
+	if sample.TransmitMedium != core.MediumID(3) {
+		t.Fatalf("expected transmitted medium 3, got %d", sample.TransmitMedium)
+	}
+}

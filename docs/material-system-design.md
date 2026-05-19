@@ -92,11 +92,14 @@ constant emission
 Implemented spectral and output features:
 
 ```text
-renderer-level wavelength sampling on camera rays
+renderer-level wavelength sampling
 Ray.WaveLength and Ray.WavelengthPDF propagation
 white-point normalized spectral-to-RGB reconstruction weight
 constant and Cauchy IOR models
 wavelength-aware specular dielectric eta evaluation
+spectral parameter parsing for RGB, constant, sampled, and blackbody values
+wavelength-aware Lambert, constant emission, specular dielectric, and rough conductor parameters
+multi-wavelength sampled mode through repeated wavelength subpaths
 PNG output exposure
 linear / reinhard / aces tone mapping
 gamma encoding
@@ -108,9 +111,14 @@ Current limitations:
 rough dielectric is not implemented yet
 Beckmann distribution is not implemented yet
 full spectral material databases are not implemented yet
-Lambert and conductor parameters are still RGB spectra
+full packet-style multi-channel light transport is not implemented yet
+named medium boundaries and nested dielectric stacks are not implemented yet
+direct lighting through specular chains, photon mapping, and BDPT are not implemented yet
 subsurface, volume, texture graphs, MIS, and caustic-focused integrators are not implemented yet
 ```
+
+Nested dielectric media and caustic-capable validation are planned separately in
+[`medium-and-caustics-modernization-plan.md`](medium-and-caustics-modernization-plan.md).
 
 ## Core Concepts
 

@@ -1,6 +1,7 @@
 package optics
 
 import (
+	"github.com/Algo2147483647/ray/engine/go/internal/material/medium"
 	"github.com/Algo2147483647/ray/engine/go/internal/utils"
 	"gonum.org/v1/gonum/mat"
 	"math"
@@ -14,12 +15,12 @@ type Ray struct {
 	WaveLength      float64       `json:"wave_length"` // (nm)
 	WavelengthPDF   float64       `json:"wavelength_pdf"`
 	RefractionIndex float64       `json:"refraction_index"`
-	DebugSwitch     bool          `json:"debug_switch"`
+	MediumStack     medium.Stack  `json:"-"`
 }
 
 const (
-	WavelengthMin = 380.0 // 最小波长(nm)
-	WavelengthMax = 750.0 // 最大波长(nm)
+	WavelengthMin = 380.0 // Minimum wavelength (nm)
+	WavelengthMax = 750.0 // Maximum wavelength (nm)
 )
 
 var DebugRayTraces []map[string]interface{}
@@ -48,9 +49,9 @@ func (r *Ray) Init() {
 	}
 
 	r.RefractionIndex = 1
+	r.MediumStack.Reset(0)
 	r.WaveLength = 0
 	r.WavelengthPDF = 0
-	r.DebugSwitch = false
 }
 
 func (ray *Ray) ConvertToMonochrome() {

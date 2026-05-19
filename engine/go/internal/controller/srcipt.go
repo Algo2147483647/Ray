@@ -43,10 +43,11 @@ type RenderScript struct {
 }
 
 type Script struct {
-	Materials []map[string]interface{} `json:"materials"`
-	Objects   []map[string]interface{} `json:"objects"`
-	Cameras   []CameraScript           `json:"cameras"`
-	Render    RenderScript             `json:"render"`
+	Materials []map[string]interface{}          `json:"materials"`
+	Media     map[string]map[string]interface{} `json:"media"`
+	Objects   []map[string]interface{}          `json:"objects"`
+	Cameras   []CameraScript                    `json:"cameras"`
+	Render    RenderScript                      `json:"render"`
 }
 
 func ReadScriptFile(filepath string) (*Script, error) {
@@ -84,6 +85,11 @@ func LoadSceneFromScript(script *Script, scene *model.Scene) error {
 	if err != nil {
 		return err
 	}
+	mediaRegistry, err := ParseMediaRegistry(script)
+	if err != nil {
+		return err
+	}
+	scene.ObjectTree.Media = mediaRegistry
 
 	var parseErrors []error
 
@@ -117,10 +123,17 @@ func LoadSceneFromScript(script *Script, scene *model.Scene) error {
 			continue
 		}
 
+		mediumBoundary, err := parseMediumBoundary(item, mediaRegistry)
+		if err != nil {
+			parseErrors = append(parseErrors, fmt.Errorf("%s medium_boundary: %w", objectLabel, err))
+			continue
+		}
+
 		for _, shape := range shapes {
 			scene.ObjectTree.AddObject(&object.Object{
-				Shape:    shape,
-				Material: material,
+				Shape:          shape,
+				Material:       material,
+				MediumBoundary: mediumBoundary,
 			})
 		}
 	}

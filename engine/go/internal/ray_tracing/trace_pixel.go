@@ -11,7 +11,6 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-// TracePixel 追踪单个像素
 func (h *Handler) TracePixel(camera camera.Camera, objTree *object.ObjectTree, samples int64, index ...int) *mat.VecDense {
 	color := mat.NewVecDense(3, nil)
 	ray := h.RayPool.Get().(*optics.Ray) // new ray
@@ -27,6 +26,7 @@ func (h *Handler) TracePixel(camera camera.Camera, objTree *object.ObjectTree, s
 			ray.DisableSpectralSampling()
 			color.AddVec(color, h.TraceRay(objTree, ray, 0))
 			totalTraces++
+
 		case core.SpectrumRGBAndSpectral:
 			wavelengthSamples := h.WavelengthSamples
 			if wavelengthSamples <= 0 {
@@ -39,6 +39,7 @@ func (h *Handler) TracePixel(camera camera.Camera, objTree *object.ObjectTree, s
 				color.AddVec(color, h.TraceRay(objTree, ray, 0))
 				totalTraces++
 			}
+
 		default:
 			camera.GenerateRay(ray, index...)
 			sample := wavelengthSampler.Sample(rand.Float64())
@@ -47,6 +48,7 @@ func (h *Handler) TracePixel(camera camera.Camera, objTree *object.ObjectTree, s
 			totalTraces++
 		}
 	}
+
 	if totalTraces == 0 {
 		return color
 	}

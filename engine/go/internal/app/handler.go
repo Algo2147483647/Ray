@@ -137,8 +137,7 @@ func (h *Handler) Render() *Handler {
 	if h.ActiveCamera == nil {
 		h.err = fmt.Errorf("render camera is not configured")
 		return h
-	}
-	if h.Film == nil {
+	} else if h.Film == nil {
 		h.err = fmt.Errorf("film is not initialized")
 		return h
 	}
@@ -152,8 +151,7 @@ func (h *Handler) Render() *Handler {
 	renderHandler.WavelengthSamples = h.Config.WavelengthSamples
 	renderHandler.TraceScene(h.ActiveCamera, h.Scene.ObjectTree, h.Film, h.Config.Samples)
 
-	elapsed := time.Since(start)
-	fmt.Printf("Rendering completed in %v\n", elapsed)
+	fmt.Printf("Rendering completed in %v\n", time.Since(start))
 	return h
 }
 
@@ -183,15 +181,9 @@ func (h *Handler) SaveOutputs() *Handler {
 	if h.Config.OutputFilm != "" {
 		h.SaveFilm(h.Config.OutputFilm)
 	}
-	if h.err != nil {
-		return h
-	}
 
 	if h.Config.OutputImage != "" {
 		h.SaveImg(h.Config.OutputImage)
-	}
-	if h.err != nil {
-		return h
 	}
 
 	if h.Config.DebugOutput != "" {

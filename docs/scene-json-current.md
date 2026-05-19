@@ -6,6 +6,7 @@ This document records the current scene JSON fields used by the Go renderer afte
 
 ```json
 {
+  "media": {},
   "materials": [],
   "objects": [],
   "cameras": [],
@@ -14,6 +15,44 @@ This document records the current scene JSON fields used by the Go renderer afte
 ```
 
 `camera` is still accepted as a legacy alias for `cameras` when `cameras` is absent.
+
+## Media
+
+`media` is optional. When omitted, the renderer creates a default `air` medium with IOR 1. Named media are used by object-level `medium_boundary` blocks so refraction can use explicit incident/transmitted media instead of only a scalar ray IOR.
+
+```json
+{
+  "media": {
+    "glass": {
+      "type": "homogeneous",
+      "ior": {
+        "type": "constant",
+        "eta": 1.5
+      }
+    },
+    "dispersive_glass": {
+      "type": "homogeneous",
+      "ior": {
+        "type": "cauchy",
+        "a": 1.5046,
+        "b": 0.0042,
+        "c": 0
+      }
+    }
+  }
+}
+```
+
+Supported medium fields:
+
+```text
+type: homogeneous
+ior: constant or cauchy IOR object
+sigma_a: optional spectral absorption placeholder
+sigma_s: optional spectral scattering placeholder
+```
+
+`sigma_a` and `sigma_s` are parsed now but homogeneous volume attenuation/scattering is not yet applied during transport.
 
 ## Materials
 
@@ -90,6 +129,30 @@ eta(lambda_nm) = A + B / lambda_um^2 + C / lambda_um^4
 ```
 
 Renderer-level spectral sampling chooses one wavelength per camera path and propagates it through the path.
+
+When an object has a `medium_boundary`, the boundary media provide the incident/transmitted eta for this BxDF. Without `medium_boundary`, legacy `eta_outside`, `eta_inside`, and `ior` behavior remains active for compatibility.
+
+## Objects And Medium Boundaries
+
+Objects may declare the media separated by a closed dielectric boundary:
+
+```json
+{
+  "id": "glass-sphere",
+  "shape": "sphere",
+  "position": [0, 0, 0],
+  "r": 1,
+  "material_id": "glass",
+  "medium_boundary": {
+    "outside": "air",
+    "inside": "dispersive_glass",
+    "priority": 10,
+    "thin": false
+  }
+}
+```
+
+`outside` defaults to `air`. `inside` is required when `medium_boundary` is present. `priority` is parsed for future overlap resolution. `thin: true` marks a non-container boundary and disables medium-stack mutation.
 
 ### Rough Conductor
 

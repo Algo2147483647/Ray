@@ -40,14 +40,6 @@ func NewHandler() *Handler {
 	}
 }
 
-func DebugIsRecordRay(ray *optics.Ray, row, col, sample int) {
-	if row%100 == 1 && col%100 == 1 && sample == 0 {
-		ray.DebugSwitch = true
-	} else {
-		ray.DebugSwitch = false
-	}
-}
-
 func (h *Handler) EffectiveSampleCount(cameraSamples int64) int64 {
 	if cameraSamples <= 0 {
 		return 0

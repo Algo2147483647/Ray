@@ -97,16 +97,7 @@ func (s SpecularDielectric) Sample(ctx core.ShadingContext, wo core.Direction, u
 		return core.BxDFSample{}
 	}
 
-	etaI := s.EtaOutside
-	etaT := etaInside
-	if ctx.CurrentIOR > 0 {
-		etaI = ctx.CurrentIOR
-		if almostEqualIOR(ctx.CurrentIOR, etaInside) {
-			etaT = s.EtaOutside
-		} else {
-			etaT = etaInside
-		}
-	}
+	etaI, etaT := s.resolveEta(ctx, etaInside)
 
 	fresnel := FresnelDielectric(math.Abs(wo.Z), etaI, etaT)
 	if u.U < fresnel {
@@ -145,11 +136,12 @@ func (s SpecularDielectric) Sample(ctx core.ShadingContext, wo core.Direction, u
 
 	cos := core.AbsCosTheta(wi)
 	sample := core.BxDFSample{
-		Wi:    wi,
-		F:     s.Transmittance.Eval(ctx).MulScalar(1 - fresnel).DivScalar(cos),
-		PDF:   1 - fresnel,
-		Flags: core.DeltaTransmission,
-		Eta:   etaT,
+		Wi:             wi,
+		F:              s.Transmittance.Eval(ctx).MulScalar(1 - fresnel).DivScalar(cos),
+		PDF:            1 - fresnel,
+		Flags:          core.DeltaTransmission,
+		Eta:            etaT,
+		TransmitMedium: ctx.TransmitMedium,
 	}
 	if spectralSample {
 		sample.WavelengthNM = wavelengthNM
@@ -184,6 +176,24 @@ func (s SpecularDielectric) resolveWavelength(ctx core.ShadingContext) (float64,
 		return ctx.WavelengthNM, true
 	}
 	return ior.DefaultWavelengthNM, false
+}
+
+func (s SpecularDielectric) resolveEta(ctx core.ShadingContext, etaInside float64) (float64, float64) {
+	if ior.IsValidEta(ctx.EtaIncident) && ior.IsValidEta(ctx.EtaTransmit) {
+		return ctx.EtaIncident, ctx.EtaTransmit
+	}
+
+	etaI := s.EtaOutside
+	etaT := etaInside
+	if ctx.CurrentIOR > 0 {
+		etaI = ctx.CurrentIOR
+		if almostEqualIOR(ctx.CurrentIOR, etaInside) {
+			etaT = s.EtaOutside
+		} else {
+			etaT = etaInside
+		}
+	}
+	return etaI, etaT
 }
 
 func (s SpecularDielectric) insideIOR() ior.Model {
