@@ -1,4 +1,4 @@
-package app
+package controller
 
 import (
 	"fmt"
@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/Algo2147483647/ray/engine/controller"
 	"github.com/Algo2147483647/ray/engine/model"
 	"github.com/Algo2147483647/ray/engine/model/camera"
 	"github.com/Algo2147483647/ray/engine/model/material/core"
@@ -17,7 +16,7 @@ import (
 type Handler struct {
 	err          error
 	Scene        *model.Scene
-	Script       *controller.Script
+	Script       *Script
 	Film         *camera.Film
 	ActiveCamera camera.Camera
 	Config       RenderConfig
@@ -63,14 +62,14 @@ func (h *Handler) LoadScript(scriptPath string) *Handler {
 
 	fmt.Printf("Loading scene from: %s\n", scriptPath)
 
-	script, err := controller.ReadScriptFile(scriptPath)
+	script, err := ReadScriptFile(scriptPath)
 	if err != nil {
 		h.err = err
 		return h
 	}
 
 	h.Script = script
-	if err := controller.LoadSceneFromScript(script, h.Scene); err != nil {
+	if err := LoadSceneFromScript(script, h.Scene); err != nil {
 		h.err = err
 		return h
 	}
@@ -101,7 +100,7 @@ func (h *Handler) ConfigureRender(overrides RenderOverrides) *Handler {
 
 func (h *Handler) selectRenderCamera(cameraIndex, width, height int) (camera.Camera, int, int, error) {
 	if len(h.Scene.Cameras) == 0 {
-		defaultCamera, err := controller.BuildCamera3DFromScript(controller.DefaultCameraScript())
+		defaultCamera, err := BuildCamera3DFromScript(DefaultCameraScript())
 		if err != nil {
 			return nil, 0, 0, err
 		}

@@ -1,4 +1,4 @@
-package app
+package controller
 
 import (
 	"flag"
@@ -6,7 +6,6 @@ import (
 	"io"
 	"runtime"
 
-	"github.com/Algo2147483647/ray/engine/controller"
 	"github.com/Algo2147483647/ray/engine/model/camera"
 )
 
@@ -122,7 +121,7 @@ func ParseRenderOverrides(args []string) (RenderOverrides, error) {
 	return overrides, nil
 }
 
-func ResolveRenderConfig(script *controller.Script, overrides RenderOverrides) RenderConfig {
+func ResolveRenderConfig(script *Script, overrides RenderOverrides) RenderConfig {
 	config := RenderConfig{
 		ScriptPath:        overrides.ScriptPath,
 		CameraIndex:       0,

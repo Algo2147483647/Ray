@@ -1,15 +1,13 @@
-package app
+package controller
 
 import (
 	"runtime"
 	"testing"
-
-	"github.com/Algo2147483647/ray/engine/controller"
 )
 
 func TestResolveRenderConfigMergesScriptAndCLI(t *testing.T) {
-	script := &controller.Script{
-		Render: controller.RenderScript{
+	script := &Script{
+		Render: RenderScript{
 			Samples:           12,
 			ThreadNum:         3,
 			CameraIndex:       1,
@@ -97,8 +95,8 @@ func TestResolveRenderConfigDefaultsThreadNumToNumCPU(t *testing.T) {
 }
 
 func TestResolveRenderConfigDefaultsSampledModeToMultipleWavelengths(t *testing.T) {
-	config := ResolveRenderConfig(&controller.Script{
-		Render: controller.RenderScript{
+	config := ResolveRenderConfig(&Script{
+		Render: RenderScript{
 			SpectrumMode: "sampled",
 		},
 	}, RenderOverrides{ScriptPath: defaultScriptPath})
