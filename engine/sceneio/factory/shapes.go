@@ -85,6 +85,33 @@ func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 		}
 		return []shape.Shape{sphere}, nil
 
+	case "circle":
+		position, err := requiredFloat64SliceField(objDef, "position", utils.Dimension)
+		if err != nil {
+			return nil, err
+		}
+		normal, err := requiredFloat64SliceField(objDef, "normal", utils.Dimension)
+		if err != nil {
+			return nil, err
+		}
+		normalVec := mat.NewVecDense(len(normal), normal)
+		if mat.Norm(normalVec, 2) < utils.EPS {
+			return nil, fmt.Errorf("field %q must not be zero", "normal")
+		}
+		radius, err := requiredFloat64Field(objDef, "r")
+		if err != nil {
+			return nil, err
+		}
+		if radius <= 0 {
+			return nil, fmt.Errorf("field %q must be > 0", "r")
+		}
+
+		circle := shape.NewCircle(mat.NewVecDense(len(position), position), normalVec, radius)
+		if err := applyEngravingFunc(circle, objDef); err != nil {
+			return nil, err
+		}
+		return []shape.Shape{circle}, nil
+
 	case "triangle":
 		p1, err := requiredFloat64SliceField(objDef, "p1", utils.Dimension)
 		if err != nil {
