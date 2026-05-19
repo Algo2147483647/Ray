@@ -1,7 +1,6 @@
 package app
 
 import (
-	"encoding/json"
 	"fmt"
 	"image/png"
 	"os"
@@ -13,7 +12,6 @@ import (
 	"github.com/Algo2147483647/ray/engine/model/camera"
 	"github.com/Algo2147483647/ray/engine/model/material/core"
 	"github.com/Algo2147483647/ray/engine/ray_tracing"
-	"github.com/Algo2147483647/ray/engine/utils"
 )
 
 type Handler struct {
@@ -185,10 +183,6 @@ func (h *Handler) SaveOutputs() *Handler {
 		h.SaveImg(h.Config.OutputImage)
 	}
 
-	if h.Config.DebugOutput != "" {
-		h.SaveDebugInfo(h.Config.DebugOutput)
-	}
-
 	return h
 }
 
@@ -202,35 +196,6 @@ func (h *Handler) ResumeFilm() *Handler {
 
 	fmt.Printf("Merging existing film: %s\n", h.Config.ResumeFilm)
 	return h.MergeFilm(h.Config.ResumeFilm)
-}
-
-func (h *Handler) SaveDebugInfo(filename string) *Handler {
-	if h.err != nil {
-		return h
-	}
-
-	if utils.IsDebug {
-		if err := ensureParentDir(filename); err != nil {
-			h.err = err
-			return h
-		}
-
-		file, err := os.Create(filename)
-		if err != nil {
-			h.err = err
-			return h
-		}
-		defer file.Close()
-
-		encoder := json.NewEncoder(file)
-		encoder.SetIndent("", "  ")
-		//if err := encoder.Encode(debugtrace.RayTraces); err != nil {
-		//	h.err = err
-		//	return h
-		//}
-	}
-
-	return h
 }
 
 func (h *Handler) SaveImg(filename string) *Handler {

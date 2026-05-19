@@ -17,7 +17,6 @@ const (
 	defaultSamples      = int64(20)
 	defaultOutputImage  = "../../outputs/output.png"
 	defaultOutputFilm   = "../../outputs/img.bin"
-	defaultDebugOutput  = "../../outputs/debug_traces.json"
 )
 
 type RenderOverrides struct {
@@ -30,7 +29,6 @@ type RenderOverrides struct {
 	OutputImage       string
 	OutputFilm        string
 	ResumeFilm        string
-	DebugOutput       string
 	Exposure          float64
 	ToneMapping       string
 	Gamma             float64
@@ -49,7 +47,6 @@ type RenderConfig struct {
 	OutputImage       string
 	OutputFilm        string
 	ResumeFilm        string
-	DebugOutput       string
 	Exposure          float64
 	ToneMapping       string
 	Gamma             float64
@@ -74,7 +71,6 @@ func ParseRenderOverrides(args []string) (RenderOverrides, error) {
 	flagSet.StringVar(&overrides.OutputImage, "output-image", "", "output image path")
 	flagSet.StringVar(&overrides.OutputFilm, "output-film", "", "output film path")
 	flagSet.StringVar(&overrides.ResumeFilm, "resume-film", "", "existing film path to merge before saving outputs")
-	flagSet.StringVar(&overrides.DebugOutput, "debug-output", "", "debug output path")
 	flagSet.Float64Var(&overrides.Exposure, "exposure", 0, "output exposure multiplier")
 	flagSet.StringVar(&overrides.ToneMapping, "tone-mapping", "", "output tone mapping: linear, reinhard, aces")
 	flagSet.Float64Var(&overrides.Gamma, "gamma", 0, "output gamma, for example 2.2")
@@ -134,7 +130,6 @@ func ResolveRenderConfig(script *controller.Script, overrides RenderOverrides) R
 		Samples:           defaultSamples,
 		OutputImage:       defaultOutputImage,
 		OutputFilm:        defaultOutputFilm,
-		DebugOutput:       defaultDebugOutput,
 		Exposure:          1,
 		ToneMapping:       string(camera.ToneMappingLinear),
 		Gamma:             1,
@@ -167,9 +162,6 @@ func ResolveRenderConfig(script *controller.Script, overrides RenderOverrides) R
 		}
 		if script.Render.ResumeFilm != "" {
 			config.ResumeFilm = script.Render.ResumeFilm
-		}
-		if script.Render.DebugOutput != "" {
-			config.DebugOutput = script.Render.DebugOutput
 		}
 		if script.Render.Exposure > 0 {
 			config.Exposure = script.Render.Exposure
@@ -214,9 +206,6 @@ func ResolveRenderConfig(script *controller.Script, overrides RenderOverrides) R
 	}
 	if overrides.ResumeFilm != "" {
 		config.ResumeFilm = overrides.ResumeFilm
-	}
-	if overrides.DebugOutput != "" {
-		config.DebugOutput = overrides.DebugOutput
 	}
 	if overrides.Exposure > 0 {
 		config.Exposure = overrides.Exposure

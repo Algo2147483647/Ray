@@ -226,25 +226,6 @@ func parseIORModel(def map[string]interface{}) (ior.Model, error) {
 	return ior.NewConstant(etaInside), nil
 }
 
-func requiredSpectrumField(data map[string]interface{}, key string) (core.Spectrum, error) {
-	parameter, err := requiredSpectralParameterField(data, key)
-	if err != nil {
-		return core.Spectrum{}, err
-	}
-	return parameter.Eval(core.ShadingContext{SpectrumMode: core.SpectrumRGB}), nil
-}
-
-func optionalSpectrumField(data map[string]interface{}, key string, fallback core.Spectrum) (core.Spectrum, error) {
-	parameter, ok, err := optionalSpectralParameterField(data, key, core.NewRGBParameter(fallback))
-	if err != nil {
-		return core.Spectrum{}, err
-	}
-	if !ok {
-		return fallback, nil
-	}
-	return parameter.Eval(core.ShadingContext{SpectrumMode: core.SpectrumRGB}), nil
-}
-
 func requiredEmissionRadianceField(data map[string]interface{}) (core.SpectralParameter, error) {
 	if _, ok := data["radiance"]; ok {
 		return requiredSpectralParameterField(data, "radiance")

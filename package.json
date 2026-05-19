@@ -2,12 +2,12 @@
   "name": "ray-workspace",
   "private": true,
   "scripts": {
-    "ray": "go -C engine/go run ./cmd/ray",
-    "ray:test": "go -C engine/go test ./...",
-    "ray:build": "go -C engine/go build -o ../../bin/ray ./cmd/ray",
-    "ui": "npm --prefix apps/scene-editor run dev",
-    "ui:install": "npm --prefix apps/scene-editor install",
-    "ui:build": "npm --prefix apps/scene-editor run build",
-    "ui:preview": "npm --prefix apps/scene-editor run preview"
+    "ray": "go -C engine run .",
+    "ray:test": "go -C engine test ./...",
+    "ray:build": "go -C engine build -o ../bin/ray .",
+    "ui": "npm --prefix scene-editor run dev",
+    "ui:install": "npm --prefix scene-editor install",
+    "ui:build": "npm --prefix scene-editor run build",
+    "ui:preview": "npm --prefix scene-editor run preview"
   }
 }

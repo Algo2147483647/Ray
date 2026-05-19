@@ -18,7 +18,6 @@ func TestResolveRenderConfigMergesScriptAndCLI(t *testing.T) {
 			OutputImage:       "scene.png",
 			OutputFilm:        "scene.bin",
 			ResumeFilm:        "resume.bin",
-			DebugOutput:       "scene-debug.json",
 			Exposure:          1.5,
 			ToneMapping:       "reinhard",
 			Gamma:             2.2,
@@ -61,8 +60,8 @@ func TestResolveRenderConfigMergesScriptAndCLI(t *testing.T) {
 	if config.OutputImage != "override.png" {
 		t.Fatalf("expected CLI output image override, got %s", config.OutputImage)
 	}
-	if config.OutputFilm != "scene.bin" || config.ResumeFilm != "resume.bin" || config.DebugOutput != "scene-debug.json" {
-		t.Fatalf("unexpected output fallback: film=%s resume=%s debug=%s", config.OutputFilm, config.ResumeFilm, config.DebugOutput)
+	if config.OutputFilm != "scene.bin" || config.ResumeFilm != "resume.bin" {
+		t.Fatalf("unexpected output fallback: film=%s resume=%s", config.OutputFilm, config.ResumeFilm)
 	}
 	if config.Exposure != 0.75 || config.ToneMapping != "aces" || config.Gamma != 1.8 {
 		t.Fatalf("unexpected output transform: exposure=%f tone=%s gamma=%f", config.Exposure, config.ToneMapping, config.Gamma)

@@ -22,7 +22,6 @@ type RenderScript struct {
 	OutputImage       string  `json:"output_image"`
 	OutputFilm        string  `json:"output_film"`
 	ResumeFilm        string  `json:"resume_film"`
-	DebugOutput       string  `json:"debug_output"`
 	Exposure          float64 `json:"exposure"`
 	ToneMapping       string  `json:"tone_mapping"`
 	Gamma             float64 `json:"gamma"`

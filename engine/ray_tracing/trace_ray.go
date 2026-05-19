@@ -9,28 +9,11 @@ import (
 	"github.com/Algo2147483647/ray/engine/model/material/core"
 	"github.com/Algo2147483647/ray/engine/model/material/medium"
 	"github.com/Algo2147483647/ray/engine/model/object"
-	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 )
 
 func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *renderray.Ray, level int64) *mat.VecDense {
-	var (
-		normal        = mat.NewVecDense(ray.Origin.Len(), nil)
-		DebugRayTrace = map[string]interface{}{}
-	)
-
-	if utils.IsDebug {
-		DebugRayTrace = map[string]interface{}{
-			"start":      append([]float64(nil), ray.Origin.RawVector().Data...),
-			"direction":  append([]float64(nil), ray.Direction.RawVector().Data...),
-			"color":      append([]float64(nil), ray.Color.RawVector().Data...),
-			"level":      level,
-			"hit_object": "",
-		}
-
-		normal.AddVec(ray.Origin, math_lib.ScaleVec2(1, ray.Direction))
-		DebugRayTrace["end"] = append([]float64(nil), normal.RawVector().Data...)
-	}
+	normal := mat.NewVecDense(ray.Origin.Len(), nil)
 
 	if level > h.MaxRayLevel {
 		ray.Color.ScaleVec(0, ray.Color)
@@ -45,13 +28,6 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *renderray.Ray, level
 	ray.Origin.CopyVec(hit.Point)
 	normal = hit.ShadingNormal
 	obj := hit.Object
-
-	if utils.IsDebug {
-		DebugRayTrace["hit_object"] = obj.Shape.Name()
-		DebugRayTrace["end"] = append([]float64(nil), ray.Origin.RawVector().Data...)
-		DebugRayTrace["distance"] = hit.Distance
-		DebugRayTrace["front_face"] = hit.FrontFace
-	}
 
 	if obj.Material == nil {
 		ray.Color.ScaleVec(0, ray.Color)

@@ -1,30 +1,20 @@
 package optics
 
 import (
-	"gonum.org/v1/gonum/mat"
-	"gonum.org/v1/plot"
-	"gonum.org/v1/plot/plotter"
-	"gonum.org/v1/plot/plotutil"
-	"gonum.org/v1/plot/vg"
-	"image"
-	"image/color"
-	"image/png"
 	"math"
-	"os"
 	"testing"
+
+	"gonum.org/v1/gonum/mat"
 )
 
-// TestConvertToMonochromeMonteCarlo 使用蒙特卡洛方法测试 ConvertToMonochrome 方法
 func TestConvertToMonochromeMonteCarlo(t *testing.T) {
 	const numSamples = 200000
 
-	// 存储收集的数据
 	redValues := make([]float64, numSamples)
 	greenValues := make([]float64, numSamples)
 	blueValues := make([]float64, numSamples)
 	wavelengths := make([]float64, numSamples)
 
-	// 蒙特卡洛模拟
 	for i := 0; i < numSamples; i++ {
 		ray := &Ray{
 			Color: mat.NewVecDense(3, []float64{1.0, 1.0, 1.0}),
@@ -37,13 +27,10 @@ func TestConvertToMonochromeMonteCarlo(t *testing.T) {
 		blueValues[i] = ray.Color.AtVec(2)
 	}
 
-	// 验证分布是否合理
 	validateDistribution(t, wavelengths, redValues, greenValues, blueValues)
 }
 
-// validateDistribution 验证分布是否合理
 func validateDistribution(t *testing.T, wavelengths, red, green, blue []float64) {
-	// 检查波长范围
 	minWavelength, maxWavelength := math.Inf(1), math.Inf(-1)
 	for _, w := range wavelengths {
 		if w < minWavelength {
@@ -59,10 +46,8 @@ func validateDistribution(t *testing.T, wavelengths, red, green, blue []float64)
 			minWavelength, maxWavelength, WavelengthMin, WavelengthMax)
 	}
 
-	// 检查颜色值是否合理
 	checkColorRange := func(values []float64, name string) {
 		for _, v := range values {
-			// 由于使用了 ScaleVec，颜色值可能超过 [0,1] 范围
 			if math.IsNaN(v) || math.IsInf(v, 0) {
 				t.Errorf("Invalid %s value: %f", name, v)
 			}
@@ -73,10 +58,6 @@ func validateDistribution(t *testing.T, wavelengths, red, green, blue []float64)
 	checkColorRange(green, "green")
 	checkColorRange(blue, "blue")
 
-	t.Logf("Sampled %d rays", len(wavelengths))
-	t.Logf("Wavelength range: [%f, %f]", minWavelength, maxWavelength)
-
-	// 计算基本统计信息
 	calculateStats := func(data []float64) (mean, std float64) {
 		var sum float64
 		for _, v := range data {
@@ -93,15 +74,9 @@ func validateDistribution(t *testing.T, wavelengths, red, green, blue []float64)
 		return mean, std
 	}
 
-	wMean, wStd := calculateStats(wavelengths)
-	rMean, rStd := calculateStats(red)
-	gMean, gStd := calculateStats(green)
-	bMean, bStd := calculateStats(blue)
-
-	t.Logf("Wavelength: mean=%f, std=%f", wMean, wStd)
-	t.Logf("Red: mean=%f, std=%f", rMean, rStd)
-	t.Logf("Green: mean=%f, std=%f", gMean, gStd)
-	t.Logf("Blue: mean=%f, std=%f", bMean, bStd)
+	rMean, _ := calculateStats(red)
+	gMean, _ := calculateStats(green)
+	bMean, _ := calculateStats(blue)
 
 	for name, mean := range map[string]float64{"red": rMean, "green": gMean, "blue": bMean} {
 		if math.Abs(mean-1) > 0.03 {
@@ -110,12 +85,12 @@ func validateDistribution(t *testing.T, wavelengths, red, green, blue []float64)
 	}
 }
 
-func TestSpectralRGBWeightWhitePoint(t *testing.T) {
+func TestRGBWeightWhitePoint(t *testing.T) {
 	const samples = 10000
 	var sum [3]float64
 	for i := 0; i < samples; i++ {
 		t := (float64(i) + 0.5) / samples
-		weight := SpectralRGBWeight(WavelengthMin + t*(WavelengthMax-WavelengthMin))
+		weight := RGBWeight(WavelengthMin + t*(WavelengthMax-WavelengthMin))
 		sum[0] += weight.AtVec(0)
 		sum[1] += weight.AtVec(1)
 		sum[2] += weight.AtVec(2)
@@ -161,131 +136,4 @@ func TestWavelengthToXYZHasExpectedPrimaryRegions(t *testing.T) {
 	if red.AtVec(0) <= red.AtVec(1) || red.AtVec(0) <= red.AtVec(2) {
 		t.Fatalf("expected 610nm to be dominated by X, got %v", red.RawVector().Data)
 	}
-}
-
-func TestWaveLengthToRGB(t *testing.T) {
-	// 创建新的图表
-	p := plot.New()
-
-	p.Title.Text = "RGB values by Wavelength"
-	p.X.Label.Text = "Wavelength (nm)"
-	p.Y.Label.Text = "RGB Value"
-
-	// 创建数据点
-	var rData, gData, bData plotter.XYs
-	step := 1.0
-	count := int((WavelengthMax - WavelengthMin) / step)
-
-	rData = make(plotter.XYs, count)
-	gData = make(plotter.XYs, count)
-	bData = make(plotter.XYs, count)
-
-	for i := 0; i < count; i++ {
-		wavelength := WavelengthMin + float64(i)*step
-		rgb := WaveLengthToRGB(wavelength)
-
-		rData[i].X = wavelength
-		rData[i].Y = rgb.AtVec(0)
-
-		gData[i].X = wavelength
-		gData[i].Y = rgb.AtVec(1)
-
-		bData[i].X = wavelength
-		bData[i].Y = rgb.AtVec(2)
-	}
-
-	// 添加数据线到图表
-	rLine, err := plotter.NewLine(rData)
-	if err != nil {
-		t.Fatal(err)
-	}
-	rLine.Color = plotutil.Color(0) // Red line
-
-	gLine, err := plotter.NewLine(gData)
-	if err != nil {
-		t.Fatal(err)
-	}
-	gLine.Color = plotutil.Color(1) // Green line
-
-	bLine, err := plotter.NewLine(bData)
-	if err != nil {
-		t.Fatal(err)
-	}
-	bLine.Color = plotutil.Color(2) // Blue line
-
-	// 将线条添加到图表
-	p.Add(rLine, gLine, bLine)
-	p.Legend.Add("Red", rLine)
-	p.Legend.Add("Green", gLine)
-	p.Legend.Add("Blue", bLine)
-
-	// 设置图例位置
-	p.Legend.Top = true
-
-	// 保存图表为PNG文件
-	if err := p.Save(10*vg.Inch, 6*vg.Inch, "wavelength_rgb_curve.png"); err != nil {
-		t.Fatal(err)
-	}
-}
-func TestWaveLengthToRGB2(t *testing.T) {
-	// 3. 生成光谱图像
-	generateSpectrumImage("spectrum.png")
-	t.Log("Spectrum image generated: spectrum.png")
-}
-
-// 生成光谱图像
-func generateSpectrumImage(filename string) {
-	const (
-		width  = 800
-		height = 200
-	)
-
-	img := image.NewRGBA(image.Rect(0, 0, width, height))
-	step := (WavelengthMax - WavelengthMin) / float64(width)
-	exposure := spectrumDisplayExposure(width)
-
-	// 绘制渐变光谱
-	for x := 0; x < width; x++ {
-		wavelength := WavelengthMin + float64(x)*step
-		rgb := WaveLengthToRGB(wavelength).RawVector().Data
-		c := color.RGBA{
-			R: linearSRGBToDisplayByte(rgb[0] * exposure),
-			G: linearSRGBToDisplayByte(rgb[1] * exposure),
-			B: linearSRGBToDisplayByte(rgb[2] * exposure),
-			A: 255,
-		}
-
-		// 填充整个高度
-		for y := 0; y < height; y++ {
-			img.Set(x, y, c)
-		}
-	}
-
-	// 保存为PNG
-	f, _ := os.Create(filename)
-	defer f.Close()
-	png.Encode(f, img)
-}
-
-func spectrumDisplayExposure(width int) float64 {
-	step := (WavelengthMax - WavelengthMin) / float64(width)
-	maxComponent := 0.0
-	for x := 0; x < width; x++ {
-		wavelength := WavelengthMin + float64(x)*step
-		rgb := WaveLengthToRGB(wavelength).RawVector().Data
-		for _, component := range rgb {
-			maxComponent = math.Max(maxComponent, component)
-		}
-	}
-	return safeDivide(1, maxComponent)
-}
-
-func linearSRGBToDisplayByte(value float64) uint8 {
-	value = math.Max(0, math.Min(1, value))
-	if value <= 0.0031308 {
-		value *= 12.92
-	} else {
-		value = 1.055*math.Pow(value, 1.0/2.4) - 0.055
-	}
-	return uint8(math.Round(value * 255))
 }

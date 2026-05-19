@@ -1,4 +1,4 @@
-# Math and Physics in `engine/go`
+# Math and Physics in `engine`
 
 This directory organizes the mathematical and physical ideas embedded in the Go ray tracing project. The goal is not only to describe the code, but to explain the theory that the code is implementing and where each idea appears in the codebase.
 
@@ -24,14 +24,14 @@ The project combines four layers of knowledge:
    Surfaces are represented either as explicit primitives such as spheres, triangles, and cuboids, or as algebraic surfaces such as quadratic and fourth-order implicit equations.
 
 3. **Geometrical optics and BSDF materials**
-   Rays carry position, direction, color, wavelength, wavelength PDF, and refractive index. Current scene objects use the `internal/material` BSDF/BxDF system for diffuse, specular, dielectric, dispersive, rough-conductor, and emissive behavior.
+   Rays carry position, direction, color, wavelength, wavelength PDF, and refractive index. Current scene objects use the `engine/model/material` BSDF/BxDF system for diffuse, specular, dielectric, dispersive, rough-conductor, and emissive behavior.
 
 4. **Monte Carlo rendering**
    Pixels are estimated by averaging repeated stochastic ray samples. Randomized camera jitter and randomized material branching are the main sampling mechanisms.
 
 ## Primary Code Entry Points
 
-- Render pipeline: `main.go`, `handler.go`, `ray_tracing/`
+- Render pipeline: `engine/main.go`, `engine/app/`, `engine/ray_tracing/`
 - Scene parsing: `controller/`
 - Cameras and film: `model/camera/`
 - Optical state: `model/optics/`

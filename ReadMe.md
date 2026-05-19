@@ -16,13 +16,14 @@ Ray/
     scene-editor/        React/TypeScript scene editor
   docs/                  Design notes, math notes, and rendered examples
   engine/
-    go/                  Go ray tracing engine
-      cmd/ray/           CLI entry point
-      internal/app/      Application orchestration and render config
-      internal/controller/
-      internal/model/
-      internal/ray_tracing/
-      internal/utils/
+    main.go              CLI entry point
+    app/                 Application orchestration and render config
+    controller/
+    model/
+    ray_tracing/
+    sceneio/
+    utils/
+  scene-editor/          React/TypeScript scene editor
   examples/
     scenes/              Scene JSON files
   outputs/               Render outputs, ignored by git
@@ -75,7 +76,7 @@ npm run ui:install
 npm run ui
 ```
 
-The editor lives in `apps/scene-editor` and provides a structured interface for viewing and editing scene data.
+The editor lives in `scene-editor` and provides a structured interface for viewing and editing scene data.
 
 ## Scene Scripts
 
@@ -108,14 +109,14 @@ Scenes are JSON files containing materials, objects, cameras, and optional rende
 
 To add a shape:
 
-1. Add the implementation under `engine/go/internal/model/shape`.
+1. Add the implementation under `engine/model/shape`.
 2. Implement the `Shape` interface.
-3. Register JSON parsing in `engine/go/internal/controller/parse_shape.go`.
+3. Register JSON parsing in `engine/sceneio/factory/shapes.go`.
 
 To add material behavior:
 
-1. Update `engine/go/internal/model/optics/material.go`.
-2. Add or update parser support under `engine/go/internal/controller`.
+1. Update the relevant package under `engine/model/material`.
+2. Add or update parser support under `engine/sceneio/factory`.
 3. Add focused tests beside the changed package.
 
 ## Documentation
