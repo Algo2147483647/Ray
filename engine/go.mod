@@ -1,4 +1,4 @@
-module github.com/Algo2147483647/ray/engine/go
+module github.com/Algo2147483647/ray/engine
 
 go 1.24.6
 

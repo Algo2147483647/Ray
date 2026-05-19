@@ -9,10 +9,9 @@ import (
 	"time"
 
 	"github.com/Algo2147483647/ray/engine/controller"
-	"github.com/Algo2147483647/ray/engine/debugtrace"
-	"github.com/Algo2147483647/ray/engine/material/core"
 	"github.com/Algo2147483647/ray/engine/model"
 	"github.com/Algo2147483647/ray/engine/model/camera"
+	"github.com/Algo2147483647/ray/engine/model/material/core"
 	"github.com/Algo2147483647/ray/engine/ray_tracing"
 	"github.com/Algo2147483647/ray/engine/utils"
 )
@@ -225,10 +224,10 @@ func (h *Handler) SaveDebugInfo(filename string) *Handler {
 
 		encoder := json.NewEncoder(file)
 		encoder.SetIndent("", "  ")
-		if err := encoder.Encode(debugtrace.RayTraces); err != nil {
-			h.err = err
-			return h
-		}
+		//if err := encoder.Encode(debugtrace.RayTraces); err != nil {
+		//	h.err = err
+		//	return h
+		//}
 	}
 
 	return h
