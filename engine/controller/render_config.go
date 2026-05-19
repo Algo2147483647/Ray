@@ -20,6 +20,7 @@ const (
 
 type RenderOverrides struct {
 	ScriptPath        string
+	Dimension         int
 	CameraIndex       int
 	ThreadNum         int
 	Width             int
@@ -38,6 +39,7 @@ type RenderOverrides struct {
 
 type RenderConfig struct {
 	ScriptPath        string
+	Dimension         int
 	CameraIndex       int
 	ThreadNum         int
 	Width             int
@@ -62,6 +64,7 @@ func ParseRenderOverrides(args []string) (RenderOverrides, error) {
 	flagSet := flag.NewFlagSet("ray", flag.ContinueOnError)
 	flagSet.SetOutput(io.Discard)
 	flagSet.StringVar(&overrides.ScriptPath, "script", "", "path to the scene script")
+	flagSet.IntVar(&overrides.Dimension, "dimension", 0, "scene dimension")
 	flagSet.IntVar(&overrides.CameraIndex, "camera-index", -1, "camera index to render")
 	flagSet.IntVar(&overrides.ThreadNum, "threads", 0, "worker thread count")
 	flagSet.IntVar(&overrides.Width, "width", 0, "output width")
@@ -89,6 +92,9 @@ func ParseRenderOverrides(args []string) (RenderOverrides, error) {
 	}
 	if overrides.CameraIndex < -1 {
 		return RenderOverrides{}, fmt.Errorf("camera-index must be >= -1")
+	}
+	if overrides.Dimension < 0 || overrides.Dimension == 1 {
+		return RenderOverrides{}, fmt.Errorf("dimension must be 0 or >= 2")
 	}
 	if overrides.ThreadNum < 0 {
 		return RenderOverrides{}, fmt.Errorf("threads must be >= 0")
@@ -124,6 +130,7 @@ func ParseRenderOverrides(args []string) (RenderOverrides, error) {
 func ResolveRenderConfig(script *Script, overrides RenderOverrides) RenderConfig {
 	config := RenderConfig{
 		ScriptPath:        overrides.ScriptPath,
+		Dimension:         3,
 		CameraIndex:       0,
 		ThreadNum:         runtime.NumCPU(),
 		Samples:           defaultSamples,
@@ -138,6 +145,9 @@ func ResolveRenderConfig(script *Script, overrides RenderOverrides) RenderConfig
 	}
 
 	if script != nil {
+		if script.Render.Dimension > 0 {
+			config.Dimension = script.Render.Dimension
+		}
 		if script.Render.CameraIndex >= 0 {
 			config.CameraIndex = script.Render.CameraIndex
 		}
@@ -184,6 +194,9 @@ func ResolveRenderConfig(script *Script, overrides RenderOverrides) RenderConfig
 
 	if overrides.CameraIndex >= 0 {
 		config.CameraIndex = overrides.CameraIndex
+	}
+	if overrides.Dimension > 0 {
+		config.Dimension = overrides.Dimension
 	}
 	if overrides.ThreadNum > 0 {
 		config.ThreadNum = overrides.ThreadNum

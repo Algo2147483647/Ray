@@ -8,6 +8,7 @@ import (
 	"github.com/Algo2147483647/ray/engine/model/camera"
 	"github.com/Algo2147483647/ray/engine/model/object"
 	"github.com/Algo2147483647/ray/engine/sceneio/schema"
+	"github.com/Algo2147483647/ray/engine/utils"
 )
 
 func LoadSceneFromScript(script *schema.Script, scene *model.Scene) error {
@@ -20,6 +21,15 @@ func LoadSceneFromScript(script *schema.Script, scene *model.Scene) error {
 
 	scene.ObjectTree = &object.ObjectTree{}
 	scene.Cameras = nil
+
+	dimension := script.Render.Dimension
+	if dimension <= 0 {
+		dimension = 3
+	}
+	if dimension < 2 {
+		return fmt.Errorf("render dimension must be >= 2, got %d", dimension)
+	}
+	utils.SetDimension(dimension)
 
 	materials, err := ParseMaterials(script)
 	if err != nil {
@@ -92,6 +102,12 @@ func LoadSceneFromScript(script *schema.Script, scene *model.Scene) error {
 }
 
 func ParseCameras(script *schema.Script) ([]camera.Camera, error) {
+	dimension := script.Render.Dimension
+	if dimension <= 0 {
+		dimension = 3
+	}
+	utils.SetDimension(dimension)
+
 	cameraDefs := script.Cameras
 	if len(cameraDefs) == 0 {
 		return nil, nil
@@ -99,11 +115,11 @@ func ParseCameras(script *schema.Script) ([]camera.Camera, error) {
 
 	cameras := make([]camera.Camera, 0, len(cameraDefs))
 	for idx, cameraDef := range cameraDefs {
-		camera3D, err := BuildCamera3DFromScript(cameraDef)
+		parsedCamera, err := BuildCameraFromScript(cameraDef)
 		if err != nil {
 			return nil, fmt.Errorf("parse camera[%d]: %w", idx, err)
 		}
-		cameras = append(cameras, camera3D)
+		cameras = append(cameras, parsedCamera)
 	}
 
 	return cameras, nil

@@ -1,19 +1,24 @@
 package schema
 
 type CameraScript struct {
-	ID          string    `json:"id"`
-	Position    []float64 `json:"position"`
-	LookAt      []float64 `json:"look_at"`
-	Direction   []float64 `json:"direction"`
-	Up          []float64 `json:"up"`
-	Width       int       `json:"width"`
-	Height      int       `json:"height"`
-	FieldOfView float64   `json:"field_of_view"`
-	AspectRatio float64   `json:"aspect_ratio"`
-	Ortho       bool      `json:"ortho"`
+	ID           string      `json:"id"`
+	Type         string      `json:"type"`
+	Position     []float64   `json:"position"`
+	LookAt       []float64   `json:"look_at"`
+	Direction    []float64   `json:"direction"`
+	Up           []float64   `json:"up"`
+	Width        int         `json:"width"`
+	Height       int         `json:"height"`
+	Widths       []int       `json:"widths"`
+	FieldOfView  float64     `json:"field_of_view"`
+	FieldOfViews []float64   `json:"field_of_views"`
+	Coordinates  [][]float64 `json:"coordinates"`
+	AspectRatio  float64     `json:"aspect_ratio"`
+	Ortho        bool        `json:"ortho"`
 }
 
 type RenderScript struct {
+	Dimension         int     `json:"dimension"`
 	Samples           int64   `json:"samples"`
 	ThreadNum         int     `json:"thread_num"`
 	CameraIndex       int     `json:"camera_index"`

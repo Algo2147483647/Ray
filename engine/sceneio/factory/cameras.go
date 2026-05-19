@@ -6,6 +6,7 @@ import (
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 	"math"
+	"strings"
 )
 
 var (
@@ -26,6 +27,10 @@ func DefaultCameraScript() CameraScript {
 }
 
 func BuildCamera3DFromScript(def CameraScript) (*modelcamera.Camera3D, error) {
+	if utils.Dimension != 3 {
+		return nil, fmt.Errorf("camera type %q requires render dimension 3, got %d", "3d", utils.Dimension)
+	}
+
 	defaults := DefaultCameraScript()
 
 	position, err := vectorFromScript("position", firstNonEmptyFloat64s(def.Position, defaults.Position))
@@ -80,6 +85,79 @@ func BuildCamera3DFromScript(def CameraScript) (*modelcamera.Camera3D, error) {
 
 	camera3D.SetLookAt(lookAt)
 	return camera3D, nil
+}
+
+func BuildCameraNDimFromScript(def CameraScript) (*modelcamera.CameraNDim, error) {
+	if len(def.Position) == 0 {
+		return nil, fmt.Errorf("position is required for n_dim camera")
+	}
+	position, err := vectorFromScript("position", def.Position)
+	if err != nil {
+		return nil, err
+	}
+	if len(def.Widths) == 0 {
+		return nil, fmt.Errorf("widths is required for n_dim camera")
+	}
+	widths := append([]int(nil), def.Widths...)
+	for i, width := range widths {
+		if width <= 0 {
+			return nil, fmt.Errorf("widths[%d] must be > 0", i)
+		}
+	}
+
+	fieldOfViews := append([]float64(nil), def.FieldOfViews...)
+	if len(fieldOfViews) == 0 && def.FieldOfView > 0 {
+		fieldOfViews = make([]float64, len(widths))
+		for i := range fieldOfViews {
+			fieldOfViews[i] = def.FieldOfView
+		}
+	}
+	if len(fieldOfViews) != len(widths) {
+		return nil, fmt.Errorf("field_of_views count %d must match widths count %d", len(fieldOfViews), len(widths))
+	}
+	for i, fov := range fieldOfViews {
+		if fov <= 0 {
+			return nil, fmt.Errorf("field_of_views[%d] must be > 0", i)
+		}
+	}
+	if len(def.Coordinates) != len(widths)+1 {
+		return nil, fmt.Errorf("coordinates count %d must equal widths count + 1 (%d)", len(def.Coordinates), len(widths)+1)
+	}
+
+	coordinates := make([]*mat.VecDense, len(def.Coordinates))
+	for i, values := range def.Coordinates {
+		vec, err := vectorFromScript(fmt.Sprintf("coordinates[%d]", i), values)
+		if err != nil {
+			return nil, err
+		}
+		if mat.Norm(vec, 2) == 0 {
+			return nil, fmt.Errorf("coordinates[%d] must not be zero", i)
+		}
+		coordinates[i] = vec
+	}
+
+	cameraNDim := &modelcamera.CameraNDim{
+		Position:    position,
+		Coordinates: coordinates,
+		Width:       widths,
+		FieldOfView: fieldOfViews,
+		Ortho:       def.Ortho,
+	}
+	if err := cameraNDim.Prepare(); err != nil {
+		return nil, err
+	}
+	return cameraNDim, nil
+}
+
+func BuildCameraFromScript(def CameraScript) (modelcamera.Camera, error) {
+	switch strings.ToLower(def.Type) {
+	case "", "3d", "camera3d":
+		return BuildCamera3DFromScript(def)
+	case "n_dim", "ndim", "n-dimensional":
+		return BuildCameraNDimFromScript(def)
+	default:
+		return nil, fmt.Errorf("unsupported camera type %q", def.Type)
+	}
 }
 
 func vectorFromScript(name string, values []float64) (*mat.VecDense, error) {

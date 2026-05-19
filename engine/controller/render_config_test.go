@@ -8,6 +8,7 @@ import (
 func TestResolveRenderConfigMergesScriptAndCLI(t *testing.T) {
 	script := &Script{
 		Render: RenderScript{
+			Dimension:         4,
 			Samples:           12,
 			ThreadNum:         3,
 			CameraIndex:       1,
@@ -42,6 +43,9 @@ func TestResolveRenderConfigMergesScriptAndCLI(t *testing.T) {
 
 	if config.ScriptPath != "custom.json" {
 		t.Fatalf("unexpected script path: %s", config.ScriptPath)
+	}
+	if config.Dimension != 4 {
+		t.Fatalf("unexpected dimension: %d", config.Dimension)
 	}
 	if config.CameraIndex != 2 {
 		t.Fatalf("expected CLI camera index override, got %d", config.CameraIndex)

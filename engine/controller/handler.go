@@ -83,32 +83,36 @@ func (h *Handler) ConfigureRender(overrides RenderOverrides) *Handler {
 	}
 
 	config := ResolveRenderConfig(h.Script, overrides)
-	renderCamera, width, height, err := h.selectRenderCamera(config.CameraIndex, config.Width, config.Height)
+	renderCamera, filmShape, err := h.selectRenderCamera(config.CameraIndex, config.Width, config.Height)
 	if err != nil {
 		h.err = err
 		return h
 	}
 
-	config.Width = width
-	config.Height = height
+	if len(filmShape) > 0 {
+		config.Width = filmShape[0]
+	}
+	if len(filmShape) > 1 {
+		config.Height = filmShape[1]
+	}
 	h.Config = config
 	h.ActiveCamera = renderCamera
-	h.Film = camera.NewFilm(width, height)
+	h.Film = camera.NewFilm(filmShape...)
 	h.Film.WorkingSpace = renderWorkingSpace(config.WorkingSpace)
 	return h
 }
 
-func (h *Handler) selectRenderCamera(cameraIndex, width, height int) (camera.Camera, int, int, error) {
+func (h *Handler) selectRenderCamera(cameraIndex, width, height int) (camera.Camera, []int, error) {
 	if len(h.Scene.Cameras) == 0 {
 		defaultCamera, err := BuildCamera3DFromScript(DefaultCameraScript())
 		if err != nil {
-			return nil, 0, 0, err
+			return nil, nil, err
 		}
 		h.Scene.Cameras = append(h.Scene.Cameras, defaultCamera)
 	}
 
 	if cameraIndex < 0 || cameraIndex >= len(h.Scene.Cameras) {
-		return nil, 0, 0, fmt.Errorf("camera index %d out of range (available: %d)", cameraIndex, len(h.Scene.Cameras))
+		return nil, nil, fmt.Errorf("camera index %d out of range (available: %d)", cameraIndex, len(h.Scene.Cameras))
 	}
 
 	selectedCamera := h.Scene.Cameras[cameraIndex]
@@ -119,9 +123,25 @@ func (h *Handler) selectRenderCamera(cameraIndex, width, height int) (camera.Cam
 		c.Width = resolvedWidth
 		c.Height = resolvedHeight
 		c.AspectRatio = float64(resolvedWidth) / float64(resolvedHeight)
-		return c, resolvedWidth, resolvedHeight, nil
+		return c, []int{resolvedWidth, resolvedHeight}, nil
+	case *camera.CameraNDim:
+		if len(c.Width) == 0 {
+			return nil, nil, fmt.Errorf("n_dim camera has no film widths")
+		}
+		filmShape := append([]int(nil), c.Width...)
+		if width > 0 {
+			filmShape[0] = width
+		}
+		if height > 0 && len(filmShape) > 1 {
+			filmShape[1] = height
+		}
+		c.Width = append([]int(nil), filmShape...)
+		if err := c.Prepare(); err != nil {
+			return nil, nil, err
+		}
+		return c, filmShape, nil
 	default:
-		return selectedCamera, firstPositiveInt(width, defaultRenderWidth), firstPositiveInt(height, defaultRenderHeight), nil
+		return selectedCamera, []int{firstPositiveInt(width, defaultRenderWidth), firstPositiveInt(height, defaultRenderHeight)}, nil
 	}
 }
 

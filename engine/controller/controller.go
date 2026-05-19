@@ -35,6 +35,10 @@ func BuildCamera3DFromScript(def CameraScript) (*camera.Camera3D, error) {
 	return factory.BuildCamera3DFromScript(def)
 }
 
+func BuildCameraNDimFromScript(def CameraScript) (*camera.CameraNDim, error) {
+	return factory.BuildCameraNDimFromScript(def)
+}
+
 func ParseMaterials(script *Script) (map[string]*core.Material, error) {
 	return factory.ParseMaterials(script)
 }
