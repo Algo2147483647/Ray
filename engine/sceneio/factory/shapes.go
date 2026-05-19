@@ -112,6 +112,40 @@ func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 		}
 		return []shape.Shape{circle}, nil
 
+	case "finite cylinder", "cylinder":
+		position, err := requiredFloat64SliceField(objDef, "position", utils.Dimension)
+		if err != nil {
+			return nil, err
+		}
+		axis, err := requiredFloat64SliceField(objDef, "axis", utils.Dimension)
+		if err != nil {
+			return nil, err
+		}
+		axisVec := mat.NewVecDense(len(axis), axis)
+		if mat.Norm(axisVec, 2) < utils.EPS {
+			return nil, fmt.Errorf("field %q must not be zero", "axis")
+		}
+		radius, err := requiredFloat64Field(objDef, "r")
+		if err != nil {
+			return nil, err
+		}
+		if radius <= 0 {
+			return nil, fmt.Errorf("field %q must be > 0", "r")
+		}
+		height, err := requiredFloat64Field(objDef, "height")
+		if err != nil {
+			return nil, err
+		}
+		if height <= 0 {
+			return nil, fmt.Errorf("field %q must be > 0", "height")
+		}
+
+		cylinder := shape.NewFiniteCylinder(mat.NewVecDense(len(position), position), axisVec, radius, height)
+		if err := applyEngravingFunc(cylinder, objDef); err != nil {
+			return nil, err
+		}
+		return []shape.Shape{cylinder}, nil
+
 	case "triangle":
 		p1, err := requiredFloat64SliceField(objDef, "p1", utils.Dimension)
 		if err != nil {
