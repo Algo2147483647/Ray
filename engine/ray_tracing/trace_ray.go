@@ -13,8 +13,6 @@ import (
 )
 
 func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *renderray.Ray, level int64) *mat.VecDense {
-	normal := mat.NewVecDense(ray.Origin.Len(), nil)
-
 	if level > h.MaxRayLevel {
 		ray.Color.ScaleVec(0, ray.Color)
 		return ray.Color
@@ -26,7 +24,7 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *renderray.Ray, level
 	}
 
 	ray.Origin.CopyVec(hit.Point)
-	normal = hit.ShadingNormal
+	normal := hit.ShadingNormal
 	obj := hit.Object
 
 	if obj.Material == nil {
@@ -52,8 +50,7 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *renderray.Ray, level
 	}
 	prepareMediumContext(&ctx, media, ray, obj.MediumBoundary, hit.FrontFace)
 
-	woWorld := negateVec(ray.Direction)
-	woLocal, frameOK := worldToLocal(woWorld, normal)
+	woLocal, frameOK := worldToLocalNegated(ray.Direction, normal)
 	if !frameOK {
 		ray.Color.ScaleVec(0, ray.Color)
 		return ray.Color
@@ -81,7 +78,10 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *renderray.Ray, level
 		applyMediumTransmission(media, ray, ctx, obj.MediumBoundary, sample)
 	}
 
-	ray.Direction = localToWorld(sample.Wi, normal)
+	if !localToWorldInto(ray.Direction, sample.Wi, normal) {
+		ray.Color.ScaleVec(0, ray.Color)
+		return ray.Color
+	}
 	math_lib.Normalize(ray.Direction)
 
 	return h.TraceRay(objTree, ray, level+1)
@@ -148,17 +148,37 @@ func worldToLocal(v, normal *mat.VecDense) (core.Direction, bool) {
 	), true
 }
 
-func localToWorld(v core.Direction, normal *mat.VecDense) *mat.VecDense {
+func worldToLocalNegated(v, normal *mat.VecDense) (core.Direction, bool) {
 	tangent, bitangent, ok := tangentFrame(normal)
 	if !ok {
-		return mat.NewVecDense(normal.Len(), nil)
+		return core.Direction{}, false
+	}
+	return core.NewDirection(
+		-mat.Dot(v, tangent),
+		-mat.Dot(v, bitangent),
+		-mat.Dot(v, normal),
+	), true
+}
+
+func localToWorld(v core.Direction, normal *mat.VecDense) *mat.VecDense {
+	res := mat.NewVecDense(normal.Len(), nil)
+	if !localToWorldInto(res, v, normal) {
+		return res
+	}
+	return res
+}
+
+func localToWorldInto(res *mat.VecDense, v core.Direction, normal *mat.VecDense) bool {
+	tangent, bitangent, ok := tangentFrame(normal)
+	if !ok {
+		return false
 	}
 
-	res := mat.NewVecDense(3, nil)
+	res.Zero()
 	res.AddScaledVec(res, v.X, tangent)
 	res.AddScaledVec(res, v.Y, bitangent)
 	res.AddScaledVec(res, v.Z, normal)
-	return res
+	return true
 }
 
 func tangentFrame(normal *mat.VecDense) (*mat.VecDense, *mat.VecDense, bool) {

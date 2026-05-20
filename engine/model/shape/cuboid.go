@@ -67,7 +67,7 @@ func (c *Cuboid) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64)
 
 	point := pointAt(raySt, rayDir, distance)
 	normal := c.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
-	return newSurfaceInteraction(raySt, rayDir, distance, normal), true
+	return newSurfaceInteractionAt(point, distance, normal), true
 }
 
 func (c *Cuboid) OverlapsRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) bool {

@@ -84,7 +84,7 @@ func (s *Sphere) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64)
 
 	point := pointAt(raySt, rayDir, distance)
 	normal := s.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
-	return newSurfaceInteraction(raySt, rayDir, distance, normal), true
+	return newSurfaceInteractionAt(point, distance, normal), true
 }
 
 func (s *Sphere) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {

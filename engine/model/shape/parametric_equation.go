@@ -41,7 +41,7 @@ func (f *ParametricEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, t
 
 	point := pointAt(raySt, rayDir, distance)
 	normal := f.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
-	return newSurfaceInteraction(raySt, rayDir, distance, normal), true
+	return newSurfaceInteractionAt(point, distance, normal), true
 }
 
 func (f *ParametricEquation) IntersectPure(raySt, rayDir *mat.VecDense, u0, v0, tol float64, maxIter int) float64 {

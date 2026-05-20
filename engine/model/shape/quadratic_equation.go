@@ -52,7 +52,7 @@ func (p *QuadraticEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tM
 		if distanceInRange(t1, tMin, tMax) {
 			point := pointAt(raySt, rayDir, t1)
 			normal := p.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
-			return newSurfaceInteraction(raySt, rayDir, t1, normal), true
+			return newSurfaceInteractionAt(point, t1, normal), true
 		}
 	case 2:
 		minValidRoots := math.MaxFloat64 // Filter positive roots and choose the smallest one.
@@ -65,7 +65,7 @@ func (p *QuadraticEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tM
 		if minValidRoots != math.MaxFloat64 {
 			point := pointAt(raySt, rayDir, minValidRoots)
 			normal := p.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
-			return newSurfaceInteraction(raySt, rayDir, minValidRoots, normal), true
+			return newSurfaceInteractionAt(point, minValidRoots, normal), true
 		}
 	}
 

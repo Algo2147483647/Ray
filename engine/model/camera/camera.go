@@ -5,7 +5,7 @@ import (
 )
 
 type Camera interface {
-	GenerateRay(res *renderray.Ray, index ...int) *renderray.Ray
+	GenerateRay(res *renderray.Ray, index ...int) *renderray.Ray // Generates a ray for a given pixel index.
 }
 
 type CameraBase struct {

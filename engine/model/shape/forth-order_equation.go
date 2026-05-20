@@ -102,7 +102,7 @@ func (p *FourOrderEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tM
 
 	point := pointAt(raySt, rayDir, res)
 	normal := p.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
-	return newSurfaceInteraction(raySt, rayDir, res, normal), true
+	return newSurfaceInteractionAt(point, res, normal), true
 }
 
 func (p *FourOrderEquation) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {

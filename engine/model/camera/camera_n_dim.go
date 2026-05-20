@@ -11,12 +11,11 @@ import (
 
 type CameraNDim struct {
 	CameraBase
-	Position    *mat.VecDense
-	Coordinates []*mat.VecDense
-	Width       []int
-	FieldOfView []float64
-	Ortho       bool
-
+	Position               *mat.VecDense
+	Coordinates            []*mat.VecDense
+	Width                  []int
+	FieldOfView            []float64
+	Ortho                  bool
 	orthonormalCoordinates []*mat.VecDense
 	fovTangents            []float64
 }
@@ -26,19 +25,23 @@ func NewCameraNDim() *CameraNDim {
 }
 
 func (c *CameraNDim) Prepare() error {
+	// If the cached/pre-computed result is complete, return it directly.
+	if len(c.orthonormalCoordinates) == len(c.Coordinates) && len(c.fovTangents) == len(c.FieldOfView) {
+		return nil
+	}
+
+	// Check configuration
 	if len(c.Coordinates) == 0 {
 		return fmt.Errorf("camera coordinates are not configured")
-	}
-	if len(c.Width) == 0 {
+	} else if len(c.Width) == 0 {
 		return fmt.Errorf("camera width is not configured")
-	}
-	if len(c.Width) != len(c.FieldOfView) {
+	} else if len(c.Width) != len(c.FieldOfView) {
 		return fmt.Errorf("width count %d does not match field of view count %d", len(c.Width), len(c.FieldOfView))
-	}
-	if len(c.Coordinates) != len(c.Width)+1 {
+	} else if len(c.Coordinates) != len(c.Width)+1 {
 		return fmt.Errorf("coordinate count %d must equal width count + 1 (%d)", len(c.Coordinates), len(c.Width)+1)
 	}
 
+	// Compute
 	c.orthonormalCoordinates = math_lib.GramSchmidt(c.Coordinates...)
 	c.fovTangents = make([]float64, len(c.FieldOfView))
 	for i, fov := range c.FieldOfView {
@@ -48,21 +51,13 @@ func (c *CameraNDim) Prepare() error {
 	return nil
 }
 
-func (c *CameraNDim) ensurePrepared() error {
-	if len(c.orthonormalCoordinates) == len(c.Coordinates) && len(c.fovTangents) == len(c.FieldOfView) {
-		return nil
-	}
-
-	return c.Prepare()
-}
-
 func (c *CameraNDim) GenerateRay(res *renderray.Ray, x ...int) *renderray.Ray {
 	if res == nil {
 		res = &renderray.Ray{}
 	}
 	res.Init()
 
-	if err := c.ensurePrepared(); err != nil {
+	if err := c.Prepare(); err != nil {
 		panic(err)
 	}
 

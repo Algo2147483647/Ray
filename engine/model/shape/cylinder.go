@@ -68,7 +68,7 @@ func (c *FiniteCylinder) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax 
 
 	point := pointAt(raySt, rayDir, best)
 	normal := c.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
-	return newSurfaceInteraction(raySt, rayDir, best, normal), true
+	return newSurfaceInteractionAt(point, best, normal), true
 }
 
 func (c *FiniteCylinder) intersectSide(raySt, rayDir *mat.VecDense, tMin, tMax float64) float64 {
