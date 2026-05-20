@@ -1,7 +1,6 @@
 # Ray Tracing
 
-A Go-based ray tracing engine for optical simulation and physically inspired rendering. The project includes a renderer, scene JSON examples, documentation, and a React scene editor.
-
+A Go-based ray tracing engine for optical simulation and physically inspired rendering. The repository contains the renderer, JSON scene examples, design notes, rendered examples, and a React scene editor.
 
 ![feature-showcase-800x800-2000spp.png](docs%2Fassets%2Ffeature-showcase-800x800-2000spp.png)
 ![four-order-equation-wide-soft-gold-800x800-1000spp.png](docs%2Fassets%2Ffour-order-equation-wide-soft-gold-800x800-1000spp.png)
@@ -12,30 +11,32 @@ A Go-based ray tracing engine for optical simulation and physically inspired ren
 
 ```text
 Ray/
-  apps/
-    scene-editor/        React/TypeScript scene editor
-  docs/                  Design notes, math notes, and rendered examples
-  engine/
+  docs/                  Design notes, schema notes, and rendered examples
+  engine/                Go renderer
     main.go              CLI entry point
-    app/                 Application orchestration and render config
-    controller/
-    model/
-    ray_tracing/
-    sceneio/
-    utils/
-  scene-editor/          React/TypeScript scene editor
-  examples/
-    scenes/              Scene JSON files
+    controller/          CLI-facing orchestration, render config, JSON parsing, scene factory
+      factory/           Builds cameras, materials, media, objects, and shapes from JSON
+      parser/            Scene JSON structs and file loading
+    model/               Renderer domain model
+      camera/            3D and N-dimensional cameras, film storage, output transforms
+      material/          Material container, BSDF/BxDF, emission, media, microfacet models
+      object/            Objects, BVH build/update, traversal, surface hit records
+      optics/            Rays, spectra, wavelength sampling helpers
+      shape/             Analytic primitives and intersection logic
+    ray_tracing/         Integrator, pixel sampling, recursive path tracing, render tiling
+    utils/               Shared numeric and parsing helpers
+  examples/scenes/       Scene JSON files
   outputs/               Render outputs, ignored by git
+  scene-editor/          React/TypeScript scene editor
 ```
 
-The previous C++ implementation has been removed so the repository has one active engine path.
+The active engine is the Go implementation under `engine/`.
 
 ## Requirements
 
 - Go 1.24+
 - Node.js 16+ for the scene editor
-- Python 3.x for auxiliary visualization scripts in the editor tools
+- Python 3.x only for auxiliary editor/visualization tooling
 
 ## Render From The CLI
 
@@ -48,17 +49,17 @@ npm run ray
 Use a specific scene:
 
 ```bash
-npm run ray -- --script ../../examples/scenes/default.json
+npm run ray -- --script ../examples/scenes/feature-showcase.json
 ```
 
 Useful render flags:
 
 ```bash
 npm run ray -- --width 800 --height 600 --samples 64 --threads 8
-npm run ray -- --output-image ../../outputs/render.png
+npm run ray -- --output-image ../outputs/render.png
 ```
 
-The default scene is `examples/scenes/default.json`. Default outputs are written under `outputs/`.
+Default outputs are written under `outputs/`.
 
 ## Go Development
 
@@ -80,17 +81,22 @@ The editor lives in `scene-editor` and provides a structured interface for viewi
 
 ## Scene Scripts
 
-Scenes are JSON files containing materials, objects, cameras, and optional render settings:
+Scenes are JSON files containing optional media, materials, objects, cameras, and render settings:
 
 ```json
 {
   "materials": [
     {
       "id": "glass",
-      "color": [1, 1, 1],
-      "reflectivity": 0.1,
-      "refractivity": 0.9,
-      "refractive_index": [1.5]
+      "surface": {
+        "type": "specular_dielectric",
+        "reflectance": [1, 1, 1],
+        "transmittance": [1, 1, 1],
+        "ior": {
+          "type": "constant",
+          "eta": 1.5
+        }
+      }
     }
   ],
   "objects": [
@@ -101,9 +107,23 @@ Scenes are JSON files containing materials, objects, cameras, and optional rende
       "position": [0, 0, 0],
       "r": 1
     }
-  ]
+  ],
+  "cameras": [
+    {
+      "type": "3d",
+      "position": [-4, 0, 1],
+      "look_at": [0, 0, 0],
+      "field_of_view": 60
+    }
+  ],
+  "render": {
+    "samples": 64,
+    "spectrum_mode": "hero_wavelength"
+  }
 }
 ```
+
+See [`docs/scene-json-current.md`](docs/scene-json-current.md) for the current schema.
 
 ## Extending The Engine
 
@@ -111,14 +131,14 @@ To add a shape:
 
 1. Add the implementation under `engine/model/shape`.
 2. Implement the `Shape` interface.
-3. Register JSON parsing in `engine/sceneio/factory/shapes.go`.
+3. Register JSON parsing in `engine/controller/factory/shapes.go`.
 
 To add material behavior:
 
-1. Update the relevant package under `engine/model/material`.
-2. Add or update parser support under `engine/sceneio/factory`.
+1. Add the BxDF, BSDF, emission, or medium code under `engine/model/material`.
+2. Add parser support under `engine/controller/factory`.
 3. Add focused tests beside the changed package.
 
 ## Documentation
 
-More detailed notes are in `docs/`, including mathematical foundations, geometry and intersection behavior, optics/material notes, and scene JSON rules.
+More detailed notes are in `docs/`, including mathematical foundations, geometry and BVH behavior, optics/material notes, camera/rendering flow, and scene JSON rules.

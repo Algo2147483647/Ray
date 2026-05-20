@@ -15,9 +15,11 @@ At a high level, the program performs:
 
 Relevant code:
 
-- `main.go`
-- `handler.go`
-- `render_config.go`
+- `engine/main.go`
+- `engine/controller/handler.go`
+- `engine/controller/render_config.go`
+- `engine/controller/parser/script.go`
+- `engine/controller/factory/scene.go`
 
 ## 2. Scene as the Main Physical Container
 
@@ -34,8 +36,10 @@ Conceptually, the scene is the full optical experiment:
 
 Relevant code:
 
-- `model/scene.go`
-- `controller/srcipt.go`
+- `engine/model/scene.go`
+- `engine/model/object/object_tree.go`
+- `engine/model/object/bvh_build.go`
+- `engine/model/object/intersection.go`
 
 ## 3. Scene Scripts as a Declarative Model
 
@@ -50,10 +54,12 @@ This makes the project a small domain-specific environment for optical scene con
 
 Relevant code:
 
-- `controller/srcipt.go`
-- `controller/parse_materials.go`
-- `controller/parse_shape.go`
-- `controller/parse_camera.go`
+- `engine/controller/parser/schema.go`
+- `engine/controller/parser/script.go`
+- `engine/controller/factory/materials.go`
+- `engine/controller/factory/media.go`
+- `engine/controller/factory/shapes.go`
+- `engine/controller/factory/cameras.go`
 
 ## 4. 3D Camera Model
 
@@ -78,8 +84,8 @@ This is the project’s measurement model: it specifies which light paths are sa
 
 Relevant code:
 
-- `model/camera/camera_3d.go`
-- `controller/parse_camera.go`
+- `engine/model/camera/camera_3d.go`
+- `engine/controller/factory/cameras.go`
 
 ## 5. N-Dimensional Camera Model
 
@@ -104,8 +110,8 @@ This is one of the most distinctive ideas in the codebase. It shows that the ren
 
 Relevant code:
 
-- `model/camera/camera_n_dim.go`
-- `model/camera/camera_n_dim_test.go`
+- `engine/model/camera/camera_n_dim.go`
+- `engine/model/camera/camera_n_dim_test.go`
 
 ## 6. Pixel Sampling
 
@@ -126,7 +132,7 @@ This is the discrete Monte Carlo estimator for the pixel intensity.
 
 Relevant code:
 
-- `ray_tracing/trace_pixel.go`
+- `engine/ray_tracing/trace_pixel.go`
 
 ## 7. Recursive Ray Tracing
 
@@ -147,7 +153,10 @@ This structure expresses the physical idea that the path of light is piecewise l
 
 Relevant code:
 
-- `ray_tracing/trace_ray.go`
+- `engine/ray_tracing/trace_ray.go`
+- `engine/model/material/bsdf/`
+- `engine/model/material/bxdf/`
+- `engine/model/material/medium/`
 
 ## 8. Why the Normal May Be Flipped
 
@@ -161,7 +170,8 @@ Without this correction:
 
 Relevant code:
 
-- `ray_tracing/trace_ray.go`
+- `engine/ray_tracing/trace_ray.go`
+- `engine/model/object/intersection.go`
 
 ## 9. Film as a Tensor-Valued Measurement Buffer
 
@@ -179,7 +189,7 @@ This matches the project's general higher-dimensional mindset.
 
 Relevant code:
 
-- `model/camera/film.go`
+- `engine/model/camera/film.go`
 
 ## 10. Merging Films
 
@@ -193,7 +203,7 @@ This is statistically correct for combining independent sample batches from the 
 
 Relevant code:
 
-- `model/camera/film.go`
+- `engine/model/camera/film.go`
 
 ## 11. Parallel Rendering
 
@@ -207,7 +217,7 @@ This is a standard task-parallel pattern for embarrassingly parallel rendering w
 
 Relevant code:
 
-- `ray_tracing/trace_scene.go`
+- `engine/ray_tracing/trace_scene.go`
 
 ## 12. Ray Pooling and Allocation Control
 
@@ -217,8 +227,8 @@ From a systems perspective, this is not physics, but it supports the practical n
 
 Relevant code:
 
-- `ray_tracing/handler.go`
-- `utils/pools.go`
+- `engine/ray_tracing/handler.go`
+- `engine/utils/pools.go`
 
 ## 13. Render Configuration as a Numerical Experiment Setup
 
@@ -265,11 +275,11 @@ The same values can be overridden from the CLI with `--exposure`, `--tone-mappin
 
 Relevant code:
 
-- `render_config.go`
+- `engine/controller/render_config.go`
 
 ## 14. What the Default Scene Demonstrates
 
-The sample `test.json` showcases several important ideas:
+The sample scenes under `examples/scenes/` showcase several important ideas:
 
 - emissive triangles as area-light approximations,
 - diffuse room boundaries,
@@ -287,7 +297,8 @@ So even the default scene is already a compact demonstration of:
 
 Relevant code:
 
-- `test.json`
+- `examples/scenes/feature-showcase.json`
+- `examples/scenes/true-spectral-prism-dispersion-200spp.json`
 
 ## 15. Important Current Boundaries
 

@@ -1,6 +1,6 @@
 # Current Scene JSON
 
-This document records the current scene JSON fields used by the Go renderer after the BSDF/BxDF material migration.
+This document records the current scene JSON fields used by the Go renderer after the controller/parser/factory and BSDF/BxDF refactor.
 
 ## Top-Level Shape
 
@@ -14,7 +14,7 @@ This document records the current scene JSON fields used by the Go renderer afte
 }
 ```
 
-`camera` is still accepted as a legacy alias for `cameras` when `cameras` is absent.
+Use `cameras` for camera definitions. If the list is omitted or empty, the render handler creates a default 3D camera at render time.
 
 ## Media
 
@@ -48,8 +48,8 @@ Supported medium fields:
 ```text
 type: homogeneous
 ior: constant or cauchy IOR object
-sigma_a: optional spectral absorption placeholder
-sigma_s: optional spectral scattering placeholder
+sigma_a: optional spectral absorption placeholder, parsed but not transported
+sigma_s: optional spectral scattering placeholder, parsed but not transported
 ```
 
 `sigma_a` and `sigma_s` are parsed now but homogeneous volume attenuation/scattering is not yet applied during transport.
@@ -152,7 +152,7 @@ Objects may declare the media separated by a closed dielectric boundary:
 }
 ```
 
-`outside` defaults to `air`. `inside` is required when `medium_boundary` is present. `priority` is parsed for future overlap resolution. `thin: true` marks a non-container boundary and disables medium-stack mutation.
+`outside` defaults to `air`. `inside` is required when `medium_boundary` is present. `priority` participates in medium-stack overlap resolution. `thin: true` marks a non-container boundary and disables medium-stack mutation.
 
 ### Rough Conductor
 
@@ -262,13 +262,12 @@ Supported object forms:
     "height": 800,
     "output_image": "../../outputs/image.png",
     "output_film": "../../outputs/image.bin",
-    "debug_output": "../../outputs/debug.json",
     "exposure": 2.1,
     "tone_mapping": "reinhard",
     "gamma": 2.2,
     "spectrum_mode": "hero_wavelength",
     "wavelength_samples": 1,
-    "working_space": "xyz"
+    "color_space": "xyz"
   }
 }
 ```
@@ -293,14 +292,14 @@ sampled
 
 Camera ray generation now only creates geometric rays. Wavelength sampling is owned by the renderer/integrator so that `rgb`, `hero_wavelength`, and `sampled` modes share the same camera code.
 
-Film stores three channels in an explicit working space. `rgb` mode accumulates `linear_srgb`; `hero_wavelength` and `sampled` modes carry scalar spectral power along each wavelength path, convert spectral power through the CIE 1931 XYZ matching functions, white-normalize to the D65 output white, and accumulate `xyz` in the Film before the final output transform.
+Film stores three channels in an explicit color space. `rgb` mode accumulates `linear_srgb`; `hero_wavelength` and `sampled` modes carry scalar spectral power along each wavelength path, convert spectral power through the CIE 1931 XYZ matching functions, white-normalize to the D65 output white, and accumulate `xyz` in the Film before the final output transform.
 
-`core.Spectrum` now preserves optional sampled channels in addition to its RGB compatibility fields. Lambert, specular reflection, specular dielectric, rough conductor, and constant emission evaluate their spectral parameters from `ShadingContext` instead of collapsing all inputs to RGB at parse time. In `sampled` mode the renderer still traces wavelength sub-paths independently, which is required for dispersive paths where different wavelengths can refract in different directions. The sampled-channel `Spectrum` path is active in material evaluation and unit tests, and is the compatibility layer for a future packet-style spectral integrator.
+`optics.Spectrum` preserves optional sampled channels in addition to its RGB compatibility fields. Lambert, specular reflection, specular dielectric, rough conductor, and constant emission evaluate their spectral parameters from `bxdf.ShadingContext` instead of collapsing all inputs to RGB at parse time. In `sampled` mode the renderer still traces wavelength sub-paths independently, which is required for dispersive paths where different wavelengths can refract in different directions. The sampled-channel `Spectrum` path is active in material evaluation and unit tests, and is the compatibility layer for a future packet-style spectral integrator.
 
 CLI overrides:
 
 ```bash
-go -C engine/go run ./cmd/ray --script ../../examples/scenes/feature-showcase.json --width 800 --height 800 --samples 2000 --exposure 2.1 --tone-mapping reinhard --gamma 2.2
+go -C engine run . --script ../examples/scenes/feature-showcase.json --width 800 --height 800 --samples 2000 --exposure 2.1 --tone-mapping reinhard --gamma 2.2
 ```
 
 ## Legacy Material Fields
@@ -320,8 +319,10 @@ Use `surface` and `emission` blocks instead.
 ## Current Showcase Scenes
 
 ```text
-examples/scenes/neutral-dispersion-slit-test.json
 examples/scenes/feature-showcase.json
+examples/scenes/dispersion-three-balls.json
+examples/scenes/prism refraction.json
+examples/scenes/true-spectral-prism-dispersion-200spp.json
 ```
 
 `feature-showcase.json` exercises Lambert color bleeding, constant emission, specular reflection, constant-IOR glass, Cauchy-dispersive glass, GGX rough conductor, spectral sampling, and tone-mapped PNG output.
