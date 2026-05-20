@@ -1,9 +1,8 @@
 package microfacet
 
 import (
+	"github.com/Algo2147483647/ray/engine/model/optics"
 	"math"
-
-	"github.com/Algo2147483647/ray/engine/model/material/core"
 )
 
 func FresnelDielectric(cosThetaI, etaI, etaT float64) float64 {
@@ -26,7 +25,7 @@ func FresnelDielectric(cosThetaI, etaI, etaT float64) float64 {
 	return (rParallel*rParallel + rPerpendicular*rPerpendicular) * 0.5
 }
 
-func FresnelConductor(cosThetaI float64, eta, k core.Spectrum) core.Spectrum {
+func FresnelConductor(cosThetaI float64, eta, k optics.Spectrum) optics.Spectrum {
 	if eta.HasSamples() || k.HasSamples() {
 		count := eta.SampleCount()
 		if k.SampleCount() > count {
@@ -36,16 +35,16 @@ func FresnelConductor(cosThetaI float64, eta, k core.Spectrum) core.Spectrum {
 		for i := 0; i < count; i++ {
 			samples[i] = fresnelConductorChannel(cosThetaI, spectrumSampleAt(eta, i), spectrumSampleAt(k, i))
 		}
-		return core.NewSampledSpectrum(samples)
+		return optics.NewSampledSpectrum(samples)
 	}
-	return core.NewSpectrum(
+	return optics.NewSpectrum(
 		fresnelConductorChannel(cosThetaI, eta.RGBChannel(0), k.RGBChannel(0)),
 		fresnelConductorChannel(cosThetaI, eta.RGBChannel(1), k.RGBChannel(1)),
 		fresnelConductorChannel(cosThetaI, eta.RGBChannel(2), k.RGBChannel(2)),
 	)
 }
 
-func spectrumSampleAt(s core.Spectrum, i int) float64 {
+func spectrumSampleAt(s optics.Spectrum, i int) float64 {
 	if i < len(s.Samples) {
 		return s.Samples[i]
 	}

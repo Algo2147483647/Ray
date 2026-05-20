@@ -1,64 +1,64 @@
 package bxdf
 
 import (
-	"github.com/Algo2147483647/ray/engine/model/material/core/spectrum_parameter"
+	"github.com/Algo2147483647/ray/engine/model/optics"
+	"github.com/Algo2147483647/ray/engine/model/optics/spectrum_parameter"
+	"github.com/Algo2147483647/ray/engine/utils/maths"
 	"math"
-
-	"github.com/Algo2147483647/ray/engine/model/material/core"
 )
 
 type Lambert struct {
-	Albedo core.SpectralParameter
+	Albedo optics.SpectralParameter
 }
 
-func NewLambert(albedo core.Spectrum) Lambert {
+func NewLambert(albedo optics.Spectrum) Lambert {
 	return NewLambertParameter(spectrum_parameter.NewRGBParameter(albedo))
 }
 
-func NewLambertParameter(albedo core.SpectralParameter) Lambert {
+func NewLambertParameter(albedo optics.SpectralParameter) Lambert {
 	return Lambert{Albedo: albedo}
 }
 
-func (l Lambert) Eval(ctx core.ShadingContext, wi, wo core.Direction) core.Spectrum {
-	if !core.IsUpperHemisphere(wi) || !core.IsUpperHemisphere(wo) {
-		return core.Spectrum{}
+func (l Lambert) Eval(ctx ShadingContext, wi, wo maths.Direction) optics.Spectrum {
+	if !maths.IsUpperHemisphere(wi) || !maths.IsUpperHemisphere(wo) {
+		return optics.Spectrum{}
 	}
 	return l.Albedo.Eval(ctx).MulScalar(1 / math.Pi)
 }
 
-func (l Lambert) Sample(ctx core.ShadingContext, wo core.Direction, u core.Sample2D) core.BxDFSample {
-	if !core.IsUpperHemisphere(wo) {
-		return core.BxDFSample{}
+func (l Lambert) Sample(ctx ShadingContext, wo maths.Direction, u maths.Sample2D) BxDFSample {
+	if !maths.IsUpperHemisphere(wo) {
+		return BxDFSample{}
 	}
 
-	wi := core.CosineSampleHemisphere(u)
-	return core.BxDFSample{
+	wi := maths.CosineSampleHemisphere(u)
+	return BxDFSample{
 		Wi:    wi,
 		F:     l.Eval(ctx, wi, wo),
 		PDF:   l.PDF(ctx, wi, wo),
-		Flags: core.DeltaNone,
+		Flags: DeltaNone,
 	}
 }
 
-func (l Lambert) PDF(_ core.ShadingContext, wi, wo core.Direction) float64 {
-	if !core.IsUpperHemisphere(wi) || !core.IsUpperHemisphere(wo) {
+func (l Lambert) PDF(_ ShadingContext, wi, wo maths.Direction) float64 {
+	if !maths.IsUpperHemisphere(wi) || !maths.IsUpperHemisphere(wo) {
 		return 0
 	}
-	return core.CosineHemispherePDF(wi)
+	return maths.CosineHemispherePDF(wi)
 }
 
-func (l Lambert) AlbedoBound(core.ShadingContext) core.Spectrum {
+func (l Lambert) AlbedoBound(ShadingContext) optics.Spectrum {
 	return l.Albedo.Bounds().Max
 }
 
-func (l Lambert) RoughnessInfo(core.ShadingContext) core.RoughnessInfo {
-	return core.RoughnessInfo{
+func (l Lambert) RoughnessInfo(ShadingContext) RoughnessInfo {
+	return RoughnessInfo{
 		IsDelta: false,
 		AlphaX:  1,
 		AlphaY:  1,
 	}
 }
 
-func (l Lambert) DeltaFlags() core.DeltaFlags {
-	return core.DeltaNone
+func (l Lambert) DeltaFlags() DeltaFlags {
+	return DeltaNone
 }

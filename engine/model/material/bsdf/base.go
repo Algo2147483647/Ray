@@ -1,7 +1,9 @@
 package bsdf
 
-import "github.com/Algo2147483647/ray/engine/model/material/core"
+import (
+	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
+)
 
 type BSDF interface {
-	core.Scattering
+	bxdf.Scattering
 }

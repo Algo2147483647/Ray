@@ -1,20 +1,21 @@
 package bxdf
 
 import (
-	"github.com/Algo2147483647/ray/engine/model/material/core"
+	"github.com/Algo2147483647/ray/engine/model/material/medium"
+	"github.com/Algo2147483647/ray/engine/model/optics"
 	"github.com/Algo2147483647/ray/engine/utils/maths"
 )
 
 type BxDF interface {
-	core.Scattering
+	Scattering
 }
 
 type ParameterGradients struct {
-	Values map[string]core.Spectrum
+	Values map[string]optics.Spectrum
 }
 
 type DifferentiableBxDF interface {
-	ParameterDerivatives(ctx core.ShadingContext, wi, wo maths.Direction) ParameterGradients
+	ParameterDerivatives(ctx ShadingContext, wi, wo maths.Direction) ParameterGradients
 }
 
 type TransportMode int
@@ -56,26 +57,26 @@ type ShadingContext struct {
 	WavelengthPDF  float64
 	EtaIncident    float64
 	EtaTransmit    float64
-	IncidentMedium MediumID
-	TransmitMedium MediumID
+	IncidentMedium medium.MediumID
+	TransmitMedium medium.MediumID
 	Entering       bool
 }
 
 type BxDFSample struct {
-	Wi             Direction
-	F              Spectrum
+	Wi             maths.Direction
+	F              optics.Spectrum
 	PDF            float64
 	Flags          DeltaFlags
 	Eta            float64
 	WavelengthNM   float64
-	TransmitMedium MediumID
+	TransmitMedium medium.MediumID
 }
 
 type Scattering interface {
-	Eval(ctx ShadingContext, wi, wo Direction) Spectrum             // Evaluates the scattering function value for an incoming direction wi and outgoing direction wo.
-	Sample(ctx ShadingContext, wo Direction, u Sample2D) BxDFSample // Samples an incoming direction given an outgoing direction and a 2D random sample.
-	PDF(ctx ShadingContext, wi, wo Direction) float64               // Returns the probability density of sampling wi given wo.
-	AlbedoBound(ctx ShadingContext) Spectrum                        // Returns an upper bound estimate of the scattering albedo.
-	RoughnessInfo(ctx ShadingContext) RoughnessInfo                 // Returns roughness-related metadata for the scattering model.
-	DeltaFlags() DeltaFlags                                         // Returns flags describing whether the scattering contains delta/discrete components.
+	Eval(ctx ShadingContext, wi, wo maths.Direction) optics.Spectrum            // Evaluates the scattering function value for an incoming direction wi and outgoing direction wo.
+	Sample(ctx ShadingContext, wo maths.Direction, u maths.Sample2D) BxDFSample // Samples an incoming direction given an outgoing direction and a 2D random sample.
+	PDF(ctx ShadingContext, wi, wo maths.Direction) float64                     // Returns the probability density of sampling wi given wo.
+	AlbedoBound(ctx ShadingContext) optics.Spectrum                             // Returns an upper bound estimate of the scattering albedo.
+	RoughnessInfo(ctx ShadingContext) RoughnessInfo                             // Returns roughness-related metadata for the scattering model.
+	DeltaFlags() DeltaFlags                                                     // Returns flags describing whether the scattering contains delta/discrete components.
 }

@@ -1,14 +1,15 @@
 package bsdf
 
 import (
+	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
+	"github.com/Algo2147483647/ray/engine/model/optics"
+	"github.com/Algo2147483647/ray/engine/utils/maths"
 	"math"
-
-	"github.com/Algo2147483647/ray/engine/model/material/core"
 )
 
 type WeightedBxDF struct {
 	Weight float64
-	BxDF   core.BxDF
+	BxDF   bxdf.BxDF
 }
 
 type WeightedMixture struct {
@@ -19,13 +20,13 @@ func NewWeightedMixture(components ...WeightedBxDF) WeightedMixture {
 	return WeightedMixture{Components: components}
 }
 
-func (m WeightedMixture) Eval(ctx core.ShadingContext, wi, wo core.Direction) core.Spectrum {
+func (m WeightedMixture) Eval(ctx bxdf.ShadingContext, wi, wo maths.Direction) optics.Spectrum {
 	total := m.totalWeight()
 	if total <= 0 {
-		return core.Spectrum{}
+		return optics.Spectrum{}
 	}
 
-	result := core.Spectrum{}
+	result := optics.Spectrum{}
 	for _, component := range m.Components {
 		if component.BxDF == nil || component.Weight <= 0 {
 			continue
@@ -35,19 +36,19 @@ func (m WeightedMixture) Eval(ctx core.ShadingContext, wi, wo core.Direction) co
 	return result
 }
 
-func (m WeightedMixture) Sample(ctx core.ShadingContext, wo core.Direction, u core.Sample2D) core.BxDFSample {
+func (m WeightedMixture) Sample(ctx bxdf.ShadingContext, wo maths.Direction, u maths.Sample2D) bxdf.BxDFSample {
 	total := m.totalWeight()
 	if total <= 0 {
-		return core.BxDFSample{}
+		return bxdf.BxDFSample{}
 	}
 
 	index, remappedU, ok := m.selectComponent(u.U, total)
 	if !ok {
-		return core.BxDFSample{}
+		return bxdf.BxDFSample{}
 	}
 
 	selected := m.Components[index].BxDF
-	sample := selected.Sample(ctx, wo, core.Sample2D{U: remappedU, V: u.V})
+	sample := selected.Sample(ctx, wo, maths.Sample2D{U: remappedU, V: u.V})
 	if sample.PDF == 0 {
 		return sample
 	}
@@ -58,7 +59,7 @@ func (m WeightedMixture) Sample(ctx core.ShadingContext, wo core.Direction, u co
 	return sample
 }
 
-func (m WeightedMixture) PDF(ctx core.ShadingContext, wi, wo core.Direction) float64 {
+func (m WeightedMixture) PDF(ctx bxdf.ShadingContext, wi, wo maths.Direction) float64 {
 	total := m.totalWeight()
 	if total <= 0 {
 		return 0
@@ -74,13 +75,13 @@ func (m WeightedMixture) PDF(ctx core.ShadingContext, wi, wo core.Direction) flo
 	return pdf
 }
 
-func (m WeightedMixture) AlbedoBound(ctx core.ShadingContext) core.Spectrum {
+func (m WeightedMixture) AlbedoBound(ctx bxdf.ShadingContext) optics.Spectrum {
 	total := m.totalWeight()
 	if total <= 0 {
-		return core.Spectrum{}
+		return optics.Spectrum{}
 	}
 
-	result := core.Spectrum{}
+	result := optics.Spectrum{}
 	for _, component := range m.Components {
 		if component.BxDF == nil || component.Weight <= 0 {
 			continue
@@ -90,8 +91,8 @@ func (m WeightedMixture) AlbedoBound(ctx core.ShadingContext) core.Spectrum {
 	return result
 }
 
-func (m WeightedMixture) RoughnessInfo(ctx core.ShadingContext) core.RoughnessInfo {
-	info := core.RoughnessInfo{IsDelta: true}
+func (m WeightedMixture) RoughnessInfo(ctx bxdf.ShadingContext) bxdf.RoughnessInfo {
+	info := bxdf.RoughnessInfo{IsDelta: true}
 	for _, component := range m.Components {
 		if component.BxDF == nil || component.Weight <= 0 {
 			continue
@@ -104,8 +105,8 @@ func (m WeightedMixture) RoughnessInfo(ctx core.ShadingContext) core.RoughnessIn
 	return info
 }
 
-func (m WeightedMixture) DeltaFlags() core.DeltaFlags {
-	flags := core.DeltaNone
+func (m WeightedMixture) DeltaFlags() bxdf.DeltaFlags {
+	flags := bxdf.DeltaNone
 	for _, component := range m.Components {
 		if component.BxDF == nil || component.Weight <= 0 {
 			continue

@@ -1,23 +1,25 @@
 package emission
 
 import (
-	"github.com/Algo2147483647/ray/engine/model/material/core"
+	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
+	"github.com/Algo2147483647/ray/engine/model/optics"
 	"github.com/Algo2147483647/ray/engine/model/optics/spectrum_parameter"
+	"github.com/Algo2147483647/ray/engine/utils/maths"
 )
 
 type Constant struct {
-	Radiance core.SpectralParameter
+	Radiance optics.SpectralParameter
 }
 
-func NewConstant(color core.Spectrum) Constant {
+func NewConstant(color optics.Spectrum) Constant {
 	return NewConstantParameter(spectrum_parameter.NewRGBParameter(color))
 }
 
-func NewConstantParameter(radiance core.SpectralParameter) Constant {
+func NewConstantParameter(radiance optics.SpectralParameter) Constant {
 	return Constant{Radiance: radiance}
 }
 
-func (e Constant) Emit(ctx core.ShadingContext, _ core.Direction) core.Spectrum {
+func (e Constant) Emit(ctx bxdf.ShadingContext, _ maths.Direction) optics.Spectrum {
 	return e.Radiance.Eval(ctx)
 }
 

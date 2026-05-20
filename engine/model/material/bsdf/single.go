@@ -2,55 +2,56 @@ package bsdf
 
 import (
 	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
-	"github.com/Algo2147483647/ray/engine/model/material/core"
+	"github.com/Algo2147483647/ray/engine/model/optics"
+	"github.com/Algo2147483647/ray/engine/utils/maths"
 )
 
 type Single struct {
 	BxDF bxdf.BxDF
 }
 
-func NewSingle(bxdf core.BxDF) Single {
+func NewSingle(bxdf bxdf.BxDF) Single {
 	return Single{BxDF: bxdf}
 }
 
-func (s Single) Eval(ctx core.ShadingContext, wi, wo core.Direction) core.Spectrum {
+func (s Single) Eval(ctx bxdf.ShadingContext, wi, wo maths.Direction) optics.Spectrum {
 	if s.BxDF == nil {
-		return core.Spectrum{}
+		return optics.Spectrum{}
 	}
 	return s.BxDF.Eval(ctx, wi, wo)
 }
 
-func (s Single) Sample(ctx core.ShadingContext, wo core.Direction, u core.Sample2D) core.BxDFSample {
+func (s Single) Sample(ctx bxdf.ShadingContext, wo maths.Direction, u maths.Sample2D) bxdf.BxDFSample {
 	if s.BxDF == nil {
-		return core.BxDFSample{}
+		return bxdf.BxDFSample{}
 	}
 	return s.BxDF.Sample(ctx, wo, u)
 }
 
-func (s Single) PDF(ctx core.ShadingContext, wi, wo core.Direction) float64 {
+func (s Single) PDF(ctx bxdf.ShadingContext, wi, wo maths.Direction) float64 {
 	if s.BxDF == nil {
 		return 0
 	}
 	return s.BxDF.PDF(ctx, wi, wo)
 }
 
-func (s Single) AlbedoBound(ctx core.ShadingContext) core.Spectrum {
+func (s Single) AlbedoBound(ctx bxdf.ShadingContext) optics.Spectrum {
 	if s.BxDF == nil {
-		return core.Spectrum{}
+		return optics.Spectrum{}
 	}
 	return s.BxDF.AlbedoBound(ctx)
 }
 
-func (s Single) RoughnessInfo(ctx core.ShadingContext) core.RoughnessInfo {
+func (s Single) RoughnessInfo(ctx bxdf.ShadingContext) bxdf.RoughnessInfo {
 	if s.BxDF == nil {
-		return core.RoughnessInfo{}
+		return bxdf.RoughnessInfo{}
 	}
 	return s.BxDF.RoughnessInfo(ctx)
 }
 
-func (s Single) DeltaFlags() core.DeltaFlags {
+func (s Single) DeltaFlags() bxdf.DeltaFlags {
 	if s.BxDF == nil {
-		return core.DeltaNone
+		return bxdf.DeltaNone
 	}
 	return s.BxDF.DeltaFlags()
 }

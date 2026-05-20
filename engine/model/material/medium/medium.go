@@ -2,17 +2,17 @@ package medium
 
 import (
 	"fmt"
-
-	"github.com/Algo2147483647/ray/engine/model/material/core"
-	"github.com/Algo2147483647/ray/engine/model/material/ior"
+	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
+	"github.com/Algo2147483647/ray/engine/model/optics"
+	"github.com/Algo2147483647/ray/engine/model/optics/spectrum_parameter"
 )
 
 type Medium interface {
 	ID() MediumID
 	Name() string
-	IOR(ctx core.ShadingContext) float64
-	SigmaA(ctx core.ShadingContext) core.Spectrum
-	SigmaS(ctx core.ShadingContext) core.Spectrum
+	IOR(ctx bxdf.ShadingContext) float64
+	SigmaA(ctx bxdf.ShadingContext) core.Spectrum
+	SigmaS(ctx bxdf.ShadingContext) core.Spectrum
 	IsVacuum() bool
 }
 
@@ -26,20 +26,20 @@ const (
 type Homogeneous struct {
 	id     MediumID
 	name   string
-	eta    ior.Model
-	sigmaA core.SpectralParameter
-	sigmaS core.SpectralParameter
+	eta    Model
+	sigmaA optics.SpectralParameter
+	sigmaS optics.SpectralParameter
 }
 
-func NewHomogeneous(id MediumID, name string, eta ior.Model, sigmaA, sigmaS core.SpectralParameter) Homogeneous {
+func NewHomogeneous(id MediumID, name string, eta Model, sigmaA, sigmaS optics.SpectralParameter) Homogeneous {
 	if eta == nil {
-		eta = ior.NewConstant(1)
+		eta = NewConstant(1)
 	}
 	if sigmaA == nil {
-		sigmaA = core.NewConstantParameter(0)
+		sigmaA = spectrum_parameter.NewConstantParameter(0)
 	}
 	if sigmaS == nil {
-		sigmaS = core.NewConstantParameter(0)
+		sigmaS = spectrum_parameter.NewConstantParameter(0)
 	}
 	return Homogeneous{
 		id:     id,
@@ -70,11 +70,11 @@ func (h Homogeneous) IOR(ctx core.ShadingContext) float64 {
 	return eta
 }
 
-func (h Homogeneous) SigmaA(ctx core.ShadingContext) core.Spectrum {
+func (h Homogeneous) SigmaA(ctx core.ShadingContext) optics.Spectrum {
 	return h.sigmaA.Eval(ctx)
 }
 
-func (h Homogeneous) SigmaS(ctx core.ShadingContext) core.Spectrum {
+func (h Homogeneous) SigmaS(ctx core.ShadingContext) optics.Spectrum {
 	return h.sigmaS.Eval(ctx)
 }
 

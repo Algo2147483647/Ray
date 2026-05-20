@@ -17,7 +17,7 @@ func NewBlackbodyParameter(temperature, scale float64) BlackbodyParameter {
 	}
 }
 
-func (p BlackbodyParameter) Eval(ctx core.ShadingContext) core.Spectrum {
+func (p BlackbodyParameter) Eval(ctx core.ShadingContext) optics.Spectrum {
 	if p.Temperature <= 0 || p.Scale <= 0 {
 		return core.Spectrum{}
 	}
@@ -66,7 +66,7 @@ func blackbodyPower(wavelengthNM, temperature float64) float64 {
 	return 1 / denominator
 }
 
-func ApproximateBlackbodyRGB(temperature float64) core.Spectrum {
+func ApproximateBlackbodyRGB(temperature float64) optics.Spectrum {
 	temp := core.Clamp(temperature/100, 10, 400)
 	var r, g, b float64
 

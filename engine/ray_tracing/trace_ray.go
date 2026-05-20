@@ -63,7 +63,7 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *renderray.Ray, level
 		return ray.Color
 	}
 
-	sample := obj.Material.Surface.Sample(ctx, woLocal, core.Sample2D{
+	sample := obj.Material.Surface.Sample(ctx, woLocal, maths.Sample2D{
 		U: rand.Float64(),
 		V: rand.Float64(),
 	})
@@ -143,10 +143,10 @@ func negateVec(v *mat.VecDense) *mat.VecDense {
 	return res
 }
 
-func worldToLocal(v, normal *mat.VecDense) (core.Direction, bool) {
+func worldToLocal(v, normal *mat.VecDense) (maths.Direction, bool) {
 	tangent, bitangent, ok := tangentFrame(normal)
 	if !ok {
-		return core.Direction{}, false
+		return maths.Direction{}, false
 	}
 	return core.NewDirection(
 		mat.Dot(v, tangent),
@@ -155,10 +155,10 @@ func worldToLocal(v, normal *mat.VecDense) (core.Direction, bool) {
 	), true
 }
 
-func worldToLocalNegated(v, normal *mat.VecDense) (core.Direction, bool) {
+func worldToLocalNegated(v, normal *mat.VecDense) (maths.Direction, bool) {
 	tangent, bitangent, ok := tangentFrame(normal)
 	if !ok {
-		return core.Direction{}, false
+		return maths.Direction{}, false
 	}
 	return core.NewDirection(
 		-mat.Dot(v, tangent),
@@ -167,7 +167,7 @@ func worldToLocalNegated(v, normal *mat.VecDense) (core.Direction, bool) {
 	), true
 }
 
-func localToWorld(v core.Direction, normal *mat.VecDense) *mat.VecDense {
+func localToWorld(v maths.Direction, normal *mat.VecDense) *mat.VecDense {
 	res := mat.NewVecDense(normal.Len(), nil)
 	if !localToWorldInto(res, v, normal) {
 		return res
@@ -175,7 +175,7 @@ func localToWorld(v core.Direction, normal *mat.VecDense) *mat.VecDense {
 	return res
 }
 
-func localToWorldInto(res *mat.VecDense, v core.Direction, normal *mat.VecDense) bool {
+func localToWorldInto(res *mat.VecDense, v maths.Direction, normal *mat.VecDense) bool {
 	tangent, bitangent, ok := tangentFrame(normal)
 	if !ok {
 		return false

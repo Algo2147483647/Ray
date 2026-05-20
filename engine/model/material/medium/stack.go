@@ -5,13 +5,13 @@ import "github.com/Algo2147483647/ray/engine/model/material/core"
 const baseMediumPriority = -1 << 30
 
 type StackEntry struct {
-	ID       core.MediumID
+	ID       MediumID
 	Priority int
 }
 
 type Transition struct {
-	Incident core.MediumID
-	Transmit core.MediumID
+	Incident MediumID
+	Transmit MediumID
 	Entering bool
 	Thin     bool
 }
@@ -20,13 +20,13 @@ type Stack struct {
 	entries []StackEntry
 }
 
-func NewStack(initial core.MediumID) Stack {
+func NewStack(initial MediumID) Stack {
 	var s Stack
 	s.Reset(initial)
 	return s
 }
 
-func (s *Stack) Reset(initial core.MediumID) {
+func (s *Stack) Reset(initial MediumID) {
 	s.entries = s.entries[:0]
 	if initial == core.MediumNone {
 		initial = core.MediumAir
@@ -34,7 +34,7 @@ func (s *Stack) Reset(initial core.MediumID) {
 	s.entries = append(s.entries, StackEntry{ID: initial, Priority: baseMediumPriority})
 }
 
-func (s Stack) Current() core.MediumID {
+func (s Stack) Current() MediumID {
 	if len(s.entries) == 0 {
 		return core.MediumAir
 	}
@@ -47,18 +47,18 @@ func (s Stack) Current() core.MediumID {
 	return best.ID
 }
 
-func (s *Stack) Push(id core.MediumID) {
+func (s *Stack) Push(id MediumID) {
 	s.PushWithPriority(id, 0)
 }
 
-func (s *Stack) PushWithPriority(id core.MediumID, priority int) {
+func (s *Stack) PushWithPriority(id MediumID, priority int) {
 	if id == core.MediumNone {
 		return
 	}
 	s.entries = append(s.entries, StackEntry{ID: id, Priority: priority})
 }
 
-func (s *Stack) Remove(id core.MediumID) bool {
+func (s *Stack) Remove(id MediumID) bool {
 	if id == core.MediumNone {
 		return false
 	}
@@ -74,7 +74,7 @@ func (s *Stack) Remove(id core.MediumID) bool {
 	return false
 }
 
-func (s *Stack) RemoveWithPriority(id core.MediumID, priority int) bool {
+func (s *Stack) RemoveWithPriority(id MediumID, priority int) bool {
 	if id == core.MediumNone {
 		return false
 	}
@@ -139,7 +139,7 @@ func (s Stack) ResolveTransition(boundary Boundary, entering bool) Transition {
 	}
 }
 
-func (s Stack) Contains(id core.MediumID) bool {
+func (s Stack) Contains(id MediumID) bool {
 	for _, entry := range s.entries {
 		if entry.ID == id {
 			return true
@@ -154,8 +154,8 @@ func (s Stack) Clone() Stack {
 	return Stack{entries: entries}
 }
 
-func (s Stack) Entries() []core.MediumID {
-	ids := make([]core.MediumID, len(s.entries))
+func (s Stack) Entries() []MediumID {
+	ids := make([]MediumID, len(s.entries))
 	for i, entry := range s.entries {
 		ids[i] = entry.ID
 	}

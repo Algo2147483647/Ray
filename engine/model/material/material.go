@@ -2,7 +2,9 @@ package material
 
 import (
 	"github.com/Algo2147483647/ray/engine/model/material/bsdf"
-	"github.com/Algo2147483647/ray/engine/model/material/core"
+	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
+	"github.com/Algo2147483647/ray/engine/model/optics"
+	"github.com/Algo2147483647/ray/engine/utils/maths"
 )
 
 type Material struct {
@@ -12,7 +14,7 @@ type Material struct {
 }
 
 type Emitter interface {
-	Emit(ctx core.ShadingContext, wo core.Direction) core.Spectrum
+	Emit(ctx bxdf.ShadingContext, wo maths.Direction) optics.Spectrum
 	IsDelta() bool
 }
 
@@ -20,7 +22,7 @@ type MaterialMetadata struct {
 	Name                     string
 	Units                    string
 	ColorSpace               string
-	SpectrumMode             core.SpectrumMode
+	SpectrumMode             bxdf.SpectrumMode
 	NonReciprocal            bool
 	DifferentiabilitySupport bool
 	ParameterRanges          map[string]ParameterRange

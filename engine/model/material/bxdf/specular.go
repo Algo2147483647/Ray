@@ -1,73 +1,74 @@
 package bxdf
 
 import (
+	"github.com/Algo2147483647/ray/engine/model/material/medium"
+	"github.com/Algo2147483647/ray/engine/model/optics"
+	"github.com/Algo2147483647/ray/engine/model/optics/spectrum_parameter"
+	"github.com/Algo2147483647/ray/engine/utils/maths"
 	"math"
-
-	"github.com/Algo2147483647/ray/engine/model/material/core"
-	"github.com/Algo2147483647/ray/engine/model/material/ior"
 )
 
 type SpecularReflection struct {
-	Reflectance core.SpectralParameter
+	Reflectance optics.SpectralParameter
 }
 
-func NewSpecularReflection(reflectance core.Spectrum) SpecularReflection {
-	return NewSpecularReflectionParameter(core.NewRGBParameter(reflectance))
+func NewSpecularReflection(reflectance optics.Spectrum) SpecularReflection {
+	return NewSpecularReflectionParameter(spectrum_parameter.NewRGBParameter(reflectance))
 }
 
-func NewSpecularReflectionParameter(reflectance core.SpectralParameter) SpecularReflection {
+func NewSpecularReflectionParameter(reflectance optics.SpectralParameter) SpecularReflection {
 	return SpecularReflection{Reflectance: reflectance}
 }
 
-func (s SpecularReflection) Eval(core.ShadingContext, core.Direction, core.Direction) core.Spectrum {
-	return core.Spectrum{}
+func (s SpecularReflection) Eval(ShadingContext, maths.Direction, maths.Direction) optics.Spectrum {
+	return optics.Spectrum{}
 }
 
-func (s SpecularReflection) Sample(ctx core.ShadingContext, wo core.Direction, _ core.Sample2D) core.BxDFSample {
-	if !core.IsUpperHemisphere(wo) {
-		return core.BxDFSample{}
+func (s SpecularReflection) Sample(ctx ShadingContext, wo maths.Direction, _ maths.Sample2D) BxDFSample {
+	if !maths.IsUpperHemisphere(wo) {
+		return BxDFSample{}
 	}
 
 	wi := reflectLocal(wo)
-	cos := core.AbsCosTheta(wi)
-	return core.BxDFSample{
+	cos := maths.AbsCosTheta(wi)
+	return BxDFSample{
 		Wi:    wi,
 		F:     s.Reflectance.Eval(ctx).DivScalar(cos),
 		PDF:   1,
-		Flags: core.DeltaReflection,
+		Flags: DeltaReflection,
 	}
 }
 
-func (s SpecularReflection) PDF(core.ShadingContext, core.Direction, core.Direction) float64 {
+func (s SpecularReflection) PDF(ShadingContext, maths.Direction, maths.Direction) float64 {
 	return 0
 }
 
-func (s SpecularReflection) AlbedoBound(core.ShadingContext) core.Spectrum {
+func (s SpecularReflection) AlbedoBound(ShadingContext) optics.Spectrum {
 	return s.Reflectance.Bounds().Max
 }
 
-func (s SpecularReflection) RoughnessInfo(core.ShadingContext) core.RoughnessInfo {
-	return core.RoughnessInfo{IsDelta: true}
+func (s SpecularReflection) RoughnessInfo(ShadingContext) RoughnessInfo {
+	return RoughnessInfo{IsDelta: true}
 }
 
-func (s SpecularReflection) DeltaFlags() core.DeltaFlags {
-	return core.DeltaReflection
+func (s SpecularReflection) DeltaFlags() DeltaFlags {
+	return DeltaReflection
 }
 
 type SpecularDielectric struct {
-	Reflectance   core.SpectralParameter
-	Transmittance core.SpectralParameter
+	Reflectance   optics.SpectralParameter
+	Transmittance optics.SpectralParameter
 	EtaOutside    float64
-	InsideIOR     ior.Model
+	InsideIOR     medium.Model
 }
 
-func NewSpecularDielectric(reflectance, transmittance core.Spectrum, etaOutside float64, insideIOR ior.Model) SpecularDielectric {
-	return NewSpecularDielectricParameter(core.NewRGBParameter(reflectance), core.NewRGBParameter(transmittance), etaOutside, insideIOR)
+func NewSpecularDielectric(reflectance, transmittance optics.Spectrum, etaOutside float64, insideIOR medium.Model) SpecularDielectric {
+	return NewSpecularDielectricParameter(spectrum_parameter.NewRGBParameter(reflectance), spectrum_parameter.NewRGBParameter(transmittance), etaOutside, insideIOR)
 }
 
-func NewSpecularDielectricParameter(reflectance, transmittance core.SpectralParameter, etaOutside float64, insideIOR ior.Model) SpecularDielectric {
+func NewSpecularDielectricParameter(reflectance, transmittance optics.SpectralParameter, etaOutside float64, insideIOR medium.Model) SpecularDielectric {
 	if insideIOR == nil {
-		insideIOR = ior.NewConstant(1.5)
+		insideIOR = medium.NewConstant(1.5)
 	}
 	return SpecularDielectric{
 		Reflectance:   reflectance,
@@ -77,24 +78,24 @@ func NewSpecularDielectricParameter(reflectance, transmittance core.SpectralPara
 	}
 }
 
-func NewSpecularDielectricConstant(reflectance, transmittance core.Spectrum, etaOutside, etaInside float64) SpecularDielectric {
-	return NewSpecularDielectric(reflectance, transmittance, etaOutside, ior.NewConstant(etaInside))
+func NewSpecularDielectricConstant(reflectance, transmittance optics.Spectrum, etaOutside, etaInside float64) SpecularDielectric {
+	return NewSpecularDielectric(reflectance, transmittance, etaOutside, medium.NewConstant(etaInside))
 }
 
-func (s SpecularDielectric) Eval(core.ShadingContext, core.Direction, core.Direction) core.Spectrum {
-	return core.Spectrum{}
+func (s SpecularDielectric) Eval(ShadingContext, maths.Direction, maths.Direction) optics.Spectrum {
+	return optics.Spectrum{}
 }
 
-func (s SpecularDielectric) Sample(ctx core.ShadingContext, wo core.Direction, u core.Sample2D) core.BxDFSample {
+func (s SpecularDielectric) Sample(ctx ShadingContext, wo maths.Direction, u maths.Sample2D) BxDFSample {
 	if wo.Z == 0 {
-		return core.BxDFSample{}
+		return BxDFSample{}
 	}
 
 	insideIOR := s.insideIOR()
 	wavelengthNM, spectralSample := s.resolveWavelength(ctx)
 	etaInside := insideIOR.Evaluate(wavelengthNM)
-	if !ior.IsValidEta(s.EtaOutside) || !ior.IsValidEta(etaInside) {
-		return core.BxDFSample{}
+	if !medium.IsValidEta(s.EtaOutside) || !medium.IsValidEta(etaInside) {
+		return BxDFSample{}
 	}
 
 	etaI, etaT := s.resolveEta(ctx, etaInside)
@@ -102,12 +103,12 @@ func (s SpecularDielectric) Sample(ctx core.ShadingContext, wo core.Direction, u
 	fresnel := FresnelDielectric(math.Abs(wo.Z), etaI, etaT)
 	if u.U < fresnel {
 		wi := reflectLocal(wo)
-		cos := core.AbsCosTheta(wi)
-		sample := core.BxDFSample{
+		cos := maths.AbsCosTheta(wi)
+		sample := BxDFSample{
 			Wi:    wi,
 			F:     s.Reflectance.Eval(ctx).MulScalar(fresnel).DivScalar(cos),
 			PDF:   fresnel,
-			Flags: core.DeltaReflection,
+			Flags: DeltaReflection,
 			Eta:   etaI,
 		}
 		if spectralSample {
@@ -120,12 +121,12 @@ func (s SpecularDielectric) Sample(ctx core.ShadingContext, wo core.Direction, u
 	wi, ok := refractLocal(wo, eta)
 	if !ok {
 		wi := reflectLocal(wo)
-		cos := core.AbsCosTheta(wi)
-		sample := core.BxDFSample{
+		cos := maths.AbsCosTheta(wi)
+		sample := BxDFSample{
 			Wi:    wi,
 			F:     s.Reflectance.Eval(ctx).DivScalar(cos),
 			PDF:   1,
-			Flags: core.DeltaReflection,
+			Flags: DeltaReflection,
 			Eta:   etaI,
 		}
 		if spectralSample {
@@ -134,12 +135,12 @@ func (s SpecularDielectric) Sample(ctx core.ShadingContext, wo core.Direction, u
 		return sample
 	}
 
-	cos := core.AbsCosTheta(wi)
-	sample := core.BxDFSample{
+	cos := maths.AbsCosTheta(wi)
+	sample := BxDFSample{
 		Wi:             wi,
 		F:              s.Transmittance.Eval(ctx).MulScalar(1 - fresnel).DivScalar(cos),
 		PDF:            1 - fresnel,
-		Flags:          core.DeltaTransmission,
+		Flags:          DeltaTransmission,
 		Eta:            etaT,
 		TransmitMedium: ctx.TransmitMedium,
 	}
@@ -149,37 +150,37 @@ func (s SpecularDielectric) Sample(ctx core.ShadingContext, wo core.Direction, u
 	return sample
 }
 
-func (s SpecularDielectric) PDF(core.ShadingContext, core.Direction, core.Direction) float64 {
+func (s SpecularDielectric) PDF(ShadingContext, maths.Direction, maths.Direction) float64 {
 	return 0
 }
 
-func (s SpecularDielectric) AlbedoBound(core.ShadingContext) core.Spectrum {
+func (s SpecularDielectric) AlbedoBound(ShadingContext) optics.Spectrum {
 	reflectance := s.Reflectance.Bounds().Max
 	transmittance := s.Transmittance.Bounds().Max
-	return core.NewSpectrum(
+	return optics.NewSpectrum(
 		math.Max(reflectance.RGBChannel(0), transmittance.RGBChannel(0)),
 		math.Max(reflectance.RGBChannel(1), transmittance.RGBChannel(1)),
 		math.Max(reflectance.RGBChannel(2), transmittance.RGBChannel(2)),
 	)
 }
 
-func (s SpecularDielectric) RoughnessInfo(core.ShadingContext) core.RoughnessInfo {
-	return core.RoughnessInfo{IsDelta: true}
+func (s SpecularDielectric) RoughnessInfo(ShadingContext) RoughnessInfo {
+	return RoughnessInfo{IsDelta: true}
 }
 
-func (s SpecularDielectric) DeltaFlags() core.DeltaFlags {
-	return core.DeltaReflection | core.DeltaTransmission
+func (s SpecularDielectric) DeltaFlags() DeltaFlags {
+	return DeltaReflection | DeltaTransmission
 }
 
-func (s SpecularDielectric) resolveWavelength(ctx core.ShadingContext) (float64, bool) {
+func (s SpecularDielectric) resolveWavelength(ctx ShadingContext) (float64, bool) {
 	if ctx.WavelengthNM > 0 {
 		return ctx.WavelengthNM, true
 	}
-	return ior.DefaultWavelengthNM, false
+	return medium.DefaultWavelengthNM, false
 }
 
-func (s SpecularDielectric) resolveEta(ctx core.ShadingContext, etaInside float64) (float64, float64) {
-	if ior.IsValidEta(ctx.EtaIncident) && ior.IsValidEta(ctx.EtaTransmit) {
+func (s SpecularDielectric) resolveEta(ctx ShadingContext, etaInside float64) (float64, float64) {
+	if medium.IsValidEta(ctx.EtaIncident) && medium.IsValidEta(ctx.EtaTransmit) {
 		return ctx.EtaIncident, ctx.EtaTransmit
 	}
 
@@ -196,9 +197,9 @@ func (s SpecularDielectric) resolveEta(ctx core.ShadingContext, etaInside float6
 	return etaI, etaT
 }
 
-func (s SpecularDielectric) insideIOR() ior.Model {
+func (s SpecularDielectric) insideIOR() medium.Model {
 	if s.InsideIOR == nil {
-		return ior.NewConstant(1.5)
+		return medium.NewConstant(1.5)
 	}
 	return s.InsideIOR
 }
@@ -223,16 +224,16 @@ func FresnelDielectric(cosThetaI, etaI, etaT float64) float64 {
 	return (rParallel*rParallel + rPerpendicular*rPerpendicular) * 0.5
 }
 
-func reflectLocal(wo core.Direction) core.Direction {
-	return core.NewDirection(-wo.X, -wo.Y, wo.Z)
+func reflectLocal(wo maths.Direction) maths.Direction {
+	return maths.NewDirection(-wo.X, -wo.Y, wo.Z)
 }
 
-func refractLocal(wo core.Direction, eta float64) (core.Direction, bool) {
+func refractLocal(wo maths.Direction, eta float64) (maths.Direction, bool) {
 	cosThetaO := wo.Z
 	sin2ThetaO := math.Max(0, 1-cosThetaO*cosThetaO)
 	sin2ThetaI := eta * eta * sin2ThetaO
 	if sin2ThetaI >= 1 {
-		return core.Direction{}, false
+		return maths.Direction{}, false
 	}
 
 	cosThetaI := math.Sqrt(math.Max(0, 1-sin2ThetaI))
@@ -240,7 +241,7 @@ func refractLocal(wo core.Direction, eta float64) (core.Direction, bool) {
 		cosThetaI = -cosThetaI
 	}
 
-	return core.NewDirection(-eta*wo.X, -eta*wo.Y, cosThetaI).Normalize(), true
+	return maths.NewDirection(-eta*wo.X, -eta*wo.Y, cosThetaI).Normalize(), true
 }
 
 func clamp(v, lo, hi float64) float64 {

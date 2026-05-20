@@ -19,7 +19,7 @@ func NewSampledParameter(wavelengthsNM, values []float64) SampledParameter {
 	}
 }
 
-func (p SampledParameter) Eval(ctx core.ShadingContext) core.Spectrum {
+func (p SampledParameter) Eval(ctx core.ShadingContext) optics.Spectrum {
 	if len(p.WavelengthsNM) == 0 || len(p.Values) == 0 {
 		return core.Spectrum{}
 	}

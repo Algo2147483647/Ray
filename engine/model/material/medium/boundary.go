@@ -1,17 +1,15 @@
 package medium
 
-import "github.com/Algo2147483647/ray/engine/model/material/core"
-
 type Boundary struct {
-	Outside  core.MediumID
-	Inside   core.MediumID
+	Outside  MediumID
+	Inside   MediumID
 	Priority int
 	Thin     bool
 }
 
-func NewBoundary(outside, inside core.MediumID) Boundary {
-	if outside == core.MediumNone {
-		outside = core.MediumAir
+func NewBoundary(outside, inside MediumID) Boundary {
+	if outside == MediumNone {
+		outside = MediumAir
 	}
 	return Boundary{
 		Outside: outside,
@@ -20,5 +18,5 @@ func NewBoundary(outside, inside core.MediumID) Boundary {
 }
 
 func (b Boundary) Active() bool {
-	return b.Inside != core.MediumNone
+	return b.Inside != MediumNone
 }

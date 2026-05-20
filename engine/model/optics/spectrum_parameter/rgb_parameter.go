@@ -34,7 +34,7 @@ func NewACEScgParameter(value core.Spectrum) RGBParameter {
 	}
 }
 
-func (p RGBParameter) Eval(ctx core.ShadingContext) core.Spectrum {
+func (p RGBParameter) Eval(ctx core.ShadingContext) optics.Spectrum {
 	if len(ctx.WavelengthsNM) > 0 {
 		values := make([]float64, len(ctx.WavelengthsNM))
 		value := p.Value.AverageRGB()

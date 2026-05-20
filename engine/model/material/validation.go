@@ -1,10 +1,11 @@
-package validation
+package material
 
 import (
 	"fmt"
+	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
+	"github.com/Algo2147483647/ray/engine/model/optics"
+	"github.com/Algo2147483647/ray/engine/utils/maths"
 	"math"
-
-	"github.com/Algo2147483647/ray/engine/model/material/core"
 )
 
 type Options struct {
@@ -19,12 +20,12 @@ func DefaultOptions() Options {
 	}
 }
 
-func CheckNonNegative(scattering core.Scattering, ctx core.ShadingContext, opts Options) error {
+func CheckNonNegative(scattering bxdf.Scattering, ctx bxdf.ShadingContext, opts Options) error {
 	opts = normalizeOptions(opts)
-	wo := core.NewDirection(0, 0, 1)
+	wo := maths.NewDirection(0, 0, 1)
 
 	for i := 0; i < opts.DirectionSamples; i++ {
-		wi := core.UniformHemisphereDirection(i, opts.DirectionSamples)
+		wi := maths.UniformHemisphereDirection(i, opts.DirectionSamples)
 		f := scattering.Eval(ctx, wi, wo)
 		pdf := scattering.PDF(ctx, wi, wo)
 		if !f.IsFinite() || !f.IsNonNegative() {
@@ -38,15 +39,15 @@ func CheckNonNegative(scattering core.Scattering, ctx core.ShadingContext, opts 
 	return nil
 }
 
-func CheckReciprocity(scattering core.Scattering, ctx core.ShadingContext, opts Options) error {
+func CheckReciprocity(scattering bxdf.Scattering, ctx bxdf.ShadingContext, opts Options) error {
 	if scattering.DeltaFlags()&core.NonReciprocal != 0 {
 		return nil
 	}
 
 	opts = normalizeOptions(opts)
 	for i := 0; i < opts.DirectionSamples; i++ {
-		wi := core.UniformHemisphereDirection(i, opts.DirectionSamples)
-		wo := core.UniformHemisphereDirection(opts.DirectionSamples-1-i, opts.DirectionSamples)
+		wi := maths.UniformHemisphereDirection(i, opts.DirectionSamples)
+		wo := maths.UniformHemisphereDirection(opts.DirectionSamples-1-i, opts.DirectionSamples)
 		fForward := scattering.Eval(ctx, wi, wo)
 		fReverse := scattering.Eval(ctx, wo, wi)
 		if !fForward.AlmostEqual(fReverse, opts.Tolerance) {
@@ -57,15 +58,15 @@ func CheckReciprocity(scattering core.Scattering, ctx core.ShadingContext, opts 
 	return nil
 }
 
-func CheckEnergyConservation(scattering core.Scattering, ctx core.ShadingContext, opts Options) error {
+func CheckEnergyConservation(scattering bxdf.Scattering, ctx bxdf.ShadingContext, opts Options) error {
 	opts = normalizeOptions(opts)
-	wo := core.NewDirection(0, 0, 1)
-	sum := core.Spectrum{}
+	wo := maths.NewDirection(0, 0, 1)
+	sum := optics.Spectrum{}
 
 	for i := 0; i < opts.DirectionSamples; i++ {
-		wi := core.UniformHemisphereDirection(i, opts.DirectionSamples)
+		wi := maths.UniformHemisphereDirection(i, opts.DirectionSamples)
 		f := scattering.Eval(ctx, wi, wo)
-		weight := core.AbsCosTheta(wi) * 2 * math.Pi / float64(opts.DirectionSamples)
+		weight := maths.AbsCosTheta(wi) * 2 * math.Pi / float64(opts.DirectionSamples)
 		sum = sum.Add(f.MulScalar(weight))
 	}
 
@@ -81,7 +82,7 @@ func CheckSamplePDFConsistency(scattering core.Scattering, ctx core.ShadingConte
 	wo := core.NewDirection(0, 0, 1)
 
 	for i := 0; i < opts.DirectionSamples; i++ {
-		u := core.Sample2D{
+		u := maths.Sample2D{
 			U: (float64(i) + 0.5) / float64(opts.DirectionSamples),
 			V: math.Mod(float64(i)*0.6180339887498949, 1),
 		}

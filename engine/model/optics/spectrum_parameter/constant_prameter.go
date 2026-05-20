@@ -10,7 +10,7 @@ func NewConstantParameter(value float64) ConstantParameter {
 	return ConstantParameter{Value: value}
 }
 
-func (p ConstantParameter) Eval(ctx core.ShadingContext) core.Spectrum {
+func (p ConstantParameter) Eval(ctx core.ShadingContext) optics.Spectrum {
 	if len(ctx.WavelengthsNM) > 0 {
 		values := make([]float64, len(ctx.WavelengthsNM))
 		for i := range values {
