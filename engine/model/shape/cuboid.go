@@ -32,14 +32,6 @@ func (c *Cuboid) Intersect(raySt, rayDir *mat.VecDense) float64 {
 	return interaction.Distance
 }
 
-func (c *Cuboid) IntersectPure(raySt, rayDir *mat.VecDense) float64 {
-	interaction, ok := c.IntersectRange(raySt, rayDir, utils.EPS, math.MaxFloat64)
-	if !ok {
-		return math.MaxFloat64
-	}
-	return interaction.Distance
-}
-
 func (c *Cuboid) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
 	t0, t1, ok := c.intersectionInterval(raySt, rayDir)
 	if !ok || t1 < tMin || t0 > tMax {

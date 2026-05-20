@@ -50,14 +50,6 @@ func (f *Triangle) Intersect(raySt, rayDir *mat.VecDense) float64 {
 	return interaction.Distance
 }
 
-func (f *Triangle) IntersectPure(raySt, rayDir *mat.VecDense) float64 {
-	interaction, ok := f.IntersectRange(raySt, rayDir, utils.EPS, math.MaxFloat64)
-	if !ok {
-		return math.MaxFloat64
-	}
-	return interaction.Distance
-}
-
 func (f *Triangle) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
 	t := utils.VectorPool.Get().(*mat.VecDense)
 	p := utils.VectorPool.Get().(*mat.VecDense)

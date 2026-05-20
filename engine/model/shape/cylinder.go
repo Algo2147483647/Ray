@@ -39,14 +39,6 @@ func (c *FiniteCylinder) Intersect(raySt, rayDir *mat.VecDense) float64 {
 	return interaction.Distance
 }
 
-func (c *FiniteCylinder) IntersectPure(raySt, rayDir *mat.VecDense) float64 {
-	interaction, ok := c.IntersectRange(raySt, rayDir, utils.EPS, math.MaxFloat64)
-	if !ok {
-		return math.MaxFloat64
-	}
-	return interaction.Distance
-}
-
 func (c *FiniteCylinder) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
 	best := c.intersectSide(raySt, rayDir, tMin, tMax)
 	best = math.Min(best, c.intersectCap(raySt, rayDir, 0.5*c.Height, tMin, tMax))

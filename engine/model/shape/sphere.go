@@ -30,14 +30,6 @@ func (s *Sphere) Intersect(raySt, rayDir *mat.VecDense) float64 {
 	return interaction.Distance
 }
 
-func (s *Sphere) IntersectPure(raySt, rayDir *mat.VecDense) float64 {
-	interaction, ok := s.IntersectRange(raySt, rayDir, utils.EPS, math.MaxFloat64)
-	if !ok {
-		return math.MaxFloat64
-	}
-	return interaction.Distance
-}
-
 func (s *Sphere) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
 	t := utils.VectorPool.Get().(*mat.VecDense)
 	defer func() {
