@@ -1,4 +1,21 @@
-package core
+package bxdf
+
+import (
+	"github.com/Algo2147483647/ray/engine/model/material/core"
+	"github.com/Algo2147483647/ray/engine/utils/maths"
+)
+
+type BxDF interface {
+	core.Scattering
+}
+
+type ParameterGradients struct {
+	Values map[string]core.Spectrum
+}
+
+type DifferentiableBxDF interface {
+	ParameterDerivatives(ctx core.ShadingContext, wi, wo maths.Direction) ParameterGradients
+}
 
 type TransportMode int
 
@@ -61,20 +78,4 @@ type Scattering interface {
 	AlbedoBound(ctx ShadingContext) Spectrum                        // Returns an upper bound estimate of the scattering albedo.
 	RoughnessInfo(ctx ShadingContext) RoughnessInfo                 // Returns roughness-related metadata for the scattering model.
 	DeltaFlags() DeltaFlags                                         // Returns flags describing whether the scattering contains delta/discrete components.
-}
-
-type BxDF interface {
-	Scattering
-}
-
-type BSDF interface {
-	Scattering
-}
-
-type ParameterGradients struct {
-	Values map[string]Spectrum
-}
-
-type DifferentiableBxDF interface {
-	ParameterDerivatives(ctx ShadingContext, wi, wo Direction) ParameterGradients
 }

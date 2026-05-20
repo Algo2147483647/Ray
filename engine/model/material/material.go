@@ -1,13 +1,18 @@
-package core
+package material
+
+import (
+	"github.com/Algo2147483647/ray/engine/model/material/bsdf"
+	"github.com/Algo2147483647/ray/engine/model/material/core"
+)
 
 type Material struct {
-	Surface  BSDF
+	Surface  bsdf.BSDF
 	Emission Emitter
 	Metadata MaterialMetadata
 }
 
 type Emitter interface {
-	Emit(ctx ShadingContext, wo Direction) Spectrum
+	Emit(ctx core.ShadingContext, wo core.Direction) core.Spectrum
 	IsDelta() bool
 }
 
@@ -15,7 +20,7 @@ type MaterialMetadata struct {
 	Name                     string
 	Units                    string
 	ColorSpace               string
-	SpectrumMode             SpectrumMode
+	SpectrumMode             core.SpectrumMode
 	NonReciprocal            bool
 	DifferentiabilitySupport bool
 	ParameterRanges          map[string]ParameterRange

@@ -1,9 +1,12 @@
 package bsdf
 
-import "github.com/Algo2147483647/ray/engine/model/material/core"
+import (
+	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
+	"github.com/Algo2147483647/ray/engine/model/material/core"
+)
 
 type Single struct {
-	BxDF core.BxDF
+	BxDF bxdf.BxDF
 }
 
 func NewSingle(bxdf core.BxDF) Single {

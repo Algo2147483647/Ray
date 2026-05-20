@@ -1,6 +1,7 @@
 package bxdf
 
 import (
+	"github.com/Algo2147483647/ray/engine/model/material/core/spectrum_parameter"
 	"math"
 
 	"github.com/Algo2147483647/ray/engine/model/material/core"
@@ -11,7 +12,7 @@ type Lambert struct {
 }
 
 func NewLambert(albedo core.Spectrum) Lambert {
-	return NewLambertParameter(core.NewRGBParameter(albedo))
+	return NewLambertParameter(spectrum_parameter.NewRGBParameter(albedo))
 }
 
 func NewLambertParameter(albedo core.SpectralParameter) Lambert {

@@ -8,7 +8,7 @@ import (
 )
 
 type Medium interface {
-	ID() core.MediumID
+	ID() MediumID
 	Name() string
 	IOR(ctx core.ShadingContext) float64
 	SigmaA(ctx core.ShadingContext) core.Spectrum
@@ -16,15 +16,22 @@ type Medium interface {
 	IsVacuum() bool
 }
 
+type MediumID uint32
+
+const (
+	MediumNone MediumID = 0
+	MediumAir  MediumID = 1
+)
+
 type Homogeneous struct {
-	id     core.MediumID
+	id     MediumID
 	name   string
 	eta    ior.Model
 	sigmaA core.SpectralParameter
 	sigmaS core.SpectralParameter
 }
 
-func NewHomogeneous(id core.MediumID, name string, eta ior.Model, sigmaA, sigmaS core.SpectralParameter) Homogeneous {
+func NewHomogeneous(id MediumID, name string, eta ior.Model, sigmaA, sigmaS core.SpectralParameter) Homogeneous {
 	if eta == nil {
 		eta = ior.NewConstant(1)
 	}
@@ -43,7 +50,7 @@ func NewHomogeneous(id core.MediumID, name string, eta ior.Model, sigmaA, sigmaS
 	}
 }
 
-func (h Homogeneous) ID() core.MediumID {
+func (h Homogeneous) ID() MediumID {
 	return h.id
 }
 
@@ -76,22 +83,22 @@ func (h Homogeneous) IsVacuum() bool {
 }
 
 type Registry struct {
-	mediaByID map[core.MediumID]Medium
-	idByName  map[string]core.MediumID
-	nextID    core.MediumID
+	mediaByID map[MediumID]Medium
+	idByName  map[string]MediumID
+	nextID    MediumID
 }
 
 func NewRegistry() *Registry {
 	r := &Registry{
-		mediaByID: make(map[core.MediumID]Medium),
-		idByName:  make(map[string]core.MediumID),
+		mediaByID: make(map[MediumID]Medium),
+		idByName:  make(map[string]MediumID),
 		nextID:    core.MediumAir + 1,
 	}
 	r.Set(core.MediumAir, "air", NewHomogeneous(core.MediumAir, "air", ior.NewConstant(1), nil, nil))
 	return r
 }
 
-func (r *Registry) Set(id core.MediumID, name string, m Medium) {
+func (r *Registry) Set(id MediumID, name string, m Medium) {
 	if r == nil || id == core.MediumNone || name == "" || m == nil {
 		return
 	}
@@ -102,7 +109,7 @@ func (r *Registry) Set(id core.MediumID, name string, m Medium) {
 	}
 }
 
-func (r *Registry) RegisterHomogeneous(name string, eta ior.Model, sigmaA, sigmaS core.SpectralParameter) (core.MediumID, error) {
+func (r *Registry) RegisterHomogeneous(name string, eta ior.Model, sigmaA, sigmaS core.SpectralParameter) (MediumID, error) {
 	if r == nil {
 		return core.MediumNone, fmt.Errorf("medium registry is nil")
 	}
@@ -118,7 +125,7 @@ func (r *Registry) RegisterHomogeneous(name string, eta ior.Model, sigmaA, sigma
 	return id, nil
 }
 
-func (r *Registry) ID(name string) (core.MediumID, bool) {
+func (r *Registry) ID(name string) (MediumID, bool) {
 	if r == nil {
 		return core.MediumNone, false
 	}
@@ -126,14 +133,14 @@ func (r *Registry) ID(name string) (core.MediumID, bool) {
 	return id, ok
 }
 
-func (r *Registry) Get(id core.MediumID) Medium {
+func (r *Registry) Get(id MediumID) Medium {
 	if r == nil {
 		return nil
 	}
 	return r.mediaByID[id]
 }
 
-func (r *Registry) IOR(id core.MediumID, ctx core.ShadingContext) float64 {
+func (r *Registry) IOR(id MediumID, ctx core.ShadingContext) float64 {
 	if id == core.MediumNone {
 		id = core.MediumAir
 	}
