@@ -14,17 +14,17 @@ import (
 )
 
 func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
-	shapeName, err := requiredStringField(objDef, "shape")
+	shapeName, err := utils.RequiredStringField(objDef, "shape")
 	if err != nil {
 		return nil, err
 	}
 
 	switch shapeName {
 	case "cuboid":
-		if position, hasPosition, err := optionalFloat64SliceField(objDef, "position", utils.Dimension); err != nil {
+		if position, hasPosition, err := utils.OptionalFloat64SliceField(objDef, "position", utils.Dimension); err != nil {
 			return nil, err
 		} else if hasPosition {
-			size, err := requiredFloat64SliceField(objDef, "size", utils.Dimension)
+			size, err := utils.RequiredFloat64SliceField(objDef, "size", utils.Dimension)
 			if err != nil {
 				return nil, err
 			}
@@ -43,11 +43,11 @@ func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 			return []shape.Shape{cuboid}, nil
 		}
 
-		pmin, err := requiredFloat64SliceField(objDef, "pmin", utils.Dimension)
+		pmin, err := utils.RequiredFloat64SliceField(objDef, "pmin", utils.Dimension)
 		if err != nil {
 			return nil, fmt.Errorf("cuboid requires either position+size or pmin+pmax: %w", err)
 		}
-		pmax, err := requiredFloat64SliceField(objDef, "pmax", utils.Dimension)
+		pmax, err := utils.RequiredFloat64SliceField(objDef, "pmax", utils.Dimension)
 		if err != nil {
 			return nil, fmt.Errorf("cuboid requires either position+size or pmin+pmax: %w", err)
 		}
@@ -62,11 +62,11 @@ func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 		return []shape.Shape{cuboid}, nil
 
 	case "sphere":
-		position, err := requiredFloat64SliceField(objDef, "position", utils.Dimension)
+		position, err := utils.RequiredFloat64SliceField(objDef, "position", utils.Dimension)
 		if err != nil {
 			return nil, err
 		}
-		radius, err := requiredFloat64Field(objDef, "r")
+		radius, err := utils.RequiredFloat64Field(objDef, "r")
 		if err != nil {
 			return nil, err
 		}
@@ -81,11 +81,11 @@ func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 		return []shape.Shape{sphere}, nil
 
 	case "circle":
-		position, err := requiredFloat64SliceField(objDef, "position", utils.Dimension)
+		position, err := utils.RequiredFloat64SliceField(objDef, "position", utils.Dimension)
 		if err != nil {
 			return nil, err
 		}
-		normal, err := requiredFloat64SliceField(objDef, "normal", utils.Dimension)
+		normal, err := utils.RequiredFloat64SliceField(objDef, "normal", utils.Dimension)
 		if err != nil {
 			return nil, err
 		}
@@ -93,7 +93,7 @@ func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 		if mat.Norm(normalVec, 2) < utils.EPS {
 			return nil, fmt.Errorf("field %q must not be zero", "normal")
 		}
-		radius, err := requiredFloat64Field(objDef, "r")
+		radius, err := utils.RequiredFloat64Field(objDef, "r")
 		if err != nil {
 			return nil, err
 		}
@@ -108,11 +108,11 @@ func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 		return []shape.Shape{circle}, nil
 
 	case "finite cylinder", "cylinder":
-		position, err := requiredFloat64SliceField(objDef, "position", utils.Dimension)
+		position, err := utils.RequiredFloat64SliceField(objDef, "position", utils.Dimension)
 		if err != nil {
 			return nil, err
 		}
-		axis, err := requiredFloat64SliceField(objDef, "axis", utils.Dimension)
+		axis, err := utils.RequiredFloat64SliceField(objDef, "axis", utils.Dimension)
 		if err != nil {
 			return nil, err
 		}
@@ -120,14 +120,14 @@ func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 		if mat.Norm(axisVec, 2) < utils.EPS {
 			return nil, fmt.Errorf("field %q must not be zero", "axis")
 		}
-		radius, err := requiredFloat64Field(objDef, "r")
+		radius, err := utils.RequiredFloat64Field(objDef, "r")
 		if err != nil {
 			return nil, err
 		}
 		if radius <= 0 {
 			return nil, fmt.Errorf("field %q must be > 0", "r")
 		}
-		height, err := requiredFloat64Field(objDef, "height")
+		height, err := utils.RequiredFloat64Field(objDef, "height")
 		if err != nil {
 			return nil, err
 		}
@@ -142,15 +142,15 @@ func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 		return []shape.Shape{cylinder}, nil
 
 	case "triangle":
-		p1, err := requiredFloat64SliceField(objDef, "p1", utils.Dimension)
+		p1, err := utils.RequiredFloat64SliceField(objDef, "p1", utils.Dimension)
 		if err != nil {
 			return nil, err
 		}
-		p2, err := requiredFloat64SliceField(objDef, "p2", utils.Dimension)
+		p2, err := utils.RequiredFloat64SliceField(objDef, "p2", utils.Dimension)
 		if err != nil {
 			return nil, err
 		}
-		p3, err := requiredFloat64SliceField(objDef, "p3", utils.Dimension)
+		p3, err := utils.RequiredFloat64SliceField(objDef, "p3", utils.Dimension)
 		if err != nil {
 			return nil, err
 		}
@@ -166,15 +166,15 @@ func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 		return nil, fmt.Errorf("shape %q is declared but not implemented", shapeName)
 
 	case "quadratic equation":
-		a, err := requiredFloat64SliceField(objDef, "a", 9)
+		a, err := utils.RequiredFloat64SliceField(objDef, "a", 9)
 		if err != nil {
 			return nil, err
 		}
-		b, err := requiredFloat64SliceField(objDef, "b", utils.Dimension)
+		b, err := utils.RequiredFloat64SliceField(objDef, "b", utils.Dimension)
 		if err != nil {
 			return nil, err
 		}
-		c, err := requiredFloat64Field(objDef, "c")
+		c, err := utils.RequiredFloat64Field(objDef, "c")
 		if err != nil {
 			return nil, err
 		}
@@ -187,7 +187,7 @@ func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 		return []shape.Shape{equation}, nil
 
 	case "four-order equation":
-		a, err := requiredFloat64SliceField(objDef, "a", 256)
+		a, err := utils.RequiredFloat64SliceField(objDef, "a", 256)
 		if err != nil {
 			return nil, err
 		}
@@ -203,23 +203,23 @@ func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 }
 
 func ParseShapeForSTL(objDef map[string]interface{}) ([]shape.Shape, error) {
-	filePath, err := requiredStringField(objDef, "file")
+	filePath, err := utils.RequiredStringField(objDef, "file")
 	if err != nil {
 		return nil, err
 	}
-	position, err := requiredFloat64SliceField(objDef, "position", utils.Dimension)
+	position, err := utils.RequiredFloat64SliceField(objDef, "position", utils.Dimension)
 	if err != nil {
 		return nil, err
 	}
-	zDir, err := requiredFloat64SliceField(objDef, "z_dir", utils.Dimension)
+	zDir, err := utils.RequiredFloat64SliceField(objDef, "z_dir", utils.Dimension)
 	if err != nil {
 		return nil, err
 	}
-	xDir, err := requiredFloat64SliceField(objDef, "x_dir", utils.Dimension)
+	xDir, err := utils.RequiredFloat64SliceField(objDef, "x_dir", utils.Dimension)
 	if err != nil {
 		return nil, err
 	}
-	scale, err := requiredFloat64SliceField(objDef, "scale", utils.Dimension)
+	scale, err := utils.RequiredFloat64SliceField(objDef, "scale", utils.Dimension)
 	if err != nil {
 		return nil, err
 	}
@@ -350,7 +350,7 @@ func ParseShapeForSTL(objDef map[string]interface{}) ([]shape.Shape, error) {
 }
 
 func applyEngravingFunc(target interface{ shape.Shape }, objDef map[string]interface{}) error {
-	value, ok, err := optionalStringField(objDef, "engraving_func")
+	value, ok, err := utils.OptionalStringField(objDef, "engraving_func")
 	if err != nil {
 		return err
 	}

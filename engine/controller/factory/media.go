@@ -47,12 +47,12 @@ func ParseMediaRegistry(script *parser.Script) (*medium.Registry, error) {
 }
 
 func parseMediumBoundary(def map[string]interface{}, registry *medium.Registry) (medium.Boundary, error) {
-	boundaryDef, ok, err := optionalMapField(def, "medium_boundary")
+	boundaryDef, ok, err := utils.OptionalMapField(def, "medium_boundary")
 	if err != nil || !ok {
 		return medium.Boundary{}, err
 	}
 
-	outsideName, ok, err := optionalStringField(boundaryDef, "outside")
+	outsideName, ok, err := utils.OptionalStringField(boundaryDef, "outside")
 	if err != nil {
 		return medium.Boundary{}, err
 	}
@@ -64,7 +64,7 @@ func parseMediumBoundary(def map[string]interface{}, registry *medium.Registry) 
 		return medium.Boundary{}, fmt.Errorf("unknown outside medium %q", outsideName)
 	}
 
-	insideName, err := requiredStringField(boundaryDef, "inside")
+	insideName, err := utils.RequiredStringField(boundaryDef, "inside")
 	if err != nil {
 		return medium.Boundary{}, err
 	}
@@ -73,7 +73,7 @@ func parseMediumBoundary(def map[string]interface{}, registry *medium.Registry) 
 		return medium.Boundary{}, fmt.Errorf("unknown inside medium %q", insideName)
 	}
 
-	priorityValue, ok, err := optionalFloat64Field(boundaryDef, "priority")
+	priorityValue, ok, err := utils.OptionalFloat64Field(boundaryDef, "priority")
 	if err != nil {
 		return medium.Boundary{}, err
 	}
@@ -85,7 +85,7 @@ func parseMediumBoundary(def map[string]interface{}, registry *medium.Registry) 
 		}
 	}
 
-	thin, ok, err := optionalBoolField(boundaryDef, "thin")
+	thin, ok, err := utils.OptionalBoolField(boundaryDef, "thin")
 	if err != nil {
 		return medium.Boundary{}, err
 	}
@@ -102,7 +102,7 @@ func parseMediumBoundary(def map[string]interface{}, registry *medium.Registry) 
 }
 
 func parseMediumIORModel(def map[string]interface{}) (medium.Model, error) {
-	iorDef, ok, err := optionalMapField(def, "ior")
+	iorDef, ok, err := utils.OptionalMapField(def, "ior")
 	if err != nil {
 		return nil, err
 	}
@@ -110,13 +110,13 @@ func parseMediumIORModel(def map[string]interface{}) (medium.Model, error) {
 		return medium.NewConstant(1), nil
 	}
 
-	iorType, err := requiredStringField(iorDef, "type")
+	iorType, err := utils.RequiredStringField(iorDef, "type")
 	if err != nil {
 		return nil, fmt.Errorf("ior: %w", err)
 	}
 	switch iorType {
 	case "constant":
-		eta, err := requiredFloat64Field(iorDef, "eta")
+		eta, err := utils.RequiredFloat64Field(iorDef, "eta")
 		if err != nil {
 			return nil, fmt.Errorf("ior: %w", err)
 		}
@@ -125,15 +125,15 @@ func parseMediumIORModel(def map[string]interface{}) (medium.Model, error) {
 		}
 		return medium.NewConstant(eta), nil
 	case "cauchy":
-		a, err := requiredFloat64Field(iorDef, "a")
+		a, err := utils.RequiredFloat64Field(iorDef, "a")
 		if err != nil {
 			return nil, fmt.Errorf("ior: %w", err)
 		}
-		b, err := requiredFloat64Field(iorDef, "b")
+		b, err := utils.RequiredFloat64Field(iorDef, "b")
 		if err != nil {
 			return nil, fmt.Errorf("ior: %w", err)
 		}
-		c, ok, err := optionalFloat64Field(iorDef, "c")
+		c, ok, err := utils.OptionalFloat64Field(iorDef, "c")
 		if err != nil {
 			return nil, fmt.Errorf("ior: %w", err)
 		}
