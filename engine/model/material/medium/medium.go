@@ -2,18 +2,17 @@ package medium
 
 import (
 	"fmt"
-	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
-	"github.com/Algo2147483647/ray/engine/model/optics"
-	"github.com/Algo2147483647/ray/engine/model/optics/spectrum_parameter"
 )
 
 type Medium interface {
 	ID() MediumID
 	Name() string
-	IOR(ctx bxdf.ShadingContext) float64
-	SigmaA(ctx bxdf.ShadingContext) optics.Spectrum
-	SigmaS(ctx bxdf.ShadingContext) optics.Spectrum
-	IsVacuum() bool
+	IOR(ctx WavelengthContext) float64
+}
+
+type WavelengthContext interface {
+	SpectralWavelengthNM() float64
+	SpectralWavelengthsNM() []float64
 }
 
 type MediumID uint32
@@ -24,29 +23,19 @@ const (
 )
 
 type Homogeneous struct {
-	id     MediumID
-	name   string
-	eta    Model
-	sigmaA optics.SpectralParameter
-	sigmaS optics.SpectralParameter
+	id   MediumID
+	name string
+	eta  Model
 }
 
-func NewHomogeneous(id MediumID, name string, eta Model, sigmaA, sigmaS optics.SpectralParameter) Homogeneous {
+func NewHomogeneous(id MediumID, name string, eta Model) Homogeneous {
 	if eta == nil {
 		eta = NewConstant(1)
 	}
-	if sigmaA == nil {
-		sigmaA = spectrum_parameter.NewConstantParameter(0)
-	}
-	if sigmaS == nil {
-		sigmaS = spectrum_parameter.NewConstantParameter(0)
-	}
 	return Homogeneous{
-		id:     id,
-		name:   name,
-		eta:    eta,
-		sigmaA: sigmaA,
-		sigmaS: sigmaS,
+		id:   id,
+		name: name,
+		eta:  eta,
 	}
 }
 
@@ -58,28 +47,22 @@ func (h Homogeneous) Name() string {
 	return h.name
 }
 
-func (h Homogeneous) IOR(ctx bxdf.ShadingContext) float64 {
-	wavelength := ctx.WavelengthNM
-	if wavelength <= 0 && len(ctx.WavelengthsNM) > 0 {
-		wavelength = ctx.WavelengthsNM[0]
+func (h Homogeneous) IOR(ctx WavelengthContext) float64 {
+	wavelength := 0.0
+	if ctx != nil {
+		wavelength = ctx.SpectralWavelengthNM()
+		if wavelength <= 0 {
+			wavelengths := ctx.SpectralWavelengthsNM()
+			if len(wavelengths) > 0 {
+				wavelength = wavelengths[0]
+			}
+		}
 	}
 	eta := h.eta.Evaluate(wavelength)
 	if !IsValidEta(eta) {
 		return 1
 	}
 	return eta
-}
-
-func (h Homogeneous) SigmaA(ctx bxdf.ShadingContext) optics.Spectrum {
-	return h.sigmaA.Eval(ctx)
-}
-
-func (h Homogeneous) SigmaS(ctx bxdf.ShadingContext) optics.Spectrum {
-	return h.sigmaS.Eval(ctx)
-}
-
-func (h Homogeneous) IsVacuum() bool {
-	return h.sigmaA.Bounds().Max.MaxComponent() == 0 && h.sigmaS.Bounds().Max.MaxComponent() == 0
 }
 
 type Registry struct {
@@ -94,7 +77,7 @@ func NewRegistry() *Registry {
 		idByName:  make(map[string]MediumID),
 		nextID:    MediumAir + 1,
 	}
-	r.Set(MediumAir, "air", NewHomogeneous(MediumAir, "air", NewConstant(1), nil, nil))
+	r.Set(MediumAir, "air", NewHomogeneous(MediumAir, "air", NewConstant(1)))
 	return r
 }
 
@@ -109,7 +92,7 @@ func (r *Registry) Set(id MediumID, name string, m Medium) {
 	}
 }
 
-func (r *Registry) RegisterHomogeneous(name string, eta Model, sigmaA, sigmaS optics.SpectralParameter) (MediumID, error) {
+func (r *Registry) RegisterHomogeneous(name string, eta Model) (MediumID, error) {
 	if r == nil {
 		return MediumNone, fmt.Errorf("medium registry is nil")
 	}
@@ -117,11 +100,11 @@ func (r *Registry) RegisterHomogeneous(name string, eta Model, sigmaA, sigmaS op
 		return MediumNone, fmt.Errorf("medium name must not be empty")
 	}
 	if existing, ok := r.idByName[name]; ok {
-		r.Set(existing, name, NewHomogeneous(existing, name, eta, sigmaA, sigmaS))
+		r.Set(existing, name, NewHomogeneous(existing, name, eta))
 		return existing, nil
 	}
 	id := r.nextID
-	r.Set(id, name, NewHomogeneous(id, name, eta, sigmaA, sigmaS))
+	r.Set(id, name, NewHomogeneous(id, name, eta))
 	return id, nil
 }
 
@@ -140,7 +123,7 @@ func (r *Registry) Get(id MediumID) Medium {
 	return r.mediaByID[id]
 }
 
-func (r *Registry) IOR(id MediumID, ctx bxdf.ShadingContext) float64 {
+func (r *Registry) IOR(id MediumID, ctx WavelengthContext) float64 {
 	if id == MediumNone {
 		id = MediumAir
 	}

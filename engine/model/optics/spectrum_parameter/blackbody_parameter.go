@@ -1,7 +1,7 @@
 package spectrum_parameter
 
 import (
-	"github.com/Algo2147483647/ray/engine/model/material/core"
+	"github.com/Algo2147483647/ray/engine/model/optics"
 	"math"
 )
 
@@ -17,27 +17,28 @@ func NewBlackbodyParameter(temperature, scale float64) BlackbodyParameter {
 	}
 }
 
-func (p BlackbodyParameter) Eval(ctx core.ShadingContext) optics.Spectrum {
+func (p BlackbodyParameter) Eval(ctx optics.WavelengthContext) optics.Spectrum {
 	if p.Temperature <= 0 || p.Scale <= 0 {
-		return core.Spectrum{}
+		return optics.Spectrum{}
 	}
-	if len(ctx.WavelengthsNM) > 0 {
-		values := make([]float64, len(ctx.WavelengthsNM))
-		for i, wavelengthNM := range ctx.WavelengthsNM {
+	if ctx != nil && len(ctx.SpectralWavelengthsNM()) > 0 {
+		wavelengths := ctx.SpectralWavelengthsNM()
+		values := make([]float64, len(wavelengths))
+		for i, wavelengthNM := range wavelengths {
 			values[i] = p.Scale * relativeBlackbody(wavelengthNM, p.Temperature)
 		}
-		return core.NewSampledSpectrum(values)
+		return optics.NewSampledSpectrum(values)
 	}
-	if ctx.WavelengthNM > 0 {
-		return core.ConstantSpectrum(p.Scale * relativeBlackbody(ctx.WavelengthNM, p.Temperature))
+	if ctx != nil && ctx.SpectralWavelengthNM() > 0 {
+		return optics.ConstantSpectrum(p.Scale * relativeBlackbody(ctx.SpectralWavelengthNM(), p.Temperature))
 	}
 	return ApproximateBlackbodyRGB(p.Temperature).MulScalar(p.Scale)
 }
 
-func (p BlackbodyParameter) Bounds() core.SpectrumBounds {
-	return core.SpectrumBounds{
-		Min: core.Spectrum{},
-		Max: core.ConstantSpectrum(p.Scale),
+func (p BlackbodyParameter) Bounds() optics.SpectrumBounds {
+	return optics.SpectrumBounds{
+		Min: optics.Spectrum{},
+		Max: optics.ConstantSpectrum(p.Scale),
 	}
 }
 
@@ -67,7 +68,7 @@ func blackbodyPower(wavelengthNM, temperature float64) float64 {
 }
 
 func ApproximateBlackbodyRGB(temperature float64) optics.Spectrum {
-	temp := core.Clamp(temperature/100, 10, 400)
+	temp := optics.Clamp(temperature/100, 10, 400)
 	var r, g, b float64
 
 	if temp <= 66 {
@@ -84,9 +85,9 @@ func ApproximateBlackbodyRGB(temperature float64) optics.Spectrum {
 		b = 255
 	}
 
-	return core.NewSpectrum(
-		core.SrgbChannelToLinear(core.Clamp(r/255, 0, 1)),
-		core.SrgbChannelToLinear(core.Clamp(g/255, 0, 1)),
-		core.SrgbChannelToLinear(core.Clamp(b/255, 0, 1)),
+	return optics.NewSpectrum(
+		optics.SrgbChannelToLinear(optics.Clamp(r/255, 0, 1)),
+		optics.SrgbChannelToLinear(optics.Clamp(g/255, 0, 1)),
+		optics.SrgbChannelToLinear(optics.Clamp(b/255, 0, 1)),
 	)
 }

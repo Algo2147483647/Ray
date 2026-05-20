@@ -1,7 +1,7 @@
 package spectrum_parameter
 
 import (
-	"github.com/Algo2147483647/ray/engine/model/material/core"
+	"github.com/Algo2147483647/ray/engine/model/optics"
 	"math"
 )
 
@@ -19,31 +19,32 @@ func NewSampledParameter(wavelengthsNM, values []float64) SampledParameter {
 	}
 }
 
-func (p SampledParameter) Eval(ctx core.ShadingContext) optics.Spectrum {
+func (p SampledParameter) Eval(ctx optics.WavelengthContext) optics.Spectrum {
 	if len(p.WavelengthsNM) == 0 || len(p.Values) == 0 {
-		return core.Spectrum{}
+		return optics.Spectrum{}
 	}
-	if len(ctx.WavelengthsNM) > 0 {
-		values := make([]float64, len(ctx.WavelengthsNM))
-		for i, wavelengthNM := range ctx.WavelengthsNM {
+	if ctx != nil && len(ctx.SpectralWavelengthsNM()) > 0 {
+		wavelengths := ctx.SpectralWavelengthsNM()
+		values := make([]float64, len(wavelengths))
+		for i, wavelengthNM := range wavelengths {
 			values[i] = p.valueAt(wavelengthNM)
 		}
-		return core.NewSampledSpectrum(values)
+		return optics.NewSampledSpectrum(values)
 	}
-	if ctx.WavelengthNM > 0 {
-		return core.ConstantSpectrum(p.valueAt(ctx.WavelengthNM))
+	if ctx != nil && ctx.SpectralWavelengthNM() > 0 {
+		return optics.ConstantSpectrum(p.valueAt(ctx.SpectralWavelengthNM()))
 	}
 
 	sum := 0.0
 	for _, value := range p.Values {
 		sum += value
 	}
-	return core.ConstantSpectrum(sum / float64(len(p.Values)))
+	return optics.ConstantSpectrum(sum / float64(len(p.Values)))
 }
 
-func (p SampledParameter) Bounds() core.SpectrumBounds {
+func (p SampledParameter) Bounds() optics.SpectrumBounds {
 	if len(p.Values) == 0 {
-		return core.SpectrumBounds{}
+		return optics.SpectrumBounds{}
 	}
 	minValue := p.Values[0]
 	maxValue := p.Values[0]
@@ -51,9 +52,9 @@ func (p SampledParameter) Bounds() core.SpectrumBounds {
 		minValue = math.Min(minValue, value)
 		maxValue = math.Max(maxValue, value)
 	}
-	return core.SpectrumBounds{
-		Min: core.ConstantSpectrum(minValue),
-		Max: core.ConstantSpectrum(maxValue),
+	return optics.SpectrumBounds{
+		Min: optics.ConstantSpectrum(minValue),
+		Max: optics.ConstantSpectrum(maxValue),
 	}
 }
 

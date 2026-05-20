@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/Algo2147483647/ray/engine/model"
-	"github.com/Algo2147483647/ray/engine/model/material/core"
+	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
 )
 
 func TestLoadSceneParsesMediaBoundary(t *testing.T) {
@@ -57,7 +57,7 @@ func TestLoadSceneParsesMediaBoundary(t *testing.T) {
 	if got := scene.ObjectTree.Objects[0].MediumBoundary.Inside; got != glassID {
 		t.Fatalf("unexpected inside medium: got %d want %d", got, glassID)
 	}
-	if got := scene.ObjectTree.Media.IOR(glassID, core.ShadingContext{}); got != 1.5 {
+	if got := scene.ObjectTree.Media.IOR(glassID, bxdf.ShadingContext{}); got != 1.5 {
 		t.Fatalf("unexpected glass eta: got %f want 1.5", got)
 	}
 }

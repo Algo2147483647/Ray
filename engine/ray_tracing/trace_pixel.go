@@ -6,7 +6,7 @@ import (
 
 	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
 	"github.com/Algo2147483647/ray/engine/model/camera"
-	"github.com/Algo2147483647/ray/engine/model/material/core"
+	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
 	"github.com/Algo2147483647/ray/engine/model/object"
 	"gonum.org/v1/gonum/mat"
 )
@@ -21,13 +21,13 @@ func (h *Handler) TracePixel(camera camera.Camera, objTree *object.ObjectTree, s
 
 	for s := int64(0); s < samples; s++ {
 		switch h.SpectrumMode {
-		case core.SpectrumRGB:
+		case bxdf.SpectrumRGB:
 			camera.GenerateRay(ray, index...)
 			ray.DisableSpectralSampling()
 			color.AddVec(color, h.TraceRay(objTree, ray, 0))
 			totalTraces++
 
-		case core.SpectrumRGBAndSpectral:
+		case bxdf.SpectrumRGBAndSpectral:
 			wavelengthSamples := h.WavelengthSamples
 			if wavelengthSamples <= 0 {
 				wavelengthSamples = 4

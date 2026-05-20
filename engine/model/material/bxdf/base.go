@@ -62,6 +62,14 @@ type ShadingContext struct {
 	Entering       bool
 }
 
+func (ctx ShadingContext) SpectralWavelengthNM() float64 {
+	return ctx.WavelengthNM
+}
+
+func (ctx ShadingContext) SpectralWavelengthsNM() []float64 {
+	return ctx.WavelengthsNM
+}
+
 type BxDFSample struct {
 	Wi             maths.Direction
 	F              optics.Spectrum

@@ -9,7 +9,7 @@ import (
 
 	"github.com/Algo2147483647/ray/engine/model"
 	"github.com/Algo2147483647/ray/engine/model/camera"
-	"github.com/Algo2147483647/ray/engine/model/material/core"
+	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
 	"github.com/Algo2147483647/ray/engine/ray_tracing"
 )
 
@@ -174,14 +174,14 @@ func (h *Handler) Render() *Handler {
 	return h
 }
 
-func renderSpectrumMode(value string) core.SpectrumMode {
+func renderSpectrumMode(value string) bxdf.SpectrumMode {
 	switch value {
 	case "rgb":
-		return core.SpectrumRGB
+		return bxdf.SpectrumRGB
 	case "sampled":
-		return core.SpectrumRGBAndSpectral
+		return bxdf.SpectrumRGBAndSpectral
 	default:
-		return core.SpectrumSpectral
+		return bxdf.SpectrumSpectral
 	}
 }
 

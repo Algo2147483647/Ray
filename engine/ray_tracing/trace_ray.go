@@ -6,9 +6,11 @@ import (
 	"math/rand/v2"
 
 	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
-	"github.com/Algo2147483647/ray/engine/model/material/core"
+	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
 	"github.com/Algo2147483647/ray/engine/model/material/medium"
 	"github.com/Algo2147483647/ray/engine/model/object"
+	"github.com/Algo2147483647/ray/engine/model/optics"
+	"github.com/Algo2147483647/ray/engine/utils/maths"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -37,15 +39,15 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *renderray.Ray, level
 		media = medium.NewRegistry()
 	}
 
-	ctx := core.ShadingContext{
-		TransportMode: core.TransportRadiance,
+	ctx := bxdf.ShadingContext{
+		TransportMode: bxdf.TransportRadiance,
 		SpectrumMode:  h.SpectrumMode,
 		CurrentIOR:    ray.RefractionIndex,
 		WavelengthNM:  ray.WaveLength,
 		WavelengthPDF: ray.WavelengthPDF,
 	}
 
-	if h.SpectrumMode != core.SpectrumRGB && ray.WaveLength > 0 {
+	if h.SpectrumMode != bxdf.SpectrumRGB && ray.WaveLength > 0 {
 		ctx.WavelengthsNM = []float64{ray.WaveLength}
 	}
 	prepareMediumContext(&ctx, media, ray, obj.MediumBoundary, hit.FrontFace)
@@ -72,9 +74,9 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *renderray.Ray, level
 		return ray.Color
 	}
 
-	weight := core.AbsCosTheta(sample.Wi) / sample.PDF
+	weight := maths.AbsCosTheta(sample.Wi) / sample.PDF
 	applySpectrum(ray.Color, sample.F.MulScalar(weight))
-	if sample.Flags&core.DeltaTransmission != 0 {
+	if sample.Flags&bxdf.DeltaTransmission != 0 {
 		applyMediumTransmission(media, ray, ctx, obj.MediumBoundary, sample)
 	}
 
@@ -87,7 +89,7 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *renderray.Ray, level
 	return h.TraceRay(objTree, ray, level+1)
 }
 
-func prepareMediumContext(ctx *core.ShadingContext, media *medium.Registry, ray *renderray.Ray, boundary medium.Boundary, frontFace bool) {
+func prepareMediumContext(ctx *bxdf.ShadingContext, media *medium.Registry, ray *renderray.Ray, boundary medium.Boundary, frontFace bool) {
 	transition := ray.MediumStack.ResolveTransition(boundary, frontFace)
 	incident := transition.Incident
 	transmit := transition.Transmit
@@ -106,8 +108,8 @@ func prepareMediumContext(ctx *core.ShadingContext, media *medium.Registry, ray 
 	ray.RefractionIndex = ctx.EtaIncident
 }
 
-func applyMediumTransmission(media *medium.Registry, ray *renderray.Ray, ctx core.ShadingContext, boundary medium.Boundary, sample core.BxDFSample) {
-	if boundary.Active() && sample.TransmitMedium != core.MediumNone {
+func applyMediumTransmission(media *medium.Registry, ray *renderray.Ray, ctx bxdf.ShadingContext, boundary medium.Boundary, sample bxdf.BxDFSample) {
+	if boundary.Active() && sample.TransmitMedium != medium.MediumNone {
 		if !boundary.Thin {
 			if ctx.Entering {
 				ray.MediumStack.EnterBoundary(boundary)
@@ -124,7 +126,7 @@ func applyMediumTransmission(media *medium.Registry, ray *renderray.Ray, ctx cor
 	}
 }
 
-func applySpectrum(color *mat.VecDense, spectrum core.Spectrum) {
+func applySpectrum(color *mat.VecDense, spectrum optics.Spectrum) {
 	if spectrum.HasSamples() {
 		power := spectrum.Average()
 		color.SetVec(0, color.AtVec(0)*power)
@@ -148,7 +150,7 @@ func worldToLocal(v, normal *mat.VecDense) (maths.Direction, bool) {
 	if !ok {
 		return maths.Direction{}, false
 	}
-	return core.NewDirection(
+	return maths.NewDirection(
 		mat.Dot(v, tangent),
 		mat.Dot(v, bitangent),
 		mat.Dot(v, normal),
@@ -160,7 +162,7 @@ func worldToLocalNegated(v, normal *mat.VecDense) (maths.Direction, bool) {
 	if !ok {
 		return maths.Direction{}, false
 	}
-	return core.NewDirection(
+	return maths.NewDirection(
 		-mat.Dot(v, tangent),
 		-mat.Dot(v, bitangent),
 		-mat.Dot(v, normal),

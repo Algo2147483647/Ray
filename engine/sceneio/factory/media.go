@@ -3,8 +3,6 @@ package factory
 import (
 	"fmt"
 
-	"github.com/Algo2147483647/ray/engine/model/material/core"
-	"github.com/Algo2147483647/ray/engine/model/material/ior"
 	"github.com/Algo2147483647/ray/engine/model/material/medium"
 )
 
@@ -31,16 +29,14 @@ func ParseMediaRegistry(script *Script) (*medium.Registry, error) {
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", context, err)
 		}
-		sigmaA, _, err := optionalSpectralParameterField(def, "sigma_a", core.NewConstantParameter(0))
-		if err != nil {
+		if _, _, err := optionalSpectralParameterField(def, "sigma_a", nil); err != nil {
 			return nil, fmt.Errorf("%s sigma_a: %w", context, err)
 		}
-		sigmaS, _, err := optionalSpectralParameterField(def, "sigma_s", core.NewConstantParameter(0))
-		if err != nil {
+		if _, _, err := optionalSpectralParameterField(def, "sigma_s", nil); err != nil {
 			return nil, fmt.Errorf("%s sigma_s: %w", context, err)
 		}
 
-		if _, err := registry.RegisterHomogeneous(name, etaModel, sigmaA, sigmaS); err != nil {
+		if _, err := registry.RegisterHomogeneous(name, etaModel); err != nil {
 			return nil, fmt.Errorf("%s: %w", context, err)
 		}
 	}
@@ -103,13 +99,13 @@ func parseMediumBoundary(def map[string]interface{}, registry *medium.Registry) 
 	}, nil
 }
 
-func parseMediumIORModel(def map[string]interface{}) (ior.Model, error) {
+func parseMediumIORModel(def map[string]interface{}) (medium.Model, error) {
 	iorDef, ok, err := optionalMapField(def, "ior")
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
-		return ior.NewConstant(1), nil
+		return medium.NewConstant(1), nil
 	}
 
 	iorType, err := requiredStringField(iorDef, "type")
@@ -122,10 +118,10 @@ func parseMediumIORModel(def map[string]interface{}) (ior.Model, error) {
 		if err != nil {
 			return nil, fmt.Errorf("ior: %w", err)
 		}
-		if !ior.IsValidEta(eta) {
+		if !medium.IsValidEta(eta) {
 			return nil, fmt.Errorf("ior eta must be > 0")
 		}
-		return ior.NewConstant(eta), nil
+		return medium.NewConstant(eta), nil
 	case "cauchy":
 		a, err := requiredFloat64Field(iorDef, "a")
 		if err != nil {
@@ -142,10 +138,10 @@ func parseMediumIORModel(def map[string]interface{}) (ior.Model, error) {
 		if !ok {
 			c = 0
 		}
-		model := ior.NewCauchy(a, b, c)
-		if !ior.IsValidEta(model.Evaluate(ior.WavelengthMinNM)) ||
-			!ior.IsValidEta(model.Evaluate(ior.DefaultWavelengthNM)) ||
-			!ior.IsValidEta(model.Evaluate(ior.WavelengthMaxNM)) {
+		model := medium.NewCauchy(a, b, c)
+		if !medium.IsValidEta(model.Evaluate(medium.WavelengthMinNM)) ||
+			!medium.IsValidEta(model.Evaluate(medium.DefaultWavelengthNM)) ||
+			!medium.IsValidEta(model.Evaluate(medium.WavelengthMaxNM)) {
 			return nil, fmt.Errorf("ior cauchy coefficients produce invalid eta")
 		}
 		return model, nil

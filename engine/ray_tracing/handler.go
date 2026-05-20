@@ -5,7 +5,7 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/Algo2147483647/ray/engine/model/material/core"
+	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 )
@@ -15,7 +15,7 @@ type Handler struct {
 	ThreadNum         int               `json:"thread_num"`
 	BlockCols         int               `json:"block_cols"`
 	BlockRows         int               `json:"block_rows"`
-	SpectrumMode      core.SpectrumMode `json:"spectrum_mode"`
+	SpectrumMode      bxdf.SpectrumMode `json:"spectrum_mode"`
 	WavelengthSamples int               `json:"wavelength_samples"`
 	RayPool           sync.Pool         `json:"ray_pool"`
 }
@@ -26,7 +26,7 @@ func NewHandler() *Handler {
 		ThreadNum:         runtime.NumCPU(),
 		BlockCols:         8,
 		BlockRows:         8,
-		SpectrumMode:      core.SpectrumSpectral,
+		SpectrumMode:      bxdf.SpectrumSpectral,
 		WavelengthSamples: 1,
 		RayPool: sync.Pool{
 			New: func() interface{} {
@@ -44,7 +44,7 @@ func (h *Handler) EffectiveSampleCount(cameraSamples int64) int64 {
 	if cameraSamples <= 0 {
 		return 0
 	}
-	if h.SpectrumMode != core.SpectrumRGBAndSpectral {
+	if h.SpectrumMode != bxdf.SpectrumRGBAndSpectral {
 		return cameraSamples
 	}
 	wavelengthSamples := h.WavelengthSamples

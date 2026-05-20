@@ -4,19 +4,21 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/Algo2147483647/ray/engine/model/material"
 	"github.com/Algo2147483647/ray/engine/model/material/bsdf"
 	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
-	"github.com/Algo2147483647/ray/engine/model/material/core"
 	"github.com/Algo2147483647/ray/engine/model/material/emission"
-	"github.com/Algo2147483647/ray/engine/model/material/ior"
+	"github.com/Algo2147483647/ray/engine/model/material/medium"
+	"github.com/Algo2147483647/ray/engine/model/optics"
+	"github.com/Algo2147483647/ray/engine/model/optics/spectrum_parameter"
 )
 
-func ParseMaterials(script *Script) (map[string]*core.Material, error) {
+func ParseMaterials(script *Script) (map[string]*material.Material, error) {
 	if script == nil {
 		return nil, errors.New("script is nil")
 	}
 
-	materials := make(map[string]*core.Material, len(script.Materials))
+	materials := make(map[string]*material.Material, len(script.Materials))
 	var parseErrors []error
 
 	for idx, matDef := range script.Materials {
@@ -34,10 +36,10 @@ func ParseMaterials(script *Script) (map[string]*core.Material, error) {
 			continue
 		}
 
-		material := &core.Material{
-			Metadata: core.MaterialMetadata{
+		material := &material.Material{
+			Metadata: material.MaterialMetadata{
 				Name:         id,
-				SpectrumMode: core.SpectrumRGB,
+				SpectrumMode: bxdf.SpectrumRGB,
 			},
 		}
 
@@ -80,7 +82,7 @@ func ParseMaterials(script *Script) (map[string]*core.Material, error) {
 	return materials, nil
 }
 
-func parseSurface(def map[string]interface{}) (core.BSDF, error) {
+func parseSurface(def map[string]interface{}) (bsdf.BSDF, error) {
 	surfaceType, err := requiredStringField(def, "type")
 	if err != nil {
 		return nil, err
@@ -94,17 +96,17 @@ func parseSurface(def map[string]interface{}) (core.BSDF, error) {
 		}
 		return bsdf.NewSingle(bxdf.NewLambertParameter(albedo)), nil
 	case "specular_reflection":
-		reflectance, _, err := optionalSpectralParameterField(def, "reflectance", core.NewConstantParameter(1))
+		reflectance, _, err := optionalSpectralParameterField(def, "reflectance", spectrum_parameter.NewConstantParameter(1))
 		if err != nil {
 			return nil, err
 		}
 		return bsdf.NewSingle(bxdf.NewSpecularReflectionParameter(reflectance)), nil
 	case "specular_dielectric":
-		reflectance, _, err := optionalSpectralParameterField(def, "reflectance", core.NewConstantParameter(1))
+		reflectance, _, err := optionalSpectralParameterField(def, "reflectance", spectrum_parameter.NewConstantParameter(1))
 		if err != nil {
 			return nil, err
 		}
-		transmittance, _, err := optionalSpectralParameterField(def, "transmittance", core.NewConstantParameter(1))
+		transmittance, _, err := optionalSpectralParameterField(def, "transmittance", spectrum_parameter.NewConstantParameter(1))
 		if err != nil {
 			return nil, err
 		}
@@ -115,7 +117,7 @@ func parseSurface(def map[string]interface{}) (core.BSDF, error) {
 		if !ok {
 			etaOutside = 1
 		}
-		if !ior.IsValidEta(etaOutside) {
+		if !medium.IsValidEta(etaOutside) {
 			return nil, fmt.Errorf("eta_outside must be > 0")
 		}
 		insideIOR, err := parseIORModel(def)
@@ -149,7 +151,7 @@ func parseSurface(def map[string]interface{}) (core.BSDF, error) {
 	}
 }
 
-func parseEmission(def map[string]interface{}) (core.Emitter, error) {
+func parseEmission(def map[string]interface{}) (material.Emitter, error) {
 	emissionType, err := requiredStringField(def, "type")
 	if err != nil {
 		return nil, err
@@ -167,7 +169,7 @@ func parseEmission(def map[string]interface{}) (core.Emitter, error) {
 	}
 }
 
-func parseIORModel(def map[string]interface{}) (ior.Model, error) {
+func parseIORModel(def map[string]interface{}) (medium.Model, error) {
 	if iorDef, ok, err := optionalMapField(def, "ior"); err != nil {
 		return nil, err
 	} else if ok {
@@ -181,10 +183,10 @@ func parseIORModel(def map[string]interface{}) (ior.Model, error) {
 			if err != nil {
 				return nil, fmt.Errorf("ior: %w", err)
 			}
-			if !ior.IsValidEta(eta) {
+			if !medium.IsValidEta(eta) {
 				return nil, fmt.Errorf("ior eta must be > 0")
 			}
-			return ior.NewConstant(eta), nil
+			return medium.NewConstant(eta), nil
 		case "cauchy":
 			a, err := requiredFloat64Field(iorDef, "a")
 			if err != nil {
@@ -201,10 +203,10 @@ func parseIORModel(def map[string]interface{}) (ior.Model, error) {
 			if !ok {
 				c = 0
 			}
-			model := ior.NewCauchy(a, b, c)
-			if !ior.IsValidEta(model.Evaluate(ior.WavelengthMinNM)) ||
-				!ior.IsValidEta(model.Evaluate(ior.DefaultWavelengthNM)) ||
-				!ior.IsValidEta(model.Evaluate(ior.WavelengthMaxNM)) {
+			model := medium.NewCauchy(a, b, c)
+			if !medium.IsValidEta(model.Evaluate(medium.WavelengthMinNM)) ||
+				!medium.IsValidEta(model.Evaluate(medium.DefaultWavelengthNM)) ||
+				!medium.IsValidEta(model.Evaluate(medium.WavelengthMaxNM)) {
 				return nil, fmt.Errorf("ior cauchy coefficients produce invalid eta")
 			}
 			return model, nil
@@ -220,20 +222,20 @@ func parseIORModel(def map[string]interface{}) (ior.Model, error) {
 	if !ok {
 		etaInside = 1.5
 	}
-	if !ior.IsValidEta(etaInside) {
+	if !medium.IsValidEta(etaInside) {
 		return nil, fmt.Errorf("eta_inside must be > 0")
 	}
-	return ior.NewConstant(etaInside), nil
+	return medium.NewConstant(etaInside), nil
 }
 
-func requiredEmissionRadianceField(data map[string]interface{}) (core.SpectralParameter, error) {
+func requiredEmissionRadianceField(data map[string]interface{}) (optics.SpectralParameter, error) {
 	if _, ok := data["radiance"]; ok {
 		return requiredSpectralParameterField(data, "radiance")
 	}
 	return requiredSpectralParameterField(data, "color")
 }
 
-func requiredSpectralParameterField(data map[string]interface{}, key string) (core.SpectralParameter, error) {
+func requiredSpectralParameterField(data map[string]interface{}, key string) (optics.SpectralParameter, error) {
 	value, ok := data[key]
 	if !ok {
 		return nil, fmt.Errorf("missing required field %q", key)
@@ -245,7 +247,7 @@ func requiredSpectralParameterField(data map[string]interface{}, key string) (co
 	return parameter, nil
 }
 
-func optionalSpectralParameterField(data map[string]interface{}, key string, fallback core.SpectralParameter) (core.SpectralParameter, bool, error) {
+func optionalSpectralParameterField(data map[string]interface{}, key string, fallback optics.SpectralParameter) (optics.SpectralParameter, bool, error) {
 	value, ok := data[key]
 	if !ok {
 		return fallback, false, nil
@@ -257,7 +259,7 @@ func optionalSpectralParameterField(data map[string]interface{}, key string, fal
 	return parameter, true, nil
 }
 
-func parseSpectralParameterValue(key string, value interface{}) (core.SpectralParameter, error) {
+func parseSpectralParameterValue(key string, value interface{}) (optics.SpectralParameter, error) {
 	if mapped, ok := value.(map[string]interface{}); ok {
 		return parseSpectralParameterObject(mapped)
 	}
@@ -272,10 +274,10 @@ func parseSpectralParameterValue(key string, value interface{}) (core.SpectralPa
 	if err := validateNonNegativeSlice("legacy rgb", values); err != nil {
 		return nil, err
 	}
-	return core.NewRGBParameter(core.NewSpectrum(values[0], values[1], values[2])), nil
+	return spectrum_parameter.NewRGBParameter(optics.NewSpectrum(values[0], values[1], values[2])), nil
 }
 
-func parseSpectralParameterObject(def map[string]interface{}) (core.SpectralParameter, error) {
+func parseSpectralParameterObject(def map[string]interface{}) (optics.SpectralParameter, error) {
 	parameterType, err := requiredStringField(def, "type")
 	if err != nil {
 		return nil, err
@@ -295,16 +297,16 @@ func parseSpectralParameterObject(def map[string]interface{}) (core.SpectralPara
 			return nil, err
 		}
 		if !ok {
-			space = string(core.ColorSpaceLinearSRGB)
+			space = string(optics.ColorSpaceLinearSRGB)
 		}
-		value := core.NewSpectrum(values[0], values[1], values[2])
-		switch core.ColorSpace(space) {
-		case core.ColorSpaceLinearSRGB:
-			return core.NewRGBParameter(value), nil
-		case core.ColorSpaceSRGB:
-			return core.NewSRGBParameter(value), nil
-		case core.ColorSpaceACEScg:
-			return core.NewACEScgParameter(value), nil
+		value := optics.NewSpectrum(values[0], values[1], values[2])
+		switch optics.ColorSpace(space) {
+		case optics.ColorSpaceLinearSRGB:
+			return spectrum_parameter.NewRGBParameter(value), nil
+		case optics.ColorSpaceSRGB:
+			return spectrum_parameter.NewSRGBParameter(value), nil
+		case optics.ColorSpaceACEScg:
+			return spectrum_parameter.NewACEScgParameter(value), nil
 		default:
 			return nil, fmt.Errorf("unsupported rgb color space %q", space)
 		}
@@ -316,7 +318,7 @@ func parseSpectralParameterObject(def map[string]interface{}) (core.SpectralPara
 		if value < 0 {
 			return nil, fmt.Errorf("value must be >= 0")
 		}
-		return core.NewConstantParameter(value), nil
+		return spectrum_parameter.NewConstantParameter(value), nil
 	case "sampled":
 		wavelengths, err := requiredFloat64SliceField(def, "wavelengths_nm")
 		if err != nil {
@@ -345,7 +347,7 @@ func parseSpectralParameterObject(def map[string]interface{}) (core.SpectralPara
 		if ok && interpolation != "linear" {
 			return nil, fmt.Errorf("unsupported interpolation %q", interpolation)
 		}
-		return core.NewSampledParameter(wavelengths, values), nil
+		return spectrum_parameter.NewSampledParameter(wavelengths, values), nil
 	case "blackbody":
 		temperature, err := requiredFloat64Field(def, "temperature")
 		if err != nil {
@@ -364,7 +366,7 @@ func parseSpectralParameterObject(def map[string]interface{}) (core.SpectralPara
 		if scale < 0 {
 			return nil, fmt.Errorf("scale must be >= 0")
 		}
-		return core.NewBlackbodyParameter(temperature, scale), nil
+		return spectrum_parameter.NewBlackbodyParameter(temperature, scale), nil
 	default:
 		return nil, fmt.Errorf("unsupported spectral parameter type %q", parameterType)
 	}

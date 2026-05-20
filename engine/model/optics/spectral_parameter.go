@@ -15,8 +15,13 @@ type SpectrumBounds struct {
 	Max Spectrum
 }
 
+type WavelengthContext interface {
+	SpectralWavelengthNM() float64
+	SpectralWavelengthsNM() []float64
+}
+
 type SpectralParameter interface {
-	Eval(ctx ShadingContext) Spectrum
+	Eval(ctx WavelengthContext) Spectrum
 	Bounds() SpectrumBounds
 }
 

@@ -3,7 +3,7 @@ package controller
 import (
 	"github.com/Algo2147483647/ray/engine/model"
 	"github.com/Algo2147483647/ray/engine/model/camera"
-	"github.com/Algo2147483647/ray/engine/model/material/core"
+	"github.com/Algo2147483647/ray/engine/model/material"
 	"github.com/Algo2147483647/ray/engine/model/material/medium"
 	"github.com/Algo2147483647/ray/engine/model/shape"
 	"github.com/Algo2147483647/ray/engine/sceneio/factory"
@@ -39,7 +39,7 @@ func BuildCameraNDimFromScript(def CameraScript) (*camera.CameraNDim, error) {
 	return factory.BuildCameraNDimFromScript(def)
 }
 
-func ParseMaterials(script *Script) (map[string]*core.Material, error) {
+func ParseMaterials(script *Script) (map[string]*material.Material, error) {
 	return factory.ParseMaterials(script)
 }
 

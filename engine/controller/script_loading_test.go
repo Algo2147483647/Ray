@@ -8,7 +8,9 @@ import (
 	"testing"
 
 	"github.com/Algo2147483647/ray/engine/model"
-	"github.com/Algo2147483647/ray/engine/model/material/core"
+	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
+	"github.com/Algo2147483647/ray/engine/model/optics"
+	"github.com/Algo2147483647/ray/engine/utils/maths"
 )
 
 func TestReadScriptFileReturnsErrorForInvalidJSON(t *testing.T) {
@@ -197,11 +199,11 @@ func TestParseMaterialsSupportsSpectralParameterObjects(t *testing.T) {
 		t.Fatalf("parse spectral parameter objects: %v", err)
 	}
 
-	ctx := core.ShadingContext{SpectrumMode: core.SpectrumRGB}
-	wi := core.NewDirection(0, 0, 1)
-	wo := core.NewDirection(0, 0, 1)
+	ctx := bxdf.ShadingContext{SpectrumMode: bxdf.SpectrumRGB}
+	wi := maths.NewDirection(0, 0, 1)
+	wo := maths.NewDirection(0, 0, 1)
 	got := materials["matte"].Surface.Eval(ctx, wi, wo)
-	want := core.NewSpectrum(0.8/math.Pi, 0.4/math.Pi, 0.2/math.Pi)
+	want := optics.NewSpectrum(0.8/math.Pi, 0.4/math.Pi, 0.2/math.Pi)
 	if !got.AlmostEqual(want, 1e-12) {
 		t.Fatalf("unexpected lambert eval: got %+v want %+v", got, want)
 	}
@@ -234,12 +236,12 @@ func TestParseMaterialsConvertsSRGBParameterToLinear(t *testing.T) {
 		t.Fatalf("parse srgb spectral parameter: %v", err)
 	}
 
-	ctx := core.ShadingContext{SpectrumMode: core.SpectrumRGB}
-	wi := core.NewDirection(0, 0, 1)
-	wo := core.NewDirection(0, 0, 1)
+	ctx := bxdf.ShadingContext{SpectrumMode: bxdf.SpectrumRGB}
+	wi := maths.NewDirection(0, 0, 1)
+	wo := maths.NewDirection(0, 0, 1)
 	got := materials["srgb-matte"].Surface.Eval(ctx, wi, wo)
 	linear := math.Pow((0.5+0.055)/1.055, 2.4)
-	want := core.ConstantSpectrum(linear / math.Pi)
+	want := optics.ConstantSpectrum(linear / math.Pi)
 	if !got.AlmostEqual(want, 1e-12) {
 		t.Fatalf("unexpected srgb conversion: got %+v want %+v", got, want)
 	}

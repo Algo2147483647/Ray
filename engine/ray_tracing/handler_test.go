@@ -3,12 +3,12 @@ package ray_tracing
 import (
 	"testing"
 
-	"github.com/Algo2147483647/ray/engine/model/material/core"
+	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
 )
 
 func TestEffectiveSampleCountUsesWavelengthSubsamples(t *testing.T) {
 	handler := NewHandler()
-	handler.SpectrumMode = core.SpectrumRGBAndSpectral
+	handler.SpectrumMode = bxdf.SpectrumRGBAndSpectral
 	handler.WavelengthSamples = 3
 
 	if got := handler.EffectiveSampleCount(10); got != 30 {
@@ -18,7 +18,7 @@ func TestEffectiveSampleCountUsesWavelengthSubsamples(t *testing.T) {
 
 func TestEffectiveSampleCountDefaultsSampledModeWavelengths(t *testing.T) {
 	handler := NewHandler()
-	handler.SpectrumMode = core.SpectrumRGBAndSpectral
+	handler.SpectrumMode = bxdf.SpectrumRGBAndSpectral
 	handler.WavelengthSamples = 0
 
 	if got := handler.EffectiveSampleCount(10); got != 40 {

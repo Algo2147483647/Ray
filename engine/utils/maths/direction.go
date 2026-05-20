@@ -48,6 +48,10 @@ func (d Direction) IsFinite() bool {
 	return isFinite(d.X) && isFinite(d.Y) && isFinite(d.Z)
 }
 
+func isFinite(v float64) bool {
+	return !math.IsNaN(v) && !math.IsInf(v, 0)
+}
+
 func CosTheta(d Direction) float64 {
 	return d.Z
 }
