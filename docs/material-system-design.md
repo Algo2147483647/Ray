@@ -64,19 +64,23 @@ The first implementation phase should focus on `Surface` and `BxDF`. Subsurface,
 
 ## Current Implementation Status
 
-The current renderer no longer uses the old probability-style material model for normal scene objects. Scene materials are parsed into `engine/go/internal/material/core.Material`, and the path tracer samples the material surface through the BSDF/BxDF interface.
+The current renderer no longer uses the old probability-style material model for normal scene objects. Scene materials are parsed into `engine/model/material.Material`, and the path tracer samples the material surface through the BSDF/BxDF interface.
 
 Implemented packages:
 
 ```text
-engine/go/internal/material/
-  core/
+engine/model/material/
+  material.go
+  validation.go
   bsdf/
   bxdf/
   emission/
-  ior/
+  medium/
   microfacet/
-  validation/
+engine/model/optics/
+  spectrum.go
+  spectral_parameter.go
+  spectrum_parameter/
 ```
 
 Implemented surface and emission primitives:
@@ -112,12 +116,12 @@ rough dielectric is not implemented yet
 Beckmann distribution is not implemented yet
 full spectral material databases are not implemented yet
 full packet-style multi-channel light transport is not implemented yet
-named medium boundaries and nested dielectric stacks are not implemented yet
+homogeneous volume attenuation/scattering is parsed but not transported yet
 direct lighting through specular chains, photon mapping, and BDPT are not implemented yet
 subsurface, volume, texture graphs, MIS, and caustic-focused integrators are not implemented yet
 ```
 
-Nested dielectric media and caustic-capable validation are planned separately in
+Nested dielectric media are implemented for boundary IOR through `engine/model/material/medium`. Caustic-capable validation is planned separately in
 [`medium-and-caustics-modernization-plan.md`](medium-and-caustics-modernization-plan.md).
 
 ## Core Concepts
@@ -480,41 +484,34 @@ CLI overrides use `--exposure`, `--tone-mapping`, and `--gamma`.
 ## Suggested Package Layout
 
 ```text
-engine/go/internal/material/
-  core/
-    spectrum.go
-    direction.go
-    frame.go
-    sampling.go
-    flags.go
+engine/model/material/
+  material.go
+  validation.go
   bxdf/
     lambert.go
-    oren_nayar.go
-    microfacet.go
-    rough_dielectric.go
+    specular.go
     rough_conductor.go
   bsdf/
     single.go
     mixture.go
-    layered.go
   emission/
-    area.go
-    blackbody.go
-  volume/
-    phase.go
-    medium.go
-  texture/
     constant.go
-    image.go
-    procedural.go
-  validation/
-    non_negative.go
-    reciprocity.go
-    energy.go
-    pdf_consistency.go
+  medium/
+    ior.go
+    medium.go
+    boundary.go
+    stack.go
+  microfacet/
+    fresnel.go
+    ggx.go
+
+engine/model/optics/
+  spectrum.go
+  spectral_parameter.go
+  spectrum_parameter/
 ```
 
-The existing `model/optics/material.go` can remain during migration and later become a compatibility layer.
+The legacy `model/optics/material.go` model has been removed from normal scene material flow.
 
 ## Migration Plan
 
@@ -531,22 +528,22 @@ Lambert BxDF
 basic validation harness
 ```
 
-The initial implementation lives under `engine/go/internal/material` and is intentionally isolated from the current renderer.
+The implementation now lives under `engine/model/material` and is used by the current renderer.
 
 ### Phase 2: BSDF Containers
 
 Delivered:
 
 ```text
-core.Scattering
-core.BSDF
-core.Material container
+bxdf.Scattering
+bsdf.BSDF
+material.Material container
 bsdf.Single
 bsdf.WeightedMixture
 validation over Scattering instead of only BxDF
 ```
 
-This phase does not include a compatibility adapter for the old `model/optics.Material`. The new material system is allowed to move independently of the existing material representation.
+This phase no longer uses a compatibility adapter for the old `model/optics.Material`.
 
 ### Phase 3: Renderer Sampling Path
 
@@ -663,7 +660,7 @@ Rough conductor:
 Example render command:
 
 ```bash
-go -C engine/go run ./cmd/ray --script ../../examples/scenes/rough-conductor.json --samples 64 --width 256 --height 256 --output-image ../../outputs/rough-conductor.png
+go -C engine run . --script ../examples/scenes/feature-showcase.json --samples 64 --width 256 --height 256 --output-image ../outputs/rough-conductor.png
 ```
 
 Old fields such as `color`, `reflectivity`, `refractivity`, `radiate`, and `diffuse_loss` are not part of the new material schema. They are intentionally not translated in the new parser.
@@ -717,20 +714,20 @@ heterogeneous volume
 Delivered:
 
 ```text
-material/ior model interface
+material/medium IOR model interface
 constant IOR model
 Cauchy dispersion model
 specular dielectric wavelength-aware eta evaluation
-renderer-level wavelength sampling on camera rays
+renderer-level wavelength sampling after camera ray generation
 lambda PDF propagation through ShadingContext
-white-point normalized spectral-to-RGB reconstruction
+white-point normalized spectral-to-XYZ reconstruction
 ray wavelength propagation through ShadingContext and BxDFSample
 ```
 
-The camera samples one wavelength per path at ray generation time. The ray records both `WaveLength` and `WavelengthPDF`, and the initial throughput is multiplied by a white-point normalized reconstruction weight:
+The renderer samples wavelengths per path after camera ray generation. The ray records both `WaveLength` and `WavelengthPDF`, and spectral power is reconstructed through the CIE/XYZ conversion path:
 
 ```text
-throughput_rgb *= wavelength_to_rgb(lambda) / mean_visible_wavelength_to_rgb
+xyz += spectral_power_to_xyz(lambda, pdf, power)
 ```
 
 BxDFs do not sample wavelengths. Dispersive BxDFs only evaluate their IOR model at the wavelength already carried by the renderer context. If no wavelength is present, they fall back to a deterministic 550nm value for non-renderer tests and compatibility paths.
@@ -740,8 +737,9 @@ BxDFs do not sample wavelengths. Dispersive BxDFs only evaluate their IOR model 
 Current material and spectral behavior can be exercised with:
 
 ```text
-examples/scenes/neutral-dispersion-slit-test.json
 examples/scenes/feature-showcase.json
+examples/scenes/dispersion-three-balls.json
+examples/scenes/true-spectral-prism-dispersion-200spp.json
 ```
 
 The showcase scene covers:
@@ -760,7 +758,7 @@ tone mapping / exposure / gamma output
 Example high-quality render:
 
 ```bash
-go -C engine/go run ./cmd/ray --script ../../examples/scenes/feature-showcase.json --width 800 --height 800 --samples 2000 --output-image ../../outputs/feature-showcase-800x800-2000spp.png
+go -C engine run . --script ../examples/scenes/feature-showcase.json --width 800 --height 800 --samples 2000 --output-image ../outputs/feature-showcase-800x800-2000spp.png
 ```
 
 ## Open Design Questions

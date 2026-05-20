@@ -47,10 +47,10 @@ The renderer repeatedly uses the following operations:
 
 Relevant code:
 
-- `utils/geometrical_optics.go`
-- `model/shape/sphere.go`
-- `model/shape/triangle.go`
-- `ray_tracing/trace_ray.go`
+- `engine/utils/maths/direction.go`
+- `engine/model/shape/sphere.go`
+- `engine/model/shape/triangle.go`
+- `engine/ray_tracing/trace_ray.go`
 
 ## 3. Camera Bases and Orthonormalization
 
@@ -120,7 +120,7 @@ Important implementation note:
 
 Relevant code:
 
-- `ray_tracing/trace_pixel.go`
+- `engine/ray_tracing/trace_pixel.go`
 - `model/camera/camera_3d.go`
 - `model/camera/camera_n_dim.go`
 - `model/optics/material.go`
@@ -158,8 +158,8 @@ This is a standard geometric pattern:
 
 Relevant code:
 
-- `model/shape/quadratic_equation.go`
-- `model/shape/forth-order_equation.go`
+- `engine/model/shape/quadratic_equation.go`
+- `engine/model/shape/forth-order_equation.go`
 
 ## 7. Gradients as Surface Normals
 
@@ -197,8 +197,8 @@ Examples in the project:
 
 Relevant code:
 
-- `model/shape/quadratic_equation.go`
-- `model/shape/forth-order_equation.go`
+- `engine/model/shape/quadratic_equation.go`
+- `engine/model/shape/forth-order_equation.go`
 
 ## 8. Numerical Thresholds
 
@@ -219,9 +219,9 @@ This is a standard numerical-analysis safeguard in ray tracing because floating-
 Relevant code:
 
 - `utils/global.go`
-- `model/shape/sphere.go`
-- `model/shape/plane.go`
-- `model/object/object_tree.go`
+- `engine/model/shape/sphere.go`
+- `engine/model/shape/plane.go`
+- `engine/model/object/object_tree.go`
 
 ## 9. Tensors and Higher-Order Coefficients
 
@@ -236,7 +236,7 @@ This lets a general fourth-degree polynomial be assembled as a multilinear combi
 
 Relevant code:
 
-- `model/shape/forth-order_equation.go`
+- `engine/model/shape/forth-order_equation.go`
 
 ## 10. What the Math Enables
 

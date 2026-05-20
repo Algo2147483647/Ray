@@ -1,26 +1,29 @@
 # Medium And Caustics Modernization Plan
 
-This document defines the next renderer modernization step after spectral materials: replace the current single-value refraction state with an explicit medium/boundary model, then add a caustic-capable light transport path for prism and glass-on-screen validation scenes.
+This document tracks medium and caustics modernization after spectral materials. The explicit medium/boundary model has been partially implemented; the remaining major work is volume attenuation/scattering and caustic-capable light transport for prism and glass-on-screen validation scenes.
+
+Status after the controller/material refactor:
+
+- Implemented: `medium.Registry`, constant and Cauchy IOR models, `medium.Boundary`, priority-aware `medium.Stack`, object-level `medium_boundary`, and renderer-side incident/transmitted eta resolution.
+- Still planned: homogeneous volume attenuation, participating-media scattering, direct-light/specular-chain sampling, photon mapping, BDPT, or another caustic-capable integrator.
 
 ## 1. Current State
 
-The renderer currently handles refraction with a transitional model:
+The renderer now handles refraction with a hybrid compatibility model:
 
 ```text
-Ray.RefractionIndex
-  -> ShadingContext.CurrentIOR
+Ray.MediumStack + object MediumBoundary
+  -> ShadingContext.EtaIncident / EtaTransmit
   -> SpecularDielectric.Sample
-  -> BxDFSample.Eta
-  -> Ray.RefractionIndex = sample.Eta
+  -> BxDFSample.TransmitMedium / Eta
+  -> Ray.MediumStack and Ray.RefractionIndex update
 ```
 
-This is enough for a single glass object in air, and it is already wavelength-aware through the IOR model. It is not enough for modern nested media:
+This supports nested dielectric IOR decisions and remains wavelength-aware through the IOR model. The remaining limitations are:
 
-- A ray only knows one scalar IOR, not the medium it is inside.
-- Enter/exit decisions are inferred by comparing scalar eta values.
-- Nested dielectrics such as air -> glass -> water -> glass -> air are ambiguous.
-- Overlapping dielectrics need a priority or boundary policy.
-- Absorption, participating media, thin shells, and containers have no stable place to live.
+- Volume absorption is parsed but not applied during transport.
+- Participating media are not implemented.
+- Thin shells are represented, but advanced layered/coating behavior is not implemented.
 - A diffuse receiver behind a prism cannot be lit efficiently by the current camera-only path tracer because the important paths are specular caustics.
 
 The modern target should separate three concepts:
@@ -56,39 +59,35 @@ type MediumID uint32
 type Medium interface {
     ID() MediumID
     Name() string
-    IOR(ctx core.ShadingContext) float64
-    SigmaA(ctx core.ShadingContext) core.Spectrum
-    SigmaS(ctx core.ShadingContext) core.Spectrum
-    IsVacuum() bool
+    IOR(ctx WavelengthContext) float64
 }
 ```
 
-Initial implementation can keep only vacuum and homogeneous dielectric media:
+The current implementation keeps homogeneous dielectric media focused on IOR:
 
 ```go
-type HomogeneousMedium struct {
+type Homogeneous struct {
     id     MediumID
     name   string
-    ior    ior.Model
-    sigmaA core.SpectralParameter
-    sigmaS core.SpectralParameter
+    eta    Model
 }
 ```
 
-`SigmaA` and `SigmaS` may return zero until volume transmittance is implemented. Keeping the fields in the type now prevents another schema break later.
+`sigma_a` and `sigma_s` are still accepted by scene JSON, but they are schema placeholders until volume transmittance is implemented.
 
 ### 3.2 Medium Stack
 
 ```go
-type MediumStack struct {
-    entries []MediumID
+type Stack struct {
+    entries []StackEntry
 }
 
-func (s *MediumStack) Current() MediumID
-func (s *MediumStack) Push(id MediumID)
-func (s *MediumStack) Remove(id MediumID)
-func (s *MediumStack) Contains(id MediumID) bool
-func (s *MediumStack) Clone() MediumStack
+func (s Stack) Current() MediumID
+func (s *Stack) Push(id MediumID)
+func (s *Stack) PushWithPriority(id MediumID, priority int)
+func (s *Stack) Remove(id MediumID) bool
+func (s Stack) Contains(id MediumID) bool
+func (s Stack) Clone() Stack
 ```
 
 The current medium is the topmost active medium. For ordinary nested closed surfaces, pushing on entry and removing on exit is enough. For overlapping surfaces, use boundary priority.
@@ -98,7 +97,7 @@ The current medium is the topmost active medium. For ordinary nested closed surf
 Objects that represent dielectric boundaries should declare what they separate:
 
 ```go
-type MediumBoundary struct {
+type Boundary struct {
     Outside MediumID
     Inside  MediumID
     Priority int
@@ -115,13 +114,13 @@ Rules:
 
 ### 3.4 Ray State
 
-Replace the long-term meaning of `Ray.RefractionIndex` with explicit medium state:
+The ray now carries a medium stack while keeping `RefractionIndex` as a scalar compatibility/cache value:
 
 ```go
 type Ray struct {
     ...
-    MediumStack medium.MediumStack
-    CurrentMedium medium.MediumID
+    MediumStack medium.Stack
+    RefractionIndex float64
     WaveLength float64
     WavelengthPDF float64
 }
@@ -129,9 +128,9 @@ type Ray struct {
 
 Compatibility:
 
-- Keep `Ray.RefractionIndex` for one transition phase.
-- Derive it from `CurrentMedium.IOR(ctx)` when old code needs it.
-- Stop using scalar comparison as the source of enter/exit truth.
+- `Ray.RefractionIndex` is updated from the current medium IOR.
+- Enter/exit truth comes from front-face orientation plus `medium.Boundary`.
+- Scalar comparison is no longer the primary source of boundary transition truth.
 
 ## 4. Boundary Classification
 
@@ -299,7 +298,7 @@ type CausticSample struct {
     Position *mat.VecDense
     Normal   *mat.VecDense
     Radius   float64
-    Spectrum core.Spectrum
+    Spectrum optics.Spectrum
 }
 ```
 
@@ -341,9 +340,9 @@ BDPT is more general than a caustic photon pass, but it is a larger integration 
 
 Tasks:
 
-- Add `medium` package with `MediumID`, `Medium`, `HomogeneousMedium`, and `MediumStack`.
+- Add `medium` package with `MediumID`, `Medium`, `Homogeneous`, and `Stack`.
 - Add default air medium.
-- Add `MediumBoundary` to objects or material metadata.
+- Add `medium.Boundary` to objects.
 - Preserve `Ray.RefractionIndex` compatibility.
 - Add tests for stack push/remove/current behavior.
 

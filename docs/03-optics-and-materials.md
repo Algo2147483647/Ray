@@ -1,291 +1,185 @@
 # Optics and Materials
 
-> Status note: parts of this document describe the legacy optics-material implementation. Current scene materials are parsed into the BSDF/BxDF system under `engine/go/internal/material`. For the up-to-date material schema, validation requirements, IOR/dispersion wiring, microfacet status, and tone mapping controls, see [`material-system-design.md`](material-system-design.md).
+This document describes the current optics and material model after the BSDF/BxDF and controller refactor.
 
-This document describes the physical ideas used when a ray reaches a surface. The code is primarily based on geometrical optics with a stochastic surface-interaction model.
+## 1. Ray State
 
-## 1. What a Ray Represents
-
-In this project, a ray carries more than just position and direction. It stores:
+A ray is stored in `engine/model/optics/ray.go`. It carries:
 
 - origin,
 - direction,
-- RGB color weight,
-- wavelength,
-- refractive index of the current medium,
-- a debug flag.
+- RGB/XYZ color weight,
+- sampled wavelength in nanometers,
+- wavelength PDF,
+- current scalar refractive index,
+- medium stack.
 
-This means a ray is both:
+The wavelength fields allow the renderer to operate in RGB, hero-wavelength, or sampled wavelength modes without changing camera code.
 
-- a geometric object in space,
-- a compact state vector for optical transport.
+## 2. Spectrum Values
 
-Relevant code:
+`engine/model/optics/spectrum.go` defines `optics.Spectrum`.
 
-- `model/optics/ray.go`
+A spectrum can be:
 
-## 2. Surface Interaction Model
+- RGB, using scene-linear RGB compatibility channels,
+- sampled, using channels aligned with the active wavelength samples.
 
-When a ray hits a material, the material randomly chooses one of three behaviors:
-
-1. reflection,
-2. refraction,
-3. diffuse scattering.
-
-The probabilities are controlled by:
-
-- `Reflectivity`,
-- `Refractivity`,
-- the remaining probability mass for diffuse response.
-
-This is a probabilistic transport model. Each bounce follows one sampled branch rather than splitting into multiple simultaneous child rays.
-
-Relevant code:
-
-- `model/optics/material.go`
-
-## 3. Reflection
-
-The reflected direction is computed from the standard mirror law:
+Spectrum-valued material parameters implement `optics.SpectralParameter` in `engine/model/optics/spectrum_parameter/`:
 
 ```text
-r = d - 2 (n · d) n
+constant_parameter.go
+rgb_parameter.go
+sampled_parameter.go
+blackbody_parameter.go
 ```
 
-where:
+These parameters evaluate against a wavelength context, so the same material can produce RGB values in RGB mode and sampled values in spectral modes.
 
-- `d` is the incident direction,
-- `n` is the outward unit normal,
-- `r` is the reflected unit direction.
+## 3. Material Package Layout
 
-This formula is the vector form of "angle of incidence equals angle of reflection."
-
-Relevant code:
-
-- `utils/geometrical_optics.go`
-
-## 4. Refraction and Snell's Law
-
-Refraction changes direction when a ray crosses an interface between two media with different refractive indices.
-
-The implementation computes:
+The material system lives under `engine/model/material/`:
 
 ```text
-eta = n1 / n2
+material.go       Material container and Emitter interface
+validation.go     Physical validity checks for scattering functions
+bsdf/             BSDF wrappers and mixtures
+bxdf/             Individual scattering lobes
+emission/         Emission models
+medium/           IOR models, medium registry, boundary stack
+microfacet/       Fresnel and GGX helpers
 ```
 
-where:
+The intended boundary is:
 
-- `n1` is the current medium index stored on the ray,
-- `n2` is the target medium index provided by the material.
+- `bxdf`: individual scattering models such as Lambert, specular dielectric, and rough conductor.
+- `bsdf`: composition and dispatch over one or more BxDFs.
+- `medium`: medium identity, IOR evaluation, and nested-boundary stack logic.
+- `microfacet`: low-level microfacet math shared by BxDFs.
 
-The code then uses a vector refraction formula derived from Snell's law. The key scalar relation is:
+## 4. Shading Context
+
+`bxdf.ShadingContext` carries local information needed to evaluate or sample scattering:
+
+- transport mode,
+- spectrum mode,
+- current IOR,
+- active wavelength or wavelength packet,
+- wavelength PDF,
+- incident/transmitted medium IDs,
+- incident/transmitted eta values,
+- entering/leaving boundary flag.
+
+This context is built in `engine/ray_tracing/trace_ray.go` from the ray, object boundary, and medium registry.
+
+## 5. Surface Scattering
+
+The current surface models are:
 
 ```text
-n1 sin(theta1) = n2 sin(theta2)
+lambert
+specular_reflection
+specular_dielectric
+rough_conductor
 ```
 
-This is why the algorithm first computes the transmitted sine term through `eta`.
-
 Relevant code:
-
-- `utils/geometrical_optics.go`
-- `model/optics/material.go`
-
-## 5. Total Internal Reflection
-
-When light goes from a higher index medium to a lower one, refraction may become impossible beyond the critical angle.
-
-The implementation checks:
 
 ```text
-sin^2(theta_t) > 1
+engine/model/material/bxdf/lambert.go
+engine/model/material/bxdf/specular.go
+engine/model/material/bxdf/rough_conductor.go
+engine/model/material/bsdf/single.go
+engine/model/material/bsdf/mixture.go
 ```
 
-If this is true, the refracted solution is not real, and the event becomes pure reflection.
+Each BxDF supports:
 
-This is the classic total internal reflection condition.
+- `Eval`,
+- `Sample`,
+- `PDF`,
+- `AlbedoBound`,
+- `RoughnessInfo`,
+- `DeltaFlags`.
 
-Relevant code:
+Delta materials such as perfect specular reflection and transmission sample deterministic directions. Rough conductor uses GGX microfacet distribution and conductor Fresnel.
 
-- `utils/geometrical_optics.go`
-- `model/optics/material.go`
+## 6. Fresnel and Refraction
 
-## 6. Fresnel Effect via Schlick Approximation
+Dielectric Fresnel and refraction are implemented in `engine/model/material/bxdf/specular.go`.
 
-Even when refraction is possible, real dielectric surfaces do not reflect a constant fraction of light. Reflectance depends on angle.
+For dielectric transmission:
 
-The project uses the Schlick approximation:
+1. resolve the active wavelength,
+2. evaluate the inside IOR model,
+3. resolve incident/transmitted eta from the medium context when available,
+4. sample reflection or refraction by Fresnel probability,
+5. update the transmitted medium on the returned sample.
+
+Conductor Fresnel lives in `engine/model/material/microfacet/fresnel.go` and supports RGB or sampled spectra.
+
+## 7. Media and Boundaries
+
+Medium state lives in `engine/model/material/medium/`:
 
 ```text
-R(theta) = R0 + (1 - R0) (1 - cos(theta))^5
+ior.go       Constant and Cauchy IOR models
+medium.go    Registry and homogeneous media
+boundary.go  Object boundary description
+stack.go     Nested medium stack and priority resolution
 ```
 
-with:
+Every object may declare a `medium_boundary` in scene JSON. During tracing, the renderer compares the current ray medium stack with the object's boundary to compute:
+
+- incident medium,
+- transmitted medium,
+- whether the ray is entering,
+- eta on both sides of the interface.
+
+This is more robust than the old single scalar IOR model and supports nested dielectric interfaces.
+
+## 8. Emission
+
+Constant emission lives in `engine/model/material/emission/constant.go`.
+
+Emission uses spectral parameters just like surface reflectance and transmittance. This means a light can be RGB, constant scalar, sampled spectrum, or blackbody.
+
+## 9. Wavelength Sampling
+
+Wavelength sampling is owned by the renderer rather than the camera:
 
 ```text
-R0 = ((n1 - n2) / (n1 + n2))^2
+engine/ray_tracing/wavelength_sampler.go
+engine/ray_tracing/trace_pixel.go
 ```
 
-This is a very common physically inspired approximation because it captures the increase in reflectivity near grazing angles without requiring the full Fresnel equations.
-
-Relevant code:
-
-- `utils/geometrical_optics.go`
-
-## 7. Diffuse Reflection
-
-If the ray is neither reflected nor refracted, the surface performs diffuse scattering.
-
-In 3D, the code samples a cosine-weighted hemisphere around the normal:
-
-- draw two random numbers,
-- convert them to polar coordinates,
-- build a local tangent-bitangent-normal basis,
-- map the local sample into world coordinates.
-
-This sampling pattern is physically meaningful because Lambertian reflection is naturally weighted by the cosine of the outgoing angle with respect to the normal.
-
-Relevant code:
-
-- `utils/geometrical_optics.go`
-
-## 8. A 4D Diffuse Generalization
-
-The project also includes `DiffuseReflect4D`, which constructs a random direction in the tangent subspace orthogonal to the normal and blends it with the normal direction.
-
-This is mathematically notable because it generalizes diffuse scattering ideas beyond ordinary 3D space. Even though the main runtime dimension is currently 3, this function shows that the project is exploring higher-dimensional ray transport concepts.
-
-Relevant code:
-
-- `utils/geometrical_optics.go`
-
-## 9. Emissive Materials
-
-If a material is marked as radiating, it behaves as a light source and terminates the ray path.
-
-Two emission modes exist:
-
-- default emission: multiply ray color by the material color,
-- directional emission: only rays aligned closely enough with the surface normal receive energy.
-
-The directional-light mode effectively models a highly angular emitter rather than an ideal isotropic surface source.
-
-Relevant code:
-
-- `model/optics/material.go`
-
-## 10. Material Color as Spectral Weighting
-
-After the interaction type is chosen, the ray color is multiplied component-wise by the material color or by a color function:
+Supported modes:
 
 ```text
-C_out = C_in * C_material
+rgb
+hero_wavelength
+sampled
 ```
 
-This is not a full spectral BRDF, but it is an effective RGB attenuation model. It makes the material color act like a channel-wise transmittance or reflectance factor.
+In spectral modes, the ray carries a sampled wavelength and PDF. After tracing, spectral power is converted through CIE 1931 XYZ matching functions in `engine/model/optics/wavelength.go`.
 
-Relevant code:
+## 10. Current Limits
 
-- `model/optics/material.go`
-- `model/optics/color_func_lib.go`
+Implemented:
 
-## 11. Wavelength and Monochromatic Conversion
-
-The renderer can convert a ray into a monochromatic ray by sampling a wavelength in the visible range:
-
-```text
-380 nm <= lambda <= 750 nm
-```
-
-The sampled wavelength is mapped to RGB using a spectral approximation. The resulting RGB is normalized and scaled before modulating the ray color.
-
-This is an important bridge between:
-
-- a scalar physical quantity, wavelength,
-- a display-oriented quantity, RGB color.
-
-Relevant code:
-
-- `model/optics/ray.go`
-
-## 12. Dispersion with the Cauchy Formula
-
-If a material stores a three-parameter refractive-index vector, the project interprets it as Cauchy-dispersion coefficients:
-
-```text
-n(lambda) = A + B / lambda^2 + C / lambda^4
-```
-
-This means the refractive index becomes wavelength-dependent. Rays of different wavelengths bend by different amounts, which is the core mechanism behind chromatic dispersion in transparent materials.
-
-This is one of the strongest pieces of actual physics in the renderer because it models a real optical effect rather than a purely visual trick.
-
-Relevant code:
-
-- `utils/geometrical_optics.go`
-- `model/optics/material.go`
-
-## 13. Medium Tracking
-
-Each ray stores its current refractive index. When the ray refracts into a material, that value is updated. If the material's computed index matches the ray's current index, the code interprets the event as leaving the material and returns the index to air:
-
-```text
-n = 1.0
-```
-
-This is a simple inside-outside medium model. It avoids having to explicitly store a full stack of nested media, though that also means it is best suited to relatively simple interface arrangements.
-
-Relevant code:
-
-- `model/optics/material.go`
-
-## 14. Energy Attenuation
-
-The project introduces three user-controlled loss factors:
-
-- `DiffuseLoss`
-- `ReflectLoss`
-- `RefractLoss`
-
-These scale ray color after the chosen interaction. Physically, they act like coarse energy-retention factors and allow the user to damp repeated bounces.
-
-This is not derived from first-principles radiometry, but it is a practical control mechanism for shaping brightness and stability.
-
-Relevant code:
-
-- `model/optics/material.go`
-
-## 15. What Kind of Optical Model This Is
-
-The project is best described as:
-
-- a **geometrical optics** renderer,
-- with **probabilistic dielectric and diffuse surface interactions**,
-- plus **optional wavelength-dependent refraction**.
-
-It does **not** currently model:
-
-- wave interference,
-- diffraction,
-- polarization,
-- full spectral power distributions,
-- exact energy-conserving BSDF integration.
-
-That boundary is important: the project contains real optics, but specifically *ray-based* optics.
-
-## 16. Summary
-
-The optics subsystem embeds the following physical knowledge:
-
-- mirror reflection,
-- Snell refraction,
-- total internal reflection,
-- angle-dependent Fresnel reflectance,
-- Lambert-style diffuse scattering,
-- emissive surfaces,
-- wavelength sampling,
+- Lambert diffuse,
+- perfect specular reflection,
+- perfect specular dielectric transmission,
 - Cauchy dispersion,
-- simple medium tracking.
+- GGX rough conductor,
+- constant spectral emission,
+- nested medium stack for boundary IOR,
+- RGB, hero-wavelength, and sampled wavelength render modes.
 
-Together, these ideas define the renderer's physical behavior at every bounce.
+Not yet implemented:
+
+- rough dielectric,
+- full volume absorption/scattering transport,
+- direct-light sampling and MIS,
+- caustic-focused integrators such as photon mapping or BDPT,
+- production spectral material databases.

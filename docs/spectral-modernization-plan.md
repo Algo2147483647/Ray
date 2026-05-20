@@ -6,7 +6,7 @@ This document defines a staged plan for moving Ray from the current RGB plus par
 
 The renderer has already moved through an important material architecture migration:
 
-- Scene materials are parsed into `internal/material/core.Material`.
+- Scene materials are parsed into `engine/model/material.Material`.
 - Surface scattering is routed through BSDF/BxDF interfaces.
 - `Ray` carries `WaveLength` and `WavelengthPDF`.
 - Specular dielectric supports Cauchy IOR and wavelength-aware eta evaluation.
@@ -18,7 +18,7 @@ The spectral pipeline is still incomplete:
 - Scene JSON does not yet expose a full display transform stack such as `display_space` or OCIO-style views.
 - Measured material libraries and metal presets are not implemented yet.
 - Packet-style multi-channel path transport is not implemented yet; sampled mode currently uses repeated wavelength subpaths.
-- Nested media, absorption, and caustic-focused integrators are not implemented yet.
+- Nested dielectric boundary IOR is implemented through `engine/model/material/medium`; homogeneous volume absorption/scattering and caustic-focused integrators are not implemented yet.
 - The current `aces` output option is a fitted tone mapper, not a complete ACES/OCIO view transform.
 
 The current model should be described as:
@@ -299,7 +299,7 @@ linear_srgb / acescg / xyz
 Minimum viable implementation:
 
 - Keep existing `linear`, `reinhard`, and `aces` options.
-- Add `working_space`, default `linear_srgb`.
+- Add `color_space`, default `linear_srgb`.
 - Add `display_space`, default `srgb`.
 - Document that current `aces` is an ACES-fitted tone mapper, not full OCIO.
 
@@ -356,7 +356,7 @@ Constant:
     "wavelength_min_nm": 380,
     "wavelength_max_nm": 780,
     "wavelength_samples": 1,
-    "working_space": "linear_srgb",
+    "color_space": "linear_srgb",
     "display_space": "srgb",
     "tone_mapping": "aces_fitted",
     "gamma": 2.2
@@ -372,7 +372,7 @@ spectrum_mode:
   hero_wavelength
   sampled
 
-working_space:
+color_space:
   linear_srgb
   acescg
   xyz
@@ -432,7 +432,7 @@ Goals:
 
 Tasks:
 
-- Add `internal/material/spectrum` or `internal/material/core/spectral_parameter.go`.
+- Add `engine/model/optics/spectrum_parameter` or `engine/model/optics/spectral_parameter.go`.
 - Implement:
   - `RGBParameter`
   - `ConstantParameter`
@@ -471,7 +471,7 @@ Acceptance:
 
 Goals:
 
-- Stop using `WaveLengthToRGB` as the physical reconstruction core.
+- Stop using `WavelengthToRGB` as the physical reconstruction core.
 - Reconstruct wavelengths through CIE matching functions.
 
 Tasks:
@@ -535,19 +535,19 @@ Acceptance:
 Likely modules:
 
 ```text
-engine/go/internal/material/core/spectrum.go
-engine/go/internal/material/core/bxdf.go
-engine/go/internal/material/spectrum/
-engine/go/internal/material/bxdf/
-engine/go/internal/material/emission/
-engine/go/internal/material/ior/
-engine/go/internal/controller/parse_materials.go
-engine/go/internal/app/render_config.go
-engine/go/internal/model/optics/ray.go
-engine/go/internal/model/camera/film.go
-engine/go/internal/ray_tracing/
-apps/scene-editor/src/types/scene.ts
-apps/scene-editor/src/components/InspectorPanel.tsx
+engine/model/optics/spectrum.go
+engine/model/material/bxdf/base.go
+engine/model/optics/spectrum_parameter/
+engine/model/material/bxdf/
+engine/model/material/emission/
+engine/model/material/medium/ior.go
+engine/controller/factory/materials.go
+engine/controller/render_config.go
+engine/model/optics/ray.go
+engine/model/camera/film.go
+engine/ray_tracing/
+scene-editor/src/types/scene.ts
+scene-editor/src/components/InspectorPanel.tsx
 ```
 
 Do not include in the first implementation pass:

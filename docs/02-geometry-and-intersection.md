@@ -14,9 +14,11 @@ Everything in the geometry subsystem exists to answer these three questions effi
 
 Relevant code:
 
-- `model/shape/shape.go`
-- `model/object/object_tree.go`
-- `ray_tracing/trace_ray.go`
+- `engine/model/shape/shape.go`
+- `engine/model/object/object_tree.go`
+- `engine/model/object/bvh_build.go`
+- `engine/model/object/intersection.go`
+- `engine/ray_tracing/trace_ray.go`
 
 ## 2. Shape Interface as a Mathematical Contract
 
@@ -34,7 +36,7 @@ This corresponds to three mathematical responsibilities:
 
 Relevant code:
 
-- `model/shape/shape.go`
+- `engine/model/shape/shape.go`
 
 ## 3. Sphere Intersection
 
@@ -60,7 +62,7 @@ n = normalize(x_hit - c)
 
 Relevant code:
 
-- `model/shape/sphere.go`
+- `engine/model/shape/sphere.go`
 
 ## 4. Plane Intersection
 
@@ -93,8 +95,8 @@ Important implementation note:
 
 Relevant code:
 
-- `model/shape/plane.go`
-- `controller/parse_shape.go`
+- `engine/model/shape/plane.go`
+- `engine/controller/factory/shapes.go`
 
 ## 5. Triangle Intersection
 
@@ -125,7 +127,7 @@ n = normalize((P2 - P1) x (P3 - P1))
 
 Relevant code:
 
-- `model/shape/triangle.go`
+- `engine/model/shape/triangle.go`
 
 ## 6. Cuboid Intersection
 
@@ -144,7 +146,7 @@ This same idea is used both for real cuboid geometry and for acceleration-struct
 
 Relevant code:
 
-- `model/shape/cuboid.go`
+- `engine/model/shape/cuboid.go`
 
 ## 7. Quadratic Surfaces
 
@@ -166,7 +168,7 @@ This is the most mathematically expressive primitive in the code after the fourt
 
 Relevant code:
 
-- `model/shape/quadratic_equation.go`
+- `engine/model/shape/quadratic_equation.go`
 
 ## 8. Fourth-Order Algebraic Surfaces
 
@@ -185,7 +187,7 @@ This part of the system embeds real symbolic-geometry thinking inside a ray trac
 
 Relevant code:
 
-- `model/shape/forth-order_equation.go`
+- `engine/model/shape/forth-order_equation.go`
 
 ## 9. Implicit Surfaces as a Design Direction
 
@@ -204,7 +206,7 @@ What it suggests mathematically:
 
 Relevant code:
 
-- `model/shape/implicit_equation.go`
+- `engine/model/shape/implicit_equation.go`
 
 ## 10. STL Meshes and Coordinate Transforms
 
@@ -223,7 +225,7 @@ That means STL support is not just file parsing; it is also a concrete applicati
 
 Relevant code:
 
-- `controller/parse_shape.go`
+- `engine/controller/factory/shapes.go`
 
 ## 11. Bounding Boxes and Spatial Acceleration
 
@@ -241,20 +243,22 @@ With a bounding hierarchy, many objects are rejected early by testing cheap box 
 
 ### Tree Construction Strategy
 
-The tree builder:
+The BVH builder:
 
 1. creates one leaf node per object,
 2. computes a bounding box enclosing a subset of objects,
-3. chooses a split dimension using center variance,
-4. sorts by box centers along that dimension,
+3. chooses a split using a binned SAH heuristic when possible,
+4. falls back to centroid sorting along the largest centroid extent,
 5. recursively partitions the objects.
 
-This is a geometric-statistical heuristic: the split dimension is chosen where object centers are most spread out.
+This is a geometric-statistical heuristic: cheap bounding boxes reject large parts of the scene before expensive primitive intersection.
 
 Relevant code:
 
-- `model/object/object_tree.go`
-- `model/object/object_node.go`
+- `engine/model/object/object_tree.go`
+- `engine/model/object/object_node.go`
+- `engine/model/object/bvh_build.go`
+- `engine/model/object/bvh_update.go`
 
 ## 12. First-Hit Selection
 
@@ -264,7 +268,7 @@ This logic is critical physically because light transport depends on the *first*
 
 Relevant code:
 
-- `model/object/object_tree.go`
+- `engine/model/object/intersection.go`
 
 ## 13. Engraving Functions as Geometric Masks
 
@@ -279,10 +283,10 @@ This is an interesting hybrid idea:
 
 Relevant code:
 
-- `utils/example_lib/engraving_func.go`
-- `controller/parse_shape.go`
-- `model/shape/sphere.go`
-- `model/shape/cuboid.go`
+- `engine/utils/example_lib/engraving_func.go`
+- `engine/controller/factory/shapes.go`
+- `engine/model/shape/sphere.go`
+- `engine/model/shape/cuboid.go`
 
 ## 14. Summary of Embedded Geometry Knowledge
 
