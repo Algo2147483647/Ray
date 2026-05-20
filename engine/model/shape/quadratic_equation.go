@@ -28,6 +28,14 @@ func (p *QuadraticEquation) Name() string {
 }
 
 func (p *QuadraticEquation) Intersect(raySt, rayDir *mat.VecDense) float64 {
+	interaction, ok := p.IntersectRange(raySt, rayDir, utils.EPS, math.MaxFloat64)
+	if !ok {
+		return math.MaxFloat64
+	}
+	return interaction.Distance
+}
+
+func (p *QuadraticEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
 	t := utils.VectorPool.Get().(*mat.VecDense)
 	defer func() {
 		utils.VectorPool.Put(t)
@@ -41,21 +49,27 @@ func (p *QuadraticEquation) Intersect(raySt, rayDir *mat.VecDense) float64 {
 
 	switch count {
 	case 1:
-		if t1 > utils.EPS {
-			return t1
+		if distanceInRange(t1, tMin, tMax) {
+			point := pointAt(raySt, rayDir, t1)
+			normal := p.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
+			return newSurfaceInteraction(raySt, rayDir, t1, normal), true
 		}
 	case 2:
 		minValidRoots := math.MaxFloat64 // Filter positive roots and choose the smallest one.
-		if t1 != math.MaxFloat64 && t1 > utils.EPS {
+		if distanceInRange(t1, tMin, tMax) {
 			minValidRoots = math.Min(minValidRoots, t1)
 		}
-		if t2 != math.MaxFloat64 && t2 > utils.EPS {
+		if distanceInRange(t2, tMin, tMax) {
 			minValidRoots = math.Min(minValidRoots, t2)
 		}
-		return minValidRoots
+		if minValidRoots != math.MaxFloat64 {
+			point := pointAt(raySt, rayDir, minValidRoots)
+			normal := p.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
+			return newSurfaceInteraction(raySt, rayDir, minValidRoots, normal), true
+		}
 	}
 
-	return math.MaxFloat64
+	return SurfaceInteraction{}, false
 }
 
 func (p *QuadraticEquation) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {

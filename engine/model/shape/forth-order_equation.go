@@ -26,6 +26,14 @@ func (p *FourOrderEquation) Name() string {
 }
 
 func (p *FourOrderEquation) Intersect(raySt, rayDir *mat.VecDense) float64 {
+	interaction, ok := p.IntersectRange(raySt, rayDir, utils.EPS, math.MaxFloat64)
+	if !ok {
+		return math.MaxFloat64
+	}
+	return interaction.Distance
+}
+
+func (p *FourOrderEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
 	var (
 		coeffs = [5]float64{0, 0, 0, 0, 0} // Initialize coefficients from the constant term to the fourth-degree term.
 		stx    = raySt.At(0, 0)            // Get ray origin and direction components.
@@ -84,11 +92,17 @@ func (p *FourOrderEquation) Intersect(raySt, rayDir *mat.VecDense) float64 {
 	roots := basic_algebra.SolveQuarticEquation(coeffs[4], coeffs[3], coeffs[2], coeffs[1], coeffs[0]) // Solve the quartic equation: a*t^4 + b*t^3 + c*t^2 + d*t + e = 0
 	res := math.MaxFloat64                                                                             // Find the smallest positive real root.
 	for _, root := range roots {
-		if math.Abs(imag(root)) < utils.EPS && real(root) > utils.EPS && real(root) < res {
+		if math.Abs(imag(root)) < utils.EPS && distanceInRange(real(root), tMin, tMax) && real(root) < res {
 			res = real(root)
 		}
 	}
-	return res
+	if res == math.MaxFloat64 {
+		return SurfaceInteraction{}, false
+	}
+
+	point := pointAt(raySt, rayDir, res)
+	normal := p.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
+	return newSurfaceInteraction(raySt, rayDir, res, normal), true
 }
 
 func (p *FourOrderEquation) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {

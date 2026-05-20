@@ -32,29 +32,46 @@ func (c *FiniteCylinder) Name() string {
 }
 
 func (c *FiniteCylinder) Intersect(raySt, rayDir *mat.VecDense) float64 {
-	distance := c.IntersectPure(raySt, rayDir)
-
-	if c.EngravingFunc != nil && distance != math.MaxFloat64 {
-		if c.EngravingFunc(map[string]interface{}{
-			"ray_start": raySt,
-			"ray_dir":   rayDir,
-			"distance":  distance,
-			"self":      c,
-		}) {
-			return math.MaxFloat64
-		}
+	interaction, ok := c.IntersectRange(raySt, rayDir, utils.EPS, math.MaxFloat64)
+	if !ok {
+		return math.MaxFloat64
 	}
-	return distance
+	return interaction.Distance
 }
 
 func (c *FiniteCylinder) IntersectPure(raySt, rayDir *mat.VecDense) float64 {
-	best := c.intersectSide(raySt, rayDir)
-	best = math.Min(best, c.intersectCap(raySt, rayDir, 0.5*c.Height))
-	best = math.Min(best, c.intersectCap(raySt, rayDir, -0.5*c.Height))
-	return best
+	interaction, ok := c.IntersectRange(raySt, rayDir, utils.EPS, math.MaxFloat64)
+	if !ok {
+		return math.MaxFloat64
+	}
+	return interaction.Distance
 }
 
-func (c *FiniteCylinder) intersectSide(raySt, rayDir *mat.VecDense) float64 {
+func (c *FiniteCylinder) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
+	best := c.intersectSide(raySt, rayDir, tMin, tMax)
+	best = math.Min(best, c.intersectCap(raySt, rayDir, 0.5*c.Height, tMin, tMax))
+	best = math.Min(best, c.intersectCap(raySt, rayDir, -0.5*c.Height, tMin, tMax))
+	if best == math.MaxFloat64 {
+		return SurfaceInteraction{}, false
+	}
+
+	if c.EngravingFunc != nil {
+		if c.EngravingFunc(map[string]interface{}{
+			"ray_start": raySt,
+			"ray_dir":   rayDir,
+			"distance":  best,
+			"self":      c,
+		}) {
+			return SurfaceInteraction{}, false
+		}
+	}
+
+	point := pointAt(raySt, rayDir, best)
+	normal := c.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
+	return newSurfaceInteraction(raySt, rayDir, best, normal), true
+}
+
+func (c *FiniteCylinder) intersectSide(raySt, rayDir *mat.VecDense, tMin, tMax float64) float64 {
 	oc := utils.VectorPool.Get().(*mat.VecDense)
 	dPerp := utils.VectorPool.Get().(*mat.VecDense)
 	ocPerp := utils.VectorPool.Get().(*mat.VecDense)
@@ -88,7 +105,7 @@ func (c *FiniteCylinder) intersectSide(raySt, rayDir *mat.VecDense) float64 {
 
 	best := math.MaxFloat64
 	for _, distance := range []float64{root1, root2} {
-		if distance <= utils.EPS {
+		if !distanceInRange(distance, tMin, tMax) {
 			continue
 		}
 		axisDistance := ocParallel + distance*dParallel
@@ -99,7 +116,7 @@ func (c *FiniteCylinder) intersectSide(raySt, rayDir *mat.VecDense) float64 {
 	return best
 }
 
-func (c *FiniteCylinder) intersectCap(raySt, rayDir *mat.VecDense, axisDistance float64) float64 {
+func (c *FiniteCylinder) intersectCap(raySt, rayDir *mat.VecDense, axisDistance, tMin, tMax float64) float64 {
 	denominator := mat.Dot(c.Axis, rayDir)
 	if math.Abs(denominator) < utils.EPS {
 		return math.MaxFloat64
@@ -119,7 +136,7 @@ func (c *FiniteCylinder) intersectCap(raySt, rayDir *mat.VecDense, axisDistance 
 	center.AddScaledVec(c.Center, axisDistance, c.Axis)
 	toCap.SubVec(center, raySt)
 	distance := mat.Dot(c.Axis, toCap) / denominator
-	if distance <= utils.EPS {
+	if !distanceInRange(distance, tMin, tMax) {
 		return math.MaxFloat64
 	}
 

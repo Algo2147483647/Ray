@@ -3,6 +3,7 @@ package shape
 import (
 	"github.com/Algo2147483647/golang_toolkit/math/basic_algebra"
 	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
+	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 	"math"
 )
@@ -25,7 +26,22 @@ func (f *ParametricEquation) Name() string {
 }
 
 func (f *ParametricEquation) Intersect(raySt, rayDir *mat.VecDense) float64 {
-	return f.IntersectPure(raySt, rayDir, 0, 0, 10, 10)
+	interaction, ok := f.IntersectRange(raySt, rayDir, utils.EPS, math.MaxFloat64)
+	if !ok {
+		return math.MaxFloat64
+	}
+	return interaction.Distance
+}
+
+func (f *ParametricEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
+	distance := f.IntersectPure(raySt, rayDir, 0, 0, 10, 10)
+	if !distanceInRange(distance, tMin, tMax) {
+		return SurfaceInteraction{}, false
+	}
+
+	point := pointAt(raySt, rayDir, distance)
+	normal := f.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
+	return newSurfaceInteraction(raySt, rayDir, distance, normal), true
 }
 
 func (f *ParametricEquation) IntersectPure(raySt, rayDir *mat.VecDense, u0, v0, tol float64, maxIter int) float64 {
@@ -48,7 +64,9 @@ func (f *ParametricEquation) IntersectPure(raySt, rayDir *mat.VecDense, u0, v0, 
 		t, u, v := solution[0], solution[1], solution[2]
 		if f.URange[0] <= u && u <= f.URange[1] && // Check whether parameters are in valid range.
 			f.VRange[0] <= v && v <= f.VRange[1] {
-			return t
+			if t > utils.EPS {
+				return t
+			}
 		}
 	}
 

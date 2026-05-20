@@ -25,22 +25,57 @@ func (c *Cuboid) Name() string {
 }
 
 func (c *Cuboid) Intersect(raySt, rayDir *mat.VecDense) float64 {
-	distance := c.IntersectPure(raySt, rayDir)
+	interaction, ok := c.IntersectRange(raySt, rayDir, utils.EPS, math.MaxFloat64)
+	if !ok {
+		return math.MaxFloat64
+	}
+	return interaction.Distance
+}
 
-	if c.EngravingFunc != nil && distance != math.MaxFloat64 {
+func (c *Cuboid) IntersectPure(raySt, rayDir *mat.VecDense) float64 {
+	interaction, ok := c.IntersectRange(raySt, rayDir, utils.EPS, math.MaxFloat64)
+	if !ok {
+		return math.MaxFloat64
+	}
+	return interaction.Distance
+}
+
+func (c *Cuboid) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
+	t0, t1, ok := c.intersectionInterval(raySt, rayDir)
+	if !ok || t1 < tMin || t0 > tMax {
+		return SurfaceInteraction{}, false
+	}
+
+	distance := t1
+	if t0 >= tMin {
+		distance = t0
+	}
+	if !distanceInRange(distance, tMin, tMax) {
+		return SurfaceInteraction{}, false
+	}
+
+	if c.EngravingFunc != nil {
 		if c.EngravingFunc(map[string]interface{}{
 			"ray_start": raySt,
 			"ray_dir":   rayDir,
 			"distance":  distance,
 			"self":      c,
 		}) {
-			return math.MaxFloat64
+			return SurfaceInteraction{}, false
 		}
 	}
-	return distance
+
+	point := pointAt(raySt, rayDir, distance)
+	normal := c.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
+	return newSurfaceInteraction(raySt, rayDir, distance, normal), true
 }
 
-func (c *Cuboid) IntersectPure(raySt, rayDir *mat.VecDense) float64 {
+func (c *Cuboid) OverlapsRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) bool {
+	t0, t1, ok := c.intersectionInterval(raySt, rayDir)
+	return ok && t1 >= tMin && t0 <= tMax
+}
+
+func (c *Cuboid) intersectionInterval(raySt, rayDir *mat.VecDense) (float64, float64, bool) {
 	t0 := -math.MaxFloat64
 	t1 := math.MaxFloat64
 
@@ -50,8 +85,11 @@ func (c *Cuboid) IntersectPure(raySt, rayDir *mat.VecDense) float64 {
 		pminDim := c.Pmin.AtVec(dim)
 		pmaxDim := c.Pmax.AtVec(dim)
 
-		if math.Abs(rayDirDim) < utils.EPS && (rayStDim < pminDim || rayStDim > pmaxDim) {
-			return math.MaxFloat64
+		if math.Abs(rayDirDim) < utils.EPS {
+			if rayStDim < pminDim || rayStDim > pmaxDim {
+				return 0, 0, false
+			}
+			continue
 		}
 
 		t0t := (pminDim - rayStDim) / rayDirDim
@@ -63,20 +101,18 @@ func (c *Cuboid) IntersectPure(raySt, rayDir *mat.VecDense) float64 {
 		t0 = math.Max(t0, t0t)
 		t1 = math.Min(t1, t1t)
 		if t0 > t1 || t1 < utils.EPS {
-			return math.MaxFloat64
+			return 0, 0, false
 		}
 	}
-
-	if t0 > utils.EPS {
-		return t0
-	}
-	return t1
+	return t0, t1, true
 }
 
 // GetNormalVector computes the normal vector at the intersection point.
 func (c *Cuboid) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {
 	if res == nil || res.Len() != intersect.Len() {
 		res = mat.NewVecDense(intersect.Len(), nil)
+	} else {
+		res.Zero()
 	}
 
 	a := utils.VectorPool.Get().(*mat.VecDense)
@@ -89,7 +125,11 @@ func (c *Cuboid) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {
 	b.SubVec(intersect, c.Pmax)
 
 	for i := 0; i < intersect.Len(); i++ {
-		if math.Abs(a.AtVec(i)) < utils.EPS || math.Abs(b.AtVec(i)) < utils.EPS {
+		if math.Abs(a.AtVec(i)) < utils.EPS {
+			res.SetVec(i, -1)
+			return res
+		}
+		if math.Abs(b.AtVec(i)) < utils.EPS {
 			res.SetVec(i, 1)
 			return res
 		}

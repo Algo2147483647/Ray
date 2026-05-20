@@ -18,16 +18,26 @@ func (p *Plane) Name() string {
 }
 
 func (p *Plane) Intersect(raySt, rayDir *mat.VecDense) float64 {
+	interaction, ok := p.IntersectRange(raySt, rayDir, utils.EPS, math.MaxFloat64)
+	if !ok {
+		return math.MaxFloat64
+	}
+	return interaction.Distance
+}
+
+func (p *Plane) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
 	t := mat.Dot(p.A, rayDir)
 	if math.Abs(t) < utils.EPS {
-		return math.MaxFloat64
+		return SurfaceInteraction{}, false
 	}
 
 	d := -(mat.Dot(p.A, raySt) + p.B) / t
-	if d > utils.EPS {
-		return d
+	if !distanceInRange(d, tMin, tMax) {
+		return SurfaceInteraction{}, false
 	}
-	return math.MaxFloat64
+
+	normal := p.GetNormalVector(nil, mat.NewVecDense(p.A.Len(), nil))
+	return newSurfaceInteraction(raySt, rayDir, d, normal), true
 }
 
 func (p *Plane) GetNormalVector(_, res *mat.VecDense) *mat.VecDense {

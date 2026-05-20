@@ -43,22 +43,22 @@ func (f *Triangle) Name() string {
 }
 
 func (f *Triangle) Intersect(raySt, rayDir *mat.VecDense) float64 {
-	distance := f.IntersectPure(raySt, rayDir)
-
-	if f.EngravingFunc != nil && distance != math.MaxFloat64 {
-		if f.EngravingFunc(map[string]interface{}{
-			"ray_start": raySt,
-			"ray_dir":   rayDir,
-			"distance":  distance,
-			"self":      f,
-		}) {
-			return math.MaxFloat64
-		}
+	interaction, ok := f.IntersectRange(raySt, rayDir, utils.EPS, math.MaxFloat64)
+	if !ok {
+		return math.MaxFloat64
 	}
-	return distance
+	return interaction.Distance
 }
 
 func (f *Triangle) IntersectPure(raySt, rayDir *mat.VecDense) float64 {
+	interaction, ok := f.IntersectRange(raySt, rayDir, utils.EPS, math.MaxFloat64)
+	if !ok {
+		return math.MaxFloat64
+	}
+	return interaction.Distance
+}
+
+func (f *Triangle) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
 	t := utils.VectorPool.Get().(*mat.VecDense)
 	p := utils.VectorPool.Get().(*mat.VecDense)
 	q := utils.VectorPool.Get().(*mat.VecDense)
@@ -68,28 +68,49 @@ func (f *Triangle) IntersectPure(raySt, rayDir *mat.VecDense) float64 {
 		utils.VectorPool.Put(q)
 	}()
 
-	math_lib.Cross(p, rayDir, f.Mem.Edge2) // Compute the normal vector and determinant (P = D × E2).
-	a := mat.Dot(f.Mem.Edge1, p)           // a = E1·P
-	if a > 0 {                             // Handle back-face culling.
-		t.SubVec(raySt, f.P1) // T = O - P1
+	math_lib.Cross(p, rayDir, f.Mem.Edge2)
+	a := mat.Dot(f.Mem.Edge1, p)
+	if a > 0 {
+		t.SubVec(raySt, f.P1)
 	} else {
-		t.SubVec(f.P1, raySt) // T = P1 - O
+		t.SubVec(f.P1, raySt)
 		a = -a
 	}
-	if a < utils.EPS { // Check for parallel rays.
-		return math.MaxFloat64
+	if a < utils.EPS {
+		return SurfaceInteraction{}, false
 	}
 
-	math_lib.Cross(q, t, f.Mem.Edge1) // Q = T × E1
-	u := mat.Dot(t, p) / a            // Barycentric coordinate u
-	v := mat.Dot(rayDir, q) / a       // Barycentric coordinate v
+	math_lib.Cross(q, t, f.Mem.Edge1)
+	u := mat.Dot(t, p) / a
+	v := mat.Dot(rayDir, q) / a
 	if u < 0 || u > 1 {
-		return math.MaxFloat64
+		return SurfaceInteraction{}, false
 	}
 	if v < 0 || u+v > 1 {
-		return math.MaxFloat64
+		return SurfaceInteraction{}, false
 	}
-	return mat.Dot(f.Mem.Edge2, q) / a
+
+	distance := mat.Dot(f.Mem.Edge2, q) / a
+	if !distanceInRange(distance, tMin, tMax) {
+		return SurfaceInteraction{}, false
+	}
+
+	if f.EngravingFunc != nil {
+		if f.EngravingFunc(map[string]interface{}{
+			"ray_start": raySt,
+			"ray_dir":   rayDir,
+			"distance":  distance,
+			"self":      f,
+		}) {
+			return SurfaceInteraction{}, false
+		}
+	}
+
+	interaction := newSurfaceInteraction(raySt, rayDir, distance, f.Mem.Normal)
+	interaction.UV = [2]float64{u, v}
+	interaction.DPDU = mat.VecDenseCopyOf(f.Mem.Edge1)
+	interaction.DPDV = mat.VecDenseCopyOf(f.Mem.Edge2)
+	return interaction, true
 }
 
 func (f *Triangle) GetNormalVector(_, res *mat.VecDense) *mat.VecDense {

@@ -30,25 +30,25 @@ func (c *Circle) Name() string {
 }
 
 func (c *Circle) Intersect(raySt, rayDir *mat.VecDense) float64 {
-	distance := c.IntersectPure(raySt, rayDir)
-
-	if c.EngravingFunc != nil && distance != math.MaxFloat64 {
-		if c.EngravingFunc(map[string]interface{}{
-			"ray_start": raySt,
-			"ray_dir":   rayDir,
-			"distance":  distance,
-			"self":      c,
-		}) {
-			return math.MaxFloat64
-		}
+	interaction, ok := c.IntersectRange(raySt, rayDir, utils.EPS, math.MaxFloat64)
+	if !ok {
+		return math.MaxFloat64
 	}
-	return distance
+	return interaction.Distance
 }
 
 func (c *Circle) IntersectPure(raySt, rayDir *mat.VecDense) float64 {
+	interaction, ok := c.IntersectRange(raySt, rayDir, utils.EPS, math.MaxFloat64)
+	if !ok {
+		return math.MaxFloat64
+	}
+	return interaction.Distance
+}
+
+func (c *Circle) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
 	denominator := mat.Dot(c.Normal, rayDir)
 	if math.Abs(denominator) < utils.EPS {
-		return math.MaxFloat64
+		return SurfaceInteraction{}, false
 	}
 
 	toCenter := utils.VectorPool.Get().(*mat.VecDense)
@@ -62,17 +62,28 @@ func (c *Circle) IntersectPure(raySt, rayDir *mat.VecDense) float64 {
 
 	toCenter.SubVec(c.Center, raySt)
 	distance := mat.Dot(c.Normal, toCenter) / denominator
-	if distance <= utils.EPS {
-		return math.MaxFloat64
+	if !distanceInRange(distance, tMin, tMax) {
+		return SurfaceInteraction{}, false
 	}
 
 	hit.AddScaledVec(raySt, distance, rayDir)
 	offset.SubVec(hit, c.Center)
 	if mat.Dot(offset, offset) > c.R*c.R+utils.EPS {
-		return math.MaxFloat64
+		return SurfaceInteraction{}, false
 	}
 
-	return distance
+	if c.EngravingFunc != nil {
+		if c.EngravingFunc(map[string]interface{}{
+			"ray_start": raySt,
+			"ray_dir":   rayDir,
+			"distance":  distance,
+			"self":      c,
+		}) {
+			return SurfaceInteraction{}, false
+		}
+	}
+
+	return newSurfaceInteraction(raySt, rayDir, distance, c.Normal), true
 }
 
 func (c *Circle) GetNormalVector(_, res *mat.VecDense) *mat.VecDense {
