@@ -37,7 +37,7 @@ func TestGGXVisibleNormalSampleIsFiniteAndUpperHemisphere(t *testing.T) {
 
 func TestFresnelConductorRange(t *testing.T) {
 	f := FresnelConductor(0.5, core.NewSpectrum(0.2, 0.9, 1.5), core.NewSpectrum(3.9, 2.5, 1.9))
-	if !f.IsFinite() || !f.IsNonNegative() || f.R > 1 || f.G > 1 || f.B > 1 {
+	if !f.IsFinite() || !f.IsNonNegative() || f.MaxComponent() > 1 {
 		t.Fatalf("conductor fresnel should be finite and in [0,1], got %+v", f)
 	}
 }

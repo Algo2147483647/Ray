@@ -91,9 +91,9 @@ func (r RoughConductor) PDF(_ core.ShadingContext, wi, wo core.Direction) float6
 func (r RoughConductor) AlbedoBound(core.ShadingContext) core.Spectrum {
 	weight := r.Weight.Bounds().Max
 	return core.NewSpectrum(
-		math.Min(1, weight.R),
-		math.Min(1, weight.G),
-		math.Min(1, weight.B),
+		math.Min(1, weight.RGBChannel(0)),
+		math.Min(1, weight.RGBChannel(1)),
+		math.Min(1, weight.RGBChannel(2)),
 	)
 }
 

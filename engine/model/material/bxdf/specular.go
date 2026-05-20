@@ -157,9 +157,9 @@ func (s SpecularDielectric) AlbedoBound(core.ShadingContext) core.Spectrum {
 	reflectance := s.Reflectance.Bounds().Max
 	transmittance := s.Transmittance.Bounds().Max
 	return core.NewSpectrum(
-		math.Max(reflectance.R, transmittance.R),
-		math.Max(reflectance.G, transmittance.G),
-		math.Max(reflectance.B, transmittance.B),
+		math.Max(reflectance.RGBChannel(0), transmittance.RGBChannel(0)),
+		math.Max(reflectance.RGBChannel(1), transmittance.RGBChannel(1)),
+		math.Max(reflectance.RGBChannel(2), transmittance.RGBChannel(2)),
 	)
 }
 

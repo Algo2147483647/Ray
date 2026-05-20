@@ -69,7 +69,7 @@ func CheckEnergyConservation(scattering core.Scattering, ctx core.ShadingContext
 		sum = sum.Add(f.MulScalar(weight))
 	}
 
-	if sum.R > 1+opts.Tolerance || sum.G > 1+opts.Tolerance || sum.B > 1+opts.Tolerance {
+	if sum.MaxComponent() > 1+opts.Tolerance {
 		return fmt.Errorf("energy conservation failed: reflected=%+v tolerance=%f", sum, opts.Tolerance)
 	}
 

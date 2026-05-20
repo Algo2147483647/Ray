@@ -27,11 +27,6 @@ func FresnelDielectric(cosThetaI, etaI, etaT float64) float64 {
 }
 
 func FresnelConductor(cosThetaI float64, eta, k core.Spectrum) core.Spectrum {
-	result := core.NewSpectrum(
-		fresnelConductorChannel(cosThetaI, eta.R, k.R),
-		fresnelConductorChannel(cosThetaI, eta.G, k.G),
-		fresnelConductorChannel(cosThetaI, eta.B, k.B),
-	)
 	if eta.HasSamples() || k.HasSamples() {
 		count := eta.SampleCount()
 		if k.SampleCount() > count {
@@ -41,16 +36,20 @@ func FresnelConductor(cosThetaI float64, eta, k core.Spectrum) core.Spectrum {
 		for i := 0; i < count; i++ {
 			samples[i] = fresnelConductorChannel(cosThetaI, spectrumSampleAt(eta, i), spectrumSampleAt(k, i))
 		}
-		result.Samples = samples
+		return core.NewSampledSpectrum(samples)
 	}
-	return result
+	return core.NewSpectrum(
+		fresnelConductorChannel(cosThetaI, eta.RGBChannel(0), k.RGBChannel(0)),
+		fresnelConductorChannel(cosThetaI, eta.RGBChannel(1), k.RGBChannel(1)),
+		fresnelConductorChannel(cosThetaI, eta.RGBChannel(2), k.RGBChannel(2)),
+	)
 }
 
 func spectrumSampleAt(s core.Spectrum, i int) float64 {
 	if i < len(s.Samples) {
 		return s.Samples[i]
 	}
-	return (s.R + s.G + s.B) / 3
+	return s.Average()
 }
 
 func fresnelConductorChannel(cosThetaI, eta, k float64) float64 {

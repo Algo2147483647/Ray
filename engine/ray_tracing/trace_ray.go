@@ -125,9 +125,16 @@ func applyMediumTransmission(media *medium.Registry, ray *renderray.Ray, ctx cor
 }
 
 func applySpectrum(color *mat.VecDense, spectrum core.Spectrum) {
-	color.SetVec(0, color.AtVec(0)*spectrum.R)
-	color.SetVec(1, color.AtVec(1)*spectrum.G)
-	color.SetVec(2, color.AtVec(2)*spectrum.B)
+	if spectrum.HasSamples() {
+		power := spectrum.Average()
+		color.SetVec(0, color.AtVec(0)*power)
+		color.SetVec(1, color.AtVec(1)*power)
+		color.SetVec(2, color.AtVec(2)*power)
+		return
+	}
+	color.SetVec(0, color.AtVec(0)*spectrum.RGBChannel(0))
+	color.SetVec(1, color.AtVec(1)*spectrum.RGBChannel(1))
+	color.SetVec(2, color.AtVec(2)*spectrum.RGBChannel(2))
 }
 
 func negateVec(v *mat.VecDense) *mat.VecDense {

@@ -35,9 +35,9 @@ func NewRGBParameter(value Spectrum) RGBParameter {
 func NewSRGBParameter(value Spectrum) RGBParameter {
 	return RGBParameter{
 		Value: NewSpectrum(
-			srgbChannelToLinear(value.R),
-			srgbChannelToLinear(value.G),
-			srgbChannelToLinear(value.B),
+			srgbChannelToLinear(value.RGBChannel(0)),
+			srgbChannelToLinear(value.RGBChannel(1)),
+			srgbChannelToLinear(value.RGBChannel(2)),
 		),
 		Space: ColorSpaceSRGB,
 	}

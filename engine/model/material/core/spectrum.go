@@ -2,70 +2,109 @@ package core
 
 import "math"
 
+type SpectrumKind int
+
+const (
+	SpectrumKindRGB SpectrumKind = iota
+	SpectrumKindSampled
+)
+
+// Spectrum is a renderer-space value, not an authored color.
+// RGB values are scene-linear sRGB. Sampled values are aligned with
+// ShadingContext.WavelengthsNM and intentionally do not mirror RGB channels.
 type Spectrum struct {
-	R       float64
-	G       float64
-	B       float64
+	Kind    SpectrumKind
+	RGB     [3]float64
 	Samples []float64
 }
 
 func NewSpectrum(r, g, b float64) Spectrum {
-	return Spectrum{R: r, G: g, B: b}
+	return NewRGBSpectrum(r, g, b)
+}
+
+func NewRGBSpectrum(r, g, b float64) Spectrum {
+	return Spectrum{
+		Kind: SpectrumKindRGB,
+		RGB:  [3]float64{r, g, b},
+	}
 }
 
 func ConstantSpectrum(v float64) Spectrum {
-	return Spectrum{R: v, G: v, B: v}
+	return NewSpectrum(v, v, v)
 }
 
 func NewSampledSpectrum(samples []float64) Spectrum {
-	copied := append([]float64(nil), samples...)
-	r, g, b := 0.0, 0.0, 0.0
-	if len(copied) > 0 {
-		r = copied[0]
-		g = copied[0]
-		b = copied[0]
+	return Spectrum{
+		Kind:    SpectrumKindSampled,
+		Samples: append([]float64(nil), samples...),
 	}
-	if len(copied) > 1 {
-		g = copied[1]
-	}
-	if len(copied) > 2 {
-		b = copied[2]
-	}
-	return Spectrum{R: r, G: g, B: b, Samples: copied}
 }
 
 func (s Spectrum) HasSamples() bool {
-	return len(s.Samples) > 0
+	return s.Kind == SpectrumKindSampled && len(s.Samples) > 0
 }
 
 func (s Spectrum) SampleCount() int {
 	return len(s.Samples)
 }
 
+func (s Spectrum) RGBChannel(i int) float64 {
+	if i < 0 || i >= len(s.RGB) {
+		return 0
+	}
+	return s.RGB[i]
+}
+
+func (s Spectrum) Average() float64 {
+	if s.HasSamples() {
+		sum := 0.0
+		for _, sample := range s.Samples {
+			sum += sample
+		}
+		return sum / float64(len(s.Samples))
+	}
+	return s.averageRGB()
+}
+
 func (s Spectrum) Add(other Spectrum) Spectrum {
+	if s.HasSamples() || other.HasSamples() {
+		return NewSampledSpectrum(combineSamples(s, other, func(a, b float64) float64 { return a + b }))
+	}
 	return Spectrum{
-		R:       s.R + other.R,
-		G:       s.G + other.G,
-		B:       s.B + other.B,
-		Samples: combineSamples(s, other, func(a, b float64) float64 { return a + b }),
+		Kind: SpectrumKindRGB,
+		RGB: [3]float64{
+			s.RGB[0] + other.RGB[0],
+			s.RGB[1] + other.RGB[1],
+			s.RGB[2] + other.RGB[2],
+		},
 	}
 }
 
 func (s Spectrum) MulScalar(v float64) Spectrum {
+	if s.HasSamples() {
+		return NewSampledSpectrum(mapSamples(s.Samples, func(a float64) float64 { return a * v }))
+	}
 	return Spectrum{
-		R:       s.R * v,
-		G:       s.G * v,
-		B:       s.B * v,
-		Samples: mapSamples(s.Samples, func(a float64) float64 { return a * v }),
+		Kind: SpectrumKindRGB,
+		RGB: [3]float64{
+			s.RGB[0] * v,
+			s.RGB[1] * v,
+			s.RGB[2] * v,
+		},
 	}
 }
 
 func (s Spectrum) Mul(other Spectrum) Spectrum {
+	if s.HasSamples() || other.HasSamples() {
+		return NewSampledSpectrum(combineSamples(s, other, func(a, b float64) float64 { return a * b }))
+	}
 	return Spectrum{
-		R:       s.R * other.R,
-		G:       s.G * other.G,
-		B:       s.B * other.B,
-		Samples: combineSamples(s, other, func(a, b float64) float64 { return a * b }),
+		Kind: SpectrumKindRGB,
+		RGB: [3]float64{
+			s.RGB[0] * other.RGB[0],
+			s.RGB[1] * other.RGB[1],
+			s.RGB[2] * other.RGB[2],
+		},
 	}
 }
 
@@ -73,28 +112,41 @@ func (s Spectrum) DivScalar(v float64) Spectrum {
 	if v == 0 {
 		return Spectrum{}
 	}
+	if s.HasSamples() {
+		return NewSampledSpectrum(mapSamples(s.Samples, func(a float64) float64 { return a / v }))
+	}
 	return Spectrum{
-		R:       s.R / v,
-		G:       s.G / v,
-		B:       s.B / v,
-		Samples: mapSamples(s.Samples, func(a float64) float64 { return a / v }),
+		Kind: SpectrumKindRGB,
+		RGB: [3]float64{
+			s.RGB[0] / v,
+			s.RGB[1] / v,
+			s.RGB[2] / v,
+		},
 	}
 }
 
 func (s Spectrum) MaxComponent() float64 {
-	maxValue := math.Max(s.R, math.Max(s.G, s.B))
-	for _, sample := range s.Samples {
-		maxValue = math.Max(maxValue, sample)
+	if s.HasSamples() {
+		maxValue := s.Samples[0]
+		for _, sample := range s.Samples[1:] {
+			maxValue = math.Max(maxValue, sample)
+		}
+		return maxValue
 	}
-	return maxValue
+	return math.Max(s.RGB[0], math.Max(s.RGB[1], s.RGB[2]))
 }
 
 func (s Spectrum) IsFinite() bool {
-	if !isFinite(s.R) || !isFinite(s.G) || !isFinite(s.B) {
-		return false
+	if s.HasSamples() {
+		for _, sample := range s.Samples {
+			if !isFinite(sample) {
+				return false
+			}
+		}
+		return true
 	}
-	for _, sample := range s.Samples {
-		if !isFinite(sample) {
+	for _, value := range s.RGB {
+		if !isFinite(value) {
 			return false
 		}
 	}
@@ -102,11 +154,16 @@ func (s Spectrum) IsFinite() bool {
 }
 
 func (s Spectrum) IsNonNegative() bool {
-	if s.R < 0 || s.G < 0 || s.B < 0 {
-		return false
+	if s.HasSamples() {
+		for _, sample := range s.Samples {
+			if sample < 0 {
+				return false
+			}
+		}
+		return true
 	}
-	for _, sample := range s.Samples {
-		if sample < 0 {
+	for _, value := range s.RGB {
+		if value < 0 {
 			return false
 		}
 	}
@@ -114,20 +171,21 @@ func (s Spectrum) IsNonNegative() bool {
 }
 
 func (s Spectrum) AlmostEqual(other Spectrum, eps float64) bool {
-	if math.Abs(s.R-other.R) > eps ||
-		math.Abs(s.G-other.G) > eps ||
-		math.Abs(s.B-other.B) > eps {
-		return false
-	}
-	if len(s.Samples) != len(other.Samples) {
-		return false
-	}
-	for i := range s.Samples {
-		if math.Abs(s.Samples[i]-other.Samples[i]) > eps {
+	if s.HasSamples() || other.HasSamples() {
+		if s.SampleCount() != other.SampleCount() {
 			return false
 		}
+		for i := 0; i < s.SampleCount(); i++ {
+			if math.Abs(sampleAt(s, i)-sampleAt(other, i)) > eps {
+				return false
+			}
+		}
+		return true
 	}
-	return true
+
+	return math.Abs(s.RGB[0]-other.RGB[0]) <= eps &&
+		math.Abs(s.RGB[1]-other.RGB[1]) <= eps &&
+		math.Abs(s.RGB[2]-other.RGB[2]) <= eps
 }
 
 func isFinite(v float64) bool {
@@ -168,5 +226,5 @@ func sampleAt(s Spectrum, i int) float64 {
 }
 
 func (s Spectrum) averageRGB() float64 {
-	return (s.R + s.G + s.B) / 3
+	return (s.RGB[0] + s.RGB[1] + s.RGB[2]) / 3
 }
