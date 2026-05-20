@@ -34,10 +34,6 @@ func NewCamera3D() *Camera3D {
 }
 
 func (c *Camera3D) Prepare() error {
-	if c.prepared {
-		return nil
-	}
-
 	if c.Position == nil {
 		return fmt.Errorf("camera position is not configured")
 	} else if c.Direction == nil {
@@ -84,8 +80,10 @@ func (c *Camera3D) GenerateRay(res *renderray.Ray, index ...int) *renderray.Ray 
 	}
 	res.Init()
 
-	if err := c.Prepare(); err != nil {
-		panic(err)
+	if !c.prepared {
+		if err := c.Prepare(); err != nil {
+			panic(err)
+		}
 	}
 
 	var (
