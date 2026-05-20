@@ -10,9 +10,6 @@ import (
 func TestConvertToMonochromeMonteCarlo(t *testing.T) {
 	const numSamples = 200000
 
-	redValues := make([]float64, numSamples)
-	greenValues := make([]float64, numSamples)
-	blueValues := make([]float64, numSamples)
 	wavelengths := make([]float64, numSamples)
 
 	for i := 0; i < numSamples; i++ {
@@ -22,15 +19,17 @@ func TestConvertToMonochromeMonteCarlo(t *testing.T) {
 		ray.ConvertToMonochrome()
 
 		wavelengths[i] = ray.WaveLength
-		redValues[i] = ray.Color.AtVec(0)
-		greenValues[i] = ray.Color.AtVec(1)
-		blueValues[i] = ray.Color.AtVec(2)
+		for ch := 0; ch < 3; ch++ {
+			if ray.Color.AtVec(ch) != 1 {
+				t.Fatalf("expected spectral ray throughput to stay scalar-white before film conversion, got %v", ray.Color.RawVector().Data)
+			}
+		}
 	}
 
-	validateDistribution(t, wavelengths, redValues, greenValues, blueValues)
+	validateDistribution(t, wavelengths)
 }
 
-func validateDistribution(t *testing.T, wavelengths, red, green, blue []float64) {
+func validateDistribution(t *testing.T, wavelengths []float64) {
 	minWavelength, maxWavelength := math.Inf(1), math.Inf(-1)
 	for _, w := range wavelengths {
 		if w < minWavelength {
@@ -44,44 +43,6 @@ func validateDistribution(t *testing.T, wavelengths, red, green, blue []float64)
 	if minWavelength < WavelengthMin || maxWavelength > WavelengthMax {
 		t.Errorf("Wavelength out of range: [%f, %f], expected range: [%f, %f]",
 			minWavelength, maxWavelength, WavelengthMin, WavelengthMax)
-	}
-
-	checkColorRange := func(values []float64, name string) {
-		for _, v := range values {
-			if math.IsNaN(v) || math.IsInf(v, 0) {
-				t.Errorf("Invalid %s value: %f", name, v)
-			}
-		}
-	}
-
-	checkColorRange(red, "red")
-	checkColorRange(green, "green")
-	checkColorRange(blue, "blue")
-
-	calculateStats := func(data []float64) (mean, std float64) {
-		var sum float64
-		for _, v := range data {
-			sum += v
-		}
-		mean = sum / float64(len(data))
-
-		var variance float64
-		for _, v := range data {
-			variance += (v - mean) * (v - mean)
-		}
-		std = math.Sqrt(variance / float64(len(data)))
-
-		return mean, std
-	}
-
-	rMean, _ := calculateStats(red)
-	gMean, _ := calculateStats(green)
-	bMean, _ := calculateStats(blue)
-
-	for name, mean := range map[string]float64{"red": rMean, "green": gMean, "blue": bMean} {
-		if math.Abs(mean-1) > 0.03 {
-			t.Fatalf("expected white-balanced %s mean near 1, got %f", name, mean)
-		}
 	}
 }
 
@@ -99,6 +60,26 @@ func TestRGBWeightWhitePoint(t *testing.T) {
 		mean := total / samples
 		if math.Abs(mean-1) > 1e-3 {
 			t.Fatalf("channel %d white point mean = %f, want 1", ch, mean)
+		}
+	}
+}
+
+func TestSpectralPowerToXYZWhitePoint(t *testing.T) {
+	const samples = 10000
+	var sum [3]float64
+	for i := 0; i < samples; i++ {
+		t := (float64(i) + 0.5) / samples
+		xyz := SpectralPowerToXYZ(WavelengthMin+t*(WavelengthMax-WavelengthMin), UniformWavelengthPDF(), 1)
+		sum[0] += xyz.AtVec(0)
+		sum[1] += xyz.AtVec(1)
+		sum[2] += xyz.AtVec(2)
+	}
+
+	want := d65WhiteXYZ
+	for ch, total := range sum {
+		mean := total / samples
+		if math.Abs(mean-want[ch]) > 1e-3 {
+			t.Fatalf("channel %d normalized XYZ white point = %f, want %f", ch, mean, want[ch])
 		}
 	}
 }

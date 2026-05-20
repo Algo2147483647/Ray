@@ -254,7 +254,7 @@ Recommended priority:
 
 ### 3.5 Film And Output Layer
 
-Short term, RGB Film can remain, but its working space must be explicit:
+The Film keeps three accumulation channels, but its working space is explicit:
 
 ```text
 rgb:
@@ -263,13 +263,13 @@ rgb:
 
 hero_wavelength:
   path contribution is narrow-band
-  Film converts lambda contribution to XYZ/RGB before accumulation
+  Film converts lambda contribution to XYZ before accumulation
 
 sampled:
-  Film accumulates XYZ or working RGB after spectral integration
+  Film accumulates XYZ after spectral integration
 ```
 
-Longer-term Film should use either XYZ internally:
+The current implementation uses the XYZ form internally for spectral modes:
 
 ```go
 type Film struct {

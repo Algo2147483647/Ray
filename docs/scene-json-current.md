@@ -268,7 +268,7 @@ Supported object forms:
     "gamma": 2.2,
     "spectrum_mode": "hero_wavelength",
     "wavelength_samples": 1,
-    "working_space": "linear_srgb"
+    "working_space": "xyz"
   }
 }
 ```
@@ -293,7 +293,7 @@ sampled
 
 Camera ray generation now only creates geometric rays. Wavelength sampling is owned by the renderer/integrator so that `rgb`, `hero_wavelength`, and `sampled` modes share the same camera code.
 
-Film currently stores three channels in `linear_srgb` by default. Hero-wavelength reconstruction uses a CIE 1931 XYZ approximation converted to linear sRGB and white-point normalized before the contribution reaches the Film. The Film also has an `xyz` working-space path for future spectral accumulation, but the active renderer keeps `linear_srgb` until BSDF throughput is fully spectral.
+Film stores three channels in an explicit working space. `rgb` mode accumulates `linear_srgb`; `hero_wavelength` and `sampled` modes carry scalar spectral power along each wavelength path, convert spectral power through the CIE 1931 XYZ matching functions, white-normalize to the D65 output white, and accumulate `xyz` in the Film before the final output transform.
 
 `core.Spectrum` now preserves optional sampled channels in addition to its RGB compatibility fields. Lambert, specular reflection, specular dielectric, rough conductor, and constant emission evaluate their spectral parameters from `ShadingContext` instead of collapsing all inputs to RGB at parse time. In `sampled` mode the renderer still traces wavelength sub-paths independently, which is required for dispersive paths where different wavelengths can refract in different directions. The sampled-channel `Spectrum` path is active in material evaluation and unit tests, and is the compatibility layer for a future packet-style spectral integrator.
 

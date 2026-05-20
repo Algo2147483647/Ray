@@ -36,7 +36,7 @@ func (h *Handler) TracePixel(camera camera.Camera, objTree *object.ObjectTree, s
 				camera.GenerateRay(ray, index...)
 				sample := wavelengthSampler.Sample((float64(w) + rand.Float64()) / float64(wavelengthSamples))
 				ray.SetSpectralWavelength(sample.LambdaNM)
-				color.AddVec(color, h.TraceRay(objTree, ray, 0))
+				color.AddVec(color, spectralRayToXYZ(h.TraceRay(objTree, ray, 0), ray))
 				totalTraces++
 			}
 
@@ -44,7 +44,7 @@ func (h *Handler) TracePixel(camera camera.Camera, objTree *object.ObjectTree, s
 			camera.GenerateRay(ray, index...)
 			sample := wavelengthSampler.Sample(rand.Float64())
 			ray.SetSpectralWavelength(sample.LambdaNM)
-			color.AddVec(color, h.TraceRay(objTree, ray, 0))
+			color.AddVec(color, spectralRayToXYZ(h.TraceRay(objTree, ray, 0), ray))
 			totalTraces++
 		}
 	}
@@ -53,4 +53,22 @@ func (h *Handler) TracePixel(camera camera.Camera, objTree *object.ObjectTree, s
 		return color
 	}
 	return math_lib.ScaleVec(color, 1.0/float64(totalTraces), color)
+}
+
+func spectralRayToXYZ(color *mat.VecDense, ray *renderray.Ray) *mat.VecDense {
+	if ray == nil || ray.WaveLength <= 0 {
+		return mat.NewVecDense(3, nil)
+	}
+	return renderray.SpectralPowerToXYZ(ray.WaveLength, ray.WavelengthPDF, averageVec(color))
+}
+
+func averageVec(v *mat.VecDense) float64 {
+	if v == nil || v.Len() == 0 {
+		return 0
+	}
+	sum := 0.0
+	for i := 0; i < v.Len(); i++ {
+		sum += v.AtVec(i)
+	}
+	return sum / float64(v.Len())
 }

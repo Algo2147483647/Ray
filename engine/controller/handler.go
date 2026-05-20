@@ -184,6 +184,8 @@ func renderSpectrumMode(value string) core.SpectrumMode {
 
 func renderWorkingSpace(value string) camera.WorkingSpace {
 	switch value {
+	case string(camera.WorkingSpaceXYZ):
+		return camera.WorkingSpaceXYZ
 	default:
 		return camera.WorkingSpaceLinearSRGB
 	}

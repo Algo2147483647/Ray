@@ -11,6 +11,8 @@ const (
 	WavelengthMax = 750.0
 )
 
+var d65WhiteXYZ = [3]float64{0.95047, 1.0, 1.08883}
+
 func UniformWavelengthPDF() float64 {
 	return 1 / (WavelengthMax - WavelengthMin)
 }
@@ -41,6 +43,27 @@ func WavelengthToXYZ(wavelength float64) *mat.VecDense {
 	})
 }
 
+func WavelengthToNormalizedXYZ(wavelength, pdf float64) *mat.VecDense {
+	xyz := WavelengthToXYZ(wavelength)
+	white := spectralXYZWhitePoint
+	pdfScale := wavelengthPDFScale(pdf)
+
+	return mat.NewVecDense(3, []float64{
+		safeDivide(xyz.AtVec(0)*pdfScale*d65WhiteXYZ[0], white[0]),
+		safeDivide(xyz.AtVec(1)*pdfScale*d65WhiteXYZ[1], white[1]),
+		safeDivide(xyz.AtVec(2)*pdfScale*d65WhiteXYZ[2], white[2]),
+	})
+}
+
+func SpectralPowerToXYZ(wavelength, pdf, power float64) *mat.VecDense {
+	xyz := WavelengthToNormalizedXYZ(wavelength, pdf)
+	return mat.NewVecDense(3, []float64{
+		xyz.AtVec(0) * power,
+		xyz.AtVec(1) * power,
+		xyz.AtVec(2) * power,
+	})
+}
+
 func WavelengthToLinearSRGB(wavelength float64) *mat.VecDense {
 	xyz := WavelengthToXYZ(wavelength)
 	r, g, b := xyzToLinearSRGB(xyz.AtVec(0), xyz.AtVec(1), xyz.AtVec(2))
@@ -52,6 +75,7 @@ func WavelengthToLinearSRGB(wavelength float64) *mat.VecDense {
 }
 
 var spectralWhitePoint = computeSpectralWhitePoint()
+var spectralXYZWhitePoint = computeSpectralXYZWhitePoint()
 
 func computeSpectralWhitePoint() [3]float64 {
 	const steps = 2048
@@ -63,6 +87,24 @@ func computeSpectralWhitePoint() [3]float64 {
 		sum[0] += rgb.AtVec(0)
 		sum[1] += rgb.AtVec(1)
 		sum[2] += rgb.AtVec(2)
+	}
+	return [3]float64{
+		sum[0] / steps,
+		sum[1] / steps,
+		sum[2] / steps,
+	}
+}
+
+func computeSpectralXYZWhitePoint() [3]float64 {
+	const steps = 2048
+	var sum [3]float64
+	for i := 0; i < steps; i++ {
+		t := (float64(i) + 0.5) / steps
+		wavelength := WavelengthMin + t*(WavelengthMax-WavelengthMin)
+		xyz := WavelengthToXYZ(wavelength)
+		sum[0] += xyz.AtVec(0)
+		sum[1] += xyz.AtVec(1)
+		sum[2] += xyz.AtVec(2)
 	}
 	return [3]float64{
 		sum[0] / steps,
@@ -108,4 +150,11 @@ func safeDivide(a, b float64) float64 {
 		return 0
 	}
 	return a / b
+}
+
+func wavelengthPDFScale(pdf float64) float64 {
+	if pdf <= 0 {
+		return 0
+	}
+	return 1 / (pdf * (WavelengthMax - WavelengthMin))
 }

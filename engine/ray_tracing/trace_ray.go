@@ -47,7 +47,7 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *renderray.Ray, level
 		WavelengthPDF: ray.WavelengthPDF,
 	}
 
-	if h.SpectrumMode == core.SpectrumRGBAndSpectral && ray.WaveLength > 0 {
+	if h.SpectrumMode != core.SpectrumRGB && ray.WaveLength > 0 {
 		ctx.WavelengthsNM = []float64{ray.WaveLength}
 	}
 	prepareMediumContext(&ctx, media, ray, obj.MediumBoundary, hit.FrontFace)

@@ -2,9 +2,11 @@ package camera
 
 import (
 	"encoding/binary"
+	"errors"
 	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
 	"image"
 	"image/color"
+	"io"
 	"math"
 	"os"
 	"reflect"
@@ -69,6 +71,9 @@ func (f *Film) Init(width ...int) *Film {
 func (f *Film) Merge(a *Film) *Film {
 	if !reflect.DeepEqual(f.Data[0].Shape, a.Data[0].Shape) {
 		panic("Dimension of a and b is not matched ")
+	}
+	if f.WorkingSpace != "" && a.WorkingSpace != "" && f.WorkingSpace != a.WorkingSpace {
+		panic("Working space of a and b is not matched")
 	}
 
 	totalSamples := f.Samples + a.Samples
@@ -216,6 +221,10 @@ func (f *Film) LoadFromFile(filename string) error {
 		}
 	}
 
+	if err = f.readOptionalWorkingSpace(file); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -255,5 +264,39 @@ func (f *Film) SaveToFile(filename string) error {
 		}
 	}
 
+	space := []byte(f.WorkingSpace)
+	spaceLen := int32(len(space))
+	if err = binary.Write(file, binary.LittleEndian, spaceLen); err != nil {
+		return err
+	}
+	if spaceLen > 0 {
+		if _, err = file.Write(space); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (f *Film) readOptionalWorkingSpace(file *os.File) error {
+	var spaceLen int32
+	if err := binary.Read(file, binary.LittleEndian, &spaceLen); err != nil {
+		if errors.Is(err, io.EOF) {
+			return nil
+		}
+		return err
+	}
+	if spaceLen <= 0 {
+		return nil
+	}
+
+	buf := make([]byte, spaceLen)
+	if _, err := io.ReadFull(file, buf); err != nil {
+		return err
+	}
+	switch WorkingSpace(buf) {
+	case WorkingSpaceLinearSRGB, WorkingSpaceXYZ:
+		f.WorkingSpace = WorkingSpace(buf)
+	}
 	return nil
 }

@@ -3,6 +3,7 @@ package ray_tracing
 import (
 	"fmt"
 	"github.com/Algo2147483647/ray/engine/model/camera"
+	"github.com/Algo2147483647/ray/engine/model/material/core"
 	"github.com/Algo2147483647/ray/engine/model/object"
 	"sync"
 	"sync/atomic"
@@ -11,6 +12,10 @@ import (
 
 // TraceScene renders the object tree from the supplied camera into the film.
 func (h *Handler) TraceScene(renderCamera camera.Camera, objectTree *object.ObjectTree, film *camera.Film, samples int64) {
+	if h.SpectrumMode != core.SpectrumRGB {
+		film.WorkingSpace = camera.WorkingSpaceXYZ
+	}
+
 	var (
 		nextPixel   int64
 		progress    int64

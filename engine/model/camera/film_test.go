@@ -2,6 +2,7 @@ package camera
 
 import (
 	"image/color"
+	"path/filepath"
 	"testing"
 )
 
@@ -77,5 +78,26 @@ func TestFilmToImageConvertsXYZWorkingSpace(t *testing.T) {
 	got := img.RGBAAt(0, 0)
 	if got.R < 250 || got.G < 250 || got.B < 250 {
 		t.Fatalf("expected D65-like XYZ white to convert near display white, got %+v", got)
+	}
+}
+
+func TestFilmFileRoundTripsWorkingSpace(t *testing.T) {
+	film := NewFilm(1, 1)
+	film.WorkingSpace = WorkingSpaceXYZ
+	film.Data[0].Data[0] = 0.95047
+	film.Data[1].Data[0] = 1
+	film.Data[2].Data[0] = 1.08883
+
+	filename := filepath.Join(t.TempDir(), "film.bin")
+	if err := film.SaveToFile(filename); err != nil {
+		t.Fatalf("save film: %v", err)
+	}
+
+	loaded := NewFilm(1, 1)
+	if err := loaded.LoadFromFile(filename); err != nil {
+		t.Fatalf("load film: %v", err)
+	}
+	if loaded.WorkingSpace != WorkingSpaceXYZ {
+		t.Fatalf("expected working space to round-trip as XYZ, got %q", loaded.WorkingSpace)
 	}
 }

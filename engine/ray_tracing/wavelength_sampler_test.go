@@ -2,6 +2,7 @@ package ray_tracing
 
 import (
 	"github.com/Algo2147483647/ray/engine/model/optics"
+	"gonum.org/v1/gonum/mat"
 	"math"
 	"testing"
 )
@@ -24,5 +25,22 @@ func TestUniformWavelengthSampler(t *testing.T) {
 	}
 	if math.Abs(middle.PDF-optics.UniformWavelengthPDF()) > 1e-12 {
 		t.Fatalf("unexpected wavelength pdf: got %f want %f", middle.PDF, optics.UniformWavelengthPDF())
+	}
+}
+
+func TestSpectralRayToXYZUsesScalarPower(t *testing.T) {
+	ray := &optics.Ray{
+		WaveLength:    555,
+		WavelengthPDF: optics.UniformWavelengthPDF(),
+	}
+	color := mat.NewVecDense(3, []float64{2, 2, 2})
+
+	got := spectralRayToXYZ(color, ray)
+	want := optics.SpectralPowerToXYZ(555, optics.UniformWavelengthPDF(), 2)
+
+	for ch := 0; ch < 3; ch++ {
+		if math.Abs(got.AtVec(ch)-want.AtVec(ch)) > 1e-12 {
+			t.Fatalf("unexpected XYZ channel %d: got %f want %f", ch, got.AtVec(ch), want.AtVec(ch))
+		}
 	}
 }

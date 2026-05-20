@@ -128,8 +128,18 @@ func TestParseRenderOverridesRejectsNegativeWavelengthSamples(t *testing.T) {
 	}
 }
 
+func TestParseRenderOverridesAcceptsXYZWorkingSpace(t *testing.T) {
+	overrides, err := ParseRenderOverrides([]string{"--working-space", "xyz"})
+	if err != nil {
+		t.Fatalf("expected xyz working space to be supported: %v", err)
+	}
+	if overrides.WorkingSpace != "xyz" {
+		t.Fatalf("unexpected working space: %s", overrides.WorkingSpace)
+	}
+}
+
 func TestParseRenderOverridesRejectsUnsupportedWorkingSpace(t *testing.T) {
-	if _, err := ParseRenderOverrides([]string{"--working-space", "xyz"}); err == nil {
-		t.Fatal("expected unsupported working space to fail until XYZ film accumulation is active")
+	if _, err := ParseRenderOverrides([]string{"--working-space", "magic"}); err == nil {
+		t.Fatal("expected unsupported working space to fail")
 	}
 }

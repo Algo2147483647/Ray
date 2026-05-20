@@ -65,12 +65,6 @@ func (r *Ray) SetSpectralWavelength(wavelength float64) {
 	wavelength = math.Max(WavelengthMin+1e-6, math.Min(WavelengthMax-1e-6, wavelength))
 	r.WaveLength = wavelength
 	r.WavelengthPDF = UniformWavelengthPDF()
-
-	baseColor := RGBWeight(wavelength)
-
-	r.Color.SetVec(0, baseColor.AtVec(0)*r.Color.AtVec(0))
-	r.Color.SetVec(1, baseColor.AtVec(1)*r.Color.AtVec(1))
-	r.Color.SetVec(2, baseColor.AtVec(2)*r.Color.AtVec(2))
 }
 
 func (r *Ray) DisableSpectralSampling() {

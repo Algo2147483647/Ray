@@ -253,6 +253,63 @@
     "parents": {
       "Ray Tracing": "related_to"
     },
+    "children": {
+      "Cuboid": "related_to",
+      "Four Order Equation": "related_to",
+      "Plane": "related_to",
+      "Quadratic Equation": "related_to",
+      "Sphere": "related_to",
+      "Triangle": "related_to",
+      "Circle": "related_to"
+    }
+  },
+  "Cuboid": {
+    "define": "",
+    "parents": {
+      "Shape": "related_to"
+    },
+    "children": {}
+  },
+  "Four Order Equation": {
+    "define": "",
+    "parents": {
+      "Shape": "related_to"
+    },
+    "children": {}
+  },
+  "Plane": {
+    "define": "",
+    "parents": {
+      "Shape": "related_to"
+    },
+    "children": {}
+  },
+  "Quadratic Equation": {
+    "define": "",
+    "parents": {
+      "Shape": "related_to"
+    },
+    "children": {}
+  },
+  "Sphere": {
+    "define": "",
+    "parents": {
+      "Shape": "related_to"
+    },
+    "children": {}
+  },
+  "Triangle": {
+    "define": "",
+    "parents": {
+      "Shape": "related_to"
+    },
+    "children": {}
+  },
+  "Circle": {
+    "define": "",
+    "parents": {
+      "Shape": "related_to"
+    },
     "children": {}
   }
 }
