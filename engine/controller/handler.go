@@ -123,6 +123,9 @@ func (h *Handler) selectRenderCamera(cameraIndex, width, height int) (camera.Cam
 		c.Width = resolvedWidth
 		c.Height = resolvedHeight
 		c.AspectRatio = float64(resolvedWidth) / float64(resolvedHeight)
+		if err := c.Prepare(); err != nil {
+			return nil, nil, err
+		}
 		return c, []int{resolvedWidth, resolvedHeight}, nil
 	case *camera.CameraNDim:
 		if len(c.Width) == 0 {

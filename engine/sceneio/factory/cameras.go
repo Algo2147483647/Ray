@@ -72,6 +72,9 @@ func BuildCamera3DFromScript(def CameraScript) (*modelcamera.Camera3D, error) {
 		}
 		camera3D.Direction = direction
 		camera3D.Direction.ScaleVec(1.0/mat.Norm(direction, 2), camera3D.Direction)
+		if err := camera3D.Prepare(); err != nil {
+			return nil, err
+		}
 		return camera3D, nil
 	}
 
@@ -84,6 +87,9 @@ func BuildCamera3DFromScript(def CameraScript) (*modelcamera.Camera3D, error) {
 	}
 
 	camera3D.SetLookAt(lookAt)
+	if err := camera3D.Prepare(); err != nil {
+		return nil, err
+	}
 	return camera3D, nil
 }
 

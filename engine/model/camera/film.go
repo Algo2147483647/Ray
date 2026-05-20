@@ -71,8 +71,7 @@ func (f *Film) Init(width ...int) *Film {
 func (f *Film) Merge(a *Film) *Film {
 	if !reflect.DeepEqual(f.Data[0].Shape, a.Data[0].Shape) {
 		panic("Dimension of a and b is not matched ")
-	}
-	if f.ColorSpace != "" && a.ColorSpace != "" && f.ColorSpace != a.ColorSpace {
+	} else if f.ColorSpace != "" && a.ColorSpace != "" && f.ColorSpace != a.ColorSpace {
 		panic("Working space of a and b is not matched")
 	}
 
