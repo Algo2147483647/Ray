@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Algo2147483647/ray/engine/controller/parser"
+	"github.com/Algo2147483647/ray/engine/utils"
 
 	"github.com/Algo2147483647/ray/engine/model/material"
 	"github.com/Algo2147483647/ray/engine/model/material/bsdf"
@@ -25,7 +26,7 @@ func ParseMaterials(script *parser.Script) (map[string]*material.Material, error
 	for idx, matDef := range script.Materials {
 		context := fmt.Sprintf("material[%d]", idx)
 
-		id, err := requiredStringField(matDef, "id")
+		id, err := utils.RequiredStringField(matDef, "id")
 		if err != nil {
 			parseErrors = append(parseErrors, fmt.Errorf("%s: %w", context, err))
 			continue
@@ -44,7 +45,7 @@ func ParseMaterials(script *parser.Script) (map[string]*material.Material, error
 			},
 		}
 
-		if surfaceDef, ok, err := optionalMapField(matDef, "surface"); err != nil {
+		if surfaceDef, ok, err := utils.OptionalMapField(matDef, "surface"); err != nil {
 			parseErrors = append(parseErrors, fmt.Errorf("%s: %w", context, err))
 			continue
 		} else if ok {
@@ -56,7 +57,7 @@ func ParseMaterials(script *parser.Script) (map[string]*material.Material, error
 			material.Surface = surface
 		}
 
-		if emissionDef, ok, err := optionalMapField(matDef, "emission"); err != nil {
+		if emissionDef, ok, err := utils.OptionalMapField(matDef, "emission"); err != nil {
 			parseErrors = append(parseErrors, fmt.Errorf("%s: %w", context, err))
 			continue
 		} else if ok {
@@ -84,7 +85,7 @@ func ParseMaterials(script *parser.Script) (map[string]*material.Material, error
 }
 
 func parseSurface(def map[string]interface{}) (bsdf.BSDF, error) {
-	surfaceType, err := requiredStringField(def, "type")
+	surfaceType, err := utils.RequiredStringField(def, "type")
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +114,7 @@ func parseSurface(def map[string]interface{}) (bsdf.BSDF, error) {
 		if err != nil {
 			return nil, err
 		}
-		etaOutside, ok, err := optionalFloat64Field(def, "eta_outside")
+		etaOutside, ok, err := utils.OptionalFloat64Field(def, "eta_outside")
 		if err != nil {
 			return nil, err
 		}
@@ -138,7 +139,7 @@ func parseSurface(def map[string]interface{}) (bsdf.BSDF, error) {
 		if err != nil {
 			return nil, err
 		}
-		roughness, ok, err := optionalFloat64Field(def, "roughness")
+		roughness, ok, err := utils.OptionalFloat64Field(def, "roughness")
 		if err != nil {
 			return nil, err
 		}
@@ -157,7 +158,7 @@ func parseSurface(def map[string]interface{}) (bsdf.BSDF, error) {
 }
 
 func parseEmission(def map[string]interface{}) (material.Emitter, error) {
-	emissionType, err := requiredStringField(def, "type")
+	emissionType, err := utils.RequiredStringField(def, "type")
 	if err != nil {
 		return nil, err
 	}
@@ -175,16 +176,16 @@ func parseEmission(def map[string]interface{}) (material.Emitter, error) {
 }
 
 func parseIORModel(def map[string]interface{}) (medium.Model, error) {
-	if iorDef, ok, err := optionalMapField(def, "ior"); err != nil {
+	if iorDef, ok, err := utils.OptionalMapField(def, "ior"); err != nil {
 		return nil, err
 	} else if ok {
-		iorType, err := requiredStringField(iorDef, "type")
+		iorType, err := utils.RequiredStringField(iorDef, "type")
 		if err != nil {
 			return nil, fmt.Errorf("ior: %w", err)
 		}
 		switch iorType {
 		case "constant":
-			eta, err := requiredFloat64Field(iorDef, "eta")
+			eta, err := utils.RequiredFloat64Field(iorDef, "eta")
 			if err != nil {
 				return nil, fmt.Errorf("ior: %w", err)
 			}
@@ -193,15 +194,15 @@ func parseIORModel(def map[string]interface{}) (medium.Model, error) {
 			}
 			return medium.NewConstant(eta), nil
 		case "cauchy":
-			a, err := requiredFloat64Field(iorDef, "a")
+			a, err := utils.RequiredFloat64Field(iorDef, "a")
 			if err != nil {
 				return nil, fmt.Errorf("ior: %w", err)
 			}
-			b, err := requiredFloat64Field(iorDef, "b")
+			b, err := utils.RequiredFloat64Field(iorDef, "b")
 			if err != nil {
 				return nil, fmt.Errorf("ior: %w", err)
 			}
-			c, ok, err := optionalFloat64Field(iorDef, "c")
+			c, ok, err := utils.OptionalFloat64Field(iorDef, "c")
 			if err != nil {
 				return nil, fmt.Errorf("ior: %w", err)
 			}
@@ -220,7 +221,7 @@ func parseIORModel(def map[string]interface{}) (medium.Model, error) {
 		}
 	}
 
-	etaInside, ok, err := optionalFloat64Field(def, "eta_inside")
+	etaInside, ok, err := utils.OptionalFloat64Field(def, "eta_inside")
 	if err != nil {
 		return nil, err
 	}
@@ -269,35 +270,35 @@ func parseSpectralParameterValue(key string, value interface{}) (optics.Spectral
 		return parseSpectralParameterObject(mapped)
 	}
 
-	values, err := toFloat64Slice(value)
+	values, err := utils.ToFloat64Slice(value)
 	if err != nil {
 		return nil, err
 	}
-	if err := requireSliceLength(key, values, 3); err != nil {
+	if err := utils.RequireSliceLength(key, values, 3); err != nil {
 		return nil, err
 	}
-	if err := validateNonNegativeSlice("legacy rgb", values); err != nil {
+	if err := utils.ValidateNonNegativeSlice("legacy rgb", values); err != nil {
 		return nil, err
 	}
 	return spectrum_parameter.NewRGBParameter(optics.NewSpectrum(values[0], values[1], values[2])), nil
 }
 
 func parseSpectralParameterObject(def map[string]interface{}) (optics.SpectralParameter, error) {
-	parameterType, err := requiredStringField(def, "type")
+	parameterType, err := utils.RequiredStringField(def, "type")
 	if err != nil {
 		return nil, err
 	}
 
 	switch parameterType {
 	case "rgb":
-		values, err := requiredFloat64SliceField(def, "value", 3)
+		values, err := utils.RequiredFloat64SliceField(def, "value", 3)
 		if err != nil {
 			return nil, err
 		}
-		if err := validateNonNegativeSlice("value", values); err != nil {
+		if err := utils.ValidateNonNegativeSlice("value", values); err != nil {
 			return nil, err
 		}
-		space, ok, err := optionalStringField(def, "space")
+		space, ok, err := utils.OptionalStringField(def, "space")
 		if err != nil {
 			return nil, err
 		}
@@ -317,7 +318,7 @@ func parseSpectralParameterObject(def map[string]interface{}) (optics.SpectralPa
 		}
 
 	case "constant":
-		value, err := requiredFloat64Field(def, "value")
+		value, err := utils.RequiredFloat64Field(def, "value")
 		if err != nil {
 			return nil, err
 		}
@@ -327,11 +328,11 @@ func parseSpectralParameterObject(def map[string]interface{}) (optics.SpectralPa
 		return spectrum_parameter.NewConstantParameter(value), nil
 
 	case "sampled":
-		wavelengths, err := requiredFloat64SliceField(def, "wavelengths_nm")
+		wavelengths, err := utils.RequiredFloat64SliceField(def, "wavelengths_nm")
 		if err != nil {
 			return nil, err
 		}
-		values, err := requiredFloat64SliceField(def, "values")
+		values, err := utils.RequiredFloat64SliceField(def, "values")
 		if err != nil {
 			return nil, err
 		}
@@ -341,13 +342,13 @@ func parseSpectralParameterObject(def map[string]interface{}) (optics.SpectralPa
 		if len(wavelengths) < 2 {
 			return nil, fmt.Errorf("sampled spectrum must contain at least 2 samples")
 		}
-		if err := validateStrictlyIncreasing("wavelengths_nm", wavelengths); err != nil {
+		if err := utils.ValidateStrictlyIncreasing("wavelengths_nm", wavelengths); err != nil {
 			return nil, err
 		}
-		if err := validateNonNegativeSlice("values", values); err != nil {
+		if err := utils.ValidateNonNegativeSlice("values", values); err != nil {
 			return nil, err
 		}
-		interpolation, ok, err := optionalStringField(def, "interpolation")
+		interpolation, ok, err := utils.OptionalStringField(def, "interpolation")
 		if err != nil {
 			return nil, err
 		}
@@ -357,14 +358,14 @@ func parseSpectralParameterObject(def map[string]interface{}) (optics.SpectralPa
 		return spectrum_parameter.NewSampledParameter(wavelengths, values), nil
 
 	case "blackbody":
-		temperature, err := requiredFloat64Field(def, "temperature")
+		temperature, err := utils.RequiredFloat64Field(def, "temperature")
 		if err != nil {
 			return nil, err
 		}
 		if temperature <= 0 {
 			return nil, fmt.Errorf("temperature must be > 0")
 		}
-		scale, ok, err := optionalFloat64Field(def, "scale")
+		scale, ok, err := utils.OptionalFloat64Field(def, "scale")
 		if err != nil {
 			return nil, err
 		}

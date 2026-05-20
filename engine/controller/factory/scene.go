@@ -44,14 +44,14 @@ func LoadSceneFromScript(script *parser.Script, scene *model.Scene) error {
 
 	for idx, item := range script.Objects {
 		objectLabel := fmt.Sprintf("object[%d]", idx)
-		if objectID, ok, err := optionalStringField(item, "id"); err == nil && ok && objectID != "" {
+		if objectID, ok, err := utils.OptionalStringField(item, "id"); err == nil && ok && objectID != "" {
 			objectLabel = fmt.Sprintf("object[%d] id=%q", idx, objectID)
 		} else if err != nil {
 			parseErrors = append(parseErrors, fmt.Errorf("%s: %w", objectLabel, err))
 			continue
 		}
 
-		materialID, err := requiredStringField(item, "material_id")
+		materialID, err := utils.RequiredStringField(item, "material_id")
 		if err != nil {
 			parseErrors = append(parseErrors, fmt.Errorf("%s: %w", objectLabel, err))
 			continue

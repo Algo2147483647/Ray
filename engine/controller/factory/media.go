@@ -3,6 +3,7 @@ package factory
 import (
 	"fmt"
 	"github.com/Algo2147483647/ray/engine/controller/parser"
+	"github.com/Algo2147483647/ray/engine/utils"
 
 	"github.com/Algo2147483647/ray/engine/model/material/medium"
 )
@@ -15,7 +16,7 @@ func ParseMediaRegistry(script *parser.Script) (*medium.Registry, error) {
 
 	for name, def := range script.Media {
 		context := fmt.Sprintf("medium %q", name)
-		mediumType, ok, err := optionalStringField(def, "type")
+		mediumType, ok, err := utils.OptionalStringField(def, "type")
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", context, err)
 		}
