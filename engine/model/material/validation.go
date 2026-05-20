@@ -40,7 +40,7 @@ func CheckNonNegative(scattering bxdf.Scattering, ctx bxdf.ShadingContext, opts 
 }
 
 func CheckReciprocity(scattering bxdf.Scattering, ctx bxdf.ShadingContext, opts Options) error {
-	if scattering.DeltaFlags()&core.NonReciprocal != 0 {
+	if scattering.DeltaFlags()&bxdf.NonReciprocal != 0 {
 		return nil
 	}
 
@@ -77,9 +77,9 @@ func CheckEnergyConservation(scattering bxdf.Scattering, ctx bxdf.ShadingContext
 	return nil
 }
 
-func CheckSamplePDFConsistency(scattering core.Scattering, ctx core.ShadingContext, opts Options) error {
+func CheckSamplePDFConsistency(scattering bxdf.Scattering, ctx bxdf.ShadingContext, opts Options) error {
 	opts = normalizeOptions(opts)
-	wo := core.NewDirection(0, 0, 1)
+	wo := maths.NewDirection(0, 0, 1)
 
 	for i := 0; i < opts.DirectionSamples; i++ {
 		u := maths.Sample2D{
@@ -107,10 +107,10 @@ func CheckSamplePDFConsistency(scattering core.Scattering, ctx core.ShadingConte
 	return nil
 }
 
-func CheckBasicPhysicalValidity(scattering core.Scattering, ctx core.ShadingContext, opts Options) error {
+func CheckBasicPhysicalValidity(scattering bxdf.Scattering, ctx bxdf.ShadingContext, opts Options) error {
 	checks := []struct {
 		name string
-		fn   func(core.Scattering, core.ShadingContext, Options) error
+		fn   func(bxdf.Scattering, bxdf.ShadingContext, Options) error
 	}{
 		{name: "non-negativity", fn: CheckNonNegative},
 		{name: "reciprocity", fn: CheckReciprocity},

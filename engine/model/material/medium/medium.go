@@ -11,8 +11,8 @@ type Medium interface {
 	ID() MediumID
 	Name() string
 	IOR(ctx bxdf.ShadingContext) float64
-	SigmaA(ctx bxdf.ShadingContext) core.Spectrum
-	SigmaS(ctx bxdf.ShadingContext) core.Spectrum
+	SigmaA(ctx bxdf.ShadingContext) optics.Spectrum
+	SigmaS(ctx bxdf.ShadingContext) optics.Spectrum
 	IsVacuum() bool
 }
 
@@ -58,23 +58,23 @@ func (h Homogeneous) Name() string {
 	return h.name
 }
 
-func (h Homogeneous) IOR(ctx core.ShadingContext) float64 {
+func (h Homogeneous) IOR(ctx bxdf.ShadingContext) float64 {
 	wavelength := ctx.WavelengthNM
 	if wavelength <= 0 && len(ctx.WavelengthsNM) > 0 {
 		wavelength = ctx.WavelengthsNM[0]
 	}
 	eta := h.eta.Evaluate(wavelength)
-	if !ior.IsValidEta(eta) {
+	if !IsValidEta(eta) {
 		return 1
 	}
 	return eta
 }
 
-func (h Homogeneous) SigmaA(ctx core.ShadingContext) optics.Spectrum {
+func (h Homogeneous) SigmaA(ctx bxdf.ShadingContext) optics.Spectrum {
 	return h.sigmaA.Eval(ctx)
 }
 
-func (h Homogeneous) SigmaS(ctx core.ShadingContext) optics.Spectrum {
+func (h Homogeneous) SigmaS(ctx bxdf.ShadingContext) optics.Spectrum {
 	return h.sigmaS.Eval(ctx)
 }
 
@@ -92,14 +92,14 @@ func NewRegistry() *Registry {
 	r := &Registry{
 		mediaByID: make(map[MediumID]Medium),
 		idByName:  make(map[string]MediumID),
-		nextID:    core.MediumAir + 1,
+		nextID:    MediumAir + 1,
 	}
-	r.Set(core.MediumAir, "air", NewHomogeneous(core.MediumAir, "air", ior.NewConstant(1), nil, nil))
+	r.Set(MediumAir, "air", NewHomogeneous(MediumAir, "air", NewConstant(1), nil, nil))
 	return r
 }
 
 func (r *Registry) Set(id MediumID, name string, m Medium) {
-	if r == nil || id == core.MediumNone || name == "" || m == nil {
+	if r == nil || id == MediumNone || name == "" || m == nil {
 		return
 	}
 	r.mediaByID[id] = m
@@ -109,12 +109,12 @@ func (r *Registry) Set(id MediumID, name string, m Medium) {
 	}
 }
 
-func (r *Registry) RegisterHomogeneous(name string, eta ior.Model, sigmaA, sigmaS core.SpectralParameter) (MediumID, error) {
+func (r *Registry) RegisterHomogeneous(name string, eta Model, sigmaA, sigmaS optics.SpectralParameter) (MediumID, error) {
 	if r == nil {
-		return core.MediumNone, fmt.Errorf("medium registry is nil")
+		return MediumNone, fmt.Errorf("medium registry is nil")
 	}
 	if name == "" {
-		return core.MediumNone, fmt.Errorf("medium name must not be empty")
+		return MediumNone, fmt.Errorf("medium name must not be empty")
 	}
 	if existing, ok := r.idByName[name]; ok {
 		r.Set(existing, name, NewHomogeneous(existing, name, eta, sigmaA, sigmaS))
@@ -127,7 +127,7 @@ func (r *Registry) RegisterHomogeneous(name string, eta ior.Model, sigmaA, sigma
 
 func (r *Registry) ID(name string) (MediumID, bool) {
 	if r == nil {
-		return core.MediumNone, false
+		return MediumNone, false
 	}
 	id, ok := r.idByName[name]
 	return id, ok
@@ -140,9 +140,9 @@ func (r *Registry) Get(id MediumID) Medium {
 	return r.mediaByID[id]
 }
 
-func (r *Registry) IOR(id MediumID, ctx core.ShadingContext) float64 {
-	if id == core.MediumNone {
-		id = core.MediumAir
+func (r *Registry) IOR(id MediumID, ctx bxdf.ShadingContext) float64 {
+	if id == MediumNone {
+		id = MediumAir
 	}
 	if r == nil {
 		return 1

@@ -1,7 +1,5 @@
 package medium
 
-import "github.com/Algo2147483647/ray/engine/model/material/core"
-
 const baseMediumPriority = -1 << 30
 
 type StackEntry struct {
@@ -28,15 +26,15 @@ func NewStack(initial MediumID) Stack {
 
 func (s *Stack) Reset(initial MediumID) {
 	s.entries = s.entries[:0]
-	if initial == core.MediumNone {
-		initial = core.MediumAir
+	if initial == MediumNone {
+		initial = MediumAir
 	}
 	s.entries = append(s.entries, StackEntry{ID: initial, Priority: baseMediumPriority})
 }
 
 func (s Stack) Current() MediumID {
 	if len(s.entries) == 0 {
-		return core.MediumAir
+		return MediumAir
 	}
 	best := s.entries[0]
 	for _, entry := range s.entries[1:] {
@@ -52,21 +50,21 @@ func (s *Stack) Push(id MediumID) {
 }
 
 func (s *Stack) PushWithPriority(id MediumID, priority int) {
-	if id == core.MediumNone {
+	if id == MediumNone {
 		return
 	}
 	s.entries = append(s.entries, StackEntry{ID: id, Priority: priority})
 }
 
 func (s *Stack) Remove(id MediumID) bool {
-	if id == core.MediumNone {
+	if id == MediumNone {
 		return false
 	}
 	for i := len(s.entries) - 1; i >= 0; i-- {
 		if s.entries[i].ID == id {
 			s.entries = append(s.entries[:i], s.entries[i+1:]...)
 			if len(s.entries) == 0 {
-				s.entries = append(s.entries, StackEntry{ID: core.MediumAir, Priority: baseMediumPriority})
+				s.entries = append(s.entries, StackEntry{ID: MediumAir, Priority: baseMediumPriority})
 			}
 			return true
 		}
@@ -75,14 +73,14 @@ func (s *Stack) Remove(id MediumID) bool {
 }
 
 func (s *Stack) RemoveWithPriority(id MediumID, priority int) bool {
-	if id == core.MediumNone {
+	if id == MediumNone {
 		return false
 	}
 	for i := len(s.entries) - 1; i >= 0; i-- {
 		if s.entries[i].ID == id && s.entries[i].Priority == priority {
 			s.entries = append(s.entries[:i], s.entries[i+1:]...)
 			if len(s.entries) == 0 {
-				s.entries = append(s.entries, StackEntry{ID: core.MediumAir, Priority: baseMediumPriority})
+				s.entries = append(s.entries, StackEntry{ID: MediumAir, Priority: baseMediumPriority})
 			}
 			return true
 		}
@@ -114,7 +112,7 @@ func (s Stack) ResolveTransition(boundary Boundary, entering bool) Transition {
 	if boundary.Thin {
 		if entering {
 			transmit = boundary.Inside
-		} else if boundary.Outside != core.MediumNone {
+		} else if boundary.Outside != MediumNone {
 			transmit = boundary.Outside
 		}
 		return Transition{
