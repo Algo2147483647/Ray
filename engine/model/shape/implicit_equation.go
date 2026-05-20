@@ -33,18 +33,7 @@ func (f *ImplicitEquation) Intersect(raySt, rayDir *mat.VecDense) float64 {
 }
 
 func (f *ImplicitEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
-	distance := f.IntersectPure(raySt, rayDir, 0, 0, 10, 10)
-	if !distanceInRange(distance, tMin, tMax) {
-		return SurfaceInteraction{}, false
-	}
-
-	point := pointAt(raySt, rayDir, distance)
-	normal := f.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
-	return newSurfaceInteractionAt(point, distance, normal), true
-}
-
-func (f *ImplicitEquation) IntersectPure(raySt, rayDir *mat.VecDense, u0, v0, tol float64, maxIter int) float64 {
-	return math.MaxFloat64
+	return SurfaceInteraction{}, false
 }
 
 func (f *ImplicitEquation) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {
