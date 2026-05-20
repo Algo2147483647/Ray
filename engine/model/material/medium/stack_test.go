@@ -49,3 +49,50 @@ func TestStackCloneIsIndependent(t *testing.T) {
 		t.Fatalf("unexpected clone current medium: got %d", got)
 	}
 }
+
+func TestStackCurrentUsesHighestPriorityMedium(t *testing.T) {
+	stack := NewStack(core.MediumAir)
+	low := core.MediumID(2)
+	high := core.MediumID(3)
+
+	stack.PushWithPriority(high, 10)
+	stack.PushWithPriority(low, 1)
+
+	if got := stack.Current(); got != high {
+		t.Fatalf("expected highest priority medium, got %d want %d", got, high)
+	}
+}
+
+func TestResolveTransitionKeepsLowerPriorityBoundaryHidden(t *testing.T) {
+	stack := NewStack(core.MediumAir)
+	high := core.MediumID(2)
+	low := core.MediumID(3)
+	stack.EnterBoundary(Boundary{Inside: high, Priority: 10})
+
+	transition := stack.ResolveTransition(Boundary{Inside: low, Priority: 1}, true)
+	if transition.Incident != high || transition.Transmit != high {
+		t.Fatalf("expected lower priority enter to remain in high medium, got %d -> %d", transition.Incident, transition.Transmit)
+	}
+
+	stack.EnterBoundary(Boundary{Inside: low, Priority: 1})
+	stack.ExitBoundary(Boundary{Inside: high, Priority: 10})
+	if got := stack.Current(); got != low {
+		t.Fatalf("expected lower priority medium to become active after high exit, got %d", got)
+	}
+}
+
+func TestThinBoundaryResolvesInterfaceWithoutChangingStack(t *testing.T) {
+	stack := NewStack(core.MediumAir)
+	glass := core.MediumID(2)
+	boundary := Boundary{Outside: core.MediumAir, Inside: glass, Thin: true, Priority: 5}
+
+	enter := stack.ResolveTransition(boundary, true)
+	if !enter.Thin || enter.Incident != core.MediumAir || enter.Transmit != glass {
+		t.Fatalf("unexpected thin enter transition: %+v", enter)
+	}
+
+	stack.EnterBoundary(boundary)
+	if got := stack.Current(); got != core.MediumAir {
+		t.Fatalf("thin boundary must not push volume medium, got %d", got)
+	}
+}

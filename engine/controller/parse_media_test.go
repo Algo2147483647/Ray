@@ -62,6 +62,51 @@ func TestLoadSceneParsesMediaBoundary(t *testing.T) {
 	}
 }
 
+func TestLoadSceneParsesMediumBoundaryPriorityAndThin(t *testing.T) {
+	script := &Script{
+		Media: map[string]map[string]interface{}{
+			"glass": {
+				"ior": map[string]interface{}{
+					"type": "constant",
+					"eta":  1.5,
+				},
+			},
+		},
+		Materials: []map[string]interface{}{
+			{
+				"id": "mat",
+				"surface": map[string]interface{}{
+					"type":   "lambert",
+					"albedo": []interface{}{1.0, 1.0, 1.0},
+				},
+			},
+		},
+		Objects: []map[string]interface{}{
+			{
+				"id":          "thin-pane",
+				"shape":       "sphere",
+				"position":    []interface{}{0.0, 0.0, 0.0},
+				"r":           1.0,
+				"material_id": "mat",
+				"medium_boundary": map[string]interface{}{
+					"inside":   "glass",
+					"priority": 7.0,
+					"thin":     true,
+				},
+			},
+		},
+	}
+
+	scene := model.NewScene()
+	if err := LoadSceneFromScript(script, scene); err != nil {
+		t.Fatalf("load scene with thin priority boundary: %v", err)
+	}
+	boundary := scene.ObjectTree.Objects[0].MediumBoundary
+	if boundary.Priority != 7 || !boundary.Thin {
+		t.Fatalf("expected priority/thin boundary fields, got priority=%d thin=%v", boundary.Priority, boundary.Thin)
+	}
+}
+
 func TestLoadSceneRejectsUnknownBoundaryMedium(t *testing.T) {
 	script := &Script{
 		Materials: []map[string]interface{}{

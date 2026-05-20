@@ -20,5 +20,5 @@ func NewBoundary(outside, inside core.MediumID) Boundary {
 }
 
 func (b Boundary) Active() bool {
-	return !b.Thin && b.Inside != core.MediumNone
+	return b.Inside != core.MediumNone
 }

@@ -88,9 +88,10 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *renderray.Ray, level
 }
 
 func prepareMediumContext(ctx *core.ShadingContext, media *medium.Registry, ray *renderray.Ray, boundary medium.Boundary, frontFace bool) {
-	incident := ray.MediumStack.Current()
-	transmit := incident
-	entering := false
+	transition := ray.MediumStack.ResolveTransition(boundary, frontFace)
+	incident := transition.Incident
+	transmit := transition.Transmit
+	entering := transition.Entering
 
 	ctx.IncidentMedium = incident
 	ctx.TransmitMedium = transmit
@@ -99,19 +100,6 @@ func prepareMediumContext(ctx *core.ShadingContext, media *medium.Registry, ray 
 	if !boundary.Active() {
 		return
 	}
-
-	entering = frontFace
-	if entering {
-		transmit = boundary.Inside
-	} else if boundary.Outside != core.MediumNone {
-		transmit = boundary.Outside
-	} else {
-		transmit = core.MediumAir
-	}
-
-	ctx.IncidentMedium = incident
-	ctx.TransmitMedium = transmit
-	ctx.Entering = entering
 	ctx.EtaIncident = media.IOR(incident, *ctx)
 	ctx.EtaTransmit = media.IOR(transmit, *ctx)
 	ctx.CurrentIOR = ctx.EtaIncident
@@ -120,10 +108,12 @@ func prepareMediumContext(ctx *core.ShadingContext, media *medium.Registry, ray 
 
 func applyMediumTransmission(media *medium.Registry, ray *renderray.Ray, ctx core.ShadingContext, boundary medium.Boundary, sample core.BxDFSample) {
 	if boundary.Active() && sample.TransmitMedium != core.MediumNone {
-		if ctx.Entering {
-			ray.MediumStack.Push(sample.TransmitMedium)
-		} else {
-			ray.MediumStack.Remove(boundary.Inside)
+		if !boundary.Thin {
+			if ctx.Entering {
+				ray.MediumStack.EnterBoundary(boundary)
+			} else {
+				ray.MediumStack.ExitBoundary(boundary)
+			}
 		}
 		ray.RefractionIndex = media.IOR(ray.MediumStack.Current(), ctx)
 		return
