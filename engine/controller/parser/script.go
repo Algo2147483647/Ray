@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"io"
 	"os"
-
-	"github.com/Algo2147483647/ray/engine/sceneio/schema"
 )
 
-func ReadScriptFile(filepath string) (*schema.Script, error) {
+func ReadScriptFile(filepath string) (*Script, error) {
 	file, err := os.Open(filepath)
 	if err != nil {
 		return nil, fmt.Errorf("open script %q: %w", filepath, err)
@@ -21,7 +19,7 @@ func ReadScriptFile(filepath string) (*schema.Script, error) {
 		return nil, fmt.Errorf("read script %q: %w", filepath, err)
 	}
 
-	var script schema.Script
+	var script Script
 	if err := json.Unmarshal(data, &script); err != nil {
 		return nil, fmt.Errorf("parse script %q: %w", filepath, err)
 	}

@@ -2,7 +2,7 @@ package factory
 
 import (
 	"fmt"
-	"github.com/Algo2147483647/ray/engine/sceneio/parser"
+	"github.com/Algo2147483647/ray/engine/controller/parser"
 )
 
 var (

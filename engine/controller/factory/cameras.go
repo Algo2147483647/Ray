@@ -2,8 +2,8 @@ package factory
 
 import (
 	"fmt"
+	"github.com/Algo2147483647/ray/engine/controller/parser"
 	modelcamera "github.com/Algo2147483647/ray/engine/model/camera"
-	"github.com/Algo2147483647/ray/engine/sceneio/schema"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 	"math"
@@ -17,8 +17,8 @@ var (
 	defaultFieldOfView    = 100.0
 )
 
-func DefaultCameraScript() CameraScript {
-	return CameraScript{
+func DefaultCameraScript() parser.CameraScript {
+	return parser.CameraScript{
 		Position:    append([]float64(nil), defaultCameraPosition...),
 		LookAt:      append([]float64(nil), defaultCameraLookAt...),
 		Up:          append([]float64(nil), defaultCameraUp...),
@@ -27,7 +27,7 @@ func DefaultCameraScript() CameraScript {
 	}
 }
 
-func ParseCameras(script *schema.Script) ([]modelcamera.Camera, error) {
+func ParseCameras(script *parser.Script) ([]modelcamera.Camera, error) {
 	dimension := script.Render.Dimension
 	if dimension <= 0 {
 		dimension = 3
@@ -51,7 +51,7 @@ func ParseCameras(script *schema.Script) ([]modelcamera.Camera, error) {
 	return cameras, nil
 }
 
-func BuildCamera3DFromScript(def CameraScript) (*modelcamera.Camera3D, error) {
+func BuildCamera3DFromScript(def parser.CameraScript) (*modelcamera.Camera3D, error) {
 	if utils.Dimension != 3 {
 		return nil, fmt.Errorf("camera type %q requires render dimension 3, got %d", "3d", utils.Dimension)
 	}
@@ -112,7 +112,7 @@ func BuildCamera3DFromScript(def CameraScript) (*modelcamera.Camera3D, error) {
 	return camera3D, nil
 }
 
-func BuildCameraNDimFromScript(def CameraScript) (*modelcamera.CameraNDim, error) {
+func BuildCameraNDimFromScript(def parser.CameraScript) (*modelcamera.CameraNDim, error) {
 	if len(def.Position) == 0 {
 		return nil, fmt.Errorf("position is required for n_dim camera")
 	}
@@ -174,7 +174,7 @@ func BuildCameraNDimFromScript(def CameraScript) (*modelcamera.CameraNDim, error
 	return cameraNDim, nil
 }
 
-func BuildCameraFromScript(def CameraScript) (modelcamera.Camera, error) {
+func BuildCameraFromScript(def parser.CameraScript) (modelcamera.Camera, error) {
 	switch strings.ToLower(def.Type) {
 	case "", "3d", "camera3d":
 		return BuildCamera3DFromScript(def)

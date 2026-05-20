@@ -2,11 +2,12 @@ package factory
 
 import (
 	"fmt"
+	"github.com/Algo2147483647/ray/engine/controller/parser"
 
 	"github.com/Algo2147483647/ray/engine/model/material/medium"
 )
 
-func ParseMediaRegistry(script *Script) (*medium.Registry, error) {
+func ParseMediaRegistry(script *parser.Script) (*medium.Registry, error) {
 	registry := medium.NewRegistry()
 	if script == nil || len(script.Media) == 0 {
 		return registry, nil

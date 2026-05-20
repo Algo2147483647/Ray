@@ -2,9 +2,8 @@ package controller
 
 import (
 	"fmt"
-	"github.com/Algo2147483647/ray/engine/sceneio/factory"
-	"github.com/Algo2147483647/ray/engine/sceneio/parser"
-	"github.com/Algo2147483647/ray/engine/sceneio/schema"
+	"github.com/Algo2147483647/ray/engine/controller/factory"
+	"github.com/Algo2147483647/ray/engine/controller/parser"
 	"image/png"
 	"os"
 	"path/filepath"
@@ -19,7 +18,7 @@ import (
 type Handler struct {
 	err          error
 	Scene        *model.Scene
-	Script       *schema.Script
+	Script       *parser.Script
 	Film         *camera.Film
 	ActiveCamera camera.Camera
 	Config       RenderConfig

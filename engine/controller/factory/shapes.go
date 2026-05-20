@@ -13,11 +13,6 @@ import (
 	"strings"
 )
 
-func GetFloat64SliceForScript(req interface{}) (int, []float64) {
-	values, _ := toFloat64Slice(req)
-	return len(values), values
-}
-
 func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 	shapeName, err := requiredStringField(objDef, "shape")
 	if err != nil {

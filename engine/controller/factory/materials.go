@@ -3,6 +3,7 @@ package factory
 import (
 	"errors"
 	"fmt"
+	"github.com/Algo2147483647/ray/engine/controller/parser"
 
 	"github.com/Algo2147483647/ray/engine/model/material"
 	"github.com/Algo2147483647/ray/engine/model/material/bsdf"
@@ -13,7 +14,7 @@ import (
 	"github.com/Algo2147483647/ray/engine/model/optics/spectrum_parameter"
 )
 
-func ParseMaterials(script *Script) (map[string]*material.Material, error) {
+func ParseMaterials(script *parser.Script) (map[string]*material.Material, error) {
 	if script == nil {
 		return nil, errors.New("script is nil")
 	}

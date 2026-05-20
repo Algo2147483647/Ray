@@ -1,4 +1,4 @@
-package schema
+package parser
 
 type CameraScript struct {
 	ID           string      `json:"id"`

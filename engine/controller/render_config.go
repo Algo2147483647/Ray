@@ -3,7 +3,7 @@ package controller
 import (
 	"flag"
 	"fmt"
-	"github.com/Algo2147483647/ray/engine/sceneio/schema"
+	"github.com/Algo2147483647/ray/engine/controller/schema"
 	"io"
 	"runtime"
 

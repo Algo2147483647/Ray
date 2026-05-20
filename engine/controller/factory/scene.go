@@ -3,14 +3,14 @@ package factory
 import (
 	"errors"
 	"fmt"
+	"github.com/Algo2147483647/ray/engine/controller/parser"
 
 	"github.com/Algo2147483647/ray/engine/model"
 	"github.com/Algo2147483647/ray/engine/model/object"
-	"github.com/Algo2147483647/ray/engine/sceneio/schema"
 	"github.com/Algo2147483647/ray/engine/utils"
 )
 
-func LoadSceneFromScript(script *schema.Script, scene *model.Scene) error {
+func LoadSceneFromScript(script *parser.Script, scene *model.Scene) error {
 	if script == nil {
 		return errors.New("script is nil")
 	}
