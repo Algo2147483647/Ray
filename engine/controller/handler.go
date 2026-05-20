@@ -98,7 +98,7 @@ func (h *Handler) ConfigureRender(overrides RenderOverrides) *Handler {
 	h.Config = config
 	h.ActiveCamera = renderCamera
 	h.Film = camera.NewFilm(filmShape...)
-	h.Film.WorkingSpace = renderWorkingSpace(config.WorkingSpace)
+	h.Film.ColorSpace = renderColorSpace(config.ColorSpace)
 	return h
 }
 
@@ -182,12 +182,12 @@ func renderSpectrumMode(value string) core.SpectrumMode {
 	}
 }
 
-func renderWorkingSpace(value string) camera.WorkingSpace {
+func renderColorSpace(value string) camera.ColorSpace {
 	switch value {
-	case string(camera.WorkingSpaceXYZ):
-		return camera.WorkingSpaceXYZ
+	case string(camera.ColorSpaceXYZ):
+		return camera.ColorSpaceXYZ
 	default:
-		return camera.WorkingSpaceLinearSRGB
+		return camera.ColorSpaceLinearSRGB
 	}
 }
 

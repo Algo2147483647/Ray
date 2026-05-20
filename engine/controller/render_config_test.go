@@ -22,7 +22,7 @@ func TestResolveRenderConfigMergesScriptAndCLI(t *testing.T) {
 			Gamma:             2.2,
 			SpectrumMode:      "rgb",
 			WavelengthSamples: 2,
-			WorkingSpace:      "linear_srgb",
+			ColorSpace:        "linear_srgb",
 		},
 	}
 
@@ -38,7 +38,7 @@ func TestResolveRenderConfigMergesScriptAndCLI(t *testing.T) {
 		Gamma:             1.8,
 		SpectrumMode:      "hero_wavelength",
 		WavelengthSamples: 3,
-		WorkingSpace:      "linear_srgb",
+		ColorSpace:        "linear_srgb",
 	})
 
 	if config.ScriptPath != "custom.json" {
@@ -74,8 +74,8 @@ func TestResolveRenderConfigMergesScriptAndCLI(t *testing.T) {
 	if config.WavelengthSamples != 3 {
 		t.Fatalf("expected CLI wavelength samples override, got %d", config.WavelengthSamples)
 	}
-	if config.WorkingSpace != "linear_srgb" {
-		t.Fatalf("unexpected working space: %s", config.WorkingSpace)
+	if config.ColorSpace != "linear_srgb" {
+		t.Fatalf("unexpected working space: %s", config.ColorSpace)
 	}
 }
 
@@ -93,8 +93,8 @@ func TestResolveRenderConfigDefaultsThreadNumToNumCPU(t *testing.T) {
 	if config.WavelengthSamples != 1 {
 		t.Fatalf("unexpected default wavelength samples: %d", config.WavelengthSamples)
 	}
-	if config.WorkingSpace != "linear_srgb" {
-		t.Fatalf("unexpected default working space: %s", config.WorkingSpace)
+	if config.ColorSpace != "linear_srgb" {
+		t.Fatalf("unexpected default working space: %s", config.ColorSpace)
 	}
 }
 
@@ -128,17 +128,17 @@ func TestParseRenderOverridesRejectsNegativeWavelengthSamples(t *testing.T) {
 	}
 }
 
-func TestParseRenderOverridesAcceptsXYZWorkingSpace(t *testing.T) {
+func TestParseRenderOverridesAcceptsXYZColorSpace(t *testing.T) {
 	overrides, err := ParseRenderOverrides([]string{"--working-space", "xyz"})
 	if err != nil {
 		t.Fatalf("expected xyz working space to be supported: %v", err)
 	}
-	if overrides.WorkingSpace != "xyz" {
-		t.Fatalf("unexpected working space: %s", overrides.WorkingSpace)
+	if overrides.ColorSpace != "xyz" {
+		t.Fatalf("unexpected working space: %s", overrides.ColorSpace)
 	}
 }
 
-func TestParseRenderOverridesRejectsUnsupportedWorkingSpace(t *testing.T) {
+func TestParseRenderOverridesRejectsUnsupportedColorSpace(t *testing.T) {
 	if _, err := ParseRenderOverrides([]string{"--working-space", "magic"}); err == nil {
 		t.Fatal("expected unsupported working space to fail")
 	}

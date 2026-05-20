@@ -25,7 +25,7 @@ func NewCameraNDim() *CameraNDim {
 }
 
 func (c *CameraNDim) Prepare() error {
-	// If the cached/pre-computed result is complete, return it directly.
+	// Avoid double counting
 	if len(c.orthonormalCoordinates) == len(c.Coordinates) && len(c.fovTangents) == len(c.FieldOfView) {
 		return nil
 	}

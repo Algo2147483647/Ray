@@ -62,9 +62,9 @@ func TestFilmToImageWithACESCompressesHighlights(t *testing.T) {
 	}
 }
 
-func TestFilmToImageConvertsXYZWorkingSpace(t *testing.T) {
+func TestFilmToImageConvertsXYZColorSpace(t *testing.T) {
 	film := NewFilm(1, 1)
-	film.WorkingSpace = WorkingSpaceXYZ
+	film.ColorSpace = ColorSpaceXYZ
 	film.Data[0].Data[0] = 0.95047
 	film.Data[1].Data[0] = 1
 	film.Data[2].Data[0] = 1.08883
@@ -81,9 +81,9 @@ func TestFilmToImageConvertsXYZWorkingSpace(t *testing.T) {
 	}
 }
 
-func TestFilmFileRoundTripsWorkingSpace(t *testing.T) {
+func TestFilmFileRoundTripsColorSpace(t *testing.T) {
 	film := NewFilm(1, 1)
-	film.WorkingSpace = WorkingSpaceXYZ
+	film.ColorSpace = ColorSpaceXYZ
 	film.Data[0].Data[0] = 0.95047
 	film.Data[1].Data[0] = 1
 	film.Data[2].Data[0] = 1.08883
@@ -97,7 +97,7 @@ func TestFilmFileRoundTripsWorkingSpace(t *testing.T) {
 	if err := loaded.LoadFromFile(filename); err != nil {
 		t.Fatalf("load film: %v", err)
 	}
-	if loaded.WorkingSpace != WorkingSpaceXYZ {
-		t.Fatalf("expected working space to round-trip as XYZ, got %q", loaded.WorkingSpace)
+	if loaded.ColorSpace != ColorSpaceXYZ {
+		t.Fatalf("expected working space to round-trip as XYZ, got %q", loaded.ColorSpace)
 	}
 }

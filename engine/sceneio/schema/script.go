@@ -32,7 +32,7 @@ type RenderScript struct {
 	Gamma             float64 `json:"gamma"`
 	SpectrumMode      string  `json:"spectrum_mode"`
 	WavelengthSamples int     `json:"wavelength_samples"`
-	WorkingSpace      string  `json:"working_space"`
+	ColorSpace        string  `json:"color_space"`
 }
 
 type Script struct {
