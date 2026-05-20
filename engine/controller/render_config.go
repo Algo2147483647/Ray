@@ -3,6 +3,7 @@ package controller
 import (
 	"flag"
 	"fmt"
+	"github.com/Algo2147483647/ray/engine/sceneio/schema"
 	"io"
 	"runtime"
 
@@ -127,7 +128,7 @@ func ParseRenderOverrides(args []string) (RenderOverrides, error) {
 	return overrides, nil
 }
 
-func ResolveRenderConfig(script *Script, overrides RenderOverrides) RenderConfig {
+func ResolveRenderConfig(script *schema.Script, overrides RenderOverrides) RenderConfig {
 	config := RenderConfig{
 		ScriptPath:        overrides.ScriptPath,
 		Dimension:         3,

@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/Algo2147483647/ray/engine/model"
-	"github.com/Algo2147483647/ray/engine/model/camera"
 	"github.com/Algo2147483647/ray/engine/model/object"
 	"github.com/Algo2147483647/ray/engine/sceneio/schema"
 	"github.com/Algo2147483647/ray/engine/utils"
@@ -99,28 +98,4 @@ func LoadSceneFromScript(script *schema.Script, scene *model.Scene) error {
 	scene.Cameras = append(scene.Cameras, cameras...)
 	scene.ObjectTree.Build()
 	return nil
-}
-
-func ParseCameras(script *schema.Script) ([]camera.Camera, error) {
-	dimension := script.Render.Dimension
-	if dimension <= 0 {
-		dimension = 3
-	}
-	utils.SetDimension(dimension)
-
-	cameraDefs := script.Cameras
-	if len(cameraDefs) == 0 {
-		return nil, nil
-	}
-
-	cameras := make([]camera.Camera, 0, len(cameraDefs))
-	for idx, cameraDef := range cameraDefs {
-		parsedCamera, err := BuildCameraFromScript(cameraDef)
-		if err != nil {
-			return nil, fmt.Errorf("parse camera[%d]: %w", idx, err)
-		}
-		cameras = append(cameras, parsedCamera)
-	}
-
-	return cameras, nil
 }

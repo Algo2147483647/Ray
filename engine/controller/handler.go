@@ -2,6 +2,9 @@ package controller
 
 import (
 	"fmt"
+	"github.com/Algo2147483647/ray/engine/sceneio/factory"
+	"github.com/Algo2147483647/ray/engine/sceneio/parser"
+	"github.com/Algo2147483647/ray/engine/sceneio/schema"
 	"image/png"
 	"os"
 	"path/filepath"
@@ -16,7 +19,7 @@ import (
 type Handler struct {
 	err          error
 	Scene        *model.Scene
-	Script       *Script
+	Script       *schema.Script
 	Film         *camera.Film
 	ActiveCamera camera.Camera
 	Config       RenderConfig
@@ -62,14 +65,14 @@ func (h *Handler) LoadScript(scriptPath string) *Handler {
 
 	fmt.Printf("Loading scene from: %s\n", scriptPath)
 
-	script, err := ReadScriptFile(scriptPath)
+	script, err := parser.ReadScriptFile(scriptPath)
 	if err != nil {
 		h.err = err
 		return h
 	}
 
 	h.Script = script
-	if err := LoadSceneFromScript(script, h.Scene); err != nil {
+	if err := factory.LoadSceneFromScript(script, h.Scene); err != nil {
 		h.err = err
 		return h
 	}
@@ -104,7 +107,7 @@ func (h *Handler) ConfigureRender(overrides RenderOverrides) *Handler {
 
 func (h *Handler) selectRenderCamera(cameraIndex, width, height int) (camera.Camera, []int, error) {
 	if len(h.Scene.Cameras) == 0 {
-		defaultCamera, err := BuildCamera3DFromScript(DefaultCameraScript())
+		defaultCamera, err := factory.BuildCamera3DFromScript(factory.DefaultCameraScript())
 		if err != nil {
 			return nil, nil, err
 		}

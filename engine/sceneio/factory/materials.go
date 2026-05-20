@@ -95,12 +95,14 @@ func parseSurface(def map[string]interface{}) (bsdf.BSDF, error) {
 			return nil, err
 		}
 		return bsdf.NewSingle(bxdf.NewLambertParameter(albedo)), nil
+
 	case "specular_reflection":
 		reflectance, _, err := optionalSpectralParameterField(def, "reflectance", spectrum_parameter.NewConstantParameter(1))
 		if err != nil {
 			return nil, err
 		}
 		return bsdf.NewSingle(bxdf.NewSpecularReflectionParameter(reflectance)), nil
+
 	case "specular_dielectric":
 		reflectance, _, err := optionalSpectralParameterField(def, "reflectance", spectrum_parameter.NewConstantParameter(1))
 		if err != nil {
@@ -125,6 +127,7 @@ func parseSurface(def map[string]interface{}) (bsdf.BSDF, error) {
 			return nil, err
 		}
 		return bsdf.NewSingle(bxdf.NewSpecularDielectricParameter(reflectance, transmittance, etaOutside, insideIOR)), nil
+
 	case "rough_conductor":
 		eta, err := requiredSpectralParameterField(def, "eta")
 		if err != nil {
@@ -146,6 +149,7 @@ func parseSurface(def map[string]interface{}) (bsdf.BSDF, error) {
 		}
 		alpha := roughness * roughness
 		return bsdf.NewSingle(bxdf.NewRoughConductorParameter(eta, k, alpha)), nil
+
 	default:
 		return nil, fmt.Errorf("unsupported surface type %q", surfaceType)
 	}
@@ -310,6 +314,7 @@ func parseSpectralParameterObject(def map[string]interface{}) (optics.SpectralPa
 		default:
 			return nil, fmt.Errorf("unsupported rgb color space %q", space)
 		}
+
 	case "constant":
 		value, err := requiredFloat64Field(def, "value")
 		if err != nil {
@@ -319,6 +324,7 @@ func parseSpectralParameterObject(def map[string]interface{}) (optics.SpectralPa
 			return nil, fmt.Errorf("value must be >= 0")
 		}
 		return spectrum_parameter.NewConstantParameter(value), nil
+
 	case "sampled":
 		wavelengths, err := requiredFloat64SliceField(def, "wavelengths_nm")
 		if err != nil {
@@ -348,6 +354,7 @@ func parseSpectralParameterObject(def map[string]interface{}) (optics.SpectralPa
 			return nil, fmt.Errorf("unsupported interpolation %q", interpolation)
 		}
 		return spectrum_parameter.NewSampledParameter(wavelengths, values), nil
+
 	case "blackbody":
 		temperature, err := requiredFloat64Field(def, "temperature")
 		if err != nil {
@@ -367,37 +374,8 @@ func parseSpectralParameterObject(def map[string]interface{}) (optics.SpectralPa
 			return nil, fmt.Errorf("scale must be >= 0")
 		}
 		return spectrum_parameter.NewBlackbodyParameter(temperature, scale), nil
+
 	default:
 		return nil, fmt.Errorf("unsupported spectral parameter type %q", parameterType)
 	}
-}
-
-func validateNonNegativeSlice(name string, values []float64) error {
-	for i, value := range values {
-		if value < 0 {
-			return fmt.Errorf("%s index %d must be >= 0", name, i)
-		}
-	}
-	return nil
-}
-
-func validateStrictlyIncreasing(name string, values []float64) error {
-	for i := 1; i < len(values); i++ {
-		if values[i] <= values[i-1] {
-			return fmt.Errorf("%s must be strictly increasing", name)
-		}
-	}
-	return nil
-}
-
-func optionalMapField(data map[string]interface{}, key string) (map[string]interface{}, bool, error) {
-	value, ok := data[key]
-	if !ok {
-		return nil, false, nil
-	}
-	mapped, ok := value.(map[string]interface{})
-	if !ok {
-		return nil, true, fmt.Errorf("field %q: expected object, got %T", key, value)
-	}
-	return mapped, true, nil
 }

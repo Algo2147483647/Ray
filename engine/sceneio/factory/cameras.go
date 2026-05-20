@@ -3,6 +3,7 @@ package factory
 import (
 	"fmt"
 	modelcamera "github.com/Algo2147483647/ray/engine/model/camera"
+	"github.com/Algo2147483647/ray/engine/sceneio/schema"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 	"math"
@@ -24,6 +25,30 @@ func DefaultCameraScript() CameraScript {
 		FieldOfView: defaultFieldOfView,
 		AspectRatio: 1,
 	}
+}
+
+func ParseCameras(script *schema.Script) ([]modelcamera.Camera, error) {
+	dimension := script.Render.Dimension
+	if dimension <= 0 {
+		dimension = 3
+	}
+	utils.SetDimension(dimension)
+
+	cameraDefs := script.Cameras
+	if len(cameraDefs) == 0 {
+		return nil, nil
+	}
+
+	cameras := make([]modelcamera.Camera, 0, len(cameraDefs))
+	for idx, cameraDef := range cameraDefs {
+		parsedCamera, err := BuildCameraFromScript(cameraDef)
+		if err != nil {
+			return nil, fmt.Errorf("parse camera[%d]: %w", idx, err)
+		}
+		cameras = append(cameras, parsedCamera)
+	}
+
+	return cameras, nil
 }
 
 func BuildCamera3DFromScript(def CameraScript) (*modelcamera.Camera3D, error) {
