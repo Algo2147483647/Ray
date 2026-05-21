@@ -61,7 +61,7 @@ func TestRoughConductorKeepsSampledColorFromSampledParameters(t *testing.T) {
 		0.35,
 	)
 	ctx := bxdf.ShadingContext{
-		SpectrumMode:  bxdf.SpectrumSpectral,
+		SpectrumMode:  optics.SpectrumModeHeroWavelength,
 		WavelengthNM:  610,
 		WavelengthsNM: []float64{450, 610},
 	}

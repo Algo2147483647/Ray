@@ -2,6 +2,14 @@ package optics
 
 import "math"
 
+type SpectrumMode int
+
+const (
+	SpectrumModeRGB SpectrumMode = iota
+	SpectrumModeHeroWavelength
+	SpectrumModeSampledWavelengths
+)
+
 type SpectrumKind int
 
 const (

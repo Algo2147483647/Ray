@@ -48,11 +48,11 @@ Supported medium fields:
 ```text
 type: homogeneous
 ior: constant or cauchy IOR object
-sigma_a: optional spectral absorption placeholder, parsed but not transported
-sigma_s: optional spectral scattering placeholder, parsed but not transported
+sigma_a: optional spectral absorption coefficient, applied as Beer-Lambert transmittance between surface hits
+sigma_s: optional spectral scattering coefficient, parsed and stored but not yet sampled as participating-media scattering
 ```
 
-`sigma_a` and `sigma_s` are parsed now but homogeneous volume attenuation/scattering is not yet applied during transport.
+`sigma_a` is evaluated in RGB or spectral context and applied during ray transport as `exp(-sigma_a * distance)`. `sigma_s` is part of the schema and medium model, but distance sampling, phase functions, and in-medium scattering events are not implemented yet.
 
 ## Materials
 
@@ -293,6 +293,8 @@ sampled
 Camera ray generation now only creates geometric rays. Wavelength sampling is owned by the renderer/integrator so that `rgb`, `hero_wavelength`, and `sampled` modes share the same camera code.
 
 Film stores three channels in an explicit color space. `rgb` mode accumulates `linear_srgb`; `hero_wavelength` and `sampled` modes carry scalar spectral power along each wavelength path, convert spectral power through the CIE 1931 XYZ matching functions, white-normalize to the D65 output white, and accumulate `xyz` in the Film before the final output transform.
+
+The code distinguishes authored RGB input spaces from film storage spaces. Material RGB parameters use `optics.RGBColorSpace` values such as `linear_srgb`, `srgb`, and `acescg`. Film accumulation uses `camera.FilmColorSpace`, currently `linear_srgb` or `xyz`.
 
 `optics.Spectrum` preserves optional sampled channels in addition to its RGB compatibility fields. Lambert, specular reflection, specular dielectric, rough conductor, and constant emission evaluate their spectral parameters from `bxdf.ShadingContext` instead of collapsing all inputs to RGB at parse time. In `sampled` mode the renderer still traces wavelength sub-paths independently, which is required for dispersive paths where different wavelengths can refract in different directions. The sampled-channel `Spectrum` path is active in material evaluation and unit tests, and is the compatibility layer for a future packet-style spectral integrator.
 

@@ -18,7 +18,7 @@ The spectral pipeline is still incomplete:
 - Scene JSON does not yet expose a full display transform stack such as `display_space` or OCIO-style views.
 - Measured material libraries and metal presets are not implemented yet.
 - Packet-style multi-channel path transport is not implemented yet; sampled mode currently uses repeated wavelength subpaths.
-- Nested dielectric boundary IOR is implemented through `engine/model/material/medium`; homogeneous volume absorption/scattering and caustic-focused integrators are not implemented yet.
+- Nested dielectric boundary IOR and homogeneous `sigma_a` absorption are implemented through `engine/model/material/medium` and `engine/ray_tracing/medium_transport.go`; participating-media scattering and caustic-focused integrators are not implemented yet.
 - The current `aces` output option is a fitted tone mapper, not a complete ACES/OCIO view transform.
 
 The current model should be described as:
@@ -150,7 +150,7 @@ type SpectrumMode int
 const (
     SpectrumModeRGB SpectrumMode = iota
     SpectrumModeHeroWavelength
-    SpectrumModeSampled
+    SpectrumModeSampledWavelengths
 )
 
 type Spectrum struct {
@@ -273,19 +273,16 @@ The current implementation uses the XYZ form internally for spectral modes:
 
 ```go
 type Film struct {
-    XYZ     [3]Tensor[float64]
-    Samples int64
+    Data       [3]Tensor[float64]
+    Samples    int64
+    ColorSpace camera.FilmColorSpace
 }
 ```
 
-or explicit working-space RGB:
+Authored RGB input spaces are a separate optics concept:
 
 ```go
-type Film struct {
-    WorkingSpace ColorSpace
-    Data         [3]Tensor[float64]
-    Samples      int64
-}
+type RGBColorSpace string
 ```
 
 Output transform:

@@ -104,6 +104,7 @@ wavelength-aware specular dielectric eta evaluation
 spectral parameter parsing for RGB, constant, sampled, and blackbody values
 wavelength-aware Lambert, constant emission, specular dielectric, and rough conductor parameters
 multi-wavelength sampled mode through repeated wavelength subpaths
+homogeneous Beer-Lambert absorption through medium sigma_a
 PNG output exposure
 linear / reinhard / aces tone mapping
 gamma encoding
@@ -116,12 +117,12 @@ rough dielectric is not implemented yet
 Beckmann distribution is not implemented yet
 full spectral material databases are not implemented yet
 full packet-style multi-channel light transport is not implemented yet
-homogeneous volume attenuation/scattering is parsed but not transported yet
+homogeneous volume scattering is parsed but not transported yet
 direct lighting through specular chains, photon mapping, and BDPT are not implemented yet
 subsurface, volume, texture graphs, MIS, and caustic-focused integrators are not implemented yet
 ```
 
-Nested dielectric media are implemented for boundary IOR through `engine/model/material/medium`. Caustic-capable validation is planned separately in
+Nested dielectric media are implemented for boundary IOR through `engine/model/material/medium`, and homogeneous absorption is applied in `engine/ray_tracing/medium_transport.go`. Caustic-capable validation is planned separately in
 [`medium-and-caustics-modernization-plan.md`](medium-and-caustics-modernization-plan.md).
 
 ## Core Concepts

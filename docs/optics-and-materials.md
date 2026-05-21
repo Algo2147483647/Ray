@@ -124,6 +124,7 @@ Medium state lives in `engine/model/material/medium/`:
 
 ```text
 ior.go       Constant and Cauchy IOR models
+coefficient.go  RGB/sampled absorption and scattering coefficients
 medium.go    Registry and homogeneous media
 boundary.go  Object boundary description
 stack.go     Nested medium stack and priority resolution
@@ -138,6 +139,14 @@ Every object may declare a `medium_boundary` in scene JSON. During tracing, the 
 
 This is more robust than the old single scalar IOR model and supports nested dielectric interfaces.
 
+Homogeneous absorption is applied in `engine/ray_tracing/medium_transport.go` with Beer-Lambert transmittance while a ray travels between surface hits:
+
+```text
+T = exp(-sigma_a * distance)
+```
+
+`sigma_a` works in RGB mode and in wavelength-sampled modes. `sigma_s` is represented in the medium model but is not yet used to sample participating-media events.
+
 ## 8. Emission
 
 Constant emission lives in `engine/model/material/emission/constant.go`.
@@ -149,7 +158,7 @@ Emission uses spectral parameters just like surface reflectance and transmittanc
 Wavelength sampling is owned by the renderer rather than the camera:
 
 ```text
-engine/ray_tracing/wavelength_sampler.go
+engine/model/optics/wavelength_sampler.go
 engine/ray_tracing/trace_pixel.go
 ```
 
@@ -174,12 +183,13 @@ Implemented:
 - GGX rough conductor,
 - constant spectral emission,
 - nested medium stack for boundary IOR,
+- homogeneous Beer-Lambert absorption,
 - RGB, hero-wavelength, and sampled wavelength render modes.
 
 Not yet implemented:
 
 - rough dielectric,
-- full volume absorption/scattering transport,
+- participating-media scattering transport,
 - direct-light sampling and MIS,
 - caustic-focused integrators such as photon mapping or BDPT,
 - production spectral material databases.

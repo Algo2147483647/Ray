@@ -1,15 +1,15 @@
 # Medium And Caustics Modernization Plan
 
-This document tracks medium and caustics modernization after spectral materials. The explicit medium/boundary model has been partially implemented; the remaining major work is volume attenuation/scattering and caustic-capable light transport for prism and glass-on-screen validation scenes.
+This document tracks medium and caustics modernization after spectral materials. The explicit medium/boundary model and homogeneous absorption have been partially implemented; the remaining major work is participating-media scattering and caustic-capable light transport for prism and glass-on-screen validation scenes.
 
 Status after the controller/material refactor:
 
-- Implemented: `medium.Registry`, constant and Cauchy IOR models, `medium.Boundary`, priority-aware `medium.Stack`, object-level `medium_boundary`, and renderer-side incident/transmitted eta resolution.
-- Still planned: homogeneous volume attenuation, participating-media scattering, direct-light/specular-chain sampling, photon mapping, BDPT, or another caustic-capable integrator.
+- Implemented: `medium.Registry`, constant and Cauchy IOR models, `medium.Boundary`, priority-aware `medium.Stack`, object-level `medium_boundary`, renderer-side incident/transmitted eta resolution, and homogeneous Beer-Lambert absorption through `sigma_a`.
+- Still planned: participating-media distance sampling and phase functions for `sigma_s`, direct-light/specular-chain sampling, photon mapping, BDPT, or another caustic-capable integrator.
 
 ## 1. Current State
 
-The renderer now handles refraction with a hybrid compatibility model:
+The renderer now handles refraction and homogeneous attenuation with a hybrid compatibility model:
 
 ```text
 Ray.MediumStack + object MediumBoundary
@@ -21,8 +21,8 @@ Ray.MediumStack + object MediumBoundary
 
 This supports nested dielectric IOR decisions and remains wavelength-aware through the IOR model. The remaining limitations are:
 
-- Volume absorption is parsed but not applied during transport.
-- Participating media are not implemented.
+- Homogeneous absorption is implemented for `sigma_a`, but only between surface hits.
+- Participating media scattering from `sigma_s` is parsed and stored but not sampled.
 - Thin shells are represented, but advanced layered/coating behavior is not implemented.
 - A diffuse receiver behind a prism cannot be lit efficiently by the current camera-only path tracer because the important paths are specular caustics.
 
@@ -60,20 +60,24 @@ type Medium interface {
     ID() MediumID
     Name() string
     IOR(ctx WavelengthContext) float64
+    SigmaA(ctx WavelengthContext) CoefficientSpectrum
+    SigmaS(ctx WavelengthContext) CoefficientSpectrum
 }
 ```
 
-The current implementation keeps homogeneous dielectric media focused on IOR:
+The current implementation keeps homogeneous dielectric media focused on IOR plus coefficients:
 
 ```go
 type Homogeneous struct {
     id     MediumID
     name   string
     eta    Model
+    sigmaA Coefficient
+    sigmaS Coefficient
 }
 ```
 
-`sigma_a` and `sigma_s` are still accepted by scene JSON, but they are schema placeholders until volume transmittance is implemented.
+`sigma_a` is applied as Beer-Lambert transmittance during ray transport. `sigma_s` is accepted and stored for the future participating-media path, but no scattering event is sampled from it yet.
 
 ### 3.2 Medium Stack
 
@@ -178,7 +182,7 @@ Target context:
 ```go
 type ShadingContext struct {
     TransportMode TransportMode
-    SpectrumMode  SpectrumMode
+    SpectrumMode  optics.SpectrumMode
     WavelengthNM  float64
     WavelengthsNM []float64
     WavelengthPDF float64
@@ -393,17 +397,17 @@ Acceptance:
 - Existing scenes keep working.
 - New named media scenes can describe nested glass and water containers.
 
-### Phase M5: Absorption Placeholder
+### Phase M5: Homogeneous Absorption
 
 Tasks:
 
-- Add Beer-Lambert transmittance for homogeneous media:
+- Implemented: Add Beer-Lambert transmittance for homogeneous media:
 
 ```text
 T = exp(-sigmaA(lambda) * distance)
 ```
 
-- Apply it while the ray travels between surface hits.
+- Implemented: Apply it while the ray travels between surface hits.
 - Keep scattering zero until volume phase functions are implemented.
 
 Acceptance:

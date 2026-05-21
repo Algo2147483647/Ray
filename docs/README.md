@@ -12,7 +12,9 @@ This directory documents the mathematical, physical, and code-architecture ideas
 - [`scene-json-current.md`](scene-json-current.md): current JSON schema for media, materials, objects, cameras, render output controls, and showcase scenes.
 - [`controller-json-rules.md`](controller-json-rules.md): controller/parser/factory rules for consuming scene JSON.
 - [`spectral-modernization-plan.md`](spectral-modernization-plan.md): staged technical plan for moving from RGB/hero-wavelength rendering toward a modern spectral color pipeline.
-- [`medium-and-caustics-modernization-plan.md`](medium-and-caustics-modernization-plan.md): staged plan for nested dielectric media, explicit medium boundaries, absorption placeholders, and caustic-capable prism validation.
+- [`current-architecture.md`](current-architecture.md): current package boundaries for optics, materials, media, ray tracing, spectrum modes, and color-space types.
+- [`medium-and-caustics-modernization-plan.md`](medium-and-caustics-modernization-plan.md): staged plan for nested dielectric media, explicit medium boundaries, homogeneous absorption, participating-media scattering, and caustic-capable prism validation.
+- [`ray-tracing-map.json`](ray-tracing-map.json): exported architecture/map data used by external diagramming or note tools.
 
 ## Knowledge Map
 

@@ -127,7 +127,7 @@ Named media are homogeneous and currently provide IOR for dielectric boundary tr
 }
 ```
 
-`sigma_a` and `sigma_s` are parsed as spectral parameters for schema compatibility, but volume absorption/scattering is not yet applied in transport.
+`sigma_a` and `sigma_s` are parsed as spectral parameters. `sigma_a` is applied during transport as homogeneous Beer-Lambert absorption. `sigma_s` is parsed and stored for the medium model, but participating-media distance sampling and phase-function scattering are not implemented yet.
 
 Objects can declare a boundary:
 
