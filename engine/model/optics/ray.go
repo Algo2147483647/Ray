@@ -77,6 +77,14 @@ func (r *Ray) SampleWavelength(sample float64) {
 }
 
 func (r *Ray) SetSpectralWavelength(wavelength float64) {
+	r.SetSpectralSample(WavelengthSample{
+		LambdaNM: wavelength,
+		PDF:      UniformWavelengthPDF(),
+	})
+}
+
+func (r *Ray) SetSpectralSample(sample WavelengthSample) {
+	wavelength := sample.LambdaNM
 	wavelength = math.Max(WavelengthMin+1e-6, math.Min(WavelengthMax-1e-6, wavelength))
 	if r.SpectralPower == 0 {
 		r.SpectralPower = 1
@@ -85,7 +93,10 @@ func (r *Ray) SetSpectralWavelength(wavelength float64) {
 		r.RGBCompatibility = mat.NewVecDense(3, []float64{1, 1, 1})
 	}
 	r.WaveLength = wavelength
-	r.WavelengthPDF = UniformWavelengthPDF()
+	r.WavelengthPDF = sample.PDF
+	if r.WavelengthPDF <= 0 || math.IsNaN(r.WavelengthPDF) || math.IsInf(r.WavelengthPDF, 0) {
+		r.WavelengthPDF = UniformWavelengthPDF()
+	}
 }
 
 func (r *Ray) DisableSpectralSampling() {

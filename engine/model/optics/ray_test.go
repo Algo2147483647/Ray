@@ -117,6 +117,19 @@ func TestRayInitResetsReusedThroughput(t *testing.T) {
 	}
 }
 
+func TestRaySetSpectralSamplePreservesSamplerPDF(t *testing.T) {
+	ray := &Ray{}
+
+	ray.SetSpectralSample(WavelengthSample{LambdaNM: 520, PDF: 0.0123})
+
+	if ray.WaveLength != 520 {
+		t.Fatalf("unexpected wavelength: %f", ray.WaveLength)
+	}
+	if math.Abs(ray.WavelengthPDF-0.0123) > 1e-12 {
+		t.Fatalf("expected sampler pdf to be preserved, got %f", ray.WavelengthPDF)
+	}
+}
+
 func TestWavelengthToXYZHasExpectedPrimaryRegions(t *testing.T) {
 	blue := WavelengthToXYZ(450)
 	green := WavelengthToXYZ(555)

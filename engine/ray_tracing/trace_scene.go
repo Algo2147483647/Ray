@@ -5,6 +5,7 @@ import (
 	"github.com/Algo2147483647/ray/engine/model/camera"
 	"github.com/Algo2147483647/ray/engine/model/object"
 	"github.com/Algo2147483647/ray/engine/model/optics"
+	"gonum.org/v1/gonum/mat"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -61,9 +62,12 @@ func (h *Handler) TraceScene(renderCamera camera.Camera, objectTree *object.Obje
 					for x := tile.X0; x < tile.X1; x++ {
 						pixel := tile.pixelIndex(x, y, film.Data[0].Shape)
 						coords := film.Data[0].GetCoordinates(pixel)
-						color := h.TracePixel(renderCamera, objectTree, samples, coords...)
+						color, diagnostics := h.traceFilmPixel(renderCamera, objectTree, film, samples, pixel, coords...)
 						for ch := 0; ch < 3; ch++ {
 							film.Data[ch].Data[pixel] = color.AtVec(ch)
+						}
+						for _, diagnostic := range diagnostics {
+							film.RecordSpectralSample(pixel, diagnostic.WavelengthNM, diagnostic.Value)
 						}
 						rendered++
 					}
@@ -79,6 +83,13 @@ func (h *Handler) TraceScene(renderCamera camera.Camera, objectTree *object.Obje
 	time.Sleep(100 * time.Millisecond)
 
 	film.Samples = h.EffectiveSampleCount(samples)
+}
+
+func (h *Handler) traceFilmPixel(renderCamera camera.Camera, objectTree *object.ObjectTree, film *camera.Film, samples int64, pixel int, coords ...int) (*mat.VecDense, []camera.SpectralSample) {
+	if film != nil && film.HasSpectralBins() {
+		return h.TracePixelWithSpectralDiagnostics(renderCamera, objectTree, samples, coords...)
+	}
+	return h.TracePixel(renderCamera, objectTree, samples, coords...), nil
 }
 
 type renderTile struct {

@@ -21,17 +21,17 @@ func (c testWavelengthContext) SpectralWavelengthsNM() []float64 {
 	return c.wavelengths
 }
 
-func TestRGBParameterKeepsAuthoredRGBInSpectralContext(t *testing.T) {
+func TestRGBParameterUpliftsAuthoredRGBInSpectralContext(t *testing.T) {
 	red := NewRGBParameter(optics.NewSpectrum(0.82, 0.08, 0.045))
 
 	ctx := testWavelengthContext{wavelengths: []float64{450, 610}}
 
 	got := red.Eval(ctx)
 
-	if got.HasSamples() {
-		t.Fatalf("expected authored RGB to remain RGB compatibility in spectral context, got samples %v", got.Samples)
+	if !got.HasSamples() || len(got.Samples) != 2 {
+		t.Fatalf("expected authored RGB to uplift into sampled spectrum, got %+v", got)
 	}
-	if got.RGBChannel(0) <= got.RGBChannel(1) || got.RGBChannel(0) <= got.RGBChannel(2) {
-		t.Fatalf("expected red authored color to keep its dominant red channel, got %v", got)
+	if got.Samples[1] <= got.Samples[0] {
+		t.Fatalf("expected red authored color to be stronger at red wavelength, got %v", got.Samples)
 	}
 }

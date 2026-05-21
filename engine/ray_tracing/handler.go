@@ -9,13 +9,14 @@ import (
 )
 
 type Handler struct {
-	MaxRayLevel       int64               `json:"max_ray_level"`
-	ThreadNum         int                 `json:"thread_num"`
-	BlockCols         int                 `json:"block_cols"`
-	BlockRows         int                 `json:"block_rows"`
-	SpectrumMode      optics.SpectrumMode `json:"spectrum_mode"`
-	WavelengthSamples int                 `json:"wavelength_samples"`
-	RayPool           sync.Pool           `json:"ray_pool"`
+	MaxRayLevel       int64                    `json:"max_ray_level"`
+	ThreadNum         int                      `json:"thread_num"`
+	BlockCols         int                      `json:"block_cols"`
+	BlockRows         int                      `json:"block_rows"`
+	SpectrumMode      optics.SpectrumMode      `json:"spectrum_mode"`
+	WavelengthSamples int                      `json:"wavelength_samples"`
+	WavelengthSampler optics.WavelengthSampler `json:"-"`
+	RayPool           sync.Pool                `json:"ray_pool"`
 }
 
 func NewHandler() *Handler {
@@ -36,6 +37,13 @@ func NewHandler() *Handler {
 			},
 		},
 	}
+}
+
+func (h *Handler) wavelengthSampler() optics.WavelengthSampler {
+	if h.WavelengthSampler != nil {
+		return h.WavelengthSampler
+	}
+	return optics.NewUniformWavelengthSampler()
 }
 
 func (h *Handler) EffectiveSampleCount(cameraSamples int64) int64 {

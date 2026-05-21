@@ -35,6 +35,14 @@ func NewACEScgParameter(value optics.Spectrum) RGBParameter {
 }
 
 func (p RGBParameter) Eval(ctx optics.WavelengthContext) optics.Spectrum {
+	if ctx != nil {
+		if wavelengths := ctx.SpectralWavelengthsNM(); len(wavelengths) > 0 {
+			return p.Value.UpliftRGBToSampled(wavelengths)
+		}
+		if wavelength := ctx.SpectralWavelengthNM(); wavelength > 0 {
+			return p.Value.UpliftRGBToSampled([]float64{wavelength})
+		}
+	}
 	return p.Value
 }
 

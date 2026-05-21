@@ -13,9 +13,12 @@ import (
 )
 
 type Film struct {
-	Data       [3]math_lib.Tensor[float64] `json:"data"`
-	Samples    int64                       `json:"samples"`
-	ColorSpace FilmColorSpace              `json:"color_space"`
+	Data          [3]math_lib.Tensor[float64] `json:"data"`
+	Samples       int64                       `json:"samples"`
+	ColorSpace    FilmColorSpace              `json:"color_space"`
+	SpectralBins  []math_lib.Tensor[float64]  `json:"spectral_bins,omitempty"`
+	SpectralMinNM float64                     `json:"spectral_min_nm,omitempty"`
+	SpectralMaxNM float64                     `json:"spectral_max_nm,omitempty"`
 }
 
 type FilmColorSpace string
@@ -37,6 +40,11 @@ type ImageOptions struct {
 	Exposure    float64
 	ToneMapping ToneMapping
 	Gamma       float64
+}
+
+type SpectralSample struct {
+	WavelengthNM float64
+	Value        float64
 }
 
 func NewFilm(width ...int) *Film {
@@ -65,6 +73,9 @@ func (f *Film) Init(width ...int) *Film {
 	}
 	f.Samples = 0
 	f.ColorSpace = FilmColorSpaceLinearSRGB
+	f.SpectralBins = nil
+	f.SpectralMinNM = 0
+	f.SpectralMaxNM = 0
 	return f
 }
 
@@ -85,8 +96,76 @@ func (f *Film) Merge(a *Film) *Film {
 			f.Data[ch].Data[i] = (f.Data[ch].Data[i]*float64(f.Samples) + a.Data[ch].Data[i]*float64(a.Samples)) / float64(totalSamples)
 		}
 	}
+	f.mergeSpectralDiagnostics(a, totalSamples)
 	f.Samples = totalSamples
 	return f
+}
+
+func (f *Film) InitSpectralBins(count int, minNM, maxNM float64) {
+	if count <= 0 || len(f.Data[0].Shape) == 0 {
+		f.SpectralBins = nil
+		f.SpectralMinNM = 0
+		f.SpectralMaxNM = 0
+		return
+	}
+	if minNM <= 0 {
+		minNM = 380
+	}
+	if maxNM <= minNM {
+		maxNM = 750
+	}
+	f.SpectralBins = make([]math_lib.Tensor[float64], count)
+	for i := range f.SpectralBins {
+		f.SpectralBins[i] = *math_lib.NewTensor[float64](append([]int(nil), f.Data[0].Shape...))
+	}
+	f.SpectralMinNM = minNM
+	f.SpectralMaxNM = maxNM
+}
+
+func (f *Film) HasSpectralBins() bool {
+	return len(f.SpectralBins) > 0 && f.SpectralMaxNM > f.SpectralMinNM
+}
+
+func (f *Film) RecordSpectralSample(pixel int, wavelengthNM, value float64) {
+	if !f.HasSpectralBins() || pixel < 0 || math.IsNaN(value) || math.IsInf(value, 0) {
+		return
+	}
+	bin := f.SpectralBinIndex(wavelengthNM)
+	if bin < 0 || bin >= len(f.SpectralBins) || pixel >= len(f.SpectralBins[bin].Data) {
+		return
+	}
+	f.SpectralBins[bin].Data[pixel] += value
+}
+
+func (f *Film) SpectralBinIndex(wavelengthNM float64) int {
+	if !f.HasSpectralBins() || wavelengthNM < f.SpectralMinNM || wavelengthNM >= f.SpectralMaxNM {
+		return -1
+	}
+	t := (wavelengthNM - f.SpectralMinNM) / (f.SpectralMaxNM - f.SpectralMinNM)
+	idx := int(t * float64(len(f.SpectralBins)))
+	if idx < 0 || idx >= len(f.SpectralBins) {
+		return -1
+	}
+	return idx
+}
+
+func (f *Film) mergeSpectralDiagnostics(a *Film, totalSamples int64) {
+	if !f.compatibleSpectralBins(a) {
+		return
+	}
+	for bin := range f.SpectralBins {
+		for i := range f.SpectralBins[bin].Data {
+			f.SpectralBins[bin].Data[i] = (f.SpectralBins[bin].Data[i]*float64(f.Samples) + a.SpectralBins[bin].Data[i]*float64(a.Samples)) / float64(totalSamples)
+		}
+	}
+}
+
+func (f *Film) compatibleSpectralBins(a *Film) bool {
+	return f != nil && a != nil &&
+		len(f.SpectralBins) > 0 &&
+		len(f.SpectralBins) == len(a.SpectralBins) &&
+		f.SpectralMinNM == a.SpectralMinNM &&
+		f.SpectralMaxNM == a.SpectralMaxNM
 }
 
 func (f *Film) ToImage() *image.RGBA {
