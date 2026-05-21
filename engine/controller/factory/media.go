@@ -3,6 +3,7 @@ package factory
 import (
 	"fmt"
 	"github.com/Algo2147483647/ray/engine/controller/parser"
+	"github.com/Algo2147483647/ray/engine/model/optics"
 	"github.com/Algo2147483647/ray/engine/utils"
 
 	"github.com/Algo2147483647/ray/engine/model/material/medium"
@@ -31,14 +32,21 @@ func ParseMediaRegistry(script *parser.Script) (*medium.Registry, error) {
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", context, err)
 		}
-		if _, _, err := optionalSpectralParameterField(def, "sigma_a", nil); err != nil {
+		sigmaA, _, err := optionalSpectralParameterField(def, "sigma_a", nil)
+		if err != nil {
 			return nil, fmt.Errorf("%s sigma_a: %w", context, err)
 		}
-		if _, _, err := optionalSpectralParameterField(def, "sigma_s", nil); err != nil {
+		sigmaS, _, err := optionalSpectralParameterField(def, "sigma_s", nil)
+		if err != nil {
 			return nil, fmt.Errorf("%s sigma_s: %w", context, err)
 		}
 
-		if _, err := registry.RegisterHomogeneous(name, etaModel); err != nil {
+		if _, err := registry.RegisterHomogeneousWithCoefficients(
+			name,
+			etaModel,
+			spectralCoefficient{parameter: sigmaA},
+			spectralCoefficient{parameter: sigmaS},
+		); err != nil {
 			return nil, fmt.Errorf("%s: %w", context, err)
 		}
 	}
@@ -150,4 +158,23 @@ func parseMediumIORModel(def map[string]interface{}) (medium.Model, error) {
 	default:
 		return nil, fmt.Errorf("unsupported ior type %q", iorType)
 	}
+}
+
+type spectralCoefficient struct {
+	parameter optics.SpectralParameter
+}
+
+func (c spectralCoefficient) Eval(ctx medium.WavelengthContext) medium.CoefficientSpectrum {
+	if c.parameter == nil {
+		return medium.CoefficientSpectrum{}
+	}
+	evaluated := c.parameter.Eval(ctx)
+	if evaluated.HasSamples() {
+		return medium.NewSampledCoefficientSpectrum(evaluated.Samples)
+	}
+	return medium.NewRGBCoefficientSpectrum(
+		evaluated.RGBChannel(0),
+		evaluated.RGBChannel(1),
+		evaluated.RGBChannel(2),
+	)
 }

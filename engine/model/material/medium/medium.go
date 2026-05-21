@@ -8,6 +8,8 @@ type Medium interface {
 	ID() MediumID
 	Name() string
 	IOR(ctx WavelengthContext) float64
+	SigmaA(ctx WavelengthContext) CoefficientSpectrum
+	SigmaS(ctx WavelengthContext) CoefficientSpectrum
 }
 
 type WavelengthContext interface {
@@ -23,19 +25,33 @@ const (
 )
 
 type Homogeneous struct {
-	id   MediumID
-	name string
-	eta  Model
+	id     MediumID
+	name   string
+	eta    Model
+	sigmaA Coefficient
+	sigmaS Coefficient
 }
 
 func NewHomogeneous(id MediumID, name string, eta Model) Homogeneous {
+	return NewHomogeneousWithCoefficients(id, name, eta, nil, nil)
+}
+
+func NewHomogeneousWithCoefficients(id MediumID, name string, eta Model, sigmaA, sigmaS Coefficient) Homogeneous {
 	if eta == nil {
 		eta = NewConstant(1)
 	}
+	if sigmaA == nil {
+		sigmaA = ConstantCoefficient(0)
+	}
+	if sigmaS == nil {
+		sigmaS = ConstantCoefficient(0)
+	}
 	return Homogeneous{
-		id:   id,
-		name: name,
-		eta:  eta,
+		id:     id,
+		name:   name,
+		eta:    eta,
+		sigmaA: sigmaA,
+		sigmaS: sigmaS,
 	}
 }
 
@@ -63,6 +79,20 @@ func (h Homogeneous) IOR(ctx WavelengthContext) float64 {
 		return 1
 	}
 	return eta
+}
+
+func (h Homogeneous) SigmaA(ctx WavelengthContext) CoefficientSpectrum {
+	if h.sigmaA == nil {
+		return CoefficientSpectrum{}
+	}
+	return h.sigmaA.Eval(ctx)
+}
+
+func (h Homogeneous) SigmaS(ctx WavelengthContext) CoefficientSpectrum {
+	if h.sigmaS == nil {
+		return CoefficientSpectrum{}
+	}
+	return h.sigmaS.Eval(ctx)
 }
 
 type Registry struct {
@@ -93,6 +123,10 @@ func (r *Registry) Set(id MediumID, name string, m Medium) {
 }
 
 func (r *Registry) RegisterHomogeneous(name string, eta Model) (MediumID, error) {
+	return r.RegisterHomogeneousWithCoefficients(name, eta, nil, nil)
+}
+
+func (r *Registry) RegisterHomogeneousWithCoefficients(name string, eta Model, sigmaA, sigmaS Coefficient) (MediumID, error) {
 	if r == nil {
 		return MediumNone, fmt.Errorf("medium registry is nil")
 	}
@@ -100,11 +134,11 @@ func (r *Registry) RegisterHomogeneous(name string, eta Model) (MediumID, error)
 		return MediumNone, fmt.Errorf("medium name must not be empty")
 	}
 	if existing, ok := r.idByName[name]; ok {
-		r.Set(existing, name, NewHomogeneous(existing, name, eta))
+		r.Set(existing, name, NewHomogeneousWithCoefficients(existing, name, eta, sigmaA, sigmaS))
 		return existing, nil
 	}
 	id := r.nextID
-	r.Set(id, name, NewHomogeneous(id, name, eta))
+	r.Set(id, name, NewHomogeneousWithCoefficients(id, name, eta, sigmaA, sigmaS))
 	return id, nil
 }
 
@@ -135,4 +169,30 @@ func (r *Registry) IOR(id MediumID, ctx WavelengthContext) float64 {
 		return 1
 	}
 	return m.IOR(ctx)
+}
+
+func (r *Registry) SigmaA(id MediumID, ctx WavelengthContext) CoefficientSpectrum {
+	m := r.mediumOrAir(id)
+	if m == nil {
+		return CoefficientSpectrum{}
+	}
+	return m.SigmaA(ctx)
+}
+
+func (r *Registry) SigmaS(id MediumID, ctx WavelengthContext) CoefficientSpectrum {
+	m := r.mediumOrAir(id)
+	if m == nil {
+		return CoefficientSpectrum{}
+	}
+	return m.SigmaS(ctx)
+}
+
+func (r *Registry) mediumOrAir(id MediumID) Medium {
+	if id == MediumNone {
+		id = MediumAir
+	}
+	if r == nil {
+		return nil
+	}
+	return r.Get(id)
 }

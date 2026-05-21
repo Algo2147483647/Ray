@@ -24,17 +24,26 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *renderray.Ray, level
 		return terminateRay(ray)
 	}
 
+	media := objTree.Media
+	if media == nil {
+		media = medium.NewRegistry()
+	}
+	mediumCtx := bxdf.ShadingContext{
+		SpectrumMode:  h.SpectrumMode,
+		WavelengthNM:  ray.WaveLength,
+		WavelengthPDF: ray.WavelengthPDF,
+	}
+	if h.SpectrumMode != bxdf.SpectrumRGB && ray.WaveLength > 0 {
+		mediumCtx.WavelengthsNM = []float64{ray.WaveLength}
+	}
+	applyMediumAbsorption(media, ray, hit.Distance, mediumCtx)
+
 	ray.Origin.CopyVec(hit.Point)
 	normal := hit.ShadingNormal
 	obj := hit.Object
 
 	if obj.Material == nil {
 		return terminateRay(ray)
-	}
-
-	media := objTree.Media
-	if media == nil {
-		media = medium.NewRegistry()
 	}
 
 	ctx := bxdf.ShadingContext{
@@ -121,6 +130,25 @@ func applyMediumTransmission(media *medium.Registry, ray *renderray.Ray, ctx bxd
 	if sample.Eta > 0 {
 		ray.RefractionIndex = sample.Eta
 	}
+}
+
+func applyMediumAbsorption(media *medium.Registry, ray *renderray.Ray, distance float64, ctx bxdf.ShadingContext) {
+	if media == nil || ray == nil || distance <= 0 || math.IsNaN(distance) || math.IsInf(distance, 0) {
+		return
+	}
+	sigmaA := media.SigmaA(ray.MediumStack.Current(), ctx)
+	if sigmaA.HasSamples() {
+		transmittance := math.Exp(-sigmaA.Sample(0) * distance)
+		ray.SpectralPower *= transmittance
+		ray.SpectralPath = true
+		return
+	}
+	transmittance := optics.NewRGBSpectrum(
+		math.Exp(-sigmaA.RGBChannel(0)*distance),
+		math.Exp(-sigmaA.RGBChannel(1)*distance),
+		math.Exp(-sigmaA.RGBChannel(2)*distance),
+	)
+	applySpectrum(ray, transmittance)
 }
 
 func applySpectrum(ray *renderray.Ray, spectrum optics.Spectrum) {

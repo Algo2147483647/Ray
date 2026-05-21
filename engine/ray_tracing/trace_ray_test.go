@@ -2,10 +2,12 @@ package ray_tracing
 
 import (
 	renderray "github.com/Algo2147483647/ray/engine/model/optics"
+	"math"
 	"testing"
 
 	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
 	"github.com/Algo2147483647/ray/engine/model/material/medium"
+	"gonum.org/v1/gonum/mat"
 )
 
 func TestPrepareMediumContextKeepsLegacyIORWithoutBoundary(t *testing.T) {
@@ -94,4 +96,68 @@ func TestApplyMediumTransmissionThinBoundaryDoesNotMutateStack(t *testing.T) {
 	if got := ray.RefractionIndex; got != 1 {
 		t.Fatalf("thin boundary should leave current ray IOR at air, got %f", got)
 	}
+}
+
+func TestApplyMediumAbsorptionUsesBeerLambertRGB(t *testing.T) {
+	registry := medium.NewRegistry()
+	waterID, err := registry.RegisterHomogeneousWithCoefficients(
+		"water",
+		medium.NewConstant(1.33),
+		medium.ConstantCoefficient(0.5),
+		nil,
+	)
+	if err != nil {
+		t.Fatalf("register water: %v", err)
+	}
+	ray := &renderray.Ray{Color: mat.NewVecDense(3, []float64{1, 1, 1})}
+	ray.Init()
+	ray.MediumStack.Reset(waterID)
+
+	applyMediumAbsorption(registry, ray, 2, bxdf.ShadingContext{})
+
+	want := math.Exp(-1)
+	for ch := 0; ch < 3; ch++ {
+		if math.Abs(ray.Color.AtVec(ch)-want) > 1e-12 {
+			t.Fatalf("channel %d: got %f want %f", ch, ray.Color.AtVec(ch), want)
+		}
+	}
+}
+
+func TestApplyMediumAbsorptionUsesSpectralPowerForSampledSigmaA(t *testing.T) {
+	registry := medium.NewRegistry()
+	filterID, err := registry.RegisterHomogeneousWithCoefficients(
+		"filter",
+		medium.NewConstant(1),
+		sampledCoefficient{value: 0.25},
+		nil,
+	)
+	if err != nil {
+		t.Fatalf("register filter: %v", err)
+	}
+	ray := &renderray.Ray{}
+	ray.Init()
+	ray.SetSpectralWavelength(550)
+	ray.MediumStack.Reset(filterID)
+
+	applyMediumAbsorption(registry, ray, 4, bxdf.ShadingContext{
+		SpectrumMode:  bxdf.SpectrumSpectral,
+		WavelengthNM:  550,
+		WavelengthsNM: []float64{550},
+	})
+
+	want := math.Exp(-1)
+	if math.Abs(ray.SpectralPower-want) > 1e-12 {
+		t.Fatalf("got spectral power %f want %f", ray.SpectralPower, want)
+	}
+	if !ray.SpectralPath {
+		t.Fatal("expected sampled absorption to mark spectral path")
+	}
+}
+
+type sampledCoefficient struct {
+	value float64
+}
+
+func (c sampledCoefficient) Eval(medium.WavelengthContext) medium.CoefficientSpectrum {
+	return medium.NewSampledCoefficientSpectrum([]float64{c.value})
 }
