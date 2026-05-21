@@ -4,15 +4,14 @@ import (
 	"fmt"
 	"github.com/Algo2147483647/ray/engine/controller/factory"
 	"github.com/Algo2147483647/ray/engine/controller/parser"
+	"github.com/Algo2147483647/ray/engine/model"
+	"github.com/Algo2147483647/ray/engine/model/camera"
+	"github.com/Algo2147483647/ray/engine/model/optics"
+	"github.com/Algo2147483647/ray/engine/ray_tracing"
 	"image/png"
 	"os"
 	"path/filepath"
 	"time"
-
-	"github.com/Algo2147483647/ray/engine/model"
-	"github.com/Algo2147483647/ray/engine/model/camera"
-	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
-	"github.com/Algo2147483647/ray/engine/ray_tracing"
 )
 
 type Handler struct {
@@ -176,14 +175,14 @@ func (h *Handler) Render() *Handler {
 	return h
 }
 
-func renderSpectrumMode(value string) bxdf.SpectrumMode {
+func renderSpectrumMode(value string) optics.SpectrumMode {
 	switch value {
 	case "rgb":
-		return bxdf.SpectrumRGB
+		return optics.SpectrumModeRGB
 	case "sampled":
-		return bxdf.SpectrumRGBAndSpectral
+		return optics.SpectrumModeSampledWavelengths
 	default:
-		return bxdf.SpectrumSpectral
+		return optics.SpectrumModeHeroWavelength
 	}
 }
 

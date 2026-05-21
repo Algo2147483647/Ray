@@ -1,14 +1,12 @@
 package ray_tracing
 
 import (
-	"github.com/Algo2147483647/ray/engine/model/optics"
-	"math/rand/v2"
-
 	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
 	"github.com/Algo2147483647/ray/engine/model/camera"
-	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
 	"github.com/Algo2147483647/ray/engine/model/object"
+	"github.com/Algo2147483647/ray/engine/model/optics"
 	"gonum.org/v1/gonum/mat"
+	"math/rand/v2"
 )
 
 func (h *Handler) TracePixel(camera camera.Camera, objTree *object.ObjectTree, samples int64, index ...int) *mat.VecDense {
@@ -21,13 +19,13 @@ func (h *Handler) TracePixel(camera camera.Camera, objTree *object.ObjectTree, s
 
 	for s := int64(0); s < samples; s++ {
 		switch h.SpectrumMode {
-		case bxdf.SpectrumRGB:
+		case optics.SpectrumModeRGB:
 			camera.GenerateRay(ray, index...)
 			ray.DisableSpectralSampling()
 			color.AddVec(color, h.TraceRay(objTree, ray, 0))
 			totalTraces++
 
-		case bxdf.SpectrumRGBAndSpectral:
+		case optics.SpectrumModeSampledWavelengths:
 			wavelengthSamples := h.WavelengthSamples
 			if wavelengthSamples <= 0 {
 				wavelengthSamples = 4

@@ -1,23 +1,21 @@
 package ray_tracing
 
 import (
-	renderray "github.com/Algo2147483647/ray/engine/model/optics"
-	"runtime"
-	"sync"
-
-	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
+	"github.com/Algo2147483647/ray/engine/model/optics"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
+	"runtime"
+	"sync"
 )
 
 type Handler struct {
-	MaxRayLevel       int64             `json:"max_ray_level"`
-	ThreadNum         int               `json:"thread_num"`
-	BlockCols         int               `json:"block_cols"`
-	BlockRows         int               `json:"block_rows"`
-	SpectrumMode      bxdf.SpectrumMode `json:"spectrum_mode"`
-	WavelengthSamples int               `json:"wavelength_samples"`
-	RayPool           sync.Pool         `json:"ray_pool"`
+	MaxRayLevel       int64               `json:"max_ray_level"`
+	ThreadNum         int                 `json:"thread_num"`
+	BlockCols         int                 `json:"block_cols"`
+	BlockRows         int                 `json:"block_rows"`
+	SpectrumMode      optics.SpectrumMode `json:"spectrum_mode"`
+	WavelengthSamples int                 `json:"wavelength_samples"`
+	RayPool           sync.Pool           `json:"ray_pool"`
 }
 
 func NewHandler() *Handler {
@@ -26,11 +24,11 @@ func NewHandler() *Handler {
 		ThreadNum:         runtime.NumCPU(),
 		BlockCols:         8,
 		BlockRows:         8,
-		SpectrumMode:      bxdf.SpectrumSpectral,
+		SpectrumMode:      optics.SpectrumModeHeroWavelength,
 		WavelengthSamples: 1,
 		RayPool: sync.Pool{
 			New: func() interface{} {
-				return &renderray.Ray{
+				return &optics.Ray{
 					Origin:    mat.NewVecDense(utils.Dimension, nil),
 					Direction: mat.NewVecDense(utils.Dimension, nil),
 					Color:     mat.NewVecDense(3, nil),
@@ -44,7 +42,7 @@ func (h *Handler) EffectiveSampleCount(cameraSamples int64) int64 {
 	if cameraSamples <= 0 {
 		return 0
 	}
-	if h.SpectrumMode != bxdf.SpectrumRGBAndSpectral {
+	if h.SpectrumMode != optics.SpectrumModeSampledWavelengths {
 		return cameraSamples
 	}
 	wavelengthSamples := h.WavelengthSamples

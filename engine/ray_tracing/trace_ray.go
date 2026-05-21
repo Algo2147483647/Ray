@@ -1,18 +1,17 @@
 package ray_tracing
 
 import (
-	renderray "github.com/Algo2147483647/ray/engine/model/optics"
-	"math/rand/v2"
-
 	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
 	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
 	"github.com/Algo2147483647/ray/engine/model/material/medium"
 	"github.com/Algo2147483647/ray/engine/model/object"
+	"github.com/Algo2147483647/ray/engine/model/optics"
 	"github.com/Algo2147483647/ray/engine/utils/maths"
 	"gonum.org/v1/gonum/mat"
+	"math/rand/v2"
 )
 
-func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *renderray.Ray, level int64) *mat.VecDense {
+func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level int64) *mat.VecDense {
 	if level > h.MaxRayLevel {
 		return terminateRay(ray)
 	}
@@ -31,7 +30,7 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *renderray.Ray, level
 		WavelengthNM:  ray.WaveLength,
 		WavelengthPDF: ray.WavelengthPDF,
 	}
-	if h.SpectrumMode != bxdf.SpectrumRGB && ray.WaveLength > 0 {
+	if h.SpectrumMode != optics.SpectrumModeRGB && ray.WaveLength > 0 {
 		mediumCtx.WavelengthsNM = []float64{ray.WaveLength}
 	}
 	applyMediumAbsorption(media, ray, hit.Distance, mediumCtx)
@@ -52,7 +51,7 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *renderray.Ray, level
 		WavelengthPDF: ray.WavelengthPDF,
 	}
 
-	if h.SpectrumMode != bxdf.SpectrumRGB && ray.WaveLength > 0 {
+	if h.SpectrumMode != optics.SpectrumModeRGB && ray.WaveLength > 0 {
 		ctx.WavelengthsNM = []float64{ray.WaveLength}
 	}
 	prepareMediumContext(&ctx, media, ray, obj.MediumBoundary, hit.FrontFace)

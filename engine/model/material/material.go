@@ -22,7 +22,7 @@ type MaterialMetadata struct {
 	Name                     string
 	Units                    string
 	ColorSpace               string
-	SpectrumMode             bxdf.SpectrumMode
+	SpectrumMode             optics.SpectrumMode
 	NonReciprocal            bool
 	DifferentiabilitySupport bool
 	ParameterRanges          map[string]ParameterRange

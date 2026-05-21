@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Algo2147483647/ray/engine/controller/parser"
-	"github.com/Algo2147483647/ray/engine/utils"
-
 	"github.com/Algo2147483647/ray/engine/model/material"
 	"github.com/Algo2147483647/ray/engine/model/material/bsdf"
 	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
@@ -13,6 +11,7 @@ import (
 	"github.com/Algo2147483647/ray/engine/model/material/medium"
 	"github.com/Algo2147483647/ray/engine/model/optics"
 	"github.com/Algo2147483647/ray/engine/model/optics/spectrum_parameter"
+	"github.com/Algo2147483647/ray/engine/utils"
 )
 
 func ParseMaterials(script *parser.Script) (map[string]*material.Material, error) {
@@ -41,7 +40,7 @@ func ParseMaterials(script *parser.Script) (map[string]*material.Material, error
 		material := &material.Material{
 			Metadata: material.MaterialMetadata{
 				Name:         id,
-				SpectrumMode: bxdf.SpectrumRGB,
+				SpectrumMode: optics.SpectrumModeRGB,
 			},
 		}
 
