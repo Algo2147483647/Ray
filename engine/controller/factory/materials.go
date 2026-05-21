@@ -309,15 +309,15 @@ func parseSpectralParameterObject(def map[string]interface{}) (optics.SpectralPa
 			return nil, err
 		}
 		if !ok {
-			space = string(optics.ColorSpaceLinearSRGB)
+			space = string(optics.RGBColorSpaceLinearSRGB)
 		}
 		value := optics.NewSpectrum(values[0], values[1], values[2])
-		switch optics.ColorSpace(space) {
-		case optics.ColorSpaceLinearSRGB:
+		switch optics.RGBColorSpace(space) {
+		case optics.RGBColorSpaceLinearSRGB:
 			return spectrum_parameter.NewRGBParameter(value), nil
-		case optics.ColorSpaceSRGB:
+		case optics.RGBColorSpaceSRGB:
 			return spectrum_parameter.NewSRGBParameter(value), nil
-		case optics.ColorSpaceACEScg:
+		case optics.RGBColorSpaceACEScg:
 			return spectrum_parameter.NewACEScgParameter(value), nil
 		default:
 			return nil, fmt.Errorf("unsupported rgb color space %q", space)

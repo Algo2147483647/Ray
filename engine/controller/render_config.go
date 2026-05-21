@@ -255,8 +255,8 @@ func isSupportedSpectrumMode(value string) bool {
 }
 
 func isSupportedColorSpace(value string) bool {
-	switch camera.ColorSpace(value) {
-	case camera.ColorSpaceLinearSRGB, camera.ColorSpaceXYZ:
+	switch camera.FilmColorSpace(value) {
+	case camera.FilmColorSpaceLinearSRGB, camera.FilmColorSpaceXYZ:
 		return true
 	default:
 		return false

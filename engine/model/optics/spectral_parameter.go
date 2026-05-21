@@ -2,12 +2,12 @@ package optics
 
 import "math"
 
-type ColorSpace string
+type RGBColorSpace string
 
 const (
-	ColorSpaceLinearSRGB ColorSpace = "linear_srgb"
-	ColorSpaceSRGB       ColorSpace = "srgb"
-	ColorSpaceACEScg     ColorSpace = "acescg"
+	RGBColorSpaceLinearSRGB RGBColorSpace = "linear_srgb"
+	RGBColorSpaceSRGB       RGBColorSpace = "srgb"
+	RGBColorSpaceACEScg     RGBColorSpace = "acescg"
 )
 
 type SpectrumBounds struct {

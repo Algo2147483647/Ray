@@ -187,12 +187,12 @@ func renderSpectrumMode(value string) bxdf.SpectrumMode {
 	}
 }
 
-func renderColorSpace(value string) camera.ColorSpace {
+func renderColorSpace(value string) camera.FilmColorSpace {
 	switch value {
-	case string(camera.ColorSpaceXYZ):
-		return camera.ColorSpaceXYZ
+	case string(camera.FilmColorSpaceXYZ):
+		return camera.FilmColorSpaceXYZ
 	default:
-		return camera.ColorSpaceLinearSRGB
+		return camera.FilmColorSpaceLinearSRGB
 	}
 }
 

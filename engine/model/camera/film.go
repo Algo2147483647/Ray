@@ -15,14 +15,14 @@ import (
 type Film struct {
 	Data       [3]math_lib.Tensor[float64] `json:"data"`
 	Samples    int64                       `json:"samples"`
-	ColorSpace ColorSpace                  `json:"color_space"`
+	ColorSpace FilmColorSpace              `json:"color_space"`
 }
 
-type ColorSpace string
+type FilmColorSpace string
 
 const (
-	ColorSpaceLinearSRGB ColorSpace = "linear_srgb"
-	ColorSpaceXYZ        ColorSpace = "xyz"
+	FilmColorSpaceLinearSRGB FilmColorSpace = "linear_srgb"
+	FilmColorSpaceXYZ        FilmColorSpace = "xyz"
 )
 
 type ToneMapping string
@@ -50,7 +50,7 @@ func NewFilm(width ...int) *Film {
 			*math_lib.NewTensor[float64](shape),
 		},
 		Samples:    0,
-		ColorSpace: ColorSpaceLinearSRGB,
+		ColorSpace: FilmColorSpaceLinearSRGB,
 	}
 }
 
@@ -64,7 +64,7 @@ func (f *Film) Init(width ...int) *Film {
 		*math_lib.NewTensor[float64](shape),
 	}
 	f.Samples = 0
-	f.ColorSpace = ColorSpaceLinearSRGB
+	f.ColorSpace = FilmColorSpaceLinearSRGB
 	return f
 }
 
@@ -127,7 +127,7 @@ func (f *Film) outputRGBAt(i int) (float64, float64, float64) {
 	a := f.Data[0].Data[i]
 	b := f.Data[1].Data[i]
 	c := f.Data[2].Data[i]
-	if f.ColorSpace == ColorSpaceXYZ {
+	if f.ColorSpace == FilmColorSpaceXYZ {
 		return xyzToLinearSRGB(a, b, c)
 	}
 	return a, b, c
@@ -210,7 +210,7 @@ func (f *Film) LoadFromFile(filename string) error {
 		*math_lib.NewTensor[float64](shape),
 		*math_lib.NewTensor[float64](shape),
 	}
-	f.ColorSpace = ColorSpaceLinearSRGB
+	f.ColorSpace = FilmColorSpaceLinearSRGB
 
 	for ch := 0; ch < 3; ch++ {
 		for i := range f.Data[ch].Data {
@@ -293,9 +293,9 @@ func (f *Film) readOptionalColorSpace(file *os.File) error {
 	if _, err := io.ReadFull(file, buf); err != nil {
 		return err
 	}
-	switch ColorSpace(buf) {
-	case ColorSpaceLinearSRGB, ColorSpaceXYZ:
-		f.ColorSpace = ColorSpace(buf)
+	switch FilmColorSpace(buf) {
+	case FilmColorSpaceLinearSRGB, FilmColorSpaceXYZ:
+		f.ColorSpace = FilmColorSpace(buf)
 	}
 	return nil
 }

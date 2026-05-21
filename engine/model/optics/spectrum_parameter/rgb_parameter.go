@@ -4,13 +4,13 @@ import "github.com/Algo2147483647/ray/engine/model/optics"
 
 type RGBParameter struct {
 	Value optics.Spectrum
-	Space optics.ColorSpace
+	Space optics.RGBColorSpace
 }
 
 func NewRGBParameter(value optics.Spectrum) RGBParameter {
 	return RGBParameter{
 		Value: value,
-		Space: optics.ColorSpaceLinearSRGB,
+		Space: optics.RGBColorSpaceLinearSRGB,
 	}
 }
 
@@ -21,7 +21,7 @@ func NewSRGBParameter(value optics.Spectrum) RGBParameter {
 			optics.SrgbChannelToLinear(value.RGBChannel(1)),
 			optics.SrgbChannelToLinear(value.RGBChannel(2)),
 		),
-		Space: optics.ColorSpaceSRGB,
+		Space: optics.RGBColorSpaceSRGB,
 	}
 }
 
@@ -30,7 +30,7 @@ func NewACEScgParameter(value optics.Spectrum) RGBParameter {
 	// Store ACEScg values as authored linear values until output transforms land.
 	return RGBParameter{
 		Value: value,
-		Space: optics.ColorSpaceACEScg,
+		Space: optics.RGBColorSpaceACEScg,
 	}
 }
 

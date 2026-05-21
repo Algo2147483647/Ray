@@ -13,7 +13,7 @@ import (
 // TraceScene renders the object tree from the supplied camera into the film.
 func (h *Handler) TraceScene(renderCamera camera.Camera, objectTree *object.ObjectTree, film *camera.Film, samples int64) {
 	if h.SpectrumMode != bxdf.SpectrumRGB {
-		film.ColorSpace = camera.ColorSpaceXYZ
+		film.ColorSpace = camera.FilmColorSpaceXYZ
 	}
 
 	var (
