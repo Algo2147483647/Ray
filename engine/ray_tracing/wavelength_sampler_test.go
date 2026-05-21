@@ -44,3 +44,24 @@ func TestSpectralRayToXYZUsesScalarPower(t *testing.T) {
 		}
 	}
 }
+
+func TestSpectralRayToXYZPreservesChromaticRGBThroughput(t *testing.T) {
+	ray := &optics.Ray{
+		WaveLength:    555,
+		WavelengthPDF: optics.UniformWavelengthPDF(),
+	}
+	color := mat.NewVecDense(3, []float64{0.8, 0.1, 0.05})
+
+	got := spectralRayToXYZ(color, ray)
+	gotR, gotG, gotB := xyzToLinearSRGBForTest(got.AtVec(0), got.AtVec(1), got.AtVec(2))
+
+	if gotR <= gotG || gotR <= gotB {
+		t.Fatalf("expected chromatic RGB throughput to remain red-dominant, got linear RGB [%f %f %f]", gotR, gotG, gotB)
+	}
+}
+
+func xyzToLinearSRGBForTest(x, y, z float64) (float64, float64, float64) {
+	return 3.2404542*x - 1.5371385*y - 0.4985314*z,
+		-0.9692660*x + 1.8760108*y + 0.0415560*z,
+		0.0556434*x - 0.2040259*y + 1.0572252*z
+}

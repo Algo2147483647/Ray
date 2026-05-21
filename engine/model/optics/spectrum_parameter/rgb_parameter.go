@@ -35,14 +35,6 @@ func NewACEScgParameter(value optics.Spectrum) RGBParameter {
 }
 
 func (p RGBParameter) Eval(ctx optics.WavelengthContext) optics.Spectrum {
-	if ctx != nil && len(ctx.SpectralWavelengthsNM()) > 0 {
-		values := make([]float64, len(ctx.SpectralWavelengthsNM()))
-		value := p.Value.AverageRGB()
-		for i := range values {
-			values[i] = value
-		}
-		return optics.NewSampledSpectrum(values)
-	}
 	return p.Value
 }
 
