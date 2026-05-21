@@ -36,3 +36,18 @@ func TestRGBUpliftProducesWavelengthSamples(t *testing.T) {
 		t.Fatalf("expected red RGB uplift to be stronger at red wavelength, got %v", got.Samples)
 	}
 }
+
+func TestRGBReflectanceUpliftIsEnergyBounded(t *testing.T) {
+	floor := NewRGBSpectrum(0.78, 0.76, 0.71)
+
+	got := floor.UpliftRGBReflectanceToSampled([]float64{450, 550, 610})
+
+	if !got.HasSamples() || len(got.Samples) != 3 {
+		t.Fatalf("expected three uplifted spectral samples, got %+v", got)
+	}
+	for _, sample := range got.Samples {
+		if sample < 0 || sample > floor.MaxComponent() {
+			t.Fatalf("expected reflectance uplift to stay within [0,maxRGB], got samples %v", got.Samples)
+		}
+	}
+}

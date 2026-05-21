@@ -121,7 +121,7 @@ func compatibleWeightSpectrum(weight, target optics.Spectrum, ctx ShadingContext
 		return weight
 	}
 	if target.HasSamples() && !weight.HasSamples() {
-		return weight.UpliftRGBToSampled(ctx.WavelengthsNM)
+		return weight.UpliftRGBReflectanceToSampled(ctx.WavelengthsNM)
 	}
 	if !target.HasSamples() && sampledSpectrumIsConstant(weight) {
 		return optics.ConstantSpectrum(weight.Sample(0))

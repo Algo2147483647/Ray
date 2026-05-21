@@ -168,6 +168,21 @@ func (s Spectrum) UpliftRGBToSampled(wavelengthsNM []float64) Spectrum {
 	return NewSampledSpectrum(samples)
 }
 
+func (s Spectrum) UpliftRGBReflectanceToSampled(wavelengthsNM []float64) Spectrum {
+	if s.HasSamples() || len(wavelengthsNM) == 0 {
+		return s.Clone()
+	}
+	maxReflectance := s.MaxComponent()
+	if maxReflectance <= 0 {
+		return NewSampledSpectrum(make([]float64, len(wavelengthsNM)))
+	}
+	samples := make([]float64, len(wavelengthsNM))
+	for i, wavelengthNM := range wavelengthsNM {
+		samples[i] = math.Min(maxReflectance, s.RGBPowerAtWavelength(wavelengthNM))
+	}
+	return NewSampledSpectrum(samples)
+}
+
 func (s Spectrum) RGBPowerAtWavelength(wavelengthNM float64) float64 {
 	if s.HasSamples() {
 		return s.Sample(0)

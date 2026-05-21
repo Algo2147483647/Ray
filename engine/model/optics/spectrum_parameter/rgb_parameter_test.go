@@ -49,4 +49,9 @@ func TestRGBParameterUpliftsAuthoredRGBInSpectralContext(t *testing.T) {
 	if got.Samples[1] <= got.Samples[0] {
 		t.Fatalf("expected red authored color to be stronger at red wavelength, got %v", got.Samples)
 	}
+	for _, sample := range got.Samples {
+		if sample > red.Value.MaxComponent() {
+			t.Fatalf("expected RGB parameter reflectance uplift to be energy bounded, got %v", got.Samples)
+		}
+	}
 }

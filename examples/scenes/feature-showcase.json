@@ -7,7 +7,7 @@
         "radiance": {
           "type": "blackbody",
           "temperature": 4800,
-          "scale": 16
+          "scale": 4
         }
       }
     },
@@ -17,7 +17,7 @@
         "type": "constant",
         "radiance": {
           "type": "constant",
-          "value": 12
+          "value": 1.5
         }
       }
     },
@@ -374,10 +374,10 @@
     "width": 200,
     "height": 200,
     "camera_index": 0,
-    "output_image": "../../outputs/feature-showcase-200x200-200spp.png",
-    "output_film": "../../outputs/feature-showcase-200x200-200spp.bin",
-    "debug_output": "../../outputs/feature-showcase-debug.json",
-    "exposure": 1.65,
+    "output_image": "../outputs/feature-showcase-200x200-200spp.png",
+    "output_film": "../outputs/feature-showcase-200x200-200spp.bin",
+    "debug_output": "../outputs/feature-showcase-debug.json",
+    "exposure": 1.0,
     "tone_mapping": "reinhard",
     "gamma": 2.2,
     "spectrum_mode": "sampled",
