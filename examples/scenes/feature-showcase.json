@@ -91,6 +91,21 @@
       }
     }
   ],
+  "media": {
+    "blue-absorbing-glass": {
+      "type": "homogeneous",
+      "ior": {
+        "type": "constant",
+        "eta": 1.5
+      },
+      "sigma_a": {
+        "type": "sampled",
+        "wavelengths_nm": [380, 460, 540, 620, 750],
+        "values": [0.06, 0.035, 0.09, 0.32, 0.52]
+      },
+      "sigma_s": [0.0, 0.0, 0.0]
+    }
+  },
   "objects": [
     {
       "id": "floor-0",
@@ -207,7 +222,12 @@
       "shape": "sphere",
       "position": [0.03, 0.08, 0.68],
       "r": 0.36,
-      "material_id": "clear-glass"
+      "material_id": "clear-glass",
+      "medium_boundary": {
+        "outside": "air",
+        "inside": "blue-absorbing-glass",
+        "priority": 1
+      }
     },
     {
       "id": "mirror-sphere",

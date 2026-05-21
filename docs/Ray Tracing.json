@@ -41,7 +41,8 @@
       "Material": "related_to"
     },
     "children": {
-      "BxDF functions": "related_to"
+      "BxDF functions": "related_to",
+      "Microfacet": "related_to"
     }
   },
   "Subsurface": {
@@ -309,6 +310,13 @@
     "define": "",
     "parents": {
       "Shape": "related_to"
+    },
+    "children": {}
+  },
+  "Microfacet": {
+    "define": "Start building your graph from this root node.",
+    "parents": {
+      "Surface": "related_to"
     },
     "children": {}
   }

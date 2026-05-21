@@ -66,7 +66,7 @@ func SpectralPowerToXYZ(wavelength, pdf, power float64) *mat.VecDense {
 
 func WavelengthToLinearSRGB(wavelength float64) *mat.VecDense {
 	xyz := WavelengthToXYZ(wavelength)
-	r, g, b := xyzToLinearSRGB(xyz.AtVec(0), xyz.AtVec(1), xyz.AtVec(2))
+	r, g, b := XYZToLinearSRGB(xyz.AtVec(0), xyz.AtVec(1), xyz.AtVec(2))
 	return mat.NewVecDense(3, []float64{
 		math.Max(0, r),
 		math.Max(0, g),
@@ -137,12 +137,6 @@ func gaussianPiece(wavelength, center, leftScale, rightScale float64) float64 {
 	}
 	t := (wavelength - center) * scale
 	return math.Exp(-0.5 * t * t)
-}
-
-func xyzToLinearSRGB(x, y, z float64) (float64, float64, float64) {
-	return 3.2404542*x - 1.5371385*y - 0.4985314*z,
-		-0.9692660*x + 1.8760108*y + 0.0415560*z,
-		0.0556434*x - 0.2040259*y + 1.0572252*z
 }
 
 func safeDivide(a, b float64) float64 {
