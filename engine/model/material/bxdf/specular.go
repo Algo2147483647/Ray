@@ -93,6 +93,7 @@ func (s SpecularDielectric) Sample(ctx ShadingContext, wo maths.Direction, u mat
 
 	insideIOR := s.insideIOR()
 	wavelengthNM, spectralSample := s.resolveWavelength(ctx)
+	spectralSample = spectralSample && insideIOR.IsDispersive()
 	etaInside := insideIOR.Evaluate(wavelengthNM)
 	if !medium.IsValidEta(s.EtaOutside) || !medium.IsValidEta(etaInside) {
 		return BxDFSample{}

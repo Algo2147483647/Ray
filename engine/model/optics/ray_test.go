@@ -24,6 +24,9 @@ func TestConvertToMonochromeMonteCarlo(t *testing.T) {
 				t.Fatalf("expected spectral ray throughput to stay scalar-white before film conversion, got %v", ray.Color.RawVector().Data)
 			}
 		}
+		if ray.SpectralPower != 1 {
+			t.Fatalf("expected spectral power to start at 1, got %f", ray.SpectralPower)
+		}
 	}
 
 	validateDistribution(t, wavelengths)
@@ -86,7 +89,9 @@ func TestSpectralPowerToXYZWhitePoint(t *testing.T) {
 
 func TestRayInitResetsReusedThroughput(t *testing.T) {
 	ray := &Ray{
-		Color: mat.NewVecDense(3, []float64{0.2, 0.3, 0.4}),
+		Color:            mat.NewVecDense(3, []float64{0.2, 0.3, 0.4}),
+		RGBCompatibility: mat.NewVecDense(3, []float64{0.5, 0.6, 0.7}),
+		SpectralPower:    0.25,
 	}
 	ray.WaveLength = 510
 	ray.WavelengthPDF = UniformWavelengthPDF()
@@ -100,6 +105,15 @@ func TestRayInitResetsReusedThroughput(t *testing.T) {
 		if ray.Color.AtVec(i) != 1 {
 			t.Fatalf("expected throughput reset to white, got %v", ray.Color.RawVector().Data)
 		}
+		if ray.RGBCompatibility.AtVec(i) != 1 {
+			t.Fatalf("expected RGB compatibility reset to white, got %v", ray.RGBCompatibility.RawVector().Data)
+		}
+	}
+	if ray.SpectralPower != 1 {
+		t.Fatalf("expected spectral power reset to 1, got %f", ray.SpectralPower)
+	}
+	if ray.SpectralPath {
+		t.Fatal("expected spectral path marker to reset")
 	}
 }
 

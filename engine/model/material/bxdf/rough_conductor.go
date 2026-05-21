@@ -48,7 +48,8 @@ func (r RoughConductor) Eval(ctx ShadingContext, wi, wo maths.Direction) optics.
 
 	f := microfacet.FresnelConductor(math.Abs(wi.Dot(wh)), r.Eta.Eval(ctx), r.K.Eval(ctx))
 	scale := distribution.D(wh) * distribution.G(wi, wo) / (4 * cosI * cosO)
-	return f.Mul(r.Weight.Eval(ctx)).MulScalar(scale)
+	weight := compatibleWeightSpectrum(r.Weight.Eval(ctx), f, ctx)
+	return f.Mul(weight).MulScalar(scale)
 }
 
 func (r RoughConductor) Sample(ctx ShadingContext, wo maths.Direction, u maths.Sample2D) BxDFSample {
@@ -113,4 +114,30 @@ func (r RoughConductor) DeltaFlags() DeltaFlags {
 
 func reflectAbout(wo, wh maths.Direction) maths.Direction {
 	return wh.MulScalar(2 * wo.Dot(wh)).Add(wo.MulScalar(-1))
+}
+
+func compatibleWeightSpectrum(weight, target optics.Spectrum, ctx ShadingContext) optics.Spectrum {
+	if weight.HasSamples() == target.HasSamples() {
+		return weight
+	}
+	if target.HasSamples() && !weight.HasSamples() {
+		return weight.UpliftRGBToSampled(ctx.WavelengthsNM)
+	}
+	if !target.HasSamples() && sampledSpectrumIsConstant(weight) {
+		return optics.ConstantSpectrum(weight.Sample(0))
+	}
+	return optics.Spectrum{}
+}
+
+func sampledSpectrumIsConstant(s optics.Spectrum) bool {
+	if !s.HasSamples() {
+		return false
+	}
+	first := s.Sample(0)
+	for i := 1; i < s.SampleCount(); i++ {
+		if math.Abs(s.Sample(i)-first) > 1e-12 {
+			return false
+		}
+	}
+	return true
 }

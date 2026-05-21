@@ -29,7 +29,7 @@ func TestRGBParameterKeepsAuthoredRGBInSpectralContext(t *testing.T) {
 	got := red.Eval(ctx)
 
 	if got.HasSamples() {
-		t.Fatalf("expected authored RGB to remain RGB in hybrid spectral mode, got samples %v", got.Samples)
+		t.Fatalf("expected authored RGB to remain RGB compatibility in spectral context, got samples %v", got.Samples)
 	}
 	if got.RGBChannel(0) <= got.RGBChannel(1) || got.RGBChannel(0) <= got.RGBChannel(2) {
 		t.Fatalf("expected red authored color to keep its dominant red channel, got %v", got)

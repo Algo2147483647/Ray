@@ -10,13 +10,16 @@ import (
 )
 
 type Ray struct {
-	Origin          *mat.VecDense `json:"origin"`
-	Direction       *mat.VecDense `json:"direction"`
-	Color           *mat.VecDense `json:"color"`
-	WaveLength      float64       `json:"wave_length"` // (nm)
-	WavelengthPDF   float64       `json:"wavelength_pdf"`
-	RefractionIndex float64       `json:"refraction_index"`
-	MediumStack     medium.Stack  `json:"-"`
+	Origin           *mat.VecDense `json:"origin"`
+	Direction        *mat.VecDense `json:"direction"`
+	Color            *mat.VecDense `json:"color"`
+	SpectralPower    float64       `json:"spectral_power"`
+	SpectralPath     bool          `json:"spectral_path"`
+	RGBCompatibility *mat.VecDense `json:"rgb_compatibility"`
+	WaveLength       float64       `json:"wave_length"` // (nm)
+	WavelengthPDF    float64       `json:"wavelength_pdf"`
+	RefractionIndex  float64       `json:"refraction_index"`
+	MediumStack      medium.Stack  `json:"-"`
 }
 
 func (r *Ray) Init() {
@@ -42,6 +45,18 @@ func (r *Ray) Init() {
 		r.Color = mat.NewVecDense(3, []float64{1, 1, 1})
 	}
 
+	if r.RGBCompatibility == nil {
+		r.RGBCompatibility = mat.NewVecDense(3, []float64{1, 1, 1})
+	} else if r.RGBCompatibility.Len() == 3 {
+		r.RGBCompatibility.SetVec(0, 1)
+		r.RGBCompatibility.SetVec(1, 1)
+		r.RGBCompatibility.SetVec(2, 1)
+	} else {
+		r.RGBCompatibility = mat.NewVecDense(3, []float64{1, 1, 1})
+	}
+
+	r.SpectralPower = 1
+	r.SpectralPath = false
 	r.RefractionIndex = 1
 	r.MediumStack.Reset(0)
 	r.WaveLength = 0
@@ -63,6 +78,12 @@ func (r *Ray) SampleWavelength(sample float64) {
 
 func (r *Ray) SetSpectralWavelength(wavelength float64) {
 	wavelength = math.Max(WavelengthMin+1e-6, math.Min(WavelengthMax-1e-6, wavelength))
+	if r.SpectralPower == 0 {
+		r.SpectralPower = 1
+	}
+	if r.RGBCompatibility == nil {
+		r.RGBCompatibility = mat.NewVecDense(3, []float64{1, 1, 1})
+	}
 	r.WaveLength = wavelength
 	r.WavelengthPDF = UniformWavelengthPDF()
 }
@@ -70,11 +91,20 @@ func (r *Ray) SetSpectralWavelength(wavelength float64) {
 func (r *Ray) DisableSpectralSampling() {
 	r.WaveLength = 0
 	r.WavelengthPDF = 0
+	r.SpectralPower = 1
+	r.SpectralPath = false
 	if r.Color == nil {
 		r.Color = mat.NewVecDense(3, []float64{1, 1, 1})
-		return
+	} else {
+		r.Color.SetVec(0, 1)
+		r.Color.SetVec(1, 1)
+		r.Color.SetVec(2, 1)
 	}
-	r.Color.SetVec(0, 1)
-	r.Color.SetVec(1, 1)
-	r.Color.SetVec(2, 1)
+	if r.RGBCompatibility == nil {
+		r.RGBCompatibility = mat.NewVecDense(3, []float64{1, 1, 1})
+	} else {
+		r.RGBCompatibility.SetVec(0, 1)
+		r.RGBCompatibility.SetVec(1, 1)
+		r.RGBCompatibility.SetVec(2, 1)
+	}
 }

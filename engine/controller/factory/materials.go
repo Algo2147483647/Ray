@@ -150,7 +150,13 @@ func parseSurface(def map[string]interface{}) (bsdf.BSDF, error) {
 			return nil, fmt.Errorf("roughness must be in [0, 1]")
 		}
 		alpha := roughness * roughness
-		return bsdf.NewSingle(bxdf.NewRoughConductorParameter(eta, k, alpha)), nil
+		weight, _, err := optionalSpectralParameterField(def, "weight", spectrum_parameter.NewConstantParameter(1))
+		if err != nil {
+			return nil, err
+		}
+		conductor := bxdf.NewRoughConductorParameter(eta, k, alpha)
+		conductor.Weight = weight
+		return bsdf.NewSingle(conductor), nil
 
 	default:
 		return nil, fmt.Errorf("unsupported surface type %q", surfaceType)

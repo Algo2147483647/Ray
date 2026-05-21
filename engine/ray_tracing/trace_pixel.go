@@ -2,7 +2,6 @@ package ray_tracing
 
 import (
 	renderray "github.com/Algo2147483647/ray/engine/model/optics"
-	"math"
 	"math/rand/v2"
 
 	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
@@ -60,19 +59,31 @@ func spectralRayToXYZ(color *mat.VecDense, ray *renderray.Ray) *mat.VecDense {
 	if ray == nil || ray.WaveLength <= 0 {
 		return mat.NewVecDense(3, nil)
 	}
-	if !isNeutralRGB(color) {
-		return linearSRGBToXYZ(color.AtVec(0), color.AtVec(1), color.AtVec(2))
+	power := ray.SpectralPower
+	xyz := renderray.SpectralPowerToXYZ(ray.WaveLength, ray.WavelengthPDF, power)
+	compatibility := ray.RGBCompatibility
+	if compatibility == nil {
+		compatibility = color
 	}
-	return renderray.SpectralPowerToXYZ(ray.WaveLength, ray.WavelengthPDF, averageVec(color))
-}
-
-func isNeutralRGB(v *mat.VecDense) bool {
-	if v == nil || v.Len() < 3 {
-		return true
+	if !ray.SpectralPath {
+		if compatibility == nil || compatibility.Len() < 3 {
+			return linearSRGBToXYZ(power, power, power)
+		}
+		return linearSRGBToXYZ(
+			power*compatibility.AtVec(0),
+			power*compatibility.AtVec(1),
+			power*compatibility.AtVec(2),
+		)
 	}
-	const eps = 1e-9
-	return math.Abs(v.AtVec(0)-v.AtVec(1)) <= eps &&
-		math.Abs(v.AtVec(1)-v.AtVec(2)) <= eps
+	if compatibility == nil || compatibility.Len() < 3 || isWhiteRGB(compatibility) {
+		return xyz
+	}
+	r, g, b := xyzToLinearSRGB(xyz.AtVec(0), xyz.AtVec(1), xyz.AtVec(2))
+	return linearSRGBToXYZ(
+		r*compatibility.AtVec(0),
+		g*compatibility.AtVec(1),
+		b*compatibility.AtVec(2),
+	)
 }
 
 func linearSRGBToXYZ(r, g, b float64) *mat.VecDense {
@@ -83,13 +94,23 @@ func linearSRGBToXYZ(r, g, b float64) *mat.VecDense {
 	})
 }
 
-func averageVec(v *mat.VecDense) float64 {
-	if v == nil || v.Len() == 0 {
-		return 0
+func xyzToLinearSRGB(x, y, z float64) (float64, float64, float64) {
+	return 3.2404542*x - 1.5371385*y - 0.4985314*z,
+		-0.9692660*x + 1.8760108*y + 0.0415560*z,
+		0.0556434*x - 0.2040259*y + 1.0572252*z
+}
+
+func isWhiteRGB(v *mat.VecDense) bool {
+	const eps = 1e-9
+	return v.Len() >= 3 &&
+		abs(v.AtVec(0)-1) <= eps &&
+		abs(v.AtVec(1)-1) <= eps &&
+		abs(v.AtVec(2)-1) <= eps
+}
+
+func abs(v float64) float64 {
+	if v < 0 {
+		return -v
 	}
-	sum := 0.0
-	for i := 0; i < v.Len(); i++ {
-		sum += v.AtVec(i)
-	}
-	return sum / float64(v.Len())
+	return v
 }

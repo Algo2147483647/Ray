@@ -30,10 +30,13 @@ func TestUniformWavelengthSampler(t *testing.T) {
 
 func TestSpectralRayToXYZUsesScalarPower(t *testing.T) {
 	ray := &optics.Ray{
-		WaveLength:    555,
-		WavelengthPDF: optics.UniformWavelengthPDF(),
+		WaveLength:       555,
+		WavelengthPDF:    optics.UniformWavelengthPDF(),
+		SpectralPower:    2,
+		SpectralPath:     true,
+		RGBCompatibility: mat.NewVecDense(3, []float64{1, 1, 1}),
 	}
-	color := mat.NewVecDense(3, []float64{2, 2, 2})
+	color := mat.NewVecDense(3, []float64{1, 1, 1})
 
 	got := spectralRayToXYZ(color, ray)
 	want := optics.SpectralPowerToXYZ(555, optics.UniformWavelengthPDF(), 2)
@@ -47,16 +50,37 @@ func TestSpectralRayToXYZUsesScalarPower(t *testing.T) {
 
 func TestSpectralRayToXYZPreservesChromaticRGBThroughput(t *testing.T) {
 	ray := &optics.Ray{
-		WaveLength:    555,
-		WavelengthPDF: optics.UniformWavelengthPDF(),
+		WaveLength:       610,
+		WavelengthPDF:    optics.UniformWavelengthPDF(),
+		SpectralPower:    1,
+		SpectralPath:     true,
+		RGBCompatibility: mat.NewVecDense(3, []float64{0.8, 0.1, 0.05}),
 	}
-	color := mat.NewVecDense(3, []float64{0.8, 0.1, 0.05})
+	color := mat.NewVecDense(3, []float64{1, 1, 1})
 
 	got := spectralRayToXYZ(color, ray)
 	gotR, gotG, gotB := xyzToLinearSRGBForTest(got.AtVec(0), got.AtVec(1), got.AtVec(2))
 
 	if gotR <= gotG || gotR <= gotB {
 		t.Fatalf("expected chromatic RGB throughput to remain red-dominant, got linear RGB [%f %f %f]", gotR, gotG, gotB)
+	}
+}
+
+func TestSpectralRayToXYZUsesRGBCompatibilityForNonSpectralPath(t *testing.T) {
+	ray := &optics.Ray{
+		WaveLength:       610,
+		WavelengthPDF:    optics.UniformWavelengthPDF(),
+		SpectralPower:    1,
+		SpectralPath:     false,
+		RGBCompatibility: mat.NewVecDense(3, []float64{0.8, 0.1, 0.05}),
+	}
+	color := mat.NewVecDense(3, []float64{1, 1, 1})
+
+	got := spectralRayToXYZ(color, ray)
+	gotR, gotG, gotB := xyzToLinearSRGBForTest(got.AtVec(0), got.AtVec(1), got.AtVec(2))
+
+	if math.Abs(gotR-0.8) > 1e-6 || math.Abs(gotG-0.1) > 1e-6 || math.Abs(gotB-0.05) > 1e-6 {
+		t.Fatalf("expected RGB compatibility to bypass spectral conversion, got linear RGB [%f %f %f]", gotR, gotG, gotB)
 	}
 }
 

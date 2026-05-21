@@ -27,6 +27,9 @@ func FresnelDielectric(cosThetaI, etaI, etaT float64) float64 {
 
 func FresnelConductor(cosThetaI float64, eta, k optics.Spectrum) optics.Spectrum {
 	if eta.HasSamples() || k.HasSamples() {
+		if !eta.HasSamples() || !k.HasSamples() {
+			return optics.Spectrum{}
+		}
 		count := eta.SampleCount()
 		if k.SampleCount() > count {
 			count = k.SampleCount()
@@ -48,7 +51,7 @@ func spectrumSampleAt(s optics.Spectrum, i int) float64 {
 	if i < len(s.Samples) {
 		return s.Samples[i]
 	}
-	return s.Average()
+	return 0
 }
 
 func fresnelConductorChannel(cosThetaI, eta, k float64) float64 {
