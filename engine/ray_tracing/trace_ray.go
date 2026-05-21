@@ -57,10 +57,13 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *renderray.Ray, level
 	}
 	prepareMediumContext(&ctx, media, ray, obj.MediumBoundary, hit.FrontFace)
 
-	woLocal, frameOK := worldToLocalNegated(ray.Direction, normal)
+	frame, frameOK := maths.NewFrameFromNormal(normal)
 	if !frameOK {
 		return terminateRay(ray)
-	} else if obj.Material.HasEmission() {
+	}
+
+	woLocal := frame.WorldToLocalNegated(ray.Direction)
+	if obj.Material.HasEmission() {
 		emitted := obj.Material.Emission.Emit(ctx, woLocal)
 		applySpectrum(ray, emitted)
 		return ray.Color
@@ -85,9 +88,7 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *renderray.Ray, level
 		applyMediumTransmission(media, ray, ctx, obj.MediumBoundary, sample)
 	}
 
-	if !localToWorldInto(ray.Direction, sample.Wi, normal) {
-		return terminateRay(ray)
-	}
+	frame.LocalToWorldInto(ray.Direction, sample.Wi)
 	math_lib.Normalize(ray.Direction)
 
 	return h.TraceRay(objTree, ray, level+1)
