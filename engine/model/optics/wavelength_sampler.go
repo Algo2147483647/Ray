@@ -1,7 +1,6 @@
-package ray_tracing
+package optics
 
 import (
-	"github.com/Algo2147483647/ray/engine/model/optics"
 	"math"
 )
 
@@ -21,8 +20,8 @@ type UniformWavelengthSampler struct {
 
 func NewUniformWavelengthSampler() UniformWavelengthSampler {
 	return UniformWavelengthSampler{
-		MinNM: optics.WavelengthMin,
-		MaxNM: optics.WavelengthMax,
+		MinNM: WavelengthMin,
+		MaxNM: WavelengthMax,
 	}
 }
 
@@ -30,10 +29,10 @@ func (s UniformWavelengthSampler) Sample(u float64) WavelengthSample {
 	minNM := s.MinNM
 	maxNM := s.MaxNM
 	if minNM <= 0 {
-		minNM = optics.WavelengthMin
+		minNM = WavelengthMin
 	}
 	if maxNM <= minNM {
-		maxNM = optics.WavelengthMax
+		maxNM = WavelengthMax
 	}
 
 	u = math.Max(1e-6, math.Min(1-1e-6, u))
