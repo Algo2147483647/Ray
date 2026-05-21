@@ -30,7 +30,7 @@ func (p BlackbodyParameter) Eval(ctx optics.WavelengthContext) optics.Spectrum {
 		return optics.NewSampledSpectrum(values)
 	}
 	if ctx != nil && ctx.SpectralWavelengthNM() > 0 {
-		return optics.ConstantSpectrum(p.Scale * relativeBlackbody(ctx.SpectralWavelengthNM(), p.Temperature))
+		return optics.NewSampledSpectrum([]float64{p.Scale * relativeBlackbody(ctx.SpectralWavelengthNM(), p.Temperature)})
 	}
 	return ApproximateBlackbodyRGB(p.Temperature).MulScalar(p.Scale)
 }

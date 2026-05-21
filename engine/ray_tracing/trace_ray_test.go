@@ -154,6 +154,36 @@ func TestApplyMediumAbsorptionUsesSpectralPowerForSampledSigmaA(t *testing.T) {
 	}
 }
 
+func TestApplySpectrumMarksRGBCompatibilityExplicitly(t *testing.T) {
+	ray := &renderray.Ray{}
+	ray.Init()
+	ray.SetSpectralWavelength(610)
+
+	applySpectrum(ray, renderray.NewRGBSpectrum(0.8, 0.1, 0.05))
+
+	if !ray.RGBCompatibilityPath {
+		t.Fatal("expected RGB compatibility path to be marked explicitly")
+	}
+	if ray.SpectralPath {
+		t.Fatal("RGB compatibility should not masquerade as spectral throughput")
+	}
+	if math.Abs(ray.SpectralPower-1) > 1e-12 {
+		t.Fatalf("expected spectral power to stay scalar, got %f", ray.SpectralPower)
+	}
+}
+
+func TestApplySpectrumRejectsSampledSpectrumWithoutWavelength(t *testing.T) {
+	ray := &renderray.Ray{Color: mat.NewVecDense(3, []float64{1, 1, 1})}
+
+	applySpectrum(ray, renderray.NewSampledSpectrum([]float64{0.2, 1.0}))
+
+	for ch := 0; ch < 3; ch++ {
+		if ray.Color.AtVec(ch) != 0 {
+			t.Fatalf("expected sampled spectrum without wavelength context to be rejected, got color %v", ray.Color.RawVector().Data)
+		}
+	}
+}
+
 type sampledCoefficient struct {
 	value float64
 }

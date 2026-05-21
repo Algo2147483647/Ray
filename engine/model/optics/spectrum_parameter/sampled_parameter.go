@@ -32,14 +32,10 @@ func (p SampledParameter) Eval(ctx optics.WavelengthContext) optics.Spectrum {
 		return optics.NewSampledSpectrum(values)
 	}
 	if ctx != nil && ctx.SpectralWavelengthNM() > 0 {
-		return optics.ConstantSpectrum(p.valueAt(ctx.SpectralWavelengthNM()))
+		return optics.NewSampledSpectrum([]float64{p.valueAt(ctx.SpectralWavelengthNM())})
 	}
 
-	sum := 0.0
-	for _, value := range p.Values {
-		sum += value
-	}
-	return optics.ConstantSpectrum(sum / float64(len(p.Values)))
+	return optics.SampledSpectrumToLinearSRGB(p.WavelengthsNM, p.Values)
 }
 
 func (p SampledParameter) Bounds() optics.SpectrumBounds {

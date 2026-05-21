@@ -115,6 +115,9 @@ func TestRayInitResetsReusedThroughput(t *testing.T) {
 	if ray.SpectralPath {
 		t.Fatal("expected spectral path marker to reset")
 	}
+	if ray.RGBCompatibilityPath {
+		t.Fatal("expected RGB compatibility path marker to reset")
+	}
 }
 
 func TestRaySetSpectralSamplePreservesSamplerPDF(t *testing.T) {

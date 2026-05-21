@@ -64,6 +64,24 @@ func SpectralPowerToXYZ(wavelength, pdf, power float64) *mat.VecDense {
 	})
 }
 
+func SampledSpectrumToLinearSRGB(wavelengthsNM, values []float64) Spectrum {
+	if len(wavelengthsNM) == 0 || len(values) == 0 {
+		return Spectrum{}
+	}
+	count := len(wavelengthsNM)
+	if len(values) < count {
+		count = len(values)
+	}
+	xyz := mat.NewVecDense(3, nil)
+	for i := 0; i < count; i++ {
+		sampleXYZ := SpectralPowerToXYZ(wavelengthsNM[i], UniformWavelengthPDF(), values[i])
+		xyz.AddVec(xyz, sampleXYZ)
+	}
+	xyz.ScaleVec(1/float64(count), xyz)
+	r, g, b := XYZToLinearSRGB(xyz.AtVec(0), xyz.AtVec(1), xyz.AtVec(2))
+	return NewRGBSpectrum(math.Max(0, r), math.Max(0, g), math.Max(0, b))
+}
+
 func WavelengthToLinearSRGB(wavelength float64) *mat.VecDense {
 	xyz := WavelengthToXYZ(wavelength)
 	r, g, b := XYZToLinearSRGB(xyz.AtVec(0), xyz.AtVec(1), xyz.AtVec(2))

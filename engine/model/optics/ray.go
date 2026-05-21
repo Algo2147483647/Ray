@@ -10,16 +10,17 @@ import (
 )
 
 type Ray struct {
-	Origin           *mat.VecDense `json:"origin"`
-	Direction        *mat.VecDense `json:"direction"`
-	Color            *mat.VecDense `json:"color"`
-	SpectralPower    float64       `json:"spectral_power"`
-	SpectralPath     bool          `json:"spectral_path"`
-	RGBCompatibility *mat.VecDense `json:"rgb_compatibility"`
-	WaveLength       float64       `json:"wave_length"` // (nm)
-	WavelengthPDF    float64       `json:"wavelength_pdf"`
-	RefractionIndex  float64       `json:"refraction_index"`
-	MediumStack      medium.Stack  `json:"-"`
+	Origin               *mat.VecDense `json:"origin"`
+	Direction            *mat.VecDense `json:"direction"`
+	Color                *mat.VecDense `json:"color"`
+	SpectralPower        float64       `json:"spectral_power"`
+	SpectralPath         bool          `json:"spectral_path"`
+	RGBCompatibility     *mat.VecDense `json:"rgb_compatibility"`
+	RGBCompatibilityPath bool          `json:"rgb_compatibility_path"`
+	WaveLength           float64       `json:"wave_length"` // (nm)
+	WavelengthPDF        float64       `json:"wavelength_pdf"`
+	RefractionIndex      float64       `json:"refraction_index"`
+	MediumStack          medium.Stack  `json:"-"`
 }
 
 func (r *Ray) Init() {
@@ -57,6 +58,7 @@ func (r *Ray) Init() {
 
 	r.SpectralPower = 1
 	r.SpectralPath = false
+	r.RGBCompatibilityPath = false
 	r.RefractionIndex = 1
 	r.MediumStack.Reset(0)
 	r.WaveLength = 0
@@ -104,6 +106,7 @@ func (r *Ray) DisableSpectralSampling() {
 	r.WavelengthPDF = 0
 	r.SpectralPower = 1
 	r.SpectralPath = false
+	r.RGBCompatibilityPath = false
 	if r.Color == nil {
 		r.Color = mat.NewVecDense(3, []float64{1, 1, 1})
 	} else {

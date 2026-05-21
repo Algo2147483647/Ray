@@ -1,6 +1,7 @@
 package spectrum_parameter
 
 import (
+	"math"
 	"testing"
 
 	"github.com/Algo2147483647/ray/engine/model/optics"
@@ -8,6 +9,20 @@ import (
 
 type testWavelengthContext struct {
 	wavelengths []float64
+}
+
+func TestSampledParameterConvertsToRGBWithoutAveragingInRGBContext(t *testing.T) {
+	parameter := NewSampledParameter([]float64{450, 610}, []float64{0.1, 1.0})
+
+	got := parameter.Eval(nil)
+
+	if got.HasSamples() {
+		t.Fatalf("expected RGB compatibility value without wavelength context, got %+v", got)
+	}
+	if math.Abs(got.RGBChannel(0)-got.RGBChannel(1)) < 1e-6 &&
+		math.Abs(got.RGBChannel(1)-got.RGBChannel(2)) < 1e-6 {
+		t.Fatalf("expected sampled spectrum to reconstruct chromatic RGB, got %+v", got)
+	}
 }
 
 func (c testWavelengthContext) SpectralWavelengthNM() float64 {

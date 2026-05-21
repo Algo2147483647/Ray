@@ -9,12 +9,12 @@ func SpectralRayToXYZ(color *mat.VecDense, ray *Ray) *mat.VecDense {
 	power := ray.SpectralPower
 	xyz := SpectralPowerToXYZ(ray.WaveLength, ray.WavelengthPDF, power)
 	compatibility := ray.RGBCompatibility
-	if compatibility == nil {
-		compatibility = color
-	}
-	if !ray.SpectralPath {
+	if !ray.SpectralPath && ray.RGBCompatibilityPath {
 		if compatibility == nil || compatibility.Len() < 3 {
-			return LinearSRGBToXYZ(power, power, power)
+			compatibility = color
+		}
+		if compatibility == nil || compatibility.Len() < 3 {
+			return xyz
 		}
 		return LinearSRGBToXYZ(
 			power*compatibility.AtVec(0),
@@ -22,7 +22,7 @@ func SpectralRayToXYZ(color *mat.VecDense, ray *Ray) *mat.VecDense {
 			power*compatibility.AtVec(2),
 		)
 	}
-	if compatibility == nil || compatibility.Len() < 3 || isWhiteRGB(compatibility) {
+	if !ray.RGBCompatibilityPath || compatibility == nil || compatibility.Len() < 3 {
 		return xyz
 	}
 	r, g, b := XYZToLinearSRGB(xyz.AtVec(0), xyz.AtVec(1), xyz.AtVec(2))
@@ -45,19 +45,4 @@ func XYZToLinearSRGB(x, y, z float64) (float64, float64, float64) {
 	return 3.2404542*x - 1.5371385*y - 0.4985314*z,
 		-0.9692660*x + 1.8760108*y + 0.0415560*z,
 		0.0556434*x - 0.2040259*y + 1.0572252*z
-}
-
-func isWhiteRGB(v *mat.VecDense) bool {
-	const eps = 1e-9
-	return v.Len() >= 3 &&
-		abs(v.AtVec(0)-1) <= eps &&
-		abs(v.AtVec(1)-1) <= eps &&
-		abs(v.AtVec(2)-1) <= eps
-}
-
-func abs(v float64) float64 {
-	if v < 0 {
-		return -v
-	}
-	return v
 }

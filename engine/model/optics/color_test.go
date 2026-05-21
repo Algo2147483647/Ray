@@ -29,11 +29,12 @@ func TestSpectralRayToXYZUsesScalarPower(t *testing.T) {
 
 func TestSpectralRayToXYZPreservesChromaticRGBThroughput(t *testing.T) {
 	ray := &Ray{
-		WaveLength:       610,
-		WavelengthPDF:    UniformWavelengthPDF(),
-		SpectralPower:    1,
-		SpectralPath:     true,
-		RGBCompatibility: mat.NewVecDense(3, []float64{0.8, 0.1, 0.05}),
+		WaveLength:           610,
+		WavelengthPDF:        UniformWavelengthPDF(),
+		SpectralPower:        1,
+		SpectralPath:         true,
+		RGBCompatibilityPath: true,
+		RGBCompatibility:     mat.NewVecDense(3, []float64{0.8, 0.1, 0.05}),
 	}
 	color := mat.NewVecDense(3, []float64{1, 1, 1})
 
@@ -47,11 +48,12 @@ func TestSpectralRayToXYZPreservesChromaticRGBThroughput(t *testing.T) {
 
 func TestSpectralRayToXYZUsesRGBCompatibilityForNonSpectralPath(t *testing.T) {
 	ray := &Ray{
-		WaveLength:       610,
-		WavelengthPDF:    UniformWavelengthPDF(),
-		SpectralPower:    1,
-		SpectralPath:     false,
-		RGBCompatibility: mat.NewVecDense(3, []float64{0.8, 0.1, 0.05}),
+		WaveLength:           610,
+		WavelengthPDF:        UniformWavelengthPDF(),
+		SpectralPower:        1,
+		SpectralPath:         false,
+		RGBCompatibilityPath: true,
+		RGBCompatibility:     mat.NewVecDense(3, []float64{0.8, 0.1, 0.05}),
 	}
 	color := mat.NewVecDense(3, []float64{1, 1, 1})
 
@@ -60,5 +62,24 @@ func TestSpectralRayToXYZUsesRGBCompatibilityForNonSpectralPath(t *testing.T) {
 
 	if math.Abs(gotR-0.8) > 1e-6 || math.Abs(gotG-0.1) > 1e-6 || math.Abs(gotB-0.05) > 1e-6 {
 		t.Fatalf("expected RGB compatibility to bypass spectral conversion, got linear RGB [%f %f %f]", gotR, gotG, gotB)
+	}
+}
+
+func TestSpectralRayToXYZIgnoresCompatibilityWithoutExplicitFlag(t *testing.T) {
+	ray := &Ray{
+		WaveLength:       610,
+		WavelengthPDF:    UniformWavelengthPDF(),
+		SpectralPower:    1,
+		SpectralPath:     true,
+		RGBCompatibility: mat.NewVecDense(3, []float64{0.1, 0.9, 0.1}),
+	}
+
+	got := SpectralRayToXYZ(mat.NewVecDense(3, []float64{1, 1, 1}), ray)
+	want := SpectralPowerToXYZ(610, UniformWavelengthPDF(), 1)
+
+	for ch := 0; ch < 3; ch++ {
+		if math.Abs(got.AtVec(ch)-want.AtVec(ch)) > 1e-12 {
+			t.Fatalf("channel %d used RGB compatibility without explicit flag: got %f want %f", ch, got.AtVec(ch), want.AtVec(ch))
+		}
 	}
 }

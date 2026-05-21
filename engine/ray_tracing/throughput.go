@@ -17,15 +17,13 @@ func applySpectrum(ray *renderray.Ray, spectrum optics.Spectrum) {
 		ray.RGBCompatibility.SetVec(0, ray.RGBCompatibility.AtVec(0)*spectrum.RGBChannel(0))
 		ray.RGBCompatibility.SetVec(1, ray.RGBCompatibility.AtVec(1)*spectrum.RGBChannel(1))
 		ray.RGBCompatibility.SetVec(2, ray.RGBCompatibility.AtVec(2)*spectrum.RGBChannel(2))
+		ray.RGBCompatibilityPath = true
 		return
 	}
 
 	color := ray.Color
 	if spectrum.HasSamples() {
-		power := spectrum.Average()
-		color.SetVec(0, color.AtVec(0)*power)
-		color.SetVec(1, color.AtVec(1)*power)
-		color.SetVec(2, color.AtVec(2)*power)
+		color.Zero()
 		return
 	}
 	color.SetVec(0, color.AtVec(0)*spectrum.RGBChannel(0))
@@ -44,6 +42,7 @@ func terminateRay(ray *renderray.Ray) *mat.VecDense {
 	}
 	ray.SpectralPower = 0
 	ray.SpectralPath = false
+	ray.RGBCompatibilityPath = false
 	if ray.RGBCompatibility != nil {
 		ray.RGBCompatibility.ScaleVec(0, ray.RGBCompatibility)
 	}

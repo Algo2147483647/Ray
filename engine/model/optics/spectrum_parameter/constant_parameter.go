@@ -18,6 +18,9 @@ func (p ConstantParameter) Eval(ctx optics.WavelengthContext) optics.Spectrum {
 		}
 		return optics.NewSampledSpectrum(values)
 	}
+	if ctx != nil && ctx.SpectralWavelengthNM() > 0 {
+		return optics.NewSampledSpectrum([]float64{p.Value})
+	}
 	return optics.ConstantSpectrum(p.Value)
 }
 
