@@ -4,49 +4,76 @@
       "id": "ceiling-light",
       "emission": {
         "type": "constant",
-        "color": [9, 8.7, 8.2]
+        "radiance": {
+          "type": "blackbody",
+          "temperature": 4800,
+          "scale": 16
+        }
       }
     },
     {
       "id": "slit-light",
       "emission": {
         "type": "constant",
-        "color": [1.4, 1.4, 1.4]
+        "radiance": {
+          "type": "constant",
+          "value": 12
+        }
       }
     },
     {
       "id": "matte-floor",
       "surface": {
         "type": "lambert",
-        "albedo": [0.72, 0.71, 0.68]
+        "albedo": {
+          "type": "rgb",
+          "space": "srgb",
+          "value": [0.78, 0.76, 0.71]
+        }
       }
     },
     {
       "id": "matte-back",
       "surface": {
         "type": "lambert",
-        "albedo": [0.62, 0.64, 0.62]
+        "albedo": {
+          "type": "rgb",
+          "space": "srgb",
+          "value": [0.68, 0.7, 0.67]
+        }
       }
     },
     {
       "id": "matte-red",
       "surface": {
         "type": "lambert",
-        "albedo": [0.78, 0.18, 0.14]
+        "albedo": {
+          "type": "rgb",
+          "space": "srgb",
+          "value": [0.86, 0.18, 0.13]
+        }
       }
     },
     {
       "id": "matte-blue",
       "surface": {
         "type": "lambert",
-        "albedo": [0.16, 0.25, 0.78]
+        "albedo": {
+          "type": "rgb",
+          "space": "srgb",
+          "value": [0.16, 0.28, 0.84]
+        }
       }
     },
     {
       "id": "matte-green",
       "surface": {
         "type": "lambert",
-        "albedo": [0.24, 0.58, 0.32]
+        "albedo": {
+          "type": "rgb",
+          "space": "srgb",
+          "value": [0.26, 0.64, 0.34]
+        }
       }
     },
     {
@@ -85,9 +112,22 @@
       "id": "gold-rough-conductor",
       "surface": {
         "type": "rough_conductor",
-        "eta": [0.17, 0.35, 1.5],
-        "k": [3.1, 2.7, 1.9],
-        "roughness": 0.2
+        "eta": {
+          "type": "sampled",
+          "wavelengths_nm": [450, 540, 610, 700],
+          "values": [1.5, 0.72, 0.24, 0.16]
+        },
+        "k": {
+          "type": "sampled",
+          "wavelengths_nm": [450, 540, 610, 700],
+          "values": [1.85, 2.45, 3.5, 4.1]
+        },
+        "roughness": 0.18,
+        "weight": {
+          "type": "rgb",
+          "space": "linear_srgb",
+          "value": [1.0, 0.92, 0.72]
+        }
       }
     }
   ],
@@ -101,7 +141,7 @@
       "sigma_a": {
         "type": "sampled",
         "wavelengths_nm": [380, 460, 540, 620, 750],
-        "values": [0.06, 0.035, 0.09, 0.32, 0.52]
+        "values": [0.04, 0.03, 0.08, 0.28, 0.46]
       },
       "sigma_s": [0.0, 0.0, 0.0]
     }
@@ -190,17 +230,17 @@
     {
       "id": "main-light-0",
       "shape": "triangle",
-      "p1": [-0.85, -0.52, 2.235],
-      "p2": [0.55, -0.52, 2.235],
-      "p3": [-0.85, 0.52, 2.235],
+      "p1": [-1.05, -0.72, 2.235],
+      "p2": [0.78, -0.72, 2.235],
+      "p3": [-1.05, 0.72, 2.235],
       "material_id": "ceiling-light"
     },
     {
       "id": "main-light-1",
       "shape": "triangle",
-      "p1": [0.55, 0.52, 2.235],
-      "p2": [-0.85, 0.52, 2.235],
-      "p3": [0.55, -0.52, 2.235],
+      "p1": [0.78, 0.72, 2.235],
+      "p2": [-1.05, 0.72, 2.235],
+      "p3": [0.78, -0.72, 2.235],
       "material_id": "ceiling-light"
     },
     {
@@ -239,17 +279,17 @@
     {
       "id": "dispersion-slit-0",
       "shape": "triangle",
-      "p1": [1.585, 0.38, 1.23],
-      "p2": [1.585, 0.38, 1.29],
-      "p3": [1.585, 1.32, 1.23],
+      "p1": [1.585, 0.28, 1.18],
+      "p2": [1.585, 0.28, 1.36],
+      "p3": [1.585, 1.38, 1.18],
       "material_id": "slit-light"
     },
     {
       "id": "dispersion-slit-1",
       "shape": "triangle",
-      "p1": [1.585, 1.32, 1.29],
-      "p2": [1.585, 1.32, 1.23],
-      "p3": [1.585, 0.38, 1.29],
+      "p1": [1.585, 1.38, 1.36],
+      "p2": [1.585, 1.38, 1.18],
+      "p3": [1.585, 0.28, 1.36],
       "material_id": "slit-light"
     },
     {
@@ -324,21 +364,24 @@
       "look_at": [0.12, 0.05, 0.88],
       "up": [0, 0, 1],
       "field_of_view": 45,
-      "width": 192,
-      "height": 192
+      "width": 200,
+      "height": 200
     }
   ],
   "render": {
-    "samples": 1000,
+    "samples": 200,
     "thread_num": 0,
-    "width": 192,
-    "height": 192,
+    "width": 200,
+    "height": 200,
     "camera_index": 0,
-    "output_image": "../../outputs/feature-showcase-1000spp.png",
-    "output_film": "../../outputs/feature-showcase-1000spp.bin",
+    "output_image": "../../outputs/feature-showcase-200x200-200spp.png",
+    "output_film": "../../outputs/feature-showcase-200x200-200spp.bin",
     "debug_output": "../../outputs/feature-showcase-debug.json",
-    "exposure": 2.1,
+    "exposure": 1.65,
     "tone_mapping": "reinhard",
-    "gamma": 2.2
+    "gamma": 2.2,
+    "spectrum_mode": "sampled",
+    "wavelength_samples": 6,
+    "color_space": "xyz"
   }
 }
