@@ -52,11 +52,11 @@ func (t *ObjectTree) GetSurfaceInteraction(raySt, rayDir *mat.VecDense, node *Ob
 	if leftOK {
 		tMax = leftInteraction.Distance
 	}
+
 	rightInteraction, rightObj, rightOK := t.GetSurfaceInteraction(raySt, rayDir, node.Children[1], tMin, tMax)
 	if rightOK && (!leftOK || rightInteraction.Distance < leftInteraction.Distance) {
 		return rightInteraction, rightObj, true
-	}
-	if leftOK {
+	} else if leftOK {
 		return leftInteraction, leftObj, true
 	}
 	return shape.SurfaceInteraction{}, nil, false

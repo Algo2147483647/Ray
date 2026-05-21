@@ -31,8 +31,7 @@ func (t *ObjectTree) Update(strategy BVHUpdateStrategy) *ObjectTree {
 func refitNode(node *ObjectNode) *shape.Cuboid {
 	if node == nil {
 		return nil
-	}
-	if node.Obj != nil {
+	} else if node.Obj != nil {
 		if node.Obj.Shape == nil {
 			node.BoundBox = nil
 			return nil
@@ -50,8 +49,7 @@ func refitNode(node *ObjectNode) *shape.Cuboid {
 func leafCount(node *ObjectNode) int {
 	if node == nil {
 		return 0
-	}
-	if node.Obj != nil {
+	} else if node.Obj != nil {
 		return 1
 	}
 	return leafCount(node.Children[0]) + leafCount(node.Children[1])
