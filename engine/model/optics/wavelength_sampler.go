@@ -88,7 +88,7 @@ func NewWeightedWavelengthSampler(minNM, maxNM float64, bins int, weight Wavelen
 func NewCIESensitivityWavelengthSampler(bins int) WeightedWavelengthSampler {
 	return NewWeightedWavelengthSampler(WavelengthMin, WavelengthMax, bins, func(wavelengthNM float64) float64 {
 		xyz := WavelengthToXYZ(wavelengthNM)
-		return xyz.AtVec(1)
+		return xyz[1]
 	})
 }
 

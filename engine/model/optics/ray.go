@@ -12,10 +12,10 @@ import (
 type Ray struct {
 	Origin               *mat.VecDense `json:"origin"`
 	Direction            *mat.VecDense `json:"direction"`
-	Color                *mat.VecDense `json:"color"`
+	Color                RGB           `json:"color"`
 	SpectralPower        float64       `json:"spectral_power"`
 	SpectralPath         bool          `json:"spectral_path"`
-	RGBCompatibility     *mat.VecDense `json:"rgb_compatibility"`
+	RGBCompatibility     RGB           `json:"rgb_compatibility"`
 	RGBCompatibilityPath bool          `json:"rgb_compatibility_path"`
 	WaveLength           float64       `json:"wave_length"` // (nm)
 	WavelengthPDF        float64       `json:"wavelength_pdf"`
@@ -36,25 +36,8 @@ func (r *Ray) Init() {
 		r.Direction.Zero()
 	}
 
-	if r.Color == nil {
-		r.Color = mat.NewVecDense(3, []float64{1, 1, 1})
-	} else if r.Color.Len() == 3 {
-		r.Color.SetVec(0, 1)
-		r.Color.SetVec(1, 1)
-		r.Color.SetVec(2, 1)
-	} else {
-		r.Color = mat.NewVecDense(3, []float64{1, 1, 1})
-	}
-
-	if r.RGBCompatibility == nil {
-		r.RGBCompatibility = mat.NewVecDense(3, []float64{1, 1, 1})
-	} else if r.RGBCompatibility.Len() == 3 {
-		r.RGBCompatibility.SetVec(0, 1)
-		r.RGBCompatibility.SetVec(1, 1)
-		r.RGBCompatibility.SetVec(2, 1)
-	} else {
-		r.RGBCompatibility = mat.NewVecDense(3, []float64{1, 1, 1})
-	}
+	r.Color = RGB{1, 1, 1}
+	r.RGBCompatibility = RGB{1, 1, 1}
 
 	r.SpectralPower = 1
 	r.SpectralPath = false
@@ -91,9 +74,6 @@ func (r *Ray) SetSpectralSample(sample WavelengthSample) {
 	if r.SpectralPower == 0 {
 		r.SpectralPower = 1
 	}
-	if r.RGBCompatibility == nil {
-		r.RGBCompatibility = mat.NewVecDense(3, []float64{1, 1, 1})
-	}
 	r.WaveLength = wavelength
 	r.WavelengthPDF = sample.PDF
 	if r.WavelengthPDF <= 0 || math.IsNaN(r.WavelengthPDF) || math.IsInf(r.WavelengthPDF, 0) {
@@ -107,18 +87,6 @@ func (r *Ray) DisableSpectralSampling() {
 	r.SpectralPower = 1
 	r.SpectralPath = false
 	r.RGBCompatibilityPath = false
-	if r.Color == nil {
-		r.Color = mat.NewVecDense(3, []float64{1, 1, 1})
-	} else {
-		r.Color.SetVec(0, 1)
-		r.Color.SetVec(1, 1)
-		r.Color.SetVec(2, 1)
-	}
-	if r.RGBCompatibility == nil {
-		r.RGBCompatibility = mat.NewVecDense(3, []float64{1, 1, 1})
-	} else {
-		r.RGBCompatibility.SetVec(0, 1)
-		r.RGBCompatibility.SetVec(1, 1)
-		r.RGBCompatibility.SetVec(2, 1)
-	}
+	r.Color = RGB{1, 1, 1}
+	r.RGBCompatibility = RGB{1, 1, 1}
 }

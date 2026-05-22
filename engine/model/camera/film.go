@@ -200,9 +200,9 @@ func (f *Film) spectralXYZAt(pixel int) (float64, float64, float64) {
 			continue
 		}
 		xyz := optics.SpectralRadianceToXYZ(f.SpectralBinCenterNM(bin), f.SpectralBins[bin].Data[pixel])
-		x += xyz.AtVec(0)
-		y += xyz.AtVec(1)
-		z += xyz.AtVec(2)
+		x += xyz[0]
+		y += xyz[1]
+		z += xyz[2]
 	}
 	return x, y, z
 }
@@ -270,7 +270,7 @@ func LinearSRGBToFilmColorSpace(r, g, b float64, space FilmColorSpace) (float64,
 	switch space {
 	case FilmColorSpaceXYZ:
 		xyz := optics.LinearSRGBToXYZ(r, g, b)
-		return xyz.AtVec(0), xyz.AtVec(1), xyz.AtVec(2)
+		return xyz[0], xyz[1], xyz[2]
 	case FilmColorSpaceACEScg:
 		return optics.LinearSRGBToACEScg(r, g, b)
 	default:

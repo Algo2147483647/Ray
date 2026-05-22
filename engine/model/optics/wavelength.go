@@ -2,8 +2,6 @@ package optics
 
 import (
 	"math"
-
-	"gonum.org/v1/gonum/mat"
 )
 
 const (
@@ -17,61 +15,61 @@ func UniformWavelengthPDF() float64 {
 	return 1 / (WavelengthMax - WavelengthMin)
 }
 
-func RGBWeight(wavelength float64) *mat.VecDense {
+func RGBWeight(wavelength float64) RGB {
 	rgb := WavelengthToLinearSRGB(wavelength)
 	white := spectralWhitePoint
-	return mat.NewVecDense(3, []float64{
-		safeDivide(rgb.AtVec(0), white[0]),
-		safeDivide(rgb.AtVec(1), white[1]),
-		safeDivide(rgb.AtVec(2), white[2]),
-	})
+	return RGB{
+		safeDivide(rgb[0], white[0]),
+		safeDivide(rgb[1], white[1]),
+		safeDivide(rgb[2], white[2]),
+	}
 }
 
-func WavelengthToRGB(wavelength float64) *mat.VecDense {
+func WavelengthToRGB(wavelength float64) RGB {
 	return WavelengthToLinearSRGB(wavelength)
 }
 
-func WavelengthToXYZ(wavelength float64) *mat.VecDense {
+func WavelengthToXYZ(wavelength float64) XYZ {
 	if wavelength >= WavelengthMax || wavelength <= WavelengthMin {
-		return mat.NewVecDense(3, nil)
+		return XYZ{}
 	}
 	x, y, z := cie1931Approximation(wavelength)
-	return mat.NewVecDense(3, []float64{
+	return XYZ{
 		math.Max(0, x),
 		math.Max(0, y),
 		math.Max(0, z),
-	})
+	}
 }
 
-func WavelengthToNormalizedXYZ(wavelength, pdf float64) *mat.VecDense {
+func WavelengthToNormalizedXYZ(wavelength, pdf float64) XYZ {
 	xyz := WavelengthToXYZ(wavelength)
 	white := spectralXYZWhitePoint
 	pdfScale := wavelengthPDFScale(pdf)
 
-	return mat.NewVecDense(3, []float64{
-		safeDivide(xyz.AtVec(0)*pdfScale*d65WhiteXYZ[0], white[0]),
-		safeDivide(xyz.AtVec(1)*pdfScale*d65WhiteXYZ[1], white[1]),
-		safeDivide(xyz.AtVec(2)*pdfScale*d65WhiteXYZ[2], white[2]),
-	})
+	return XYZ{
+		safeDivide(xyz[0]*pdfScale*d65WhiteXYZ[0], white[0]),
+		safeDivide(xyz[1]*pdfScale*d65WhiteXYZ[1], white[1]),
+		safeDivide(xyz[2]*pdfScale*d65WhiteXYZ[2], white[2]),
+	}
 }
 
-func SpectralPowerToXYZ(wavelength, pdf, power float64) *mat.VecDense {
+func SpectralPowerToXYZ(wavelength, pdf, power float64) XYZ {
 	xyz := WavelengthToNormalizedXYZ(wavelength, pdf)
-	return mat.NewVecDense(3, []float64{
-		xyz.AtVec(0) * power,
-		xyz.AtVec(1) * power,
-		xyz.AtVec(2) * power,
-	})
+	return XYZ{
+		xyz[0] * power,
+		xyz[1] * power,
+		xyz[2] * power,
+	}
 }
 
-func SpectralRadianceToXYZ(wavelength, radiance float64) *mat.VecDense {
+func SpectralRadianceToXYZ(wavelength, radiance float64) XYZ {
 	xyz := WavelengthToXYZ(wavelength)
 	white := spectralXYZWhitePoint
-	return mat.NewVecDense(3, []float64{
-		safeDivide(xyz.AtVec(0)*d65WhiteXYZ[0], white[0]) * radiance,
-		safeDivide(xyz.AtVec(1)*d65WhiteXYZ[1], white[1]) * radiance,
-		safeDivide(xyz.AtVec(2)*d65WhiteXYZ[2], white[2]) * radiance,
-	})
+	return XYZ{
+		safeDivide(xyz[0]*d65WhiteXYZ[0], white[0]) * radiance,
+		safeDivide(xyz[1]*d65WhiteXYZ[1], white[1]) * radiance,
+		safeDivide(xyz[2]*d65WhiteXYZ[2], white[2]) * radiance,
+	}
 }
 
 func SpectralSampleRadiance(power, pdf float64) float64 {
@@ -86,24 +84,24 @@ func SampledSpectrumToLinearSRGB(wavelengthsNM, values []float64) Spectrum {
 	if len(values) < count {
 		count = len(values)
 	}
-	xyz := mat.NewVecDense(3, nil)
+	xyz := XYZ{}
 	for i := 0; i < count; i++ {
 		sampleXYZ := SpectralPowerToXYZ(wavelengthsNM[i], UniformWavelengthPDF(), values[i])
-		xyz.AddVec(xyz, sampleXYZ)
+		xyz = xyz.Add(sampleXYZ)
 	}
-	xyz.ScaleVec(1/float64(count), xyz)
-	r, g, b := XYZToLinearSRGB(xyz.AtVec(0), xyz.AtVec(1), xyz.AtVec(2))
+	xyz = xyz.MulScalar(1 / float64(count))
+	r, g, b := XYZToLinearSRGB(xyz[0], xyz[1], xyz[2])
 	return NewRGBSpectrum(math.Max(0, r), math.Max(0, g), math.Max(0, b))
 }
 
-func WavelengthToLinearSRGB(wavelength float64) *mat.VecDense {
+func WavelengthToLinearSRGB(wavelength float64) RGB {
 	xyz := WavelengthToXYZ(wavelength)
-	r, g, b := XYZToLinearSRGB(xyz.AtVec(0), xyz.AtVec(1), xyz.AtVec(2))
-	return mat.NewVecDense(3, []float64{
+	r, g, b := XYZToLinearSRGB(xyz[0], xyz[1], xyz[2])
+	return RGB{
 		math.Max(0, r),
 		math.Max(0, g),
 		math.Max(0, b),
-	})
+	}
 }
 
 var spectralWhitePoint = computeSpectralWhitePoint()
@@ -116,9 +114,9 @@ func computeSpectralWhitePoint() [3]float64 {
 		t := (float64(i) + 0.5) / steps
 		wavelength := WavelengthMin + t*(WavelengthMax-WavelengthMin)
 		rgb := WavelengthToRGB(wavelength)
-		sum[0] += rgb.AtVec(0)
-		sum[1] += rgb.AtVec(1)
-		sum[2] += rgb.AtVec(2)
+		sum[0] += rgb[0]
+		sum[1] += rgb[1]
+		sum[2] += rgb[2]
 	}
 	return [3]float64{
 		sum[0] / steps,
@@ -134,9 +132,9 @@ func computeSpectralXYZWhitePoint() [3]float64 {
 		t := (float64(i) + 0.5) / steps
 		wavelength := WavelengthMin + t*(WavelengthMax-WavelengthMin)
 		xyz := WavelengthToXYZ(wavelength)
-		sum[0] += xyz.AtVec(0)
-		sum[1] += xyz.AtVec(1)
-		sum[2] += xyz.AtVec(2)
+		sum[0] += xyz[0]
+		sum[1] += xyz[1]
+		sum[2] += xyz[2]
 	}
 	return [3]float64{
 		sum[0] / steps,

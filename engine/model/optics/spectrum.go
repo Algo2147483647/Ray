@@ -22,7 +22,7 @@ const (
 // ShadingContext.WavelengthsNM and intentionally do not mirror RGB channels.
 type Spectrum struct {
 	Kind    SpectrumKind
-	RGB     [3]float64
+	RGB     RGB
 	Samples []float64
 }
 
@@ -33,7 +33,7 @@ func NewSpectrum(r, g, b float64) Spectrum {
 func NewRGBSpectrum(r, g, b float64) Spectrum {
 	return Spectrum{
 		Kind: SpectrumKindRGB,
-		RGB:  [3]float64{r, g, b},
+		RGB:  NewRGB(r, g, b),
 	}
 }
 
@@ -103,11 +103,7 @@ func (s Spectrum) Add(other Spectrum) Spectrum {
 	}
 	return Spectrum{
 		Kind: SpectrumKindRGB,
-		RGB: [3]float64{
-			s.RGB[0] + other.RGB[0],
-			s.RGB[1] + other.RGB[1],
-			s.RGB[2] + other.RGB[2],
-		},
+		RGB:  s.RGB.Add(other.RGB),
 	}
 }
 
@@ -117,11 +113,7 @@ func (s Spectrum) MulScalar(v float64) Spectrum {
 	}
 	return Spectrum{
 		Kind: SpectrumKindRGB,
-		RGB: [3]float64{
-			s.RGB[0] * v,
-			s.RGB[1] * v,
-			s.RGB[2] * v,
-		},
+		RGB:  s.RGB.MulScalar(v),
 	}
 }
 
@@ -137,11 +129,7 @@ func (s Spectrum) Mul(other Spectrum) Spectrum {
 	}
 	return Spectrum{
 		Kind: SpectrumKindRGB,
-		RGB: [3]float64{
-			s.RGB[0] * other.RGB[0],
-			s.RGB[1] * other.RGB[1],
-			s.RGB[2] * other.RGB[2],
-		},
+		RGB:  s.RGB.Mul(other.RGB),
 	}
 }
 
@@ -154,7 +142,7 @@ func (s Spectrum) IsZero() bool {
 		}
 		return true
 	}
-	return s.RGB[0] == 0 && s.RGB[1] == 0 && s.RGB[2] == 0
+	return s.RGB.IsZero()
 }
 
 func (s Spectrum) UpliftRGBToSampled(wavelengthsNM []float64) Spectrum {
@@ -189,9 +177,9 @@ func (s Spectrum) RGBPowerAtWavelength(wavelengthNM float64) float64 {
 	}
 	weight := RGBWeight(wavelengthNM)
 	return math.Max(0,
-		s.RGB[0]*weight.AtVec(0)+
-			s.RGB[1]*weight.AtVec(1)+
-			s.RGB[2]*weight.AtVec(2),
+		s.RGB[0]*weight[0]+
+			s.RGB[1]*weight[1]+
+			s.RGB[2]*weight[2],
 	)
 }
 
@@ -204,11 +192,7 @@ func (s Spectrum) DivScalar(v float64) Spectrum {
 	}
 	return Spectrum{
 		Kind: SpectrumKindRGB,
-		RGB: [3]float64{
-			s.RGB[0] / v,
-			s.RGB[1] / v,
-			s.RGB[2] / v,
-		},
+		RGB:  s.RGB.DivScalar(v),
 	}
 }
 
@@ -220,7 +204,7 @@ func (s Spectrum) MaxComponent() float64 {
 		}
 		return maxValue
 	}
-	return math.Max(s.RGB[0], math.Max(s.RGB[1], s.RGB[2]))
+	return s.RGB.Max()
 }
 
 func (s Spectrum) IsFinite() bool {
@@ -232,12 +216,7 @@ func (s Spectrum) IsFinite() bool {
 		}
 		return true
 	}
-	for _, value := range s.RGB {
-		if !isFinite(value) {
-			return false
-		}
-	}
-	return true
+	return s.RGB.IsFinite()
 }
 
 func (s Spectrum) IsNonNegative() bool {
@@ -249,12 +228,7 @@ func (s Spectrum) IsNonNegative() bool {
 		}
 		return true
 	}
-	for _, value := range s.RGB {
-		if value < 0 {
-			return false
-		}
-	}
-	return true
+	return s.RGB.IsNonNegative()
 }
 
 func (s Spectrum) AlmostEqual(other Spectrum, eps float64) bool {
@@ -324,5 +298,5 @@ func zeroLikeSampled(a, b Spectrum) Spectrum {
 }
 
 func (s Spectrum) AverageRGB() float64 {
-	return (s.RGB[0] + s.RGB[1] + s.RGB[2]) / 3
+	return s.RGB.Average()
 }

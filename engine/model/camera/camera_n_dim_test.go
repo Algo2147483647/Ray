@@ -37,8 +37,8 @@ func TestCameraNDimGenerateRay3D(t *testing.T) {
 		t.Fatalf("expected camera ray wavelength pdf to remain unset, got %f", ray.WavelengthPDF)
 	}
 	for i := 0; i < 3; i++ {
-		if ray.Color.AtVec(i) != 1 {
-			t.Fatalf("expected camera ray throughput to start white, got %v", ray.Color.RawVector().Data)
+		if ray.Color[i] != 1 {
+			t.Fatalf("expected camera ray throughput to start white, got %v", ray.Color)
 		}
 	}
 }

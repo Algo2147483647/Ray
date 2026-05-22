@@ -7,11 +7,10 @@ import (
 	"github.com/Algo2147483647/ray/engine/model/object"
 	"github.com/Algo2147483647/ray/engine/model/optics"
 	"github.com/Algo2147483647/ray/engine/utils/maths"
-	"gonum.org/v1/gonum/mat"
 	"math/rand/v2"
 )
 
-func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level int64) *mat.VecDense {
+func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level int64) optics.RGB {
 	if level > h.MaxRayLevel {
 		return terminateRay(ray)
 	}

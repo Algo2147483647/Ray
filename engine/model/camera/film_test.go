@@ -114,8 +114,8 @@ func TestFilmConvertsSpectralBinsToWorkingSpace(t *testing.T) {
 	want := optics.SpectralRadianceToXYZ(550, 1)
 
 	for ch := 0; ch < 3; ch++ {
-		if got := film.Data[ch].Data[0]; math.Abs(got-want.AtVec(ch)) > 1e-12 {
-			t.Fatalf("unexpected spectral conversion channel %d: got %f want %f", ch, got, want.AtVec(ch))
+		if got := film.Data[ch].Data[0]; math.Abs(got-want[ch]) > 1e-12 {
+			t.Fatalf("unexpected spectral conversion channel %d: got %f want %f", ch, got, want[ch])
 		}
 	}
 }

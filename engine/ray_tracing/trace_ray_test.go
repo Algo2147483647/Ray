@@ -7,7 +7,6 @@ import (
 
 	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
 	"github.com/Algo2147483647/ray/engine/model/material/medium"
-	"gonum.org/v1/gonum/mat"
 )
 
 func TestPrepareMediumContextKeepsLegacyIORWithoutBoundary(t *testing.T) {
@@ -109,7 +108,7 @@ func TestApplyMediumAbsorptionUsesBeerLambertRGB(t *testing.T) {
 	if err != nil {
 		t.Fatalf("register water: %v", err)
 	}
-	ray := &renderray.Ray{Color: mat.NewVecDense(3, []float64{1, 1, 1})}
+	ray := &renderray.Ray{Color: renderray.RGB{1, 1, 1}}
 	ray.Init()
 	ray.MediumStack.Reset(waterID)
 
@@ -117,8 +116,8 @@ func TestApplyMediumAbsorptionUsesBeerLambertRGB(t *testing.T) {
 
 	want := math.Exp(-1)
 	for ch := 0; ch < 3; ch++ {
-		if math.Abs(ray.Color.AtVec(ch)-want) > 1e-12 {
-			t.Fatalf("channel %d: got %f want %f", ch, ray.Color.AtVec(ch), want)
+		if math.Abs(ray.Color[ch]-want) > 1e-12 {
+			t.Fatalf("channel %d: got %f want %f", ch, ray.Color[ch], want)
 		}
 	}
 }
@@ -173,19 +172,19 @@ func TestApplySpectrumMarksRGBCompatibilityExplicitly(t *testing.T) {
 }
 
 func TestApplySpectrumRejectsSampledSpectrumWithoutWavelength(t *testing.T) {
-	ray := &renderray.Ray{Color: mat.NewVecDense(3, []float64{1, 1, 1})}
+	ray := &renderray.Ray{Color: renderray.RGB{1, 1, 1}}
 
 	applySpectrum(ray, renderray.NewSampledSpectrum([]float64{0.2, 1.0}))
 
 	for ch := 0; ch < 3; ch++ {
-		if ray.Color.AtVec(ch) != 0 {
-			t.Fatalf("expected sampled spectrum without wavelength context to be rejected, got color %v", ray.Color.RawVector().Data)
+		if ray.Color[ch] != 0 {
+			t.Fatalf("expected sampled spectrum without wavelength context to be rejected, got color %v", ray.Color)
 		}
 	}
 }
 
 func TestRussianRouletteSurvivalUsesRGBThroughputMax(t *testing.T) {
-	ray := &renderray.Ray{Color: mat.NewVecDense(3, []float64{0.2, 0.8, 0.4})}
+	ray := &renderray.Ray{Color: renderray.RGB{0.2, 0.8, 0.4}}
 
 	if got := russianRouletteSurvivalProbability(ray); math.Abs(got-0.8) > 1e-12 {
 		t.Fatalf("unexpected RGB survival probability: got %f want 0.8", got)
@@ -193,7 +192,7 @@ func TestRussianRouletteSurvivalUsesRGBThroughputMax(t *testing.T) {
 }
 
 func TestRussianRouletteSurvivalClampsLowThroughput(t *testing.T) {
-	ray := &renderray.Ray{Color: mat.NewVecDense(3, []float64{0.001, 0.002, 0.003})}
+	ray := &renderray.Ray{Color: renderray.RGB{0.001, 0.002, 0.003}}
 
 	if got := russianRouletteSurvivalProbability(ray); math.Abs(got-minRussianRouletteSurvival) > 1e-12 {
 		t.Fatalf("expected low throughput survival clamp, got %f", got)
@@ -201,14 +200,14 @@ func TestRussianRouletteSurvivalClampsLowThroughput(t *testing.T) {
 }
 
 func TestRussianRouletteScalesRGBThroughput(t *testing.T) {
-	ray := &renderray.Ray{Color: mat.NewVecDense(3, []float64{0.2, 0.4, 0.6})}
+	ray := &renderray.Ray{Color: renderray.RGB{0.2, 0.4, 0.6}}
 
 	scaleRayThroughput(ray, 2)
 
-	if math.Abs(ray.Color.AtVec(0)-0.4) > 1e-12 ||
-		math.Abs(ray.Color.AtVec(1)-0.8) > 1e-12 ||
-		math.Abs(ray.Color.AtVec(2)-1.2) > 1e-12 {
-		t.Fatalf("unexpected scaled RGB throughput: %v", ray.Color.RawVector().Data)
+	if math.Abs(ray.Color[0]-0.4) > 1e-12 ||
+		math.Abs(ray.Color[1]-0.8) > 1e-12 ||
+		math.Abs(ray.Color[2]-1.2) > 1e-12 {
+		t.Fatalf("unexpected scaled RGB throughput: %v", ray.Color)
 	}
 }
 

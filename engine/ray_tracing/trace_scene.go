@@ -76,7 +76,7 @@ func (h *Handler) TraceScene(renderCamera camera.Camera, objectTree *object.Obje
 						} else {
 							color := h.TracePixel(renderCamera, objectTree, samples, coords...)
 							for ch := 0; ch < 3; ch++ {
-								film.Data[ch].Data[pixel] = color.AtVec(ch)
+								film.Data[ch].Data[pixel] = color[ch]
 							}
 						}
 						rendered++

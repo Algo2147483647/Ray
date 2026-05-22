@@ -36,7 +36,6 @@ func NewHandler() *Handler {
 				return &optics.Ray{
 					Origin:    mat.NewVecDense(utils.Dimension, nil),
 					Direction: mat.NewVecDense(utils.Dimension, nil),
-					Color:     mat.NewVecDense(3, nil),
 				}
 			},
 		},

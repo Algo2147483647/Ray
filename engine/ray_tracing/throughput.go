@@ -3,7 +3,6 @@ package ray_tracing
 import (
 	"github.com/Algo2147483647/ray/engine/model/optics"
 	renderray "github.com/Algo2147483647/ray/engine/model/optics"
-	"gonum.org/v1/gonum/mat"
 	"math"
 )
 
@@ -16,46 +15,28 @@ func applySpectrum(ray *renderray.Ray, spectrum optics.Spectrum) {
 			ray.SpectralPath = true
 			return
 		}
-		ensureRGBCompatibility(ray)
-		ray.RGBCompatibility.SetVec(0, ray.RGBCompatibility.AtVec(0)*spectrum.RGBChannel(0))
-		ray.RGBCompatibility.SetVec(1, ray.RGBCompatibility.AtVec(1)*spectrum.RGBChannel(1))
-		ray.RGBCompatibility.SetVec(2, ray.RGBCompatibility.AtVec(2)*spectrum.RGBChannel(2))
+		ray.RGBCompatibility = ray.RGBCompatibility.Mul(spectrum.RGB)
 		ray.RGBCompatibilityPath = true
 		return
 	}
 
-	color := ray.Color
 	if spectrum.HasSamples() {
-		color.Zero()
+		ray.Color = optics.RGB{}
 		return
 	}
-	color.SetVec(0, color.AtVec(0)*spectrum.RGBChannel(0))
-	color.SetVec(1, color.AtVec(1)*spectrum.RGBChannel(1))
-	color.SetVec(2, color.AtVec(2)*spectrum.RGBChannel(2))
+	ray.Color = ray.Color.Mul(spectrum.RGB)
 }
 
-func terminateRay(ray *renderray.Ray) *mat.VecDense {
+func terminateRay(ray *renderray.Ray) optics.RGB {
 	if ray == nil {
-		return mat.NewVecDense(3, nil)
+		return optics.RGB{}
 	}
-	if ray.Color == nil {
-		ray.Color = mat.NewVecDense(3, nil)
-	} else {
-		ray.Color.ScaleVec(0, ray.Color)
-	}
+	ray.Color = optics.RGB{}
 	ray.SpectralPower = 0
 	ray.SpectralPath = false
 	ray.RGBCompatibilityPath = false
-	if ray.RGBCompatibility != nil {
-		ray.RGBCompatibility.ScaleVec(0, ray.RGBCompatibility)
-	}
+	ray.RGBCompatibility = optics.RGB{}
 	return ray.Color
-}
-
-func ensureRGBCompatibility(ray *renderray.Ray) {
-	if ray.RGBCompatibility == nil || ray.RGBCompatibility.Len() != 3 {
-		ray.RGBCompatibility = mat.NewVecDense(3, []float64{1, 1, 1})
-	}
 }
 
 func russianRouletteSurvivalProbability(ray *renderray.Ray) float64 {
@@ -64,15 +45,12 @@ func russianRouletteSurvivalProbability(ray *renderray.Ray) float64 {
 	}
 	if ray.WaveLength > 0 {
 		throughput := finiteNonNegative(ray.SpectralPower)
-		if ray.RGBCompatibilityPath && ray.RGBCompatibility != nil && ray.RGBCompatibility.Len() == 3 {
-			throughput *= maxVecChannel(ray.RGBCompatibility)
+		if ray.RGBCompatibilityPath {
+			throughput *= maxRGBChannel(ray.RGBCompatibility)
 		}
 		return clampSurvival(throughput)
 	}
-	if ray.Color == nil || ray.Color.Len() == 0 {
-		return 0
-	}
-	return clampSurvival(maxVecChannel(ray.Color))
+	return clampSurvival(maxRGBChannel(ray.Color))
 }
 
 func scaleRayThroughput(ray *renderray.Ray, scale float64) {
@@ -83,18 +61,13 @@ func scaleRayThroughput(ray *renderray.Ray, scale float64) {
 		ray.SpectralPower *= scale
 		return
 	}
-	if ray.Color != nil {
-		ray.Color.ScaleVec(scale, ray.Color)
-	}
+	ray.Color = ray.Color.MulScalar(scale)
 }
 
-func maxVecChannel(v *mat.VecDense) float64 {
-	if v == nil || v.Len() == 0 {
-		return 0
-	}
+func maxRGBChannel(v optics.RGB) float64 {
 	maxValue := 0.0
-	for i := 0; i < v.Len(); i++ {
-		maxValue = math.Max(maxValue, finiteNonNegative(v.AtVec(i)))
+	for i := 0; i < 3; i++ {
+		maxValue = math.Max(maxValue, finiteNonNegative(v[i]))
 	}
 	return maxValue
 }

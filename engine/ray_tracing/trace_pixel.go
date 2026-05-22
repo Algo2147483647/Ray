@@ -1,27 +1,25 @@
 package ray_tracing
 
 import (
-	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
 	rendercamera "github.com/Algo2147483647/ray/engine/model/camera"
 	"github.com/Algo2147483647/ray/engine/model/object"
 	"github.com/Algo2147483647/ray/engine/model/optics"
-	"gonum.org/v1/gonum/mat"
 	"math/rand/v2"
 )
 
-func (h *Handler) TracePixel(renderCamera rendercamera.Camera, objTree *object.ObjectTree, samples int64, index ...int) *mat.VecDense {
+func (h *Handler) TracePixel(renderCamera rendercamera.Camera, objTree *object.ObjectTree, samples int64, index ...int) optics.Color3 {
 	color, _ := h.tracePixel(renderCamera, objTree, samples, nil, index...)
 	return color
 }
 
-func (h *Handler) TracePixelWithSpectralDiagnostics(renderCamera rendercamera.Camera, objTree *object.ObjectTree, samples int64, index ...int) (*mat.VecDense, []rendercamera.SpectralSample) {
+func (h *Handler) TracePixelWithSpectralDiagnostics(renderCamera rendercamera.Camera, objTree *object.ObjectTree, samples int64, index ...int) (optics.Color3, []rendercamera.SpectralSample) {
 	diagnostics := make([]rendercamera.SpectralSample, 0)
 	color, diagnostics := h.tracePixel(renderCamera, objTree, samples, diagnostics, index...)
 	return color, diagnostics
 }
 
-func (h *Handler) tracePixel(renderCamera rendercamera.Camera, objTree *object.ObjectTree, samples int64, diagnostics []rendercamera.SpectralSample, index ...int) (*mat.VecDense, []rendercamera.SpectralSample) {
-	color := mat.NewVecDense(3, nil)
+func (h *Handler) tracePixel(renderCamera rendercamera.Camera, objTree *object.ObjectTree, samples int64, diagnostics []rendercamera.SpectralSample, index ...int) (optics.Color3, []rendercamera.SpectralSample) {
+	color := optics.Color3{}
 	ray := h.RayPool.Get().(*optics.Ray) // new ray
 	defer h.RayPool.Put(ray)
 
@@ -35,12 +33,12 @@ func (h *Handler) tracePixel(renderCamera rendercamera.Camera, objTree *object.O
 			ray.DisableSpectralSampling()
 			contribution := h.TraceRay(objTree, ray, 0)
 			r, g, b := rendercamera.LinearSRGBToFilmColorSpace(
-				contribution.AtVec(0),
-				contribution.AtVec(1),
-				contribution.AtVec(2),
+				contribution[0],
+				contribution[1],
+				contribution[2],
 				h.WorkingSpace,
 			)
-			color.AddVec(color, mat.NewVecDense(3, []float64{r, g, b}))
+			color = color.Add(optics.Color3{r, g, b})
 			totalTraces++
 
 		case optics.SpectrumModeSampledWavelengths:
@@ -54,7 +52,7 @@ func (h *Handler) tracePixel(renderCamera rendercamera.Camera, objTree *object.O
 				ray.SetSpectralSample(sample)
 				traced := h.TraceRay(objTree, ray, 0)
 				contribution := optics.SpectralRayToXYZ(traced, ray)
-				color.AddVec(color, xyzToWorkingVec(contribution, h.WorkingSpace))
+				color = color.Add(xyzToWorkingColor(contribution, h.WorkingSpace))
 				diagnostics = appendSpectralDiagnostic(diagnostics, sample, contribution)
 				totalTraces++
 			}
@@ -65,7 +63,7 @@ func (h *Handler) tracePixel(renderCamera rendercamera.Camera, objTree *object.O
 			ray.SetSpectralSample(sample)
 			traced := h.TraceRay(objTree, ray, 0)
 			contribution := optics.SpectralRayToXYZ(traced, ray)
-			color.AddVec(color, xyzToWorkingVec(contribution, h.WorkingSpace))
+			color = color.Add(xyzToWorkingColor(contribution, h.WorkingSpace))
 			diagnostics = appendSpectralDiagnostic(diagnostics, sample, contribution)
 			totalTraces++
 		}
@@ -74,7 +72,7 @@ func (h *Handler) tracePixel(renderCamera rendercamera.Camera, objTree *object.O
 	if totalTraces == 0 {
 		return color, diagnostics
 	}
-	return math_lib.ScaleVec(color, 1.0/float64(totalTraces), color), diagnostics
+	return color.MulScalar(1.0 / float64(totalTraces)), diagnostics
 }
 
 func (h *Handler) TracePixelSpectralSamples(renderCamera rendercamera.Camera, objTree *object.ObjectTree, samples int64, index ...int) []rendercamera.SpectralSample {
@@ -132,20 +130,17 @@ func (h *Handler) TracePixelSpectralSamples(renderCamera rendercamera.Camera, ob
 	return spectralSamples
 }
 
-func xyzToWorkingVec(xyz *mat.VecDense, space rendercamera.FilmColorSpace) *mat.VecDense {
-	if xyz == nil || xyz.Len() < 3 {
-		return mat.NewVecDense(3, nil)
-	}
-	a, b, c := rendercamera.XYZToFilmColorSpace(xyz.AtVec(0), xyz.AtVec(1), xyz.AtVec(2), space)
-	return mat.NewVecDense(3, []float64{a, b, c})
+func xyzToWorkingColor(xyz optics.XYZ, space rendercamera.FilmColorSpace) optics.Color3 {
+	a, b, c := rendercamera.XYZToFilmColorSpace(xyz[0], xyz[1], xyz[2], space)
+	return optics.Color3{a, b, c}
 }
 
-func appendSpectralDiagnostic(diagnostics []rendercamera.SpectralSample, sample optics.WavelengthSample, contribution *mat.VecDense) []rendercamera.SpectralSample {
-	if diagnostics == nil || contribution == nil || contribution.Len() < 2 {
+func appendSpectralDiagnostic(diagnostics []rendercamera.SpectralSample, sample optics.WavelengthSample, contribution optics.XYZ) []rendercamera.SpectralSample {
+	if diagnostics == nil {
 		return diagnostics
 	}
 	return append(diagnostics, rendercamera.SpectralSample{
 		WavelengthNM: sample.LambdaNM,
-		Value:        contribution.AtVec(1),
+		Value:        contribution[1],
 	})
 }
