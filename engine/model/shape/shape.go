@@ -73,13 +73,11 @@ func newSurfaceInteraction(rayStart, rayDir *mat.VecDense, distance float64, nor
 }
 
 func newSurfaceInteractionAt(point *mat.VecDense, distance float64, normal *mat.VecDense) SurfaceInteraction {
-	geometricNormal := mat.VecDenseCopyOf(normal)
-	shadingNormal := mat.VecDenseCopyOf(normal)
 	return SurfaceInteraction{
 		Distance:        distance,
 		Point:           point,
-		GeometricNormal: geometricNormal,
-		ShadingNormal:   shadingNormal,
+		GeometricNormal: normal,
+		ShadingNormal:   normal,
 		PrimitiveID:     -1,
 	}
 }

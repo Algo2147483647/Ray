@@ -95,6 +95,31 @@ func TestSurfaceHitCarriesInteractionData(t *testing.T) {
 	}
 }
 
+func TestSurfaceHitDoesNotMutateShapeOwnedNormal(t *testing.T) {
+	triangle := shape.NewTriangle(
+		mat.NewVecDense(3, []float64{0, 0, 0}),
+		mat.NewVecDense(3, []float64{1, 0, 0}),
+		mat.NewVecDense(3, []float64{0, 1, 0}),
+	)
+	tree := &ObjectTree{}
+	tree.AddObject(&Object{Shape: triangle})
+	tree.Build()
+
+	original := mat.VecDenseCopyOf(triangle.Mem.Normal)
+	hit, ok := tree.GetSurfaceHit(
+		mat.NewVecDense(3, []float64{0.25, 0.25, 1}),
+		mat.NewVecDense(3, []float64{0, 0, -1}),
+	)
+	if !ok {
+		t.Fatal("expected triangle hit")
+	}
+
+	hit.GeometricNormal.SetVec(2, 42)
+	if !mat.EqualApprox(triangle.Mem.Normal, original, 1e-12) {
+		t.Fatalf("surface hit normal mutation leaked into triangle normal: got %v want %v", triangle.Mem.Normal.RawVector().Data, original.RawVector().Data)
+	}
+}
+
 func testBox(x0, y0, z0, x1, y1, z1 float64) *shape.Cuboid {
 	return shape.NewCuboid(
 		mat.NewVecDense(3, []float64{x0, y0, z0}),

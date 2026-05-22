@@ -72,11 +72,13 @@ func (t *ObjectTree) GetSurfaceHit(raySt, rayDir *mat.VecDense) (*SurfaceHit, bo
 	if geometricNormal == nil {
 		geometricNormal = obj.Shape.GetNormalVector(interaction.Point, mat.NewVecDense(interaction.Point.Len(), nil))
 	}
+	geometricNormal = mat.VecDenseCopyOf(geometricNormal)
 	math_lib.Normalize(geometricNormal)
 
 	frontFace := mat.Dot(geometricNormal, rayDir) < 0
-	shadingNormal := mat.VecDenseCopyOf(geometricNormal)
+	shadingNormal := geometricNormal
 	if !frontFace {
+		shadingNormal = mat.VecDenseCopyOf(geometricNormal)
 		shadingNormal.ScaleVec(-1, shadingNormal)
 	}
 
