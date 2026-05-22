@@ -16,9 +16,13 @@ type Triangle struct {
 }
 
 type TriangleCalculateStorage struct {
-	Edge1  *mat.VecDense
-	Edge2  *mat.VecDense
-	Normal *mat.VecDense
+	Edge1    *mat.VecDense
+	Edge2    *mat.VecDense
+	Normal   *mat.VecDense
+	P1XYZ    [3]float64
+	Edge1XYZ [3]float64
+	Edge2XYZ [3]float64
+	Has3D    bool
 }
 
 func NewTriangle(P1, P2, P3 *mat.VecDense) *Triangle {
@@ -34,6 +38,12 @@ func NewTriangle(P1, P2, P3 *mat.VecDense) *Triangle {
 		},
 	}
 	res.Mem.Normal = res.GetNormalVectorPure()
+	if P1.Len() == 3 {
+		res.Mem.P1XYZ = vecDenseXYZ(P1)
+		res.Mem.Edge1XYZ = vecDenseXYZ(res.Mem.Edge1)
+		res.Mem.Edge2XYZ = vecDenseXYZ(res.Mem.Edge2)
+		res.Mem.Has3D = true
+	}
 
 	return res
 }
@@ -59,7 +69,7 @@ func (f *Triangle) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float6
 }
 
 func (f *Triangle) IntersectCandidate(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceCandidate, bool) {
-	if f.P1.Len() == 3 && raySt.Len() == 3 && rayDir.Len() == 3 {
+	if f.Mem.Has3D && raySt.Len() == 3 && rayDir.Len() == 3 {
 		return f.intersectCandidate3D(raySt, rayDir, tMin, tMax)
 	}
 
@@ -125,9 +135,9 @@ func (f *Triangle) intersectCandidate3D(raySt, rayDir *mat.VecDense, tMin, tMax 
 	ox, oy, oz := raySt.AtVec(0), raySt.AtVec(1), raySt.AtVec(2)
 	dx, dy, dz := rayDir.AtVec(0), rayDir.AtVec(1), rayDir.AtVec(2)
 
-	p1x, p1y, p1z := f.P1.AtVec(0), f.P1.AtVec(1), f.P1.AtVec(2)
-	e1x, e1y, e1z := f.Mem.Edge1.AtVec(0), f.Mem.Edge1.AtVec(1), f.Mem.Edge1.AtVec(2)
-	e2x, e2y, e2z := f.Mem.Edge2.AtVec(0), f.Mem.Edge2.AtVec(1), f.Mem.Edge2.AtVec(2)
+	p1x, p1y, p1z := f.Mem.P1XYZ[0], f.Mem.P1XYZ[1], f.Mem.P1XYZ[2]
+	e1x, e1y, e1z := f.Mem.Edge1XYZ[0], f.Mem.Edge1XYZ[1], f.Mem.Edge1XYZ[2]
+	e2x, e2y, e2z := f.Mem.Edge2XYZ[0], f.Mem.Edge2XYZ[1], f.Mem.Edge2XYZ[2]
 
 	px := dy*e2z - dz*e2y
 	py := dz*e2x - dx*e2z

@@ -35,7 +35,12 @@ func (t *ObjectTree) GetSurfaceInteraction(raySt, rayDir *mat.VecDense, node *Ob
 	if !ok {
 		return shape.SurfaceInteraction{}, nil, false
 	}
-	return shape.SurfaceInteractionFromCandidate(raySt, rayDir, candidate), obj, true
+	interaction := shape.SurfaceInteractionFromCandidate(raySt, rayDir, candidate)
+	if interaction.GeometricNormal == nil && obj != nil {
+		interaction.GeometricNormal = obj.Shape.GetNormalVector(interaction.Point, mat.NewVecDense(interaction.Point.Len(), nil))
+		interaction.ShadingNormal = interaction.GeometricNormal
+	}
+	return interaction, obj, true
 }
 
 func (t *ObjectTree) getSurfaceCandidate(raySt, rayDir *mat.VecDense, node *ObjectNode, tMin, tMax float64) (shape.SurfaceCandidate, *Object, bool) {

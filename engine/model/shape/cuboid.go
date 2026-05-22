@@ -79,6 +79,10 @@ func (c *Cuboid) OverlapRangeNear(raySt, rayDir *mat.VecDense, tMin, tMax float6
 }
 
 func (c *Cuboid) intersectionInterval(raySt, rayDir *mat.VecDense) (float64, float64, bool) {
+	if c.Pmin.Len() == 3 && c.Pmax.Len() == 3 && raySt.Len() == 3 && rayDir.Len() == 3 {
+		return c.intersectionInterval3D(raySt, rayDir)
+	}
+
 	t0 := -math.MaxFloat64
 	t1 := math.MaxFloat64
 
@@ -108,6 +112,47 @@ func (c *Cuboid) intersectionInterval(raySt, rayDir *mat.VecDense) (float64, flo
 		}
 	}
 	return t0, t1, true
+}
+
+func (c *Cuboid) intersectionInterval3D(raySt, rayDir *mat.VecDense) (float64, float64, bool) {
+	ox, oy, oz := raySt.AtVec(0), raySt.AtVec(1), raySt.AtVec(2)
+	dx, dy, dz := rayDir.AtVec(0), rayDir.AtVec(1), rayDir.AtVec(2)
+	minX, minY, minZ := c.Pmin.AtVec(0), c.Pmin.AtVec(1), c.Pmin.AtVec(2)
+	maxX, maxY, maxZ := c.Pmax.AtVec(0), c.Pmax.AtVec(1), c.Pmax.AtVec(2)
+
+	t0 := -math.MaxFloat64
+	t1 := math.MaxFloat64
+
+	if !updateIntervalAxis(ox, dx, minX, maxX, &t0, &t1) {
+		return 0, 0, false
+	}
+	if !updateIntervalAxis(oy, dy, minY, maxY, &t0, &t1) {
+		return 0, 0, false
+	}
+	if !updateIntervalAxis(oz, dz, minZ, maxZ, &t0, &t1) {
+		return 0, 0, false
+	}
+	return t0, t1, true
+}
+
+func updateIntervalAxis(origin, direction, pmin, pmax float64, t0, t1 *float64) bool {
+	if math.Abs(direction) < utils.EPS {
+		return origin >= pmin && origin <= pmax
+	}
+
+	near := (pmin - origin) / direction
+	far := (pmax - origin) / direction
+	if near > far {
+		near, far = far, near
+	}
+
+	if near > *t0 {
+		*t0 = near
+	}
+	if far < *t1 {
+		*t1 = far
+	}
+	return *t0 <= *t1 && *t1 >= utils.EPS
 }
 
 // GetNormalVector computes the normal vector at the intersection point.

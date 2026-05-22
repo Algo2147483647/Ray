@@ -76,10 +76,27 @@ func distanceInRange(distance, tMin, tMax float64) bool {
 	return distance >= tMin && distance <= tMax && !math.IsNaN(distance) && !math.IsInf(distance, 0)
 }
 
+func closestDistance(root1, root2, tMin, tMax float64) float64 {
+	switch {
+	case distanceInRange(root1, tMin, tMax) && distanceInRange(root2, tMin, tMax):
+		return math.Min(root1, root2)
+	case distanceInRange(root1, tMin, tMax):
+		return root1
+	case distanceInRange(root2, tMin, tMax):
+		return root2
+	default:
+		return math.MaxFloat64
+	}
+}
+
 func pointAt(rayStart, rayDir *mat.VecDense, distance float64) *mat.VecDense {
 	point := mat.NewVecDense(rayStart.Len(), nil)
 	point.AddScaledVec(rayStart, distance, rayDir)
 	return point
+}
+
+func vecDenseXYZ(v *mat.VecDense) [3]float64 {
+	return [3]float64{v.AtVec(0), v.AtVec(1), v.AtVec(2)}
 }
 
 func newSurfaceInteraction(rayStart, rayDir *mat.VecDense, distance float64, normal *mat.VecDense) SurfaceInteraction {
