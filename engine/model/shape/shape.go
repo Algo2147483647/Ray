@@ -17,6 +17,21 @@ type SurfaceInteraction struct {
 	PrimitiveID     int
 }
 
+type SurfaceCandidate struct {
+	Distance        float64
+	Point           *mat.VecDense
+	GeometricNormal *mat.VecDense
+	ShadingNormal   *mat.VecDense
+	UV              [2]float64
+	DPDU            *mat.VecDense
+	DPDV            *mat.VecDense
+	PrimitiveID     int
+}
+
+type SurfaceCandidateProvider interface {
+	IntersectCandidate(rayStart, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceCandidate, bool)
+}
+
 // Shape represents the interface for geometric shapes.
 type Shape interface {
 	Name() string
@@ -70,6 +85,23 @@ func pointAt(rayStart, rayDir *mat.VecDense, distance float64) *mat.VecDense {
 func newSurfaceInteraction(rayStart, rayDir *mat.VecDense, distance float64, normal *mat.VecDense) SurfaceInteraction {
 	point := pointAt(rayStart, rayDir, distance)
 	return newSurfaceInteractionAt(point, distance, normal)
+}
+
+func SurfaceInteractionFromCandidate(rayStart, rayDir *mat.VecDense, candidate SurfaceCandidate) SurfaceInteraction {
+	point := candidate.Point
+	if point == nil {
+		point = pointAt(rayStart, rayDir, candidate.Distance)
+	}
+	return SurfaceInteraction{
+		Distance:        candidate.Distance,
+		Point:           point,
+		GeometricNormal: candidate.GeometricNormal,
+		ShadingNormal:   candidate.ShadingNormal,
+		UV:              candidate.UV,
+		DPDU:            candidate.DPDU,
+		DPDV:            candidate.DPDV,
+		PrimitiveID:     candidate.PrimitiveID,
+	}
 }
 
 func newSurfaceInteractionAt(point *mat.VecDense, distance float64, normal *mat.VecDense) SurfaceInteraction {

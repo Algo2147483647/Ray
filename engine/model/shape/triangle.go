@@ -51,8 +51,16 @@ func (f *Triangle) Intersect(raySt, rayDir *mat.VecDense) float64 {
 }
 
 func (f *Triangle) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
+	candidate, ok := f.IntersectCandidate(raySt, rayDir, tMin, tMax)
+	if !ok {
+		return SurfaceInteraction{}, false
+	}
+	return SurfaceInteractionFromCandidate(raySt, rayDir, candidate), true
+}
+
+func (f *Triangle) IntersectCandidate(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceCandidate, bool) {
 	if f.P1.Len() == 3 && raySt.Len() == 3 && rayDir.Len() == 3 {
-		return f.intersectRange3D(raySt, rayDir, tMin, tMax)
+		return f.intersectCandidate3D(raySt, rayDir, tMin, tMax)
 	}
 
 	t := utils.VectorPool.Get().(*mat.VecDense)
@@ -73,22 +81,22 @@ func (f *Triangle) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float6
 		a = -a
 	}
 	if a < utils.EPS {
-		return SurfaceInteraction{}, false
+		return SurfaceCandidate{}, false
 	}
 
 	math_lib.Cross(q, t, f.Mem.Edge1)
 	u := mat.Dot(t, p) / a
 	v := mat.Dot(rayDir, q) / a
 	if u < 0 || u > 1 {
-		return SurfaceInteraction{}, false
+		return SurfaceCandidate{}, false
 	}
 	if v < 0 || u+v > 1 {
-		return SurfaceInteraction{}, false
+		return SurfaceCandidate{}, false
 	}
 
 	distance := mat.Dot(f.Mem.Edge2, q) / a
 	if !distanceInRange(distance, tMin, tMax) {
-		return SurfaceInteraction{}, false
+		return SurfaceCandidate{}, false
 	}
 
 	if f.EngravingFunc != nil {
@@ -98,18 +106,22 @@ func (f *Triangle) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float6
 			"distance":  distance,
 			"self":      f,
 		}) {
-			return SurfaceInteraction{}, false
+			return SurfaceCandidate{}, false
 		}
 	}
 
-	interaction := newSurfaceInteraction(raySt, rayDir, distance, f.Mem.Normal)
-	interaction.UV = [2]float64{u, v}
-	interaction.DPDU = f.Mem.Edge1
-	interaction.DPDV = f.Mem.Edge2
-	return interaction, true
+	return SurfaceCandidate{
+		Distance:        distance,
+		GeometricNormal: f.Mem.Normal,
+		ShadingNormal:   f.Mem.Normal,
+		UV:              [2]float64{u, v},
+		DPDU:            f.Mem.Edge1,
+		DPDV:            f.Mem.Edge2,
+		PrimitiveID:     -1,
+	}, true
 }
 
-func (f *Triangle) intersectRange3D(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
+func (f *Triangle) intersectCandidate3D(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceCandidate, bool) {
 	ox, oy, oz := raySt.AtVec(0), raySt.AtVec(1), raySt.AtVec(2)
 	dx, dy, dz := rayDir.AtVec(0), rayDir.AtVec(1), rayDir.AtVec(2)
 
@@ -122,7 +134,7 @@ func (f *Triangle) intersectRange3D(raySt, rayDir *mat.VecDense, tMin, tMax floa
 	pz := dx*e2y - dy*e2x
 	det := e1x*px + e1y*py + e1z*pz
 	if math.Abs(det) < utils.EPS {
-		return SurfaceInteraction{}, false
+		return SurfaceCandidate{}, false
 	}
 
 	invDet := 1 / det
@@ -131,7 +143,7 @@ func (f *Triangle) intersectRange3D(raySt, rayDir *mat.VecDense, tMin, tMax floa
 	tz := oz - p1z
 	u := (tx*px + ty*py + tz*pz) * invDet
 	if u < 0 || u > 1 {
-		return SurfaceInteraction{}, false
+		return SurfaceCandidate{}, false
 	}
 
 	qx := ty*e1z - tz*e1y
@@ -139,12 +151,12 @@ func (f *Triangle) intersectRange3D(raySt, rayDir *mat.VecDense, tMin, tMax floa
 	qz := tx*e1y - ty*e1x
 	v := (dx*qx + dy*qy + dz*qz) * invDet
 	if v < 0 || u+v > 1 {
-		return SurfaceInteraction{}, false
+		return SurfaceCandidate{}, false
 	}
 
 	distance := (e2x*qx + e2y*qy + e2z*qz) * invDet
 	if !distanceInRange(distance, tMin, tMax) {
-		return SurfaceInteraction{}, false
+		return SurfaceCandidate{}, false
 	}
 
 	if f.EngravingFunc != nil {
@@ -154,15 +166,19 @@ func (f *Triangle) intersectRange3D(raySt, rayDir *mat.VecDense, tMin, tMax floa
 			"distance":  distance,
 			"self":      f,
 		}) {
-			return SurfaceInteraction{}, false
+			return SurfaceCandidate{}, false
 		}
 	}
 
-	interaction := newSurfaceInteraction(raySt, rayDir, distance, f.Mem.Normal)
-	interaction.UV = [2]float64{u, v}
-	interaction.DPDU = f.Mem.Edge1
-	interaction.DPDV = f.Mem.Edge2
-	return interaction, true
+	return SurfaceCandidate{
+		Distance:        distance,
+		GeometricNormal: f.Mem.Normal,
+		ShadingNormal:   f.Mem.Normal,
+		UV:              [2]float64{u, v},
+		DPDU:            f.Mem.Edge1,
+		DPDV:            f.Mem.Edge2,
+		PrimitiveID:     -1,
+	}, true
 }
 
 func (f *Triangle) GetNormalVector(_, res *mat.VecDense) *mat.VecDense {
