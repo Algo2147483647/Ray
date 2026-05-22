@@ -4,6 +4,8 @@ import (
 	"math"
 	"testing"
 
+	"github.com/Algo2147483647/ray/engine/model/material/medium"
+	"github.com/Algo2147483647/ray/engine/model/optics"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -65,5 +67,31 @@ func TestCameraNDimGenerateRay4D(t *testing.T) {
 	}
 	if norm := mat.Norm(ray.Direction, 2); math.Abs(norm-1.0) > 1e-10 {
 		t.Fatalf("expected normalized direction, got norm %f", norm)
+	}
+}
+
+func TestCameraNDimGenerateRayResetsReusedRayMediumState(t *testing.T) {
+	camera := NewCameraNDim()
+	camera.Position = mat.NewVecDense(3, []float64{0, 0, 0})
+	camera.Coordinates = []*mat.VecDense{
+		mat.NewVecDense(3, []float64{1, 0, 0}),
+		mat.NewVecDense(3, []float64{0, 1, 0}),
+		mat.NewVecDense(3, []float64{0, 0, 1}),
+	}
+	camera.Width = []int{100, 100}
+	camera.FieldOfView = []float64{90, 90}
+
+	ray := &optics.Ray{}
+	ray.Init()
+	ray.MediumStack.Push(medium.MediumID(42))
+	ray.SetSpectralWavelength(610)
+
+	camera.GenerateRay(ray, 50, 50)
+
+	if got := ray.MediumStack.Current(); got != medium.MediumAir {
+		t.Fatalf("expected GenerateRay to reset medium stack to air, got %v", got)
+	}
+	if ray.WaveLength != 0 || ray.WavelengthPDF != 0 {
+		t.Fatalf("expected GenerateRay to reset spectral state, got wavelength=%f pdf=%f", ray.WaveLength, ray.WavelengthPDF)
 	}
 }

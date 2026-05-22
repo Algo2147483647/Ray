@@ -53,9 +53,15 @@ func (m WeightedMixture) Sample(ctx bxdf.ShadingContext, wo maths.Direction, u m
 		return sample
 	}
 
+	selectedWeight := m.Components[index].Weight / total
+	if isDeltaSample(sample) {
+		sample.F = sample.F.MulScalar(selectedWeight)
+		sample.PDF *= selectedWeight
+		return sample
+	}
+
 	sample.F = m.Eval(ctx, sample.Wi, wo)
 	sample.PDF = m.PDF(ctx, sample.Wi, wo)
-	sample.Flags = m.DeltaFlags()
 	return sample
 }
 
@@ -151,4 +157,8 @@ func clamp01Open(v float64) float64 {
 		return math.Nextafter(1, 0)
 	}
 	return v
+}
+
+func isDeltaSample(sample bxdf.BxDFSample) bool {
+	return sample.Flags&(bxdf.DeltaReflection|bxdf.DeltaTransmission) != 0
 }
