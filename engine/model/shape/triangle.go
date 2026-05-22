@@ -51,6 +51,10 @@ func (f *Triangle) Intersect(raySt, rayDir *mat.VecDense) float64 {
 }
 
 func (f *Triangle) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
+	if f.P1.Len() == 3 && raySt.Len() == 3 && rayDir.Len() == 3 {
+		return f.intersectRange3D(raySt, rayDir, tMin, tMax)
+	}
+
 	t := utils.VectorPool.Get().(*mat.VecDense)
 	p := utils.VectorPool.Get().(*mat.VecDense)
 	q := utils.VectorPool.Get().(*mat.VecDense)
@@ -100,8 +104,64 @@ func (f *Triangle) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float6
 
 	interaction := newSurfaceInteraction(raySt, rayDir, distance, f.Mem.Normal)
 	interaction.UV = [2]float64{u, v}
-	interaction.DPDU = mat.VecDenseCopyOf(f.Mem.Edge1)
-	interaction.DPDV = mat.VecDenseCopyOf(f.Mem.Edge2)
+	interaction.DPDU = f.Mem.Edge1
+	interaction.DPDV = f.Mem.Edge2
+	return interaction, true
+}
+
+func (f *Triangle) intersectRange3D(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
+	ox, oy, oz := raySt.AtVec(0), raySt.AtVec(1), raySt.AtVec(2)
+	dx, dy, dz := rayDir.AtVec(0), rayDir.AtVec(1), rayDir.AtVec(2)
+
+	p1x, p1y, p1z := f.P1.AtVec(0), f.P1.AtVec(1), f.P1.AtVec(2)
+	e1x, e1y, e1z := f.Mem.Edge1.AtVec(0), f.Mem.Edge1.AtVec(1), f.Mem.Edge1.AtVec(2)
+	e2x, e2y, e2z := f.Mem.Edge2.AtVec(0), f.Mem.Edge2.AtVec(1), f.Mem.Edge2.AtVec(2)
+
+	px := dy*e2z - dz*e2y
+	py := dz*e2x - dx*e2z
+	pz := dx*e2y - dy*e2x
+	det := e1x*px + e1y*py + e1z*pz
+	if math.Abs(det) < utils.EPS {
+		return SurfaceInteraction{}, false
+	}
+
+	invDet := 1 / det
+	tx := ox - p1x
+	ty := oy - p1y
+	tz := oz - p1z
+	u := (tx*px + ty*py + tz*pz) * invDet
+	if u < 0 || u > 1 {
+		return SurfaceInteraction{}, false
+	}
+
+	qx := ty*e1z - tz*e1y
+	qy := tz*e1x - tx*e1z
+	qz := tx*e1y - ty*e1x
+	v := (dx*qx + dy*qy + dz*qz) * invDet
+	if v < 0 || u+v > 1 {
+		return SurfaceInteraction{}, false
+	}
+
+	distance := (e2x*qx + e2y*qy + e2z*qz) * invDet
+	if !distanceInRange(distance, tMin, tMax) {
+		return SurfaceInteraction{}, false
+	}
+
+	if f.EngravingFunc != nil {
+		if f.EngravingFunc(map[string]interface{}{
+			"ray_start": raySt,
+			"ray_dir":   rayDir,
+			"distance":  distance,
+			"self":      f,
+		}) {
+			return SurfaceInteraction{}, false
+		}
+	}
+
+	interaction := newSurfaceInteraction(raySt, rayDir, distance, f.Mem.Normal)
+	interaction.UV = [2]float64{u, v}
+	interaction.DPDU = f.Mem.Edge1
+	interaction.DPDV = f.Mem.Edge2
 	return interaction, true
 }
 
