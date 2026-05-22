@@ -90,5 +90,22 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level in
 	frame.LocalToWorldInto(ray.Direction, sample.Wi)
 	math_lib.Normalize(ray.Direction)
 
-	return h.TraceRay(objTree, ray, level+1)
+	nextLevel := level + 1
+	if h.shouldApplyRussianRoulette(nextLevel) {
+		survival := russianRouletteSurvivalProbability(ray)
+		if survival <= 0 || rand.Float64() >= survival {
+			return terminateRay(ray)
+		}
+		scaleRayThroughput(ray, 1/survival)
+	}
+
+	return h.TraceRay(objTree, ray, nextLevel)
+}
+
+func (h *Handler) shouldApplyRussianRoulette(nextLevel int64) bool {
+	depth := h.RussianRouletteDepth
+	if depth <= 0 {
+		depth = 3
+	}
+	return nextLevel >= depth
 }

@@ -10,25 +10,27 @@ import (
 )
 
 type Handler struct {
-	MaxRayLevel       int64                    `json:"max_ray_level"`
-	ThreadNum         int                      `json:"thread_num"`
-	BlockCols         int                      `json:"block_cols"`
-	BlockRows         int                      `json:"block_rows"`
-	SpectrumMode      optics.SpectrumMode      `json:"spectrum_mode"`
-	WavelengthSamples int                      `json:"wavelength_samples"`
-	WorkingSpace      camera.FilmColorSpace    `json:"working_space"`
-	WavelengthSampler optics.WavelengthSampler `json:"-"`
-	RayPool           sync.Pool                `json:"ray_pool"`
+	MaxRayLevel          int64                    `json:"max_ray_level"`
+	RussianRouletteDepth int64                    `json:"russian_roulette_depth"`
+	ThreadNum            int                      `json:"thread_num"`
+	BlockCols            int                      `json:"block_cols"`
+	BlockRows            int                      `json:"block_rows"`
+	SpectrumMode         optics.SpectrumMode      `json:"spectrum_mode"`
+	WavelengthSamples    int                      `json:"wavelength_samples"`
+	WorkingSpace         camera.FilmColorSpace    `json:"working_space"`
+	WavelengthSampler    optics.WavelengthSampler `json:"-"`
+	RayPool              sync.Pool                `json:"ray_pool"`
 }
 
 func NewHandler() *Handler {
 	return &Handler{
-		MaxRayLevel:       6,
-		ThreadNum:         runtime.NumCPU(),
-		BlockCols:         8,
-		BlockRows:         8,
-		SpectrumMode:      optics.SpectrumModeHeroWavelength,
-		WavelengthSamples: 1,
+		MaxRayLevel:          64,
+		RussianRouletteDepth: 3,
+		ThreadNum:            runtime.NumCPU(),
+		BlockCols:            8,
+		BlockRows:            8,
+		SpectrumMode:         optics.SpectrumModeHeroWavelength,
+		WavelengthSamples:    1,
 		RayPool: sync.Pool{
 			New: func() interface{} {
 				return &optics.Ray{

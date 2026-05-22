@@ -184,6 +184,58 @@ func TestApplySpectrumRejectsSampledSpectrumWithoutWavelength(t *testing.T) {
 	}
 }
 
+func TestRussianRouletteSurvivalUsesRGBThroughputMax(t *testing.T) {
+	ray := &renderray.Ray{Color: mat.NewVecDense(3, []float64{0.2, 0.8, 0.4})}
+
+	if got := russianRouletteSurvivalProbability(ray); math.Abs(got-0.8) > 1e-12 {
+		t.Fatalf("unexpected RGB survival probability: got %f want 0.8", got)
+	}
+}
+
+func TestRussianRouletteSurvivalClampsLowThroughput(t *testing.T) {
+	ray := &renderray.Ray{Color: mat.NewVecDense(3, []float64{0.001, 0.002, 0.003})}
+
+	if got := russianRouletteSurvivalProbability(ray); math.Abs(got-minRussianRouletteSurvival) > 1e-12 {
+		t.Fatalf("expected low throughput survival clamp, got %f", got)
+	}
+}
+
+func TestRussianRouletteScalesRGBThroughput(t *testing.T) {
+	ray := &renderray.Ray{Color: mat.NewVecDense(3, []float64{0.2, 0.4, 0.6})}
+
+	scaleRayThroughput(ray, 2)
+
+	if math.Abs(ray.Color.AtVec(0)-0.4) > 1e-12 ||
+		math.Abs(ray.Color.AtVec(1)-0.8) > 1e-12 ||
+		math.Abs(ray.Color.AtVec(2)-1.2) > 1e-12 {
+		t.Fatalf("unexpected scaled RGB throughput: %v", ray.Color.RawVector().Data)
+	}
+}
+
+func TestRussianRouletteScalesSpectralThroughput(t *testing.T) {
+	ray := &renderray.Ray{}
+	ray.Init()
+	ray.SetSpectralWavelength(550)
+	ray.SpectralPower = 0.25
+
+	scaleRayThroughput(ray, 4)
+
+	if math.Abs(ray.SpectralPower-1) > 1e-12 {
+		t.Fatalf("unexpected scaled spectral throughput: %f", ray.SpectralPower)
+	}
+}
+
+func TestRussianRouletteDepthDefaultsToThirdBounce(t *testing.T) {
+	handler := &Handler{}
+
+	if handler.shouldApplyRussianRoulette(2) {
+		t.Fatal("did not expect russian roulette before third bounce")
+	}
+	if !handler.shouldApplyRussianRoulette(3) {
+		t.Fatal("expected russian roulette at third bounce")
+	}
+}
+
 type sampledCoefficient struct {
 	value float64
 }
