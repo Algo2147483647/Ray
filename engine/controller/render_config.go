@@ -79,7 +79,7 @@ func ParseRenderOverrides(args []string) (RenderOverrides, error) {
 	flagSet.Float64Var(&overrides.Gamma, "gamma", 0, "output gamma, for example 2.2")
 	flagSet.StringVar(&overrides.SpectrumMode, "spectrum-mode", "", "spectrum mode: rgb, hero_wavelength, sampled")
 	flagSet.IntVar(&overrides.WavelengthSamples, "wavelength-samples", 0, "wavelength samples per camera sample in sampled mode")
-	flagSet.StringVar(&overrides.ColorSpace, "working-space", "", "film working space: linear_srgb, xyz")
+	flagSet.StringVar(&overrides.ColorSpace, "working-space", "", "film working space: linear_srgb, acescg, xyz")
 
 	if err := flagSet.Parse(args); err != nil {
 		return RenderOverrides{}, err
@@ -190,6 +190,8 @@ func ResolveRenderConfig(script *parser.Script, overrides RenderOverrides) Rende
 		}
 		if script.Render.ColorSpace != "" {
 			config.ColorSpace = script.Render.ColorSpace
+		} else if script.Render.WorkingSpace != "" {
+			config.ColorSpace = script.Render.WorkingSpace
 		}
 	}
 
@@ -256,7 +258,7 @@ func isSupportedSpectrumMode(value string) bool {
 
 func isSupportedColorSpace(value string) bool {
 	switch camera.FilmColorSpace(value) {
-	case camera.FilmColorSpaceLinearSRGB, camera.FilmColorSpaceXYZ:
+	case camera.FilmColorSpaceLinearSRGB, camera.FilmColorSpaceACEScg, camera.FilmColorSpaceXYZ:
 		return true
 	default:
 		return false

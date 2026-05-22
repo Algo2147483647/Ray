@@ -33,6 +33,7 @@ type RenderScript struct {
 	SpectrumMode      string  `json:"spectrum_mode"`
 	WavelengthSamples int     `json:"wavelength_samples"`
 	ColorSpace        string  `json:"color_space"`
+	WorkingSpace      string  `json:"working_space"`
 }
 
 type Script struct {

@@ -64,6 +64,20 @@ func SpectralPowerToXYZ(wavelength, pdf, power float64) *mat.VecDense {
 	})
 }
 
+func SpectralRadianceToXYZ(wavelength, radiance float64) *mat.VecDense {
+	xyz := WavelengthToXYZ(wavelength)
+	white := spectralXYZWhitePoint
+	return mat.NewVecDense(3, []float64{
+		safeDivide(xyz.AtVec(0)*d65WhiteXYZ[0], white[0]) * radiance,
+		safeDivide(xyz.AtVec(1)*d65WhiteXYZ[1], white[1]) * radiance,
+		safeDivide(xyz.AtVec(2)*d65WhiteXYZ[2], white[2]) * radiance,
+	})
+}
+
+func SpectralSampleRadiance(power, pdf float64) float64 {
+	return power * wavelengthPDFScale(pdf)
+}
+
 func SampledSpectrumToLinearSRGB(wavelengthsNM, values []float64) Spectrum {
 	if len(wavelengthsNM) == 0 || len(values) == 0 {
 		return Spectrum{}

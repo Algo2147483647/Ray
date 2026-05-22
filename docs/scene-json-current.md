@@ -267,7 +267,7 @@ Supported object forms:
     "gamma": 2.2,
     "spectrum_mode": "hero_wavelength",
     "wavelength_samples": 1,
-    "color_space": "xyz"
+    "color_space": "acescg"
   }
 }
 ```
@@ -292,9 +292,11 @@ sampled
 
 Camera ray generation now only creates geometric rays. Wavelength sampling is owned by the renderer/integrator so that `rgb`, `hero_wavelength`, and `sampled` modes share the same camera code.
 
-Film stores three channels in an explicit color space. `rgb` mode accumulates `linear_srgb`; `hero_wavelength` and `sampled` modes carry scalar spectral power along each wavelength path, convert spectral power through the CIE 1931 XYZ matching functions, white-normalize to the D65 output white, and accumulate `xyz` in the Film before the final output transform.
+Film stores three display/work channels in an explicit color space and can also retain spectral bins. `rgb` mode accumulates directly in the selected film working space. `hero_wavelength` and `sampled` modes first accumulate scalar wavelength samples into spectral bins, then convert the bins once through the CIE 1931 XYZ matching functions and into the selected film working space before image output.
 
-The code distinguishes authored RGB input spaces from film storage spaces. Material RGB parameters use `optics.RGBColorSpace` values such as `linear_srgb`, `srgb`, and `acescg`. Film accumulation uses `camera.FilmColorSpace`, currently `linear_srgb` or `xyz`.
+The code distinguishes authored RGB input spaces from film storage spaces. Material RGB parameters use `optics.RGBColorSpace` values such as `linear_srgb`, `srgb`, and `acescg`. Film accumulation uses `camera.FilmColorSpace`: `linear_srgb`, `acescg`, or `xyz`. `acescg` is the recommended wide-gamut working space for spectral renders that still need a three-channel film/output path.
+
+`working_space` is accepted as a legacy alias for `color_space`; prefer `color_space` in new scene files.
 
 `optics.Spectrum` preserves optional sampled channels in addition to its RGB compatibility fields. Lambert, specular reflection, specular dielectric, rough conductor, and constant emission evaluate their spectral parameters from `bxdf.ShadingContext` instead of collapsing all inputs to RGB at parse time. In `sampled` mode the renderer still traces wavelength sub-paths independently, which is required for dispersive paths where different wavelengths can refract in different directions. The sampled-channel `Spectrum` path is active in material evaluation and unit tests, and is the compatibility layer for a future packet-style spectral integrator.
 
@@ -325,6 +327,7 @@ examples/scenes/feature-showcase.json
 examples/scenes/dispersion-three-balls.json
 examples/scenes/prism refraction.json
 examples/scenes/true-spectral-prism-dispersion-200spp.json
+examples/scenes/spectral-acescg-prism-showcase.json
 ```
 
 `feature-showcase.json` exercises Lambert color bleeding, constant emission, specular reflection, constant-IOR glass, Cauchy-dispersive glass, GGX rough conductor, spectral sampling, and tone-mapped PNG output.

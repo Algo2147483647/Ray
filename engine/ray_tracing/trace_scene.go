@@ -5,16 +5,23 @@ import (
 	"github.com/Algo2147483647/ray/engine/model/camera"
 	"github.com/Algo2147483647/ray/engine/model/object"
 	"github.com/Algo2147483647/ray/engine/model/optics"
-	"gonum.org/v1/gonum/mat"
 	"sync"
 	"sync/atomic"
 	"time"
 )
 
+const defaultSpectralBinCount = 64
+
 // TraceScene renders the object tree from the supplied camera into the film.
 func (h *Handler) TraceScene(renderCamera camera.Camera, objectTree *object.ObjectTree, film *camera.Film, samples int64) {
-	if h.SpectrumMode != optics.SpectrumModeRGB {
-		film.ColorSpace = camera.FilmColorSpaceXYZ
+	if h.WorkingSpace == "" {
+		h.WorkingSpace = film.ColorSpace
+	}
+	if film.ColorSpace == "" {
+		film.ColorSpace = h.WorkingSpace
+	}
+	if h.SpectrumMode != optics.SpectrumModeRGB && !film.HasSpectralBins() {
+		film.InitSpectralBins(defaultSpectralBinCount, optics.WavelengthMin, optics.WavelengthMax)
 	}
 
 	var (
@@ -62,12 +69,15 @@ func (h *Handler) TraceScene(renderCamera camera.Camera, objectTree *object.Obje
 					for x := tile.X0; x < tile.X1; x++ {
 						pixel := tile.pixelIndex(x, y, film.Data[0].Shape)
 						coords := film.Data[0].GetCoordinates(pixel)
-						color, diagnostics := h.traceFilmPixel(renderCamera, objectTree, film, samples, pixel, coords...)
-						for ch := 0; ch < 3; ch++ {
-							film.Data[ch].Data[pixel] = color.AtVec(ch)
-						}
-						for _, diagnostic := range diagnostics {
-							film.RecordSpectralSample(pixel, diagnostic.WavelengthNM, diagnostic.Value)
+						if h.SpectrumMode != optics.SpectrumModeRGB && film.HasSpectralBins() {
+							for _, sample := range h.TracePixelSpectralSamples(renderCamera, objectTree, samples, coords...) {
+								film.RecordSpectralSample(pixel, sample.WavelengthNM, sample.Value)
+							}
+						} else {
+							color := h.TracePixel(renderCamera, objectTree, samples, coords...)
+							for ch := 0; ch < 3; ch++ {
+								film.Data[ch].Data[pixel] = color.AtVec(ch)
+							}
 						}
 						rendered++
 					}
@@ -82,14 +92,10 @@ func (h *Handler) TraceScene(renderCamera camera.Camera, objectTree *object.Obje
 	close(done)
 	time.Sleep(100 * time.Millisecond)
 
-	film.Samples = h.EffectiveSampleCount(samples)
-}
-
-func (h *Handler) traceFilmPixel(renderCamera camera.Camera, objectTree *object.ObjectTree, film *camera.Film, samples int64, pixel int, coords ...int) (*mat.VecDense, []camera.SpectralSample) {
-	if film != nil && film.HasSpectralBins() {
-		return h.TracePixelWithSpectralDiagnostics(renderCamera, objectTree, samples, coords...)
+	if h.SpectrumMode != optics.SpectrumModeRGB && film.HasSpectralBins() {
+		film.ConvertSpectralBinsToWorkingSpace()
 	}
-	return h.TracePixel(renderCamera, objectTree, samples, coords...), nil
+	film.Samples = h.EffectiveSampleCount(samples)
 }
 
 type renderTile struct {

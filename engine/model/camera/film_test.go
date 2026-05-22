@@ -2,8 +2,11 @@ package camera
 
 import (
 	"image/color"
+	"math"
 	"path/filepath"
 	"testing"
+
+	"github.com/Algo2147483647/ray/engine/model/optics"
 )
 
 func TestFilmToImageDefaultMatchesLinearClamp(t *testing.T) {
@@ -81,6 +84,42 @@ func TestFilmToImageConvertsXYZColorSpace(t *testing.T) {
 	}
 }
 
+func TestFilmToImageConvertsACEScgColorSpace(t *testing.T) {
+	film := NewFilm(1, 1)
+	film.ColorSpace = FilmColorSpaceACEScg
+	r, g, b := XYZToFilmColorSpace(0.95047, 1, 1.08883, FilmColorSpaceACEScg)
+	film.Data[0].Data[0] = r
+	film.Data[1].Data[0] = g
+	film.Data[2].Data[0] = b
+
+	img := film.ToImageWithOptions(ImageOptions{
+		Exposure:    1,
+		ToneMapping: ToneMappingLinear,
+		Gamma:       1,
+	})
+
+	got := img.RGBAAt(0, 0)
+	if got.R < 250 || got.G < 250 || got.B < 250 {
+		t.Fatalf("expected ACEScg D65-like white to convert near display white, got %+v", got)
+	}
+}
+
+func TestFilmConvertsSpectralBinsToWorkingSpace(t *testing.T) {
+	film := NewFilm(1, 1)
+	film.ColorSpace = FilmColorSpaceXYZ
+	film.InitSpectralBins(1, 549.5, 550.5)
+	film.RecordSpectralSample(0, 550, 1)
+
+	film.ConvertSpectralBinsToWorkingSpace()
+	want := optics.SpectralRadianceToXYZ(550, 1)
+
+	for ch := 0; ch < 3; ch++ {
+		if got := film.Data[ch].Data[0]; math.Abs(got-want.AtVec(ch)) > 1e-12 {
+			t.Fatalf("unexpected spectral conversion channel %d: got %f want %f", ch, got, want.AtVec(ch))
+		}
+	}
+}
+
 func TestFilmFileRoundTripsColorSpace(t *testing.T) {
 	film := NewFilm(1, 1)
 	film.ColorSpace = FilmColorSpaceXYZ
@@ -99,6 +138,36 @@ func TestFilmFileRoundTripsColorSpace(t *testing.T) {
 	}
 	if loaded.ColorSpace != FilmColorSpaceXYZ {
 		t.Fatalf("expected working space to round-trip as XYZ, got %q", loaded.ColorSpace)
+	}
+}
+
+func TestFilmFileRoundTripsACEScgAndSpectralBins(t *testing.T) {
+	film := NewFilm(1, 1)
+	film.ColorSpace = FilmColorSpaceACEScg
+	film.InitSpectralBins(2, 400, 800)
+	film.RecordSpectralSample(0, 450, 1.25)
+	film.RecordSpectralSample(0, 650, 2.5)
+
+	filename := filepath.Join(t.TempDir(), "film.bin")
+	if err := film.SaveToFile(filename); err != nil {
+		t.Fatalf("save film: %v", err)
+	}
+
+	loaded := NewFilm(1, 1)
+	if err := loaded.LoadFromFile(filename); err != nil {
+		t.Fatalf("load film: %v", err)
+	}
+	if loaded.ColorSpace != FilmColorSpaceACEScg {
+		t.Fatalf("expected ACEScg working space to round-trip, got %q", loaded.ColorSpace)
+	}
+	if !loaded.HasSpectralBins() || len(loaded.SpectralBins) != 2 {
+		t.Fatalf("expected spectral bins to round-trip, got %+v", loaded.SpectralBins)
+	}
+	if got := loaded.SpectralBins[0].Data[0]; math.Abs(got-1.25) > 1e-12 {
+		t.Fatalf("unexpected first spectral bin: %f", got)
+	}
+	if got := loaded.SpectralBins[1].Data[0]; math.Abs(got-2.5) > 1e-12 {
+		t.Fatalf("unexpected second spectral bin: %f", got)
 	}
 }
 

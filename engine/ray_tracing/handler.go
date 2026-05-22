@@ -1,6 +1,7 @@
 package ray_tracing
 
 import (
+	"github.com/Algo2147483647/ray/engine/model/camera"
 	"github.com/Algo2147483647/ray/engine/model/optics"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
@@ -15,6 +16,7 @@ type Handler struct {
 	BlockRows         int                      `json:"block_rows"`
 	SpectrumMode      optics.SpectrumMode      `json:"spectrum_mode"`
 	WavelengthSamples int                      `json:"wavelength_samples"`
+	WorkingSpace      camera.FilmColorSpace    `json:"working_space"`
 	WavelengthSampler optics.WavelengthSampler `json:"-"`
 	RayPool           sync.Pool                `json:"ray_pool"`
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"errors"
 	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
+	"github.com/Algo2147483647/ray/engine/model/optics"
 	"image"
 	"image/color"
 	"io"
@@ -26,6 +27,7 @@ type FilmColorSpace string
 const (
 	FilmColorSpaceLinearSRGB FilmColorSpace = "linear_srgb"
 	FilmColorSpaceXYZ        FilmColorSpace = "xyz"
+	FilmColorSpaceACEScg     FilmColorSpace = "acescg"
 )
 
 type ToneMapping string
@@ -46,6 +48,8 @@ type SpectralSample struct {
 	WavelengthNM float64
 	Value        float64
 }
+
+var spectralFilmMagic = [4]byte{'S', 'P', 'C', 'T'}
 
 func NewFilm(width ...int) *Film {
 	shape := make([]int, len(width))
@@ -137,6 +141,14 @@ func (f *Film) RecordSpectralSample(pixel int, wavelengthNM, value float64) {
 	f.SpectralBins[bin].Data[pixel] += value
 }
 
+func (f *Film) SpectralBinCenterNM(bin int) float64 {
+	if !f.HasSpectralBins() || bin < 0 || bin >= len(f.SpectralBins) {
+		return 0
+	}
+	width := (f.SpectralMaxNM - f.SpectralMinNM) / float64(len(f.SpectralBins))
+	return f.SpectralMinNM + (float64(bin)+0.5)*width
+}
+
 func (f *Film) SpectralBinIndex(wavelengthNM float64) int {
 	if !f.HasSpectralBins() || wavelengthNM < f.SpectralMinNM || wavelengthNM >= f.SpectralMaxNM {
 		return -1
@@ -166,6 +178,33 @@ func (f *Film) compatibleSpectralBins(a *Film) bool {
 		len(f.SpectralBins) == len(a.SpectralBins) &&
 		f.SpectralMinNM == a.SpectralMinNM &&
 		f.SpectralMaxNM == a.SpectralMaxNM
+}
+
+func (f *Film) ConvertSpectralBinsToWorkingSpace() {
+	if !f.HasSpectralBins() {
+		return
+	}
+	for pixel := range f.Data[0].Data {
+		x, y, z := f.spectralXYZAt(pixel)
+		a, b, c := XYZToFilmColorSpace(x, y, z, f.ColorSpace)
+		f.Data[0].Data[pixel] = a
+		f.Data[1].Data[pixel] = b
+		f.Data[2].Data[pixel] = c
+	}
+}
+
+func (f *Film) spectralXYZAt(pixel int) (float64, float64, float64) {
+	var x, y, z float64
+	for bin := range f.SpectralBins {
+		if pixel < 0 || pixel >= len(f.SpectralBins[bin].Data) {
+			continue
+		}
+		xyz := optics.SpectralRadianceToXYZ(f.SpectralBinCenterNM(bin), f.SpectralBins[bin].Data[pixel])
+		x += xyz.AtVec(0)
+		y += xyz.AtVec(1)
+		z += xyz.AtVec(2)
+	}
+	return x, y, z
 }
 
 func (f *Film) ToImage() *image.RGBA {
@@ -206,10 +245,37 @@ func (f *Film) outputRGBAt(i int) (float64, float64, float64) {
 	a := f.Data[0].Data[i]
 	b := f.Data[1].Data[i]
 	c := f.Data[2].Data[i]
-	if f.ColorSpace == FilmColorSpaceXYZ {
-		return xyzToLinearSRGB(a, b, c)
+	switch f.ColorSpace {
+	case FilmColorSpaceXYZ:
+		return optics.XYZToLinearSRGB(a, b, c)
+	case FilmColorSpaceACEScg:
+		return optics.ACEScgToLinearSRGB(a, b, c)
+	default:
+		return a, b, c
 	}
-	return a, b, c
+}
+
+func XYZToFilmColorSpace(x, y, z float64, space FilmColorSpace) (float64, float64, float64) {
+	switch space {
+	case FilmColorSpaceXYZ:
+		return x, y, z
+	case FilmColorSpaceACEScg:
+		return optics.XYZToACEScg(x, y, z)
+	default:
+		return optics.XYZToLinearSRGB(x, y, z)
+	}
+}
+
+func LinearSRGBToFilmColorSpace(r, g, b float64, space FilmColorSpace) (float64, float64, float64) {
+	switch space {
+	case FilmColorSpaceXYZ:
+		xyz := optics.LinearSRGBToXYZ(r, g, b)
+		return xyz.AtVec(0), xyz.AtVec(1), xyz.AtVec(2)
+	case FilmColorSpaceACEScg:
+		return optics.LinearSRGBToACEScg(r, g, b)
+	default:
+		return r, g, b
+	}
 }
 
 func normalizeImageOptions(options ImageOptions) ImageOptions {
@@ -302,14 +368,11 @@ func (f *Film) LoadFromFile(filename string) error {
 	if err = f.readOptionalColorSpace(file); err != nil {
 		return err
 	}
+	if err = f.readOptionalSpectralBins(file); err != nil {
+		return err
+	}
 
 	return nil
-}
-
-func xyzToLinearSRGB(x, y, z float64) (float64, float64, float64) {
-	return 3.2404542*x - 1.5371385*y - 0.4985314*z,
-		-0.9692660*x + 1.8760108*y + 0.0415560*z,
-		0.0556434*x - 0.2040259*y + 1.0572252*z
 }
 
 func (f *Film) SaveToFile(filename string) error {
@@ -353,6 +416,10 @@ func (f *Film) SaveToFile(filename string) error {
 		}
 	}
 
+	if err = f.writeOptionalSpectralBins(file); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -373,8 +440,69 @@ func (f *Film) readOptionalColorSpace(file *os.File) error {
 		return err
 	}
 	switch FilmColorSpace(buf) {
-	case FilmColorSpaceLinearSRGB, FilmColorSpaceXYZ:
+	case FilmColorSpaceLinearSRGB, FilmColorSpaceXYZ, FilmColorSpaceACEScg:
 		f.ColorSpace = FilmColorSpace(buf)
+	}
+	return nil
+}
+
+func (f *Film) writeOptionalSpectralBins(file *os.File) error {
+	if !f.HasSpectralBins() {
+		return nil
+	}
+	if _, err := file.Write(spectralFilmMagic[:]); err != nil {
+		return err
+	}
+	count := int32(len(f.SpectralBins))
+	if err := binary.Write(file, binary.LittleEndian, count); err != nil {
+		return err
+	}
+	if err := binary.Write(file, binary.LittleEndian, f.SpectralMinNM); err != nil {
+		return err
+	}
+	if err := binary.Write(file, binary.LittleEndian, f.SpectralMaxNM); err != nil {
+		return err
+	}
+	for bin := range f.SpectralBins {
+		for i := range f.SpectralBins[bin].Data {
+			if err := binary.Write(file, binary.LittleEndian, f.SpectralBins[bin].Data[i]); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (f *Film) readOptionalSpectralBins(file *os.File) error {
+	var magic [4]byte
+	if _, err := io.ReadFull(file, magic[:]); err != nil {
+		if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
+			return nil
+		}
+		return err
+	}
+	if magic != spectralFilmMagic {
+		return nil
+	}
+
+	var count int32
+	if err := binary.Read(file, binary.LittleEndian, &count); err != nil {
+		return err
+	}
+	var minNM, maxNM float64
+	if err := binary.Read(file, binary.LittleEndian, &minNM); err != nil {
+		return err
+	}
+	if err := binary.Read(file, binary.LittleEndian, &maxNM); err != nil {
+		return err
+	}
+	f.InitSpectralBins(int(count), minNM, maxNM)
+	for bin := range f.SpectralBins {
+		for i := range f.SpectralBins[bin].Data {
+			if err := binary.Read(file, binary.LittleEndian, &f.SpectralBins[bin].Data[i]); err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }

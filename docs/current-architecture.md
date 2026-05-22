@@ -32,8 +32,11 @@ Current film spaces:
 
 ```text
 FilmColorSpaceLinearSRGB
+FilmColorSpaceACEScg
 FilmColorSpaceXYZ
 ```
+
+Spectral render modes accumulate scalar wavelength samples into `Film.SpectralBins` and convert those bins once into the selected film working space after rendering. This keeps wavelength energy available through accumulation instead of converting every traced path to three channels immediately.
 
 Material RGB input spaces are intentionally separate and live in `optics.RGBColorSpace`:
 

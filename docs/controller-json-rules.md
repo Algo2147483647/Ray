@@ -247,7 +247,7 @@ Common fields:
     "gamma": 2.2,
     "spectrum_mode": "hero_wavelength",
     "wavelength_samples": 1,
-    "color_space": "linear_srgb"
+    "color_space": "acescg"
   }
 }
 ```
@@ -266,6 +266,14 @@ Supported spectrum modes:
 rgb
 hero_wavelength
 sampled
+```
+
+Supported film color spaces:
+
+```text
+linear_srgb
+acescg
+xyz
 ```
 
 ## Recommended Practices
