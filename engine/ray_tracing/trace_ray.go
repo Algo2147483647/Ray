@@ -11,6 +11,14 @@ import (
 	"github.com/Algo2147483647/ray/engine/utils/maths"
 )
 
+type SurfaceInteraction struct {
+	Hit     *object.SurfaceHit
+	Object  *object.Object
+	Frame   maths.Frame
+	WoLocal maths.Direction
+	Context bxdf.ShadingContext
+}
+
 func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level int64) {
 	// Stop tracing when the recursion depth exceeds the configured limit.
 	if level > h.MaxRayLevel {
@@ -30,54 +38,33 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level in
 	mediumCtx := h.newShadingContext(ray)
 	applyMediumAbsorption(media, ray, hit.Distance, mediumCtx)
 
-	// Move the ray origin to the hit point for the next bounce.
-	ray.Origin.CopyVec(hit.Point)
-
-	// Fetch the hit object and validate its material.
-	obj := hit.Object
-	if obj.Material == nil {
-		terminateRay(ray)
-		return
-	}
-
-	// Build the shading context for surface evaluation at this interaction.
-	ctx := h.newShadingContext(ray)
-	ctx.TransportMode = bxdf.TransportRadiance
-	ctx.CurrentIOR = ray.RefractionIndex
-
-	// Update medium-related state according to the material boundary.
-	prepareMediumContext(&ctx, media, ray, obj.MediumBoundary, hit.FrontFace)
-
-	// Construct a local shading frame from the hit normal.
-	frame, ok := maths.NewFrameFromNormal(hit.ShadingNormal)
+	// Prepare all surface-local interaction data for this hit.
+	si, ok := h.prepareSurfaceInteraction(media, ray, hit)
 	if !ok {
 		terminateRay(ray)
 		return
 	}
 
-	// Convert the outgoing direction into local shading coordinates.
-	woLocal := frame.WorldToLocalNegated(ray.Direction)
-
 	// Handle emissive surfaces directly; terminate if there is no BSDF to sample.
-	if h.traceEmission(ray, obj, ctx, woLocal) {
+	if h.traceEmission(ray, si.Object, si.Context, si.WoLocal) {
 		return
-	} else if !obj.Material.HasSurface() {
+	} else if !si.Object.Material.HasSurface() {
 		terminateRay(ray)
 		return
 	}
 
 	// Sample the surface BSDF to choose the next path direction.
-	sample, ok := sampleSurface(obj, ctx, woLocal)
+	sample, ok := sampleSurface(si.Object, si.Context, si.WoLocal)
 	if !ok {
 		terminateRay(ray)
 		return
 	}
 
 	// Apply the BSDF weight, spectral update, and medium transmission if needed.
-	applySurfaceSample(media, ray, ctx, obj, sample)
+	applySurfaceSample(media, ray, si.Context, si.Object, sample)
 
 	// Transform the sampled local direction back to world space.
-	frame.LocalToWorldInto(ray.Direction, sample.Wi)
+	si.Frame.LocalToWorldInto(ray.Direction, sample.Wi)
 	math_lib.Normalize(ray.Direction)
 
 	// Probabilistically terminate low-contribution paths after enough bounces.
@@ -88,6 +75,41 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level in
 
 	// Continue tracing the next bounce.
 	h.TraceRay(objTree, ray, level+1)
+}
+
+func (h *Handler) prepareSurfaceInteraction(
+	media *medium.Registry,
+	ray *optics.Ray,
+	hit *object.SurfaceHit,
+) (SurfaceInteraction, bool) {
+	// Move the ray origin to the hit point for the next bounce.
+	ray.Origin.CopyVec(hit.Point)
+
+	obj := hit.Object
+	if obj == nil || obj.Material == nil {
+		return SurfaceInteraction{}, false
+	}
+
+	ctx := h.newShadingContext(ray)
+	ctx.TransportMode = bxdf.TransportRadiance
+	ctx.CurrentIOR = ray.RefractionIndex
+
+	prepareMediumContext(&ctx, media, ray, obj.MediumBoundary, hit.FrontFace)
+
+	frame, ok := maths.NewFrameFromNormal(hit.ShadingNormal)
+	if !ok {
+		return SurfaceInteraction{}, false
+	}
+
+	woLocal := frame.WorldToLocalNegated(ray.Direction)
+
+	return SurfaceInteraction{
+		Hit:     hit,
+		Object:  obj,
+		Frame:   frame,
+		WoLocal: woLocal,
+		Context: ctx,
+	}, true
 }
 
 func getMediumRegistry(objTree *object.ObjectTree) *medium.Registry {
