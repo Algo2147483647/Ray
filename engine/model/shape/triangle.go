@@ -16,13 +16,13 @@ type Triangle struct {
 }
 
 type TriangleCalculateStorage struct {
-	Edge1    *mat.VecDense
-	Edge2    *mat.VecDense
-	Normal   *mat.VecDense
-	P1XYZ    [3]float64
-	Edge1XYZ [3]float64
-	Edge2XYZ [3]float64
-	Has3D    bool
+	Edge1    *mat.VecDense // First triangle edge vector.
+	Edge2    *mat.VecDense // Second triangle edge vector.
+	Normal   *mat.VecDense // Triangle surface normal.
+	P1XYZ    [3]float64    // First vertex position in 3D.
+	Edge1XYZ [3]float64    // First edge vector in 3D.
+	Edge2XYZ [3]float64    // Second edge vector in 3D.
+	Has3D    bool          // True when 3D cache data is available.
 }
 
 func NewTriangle(P1, P2, P3 *mat.VecDense) *Triangle {

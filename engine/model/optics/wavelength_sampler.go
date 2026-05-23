@@ -28,12 +28,12 @@ func NewUniformWavelengthSampler() UniformWavelengthSampler {
 type WavelengthWeightFunc func(wavelengthNM float64) float64
 
 type WeightedWavelengthSampler struct {
-	MinNM   float64
-	MaxNM   float64
-	Bins    int
-	centers []float64
-	pdfs    []float64
-	cdf     []float64
+	MinNM   float64   // Lower wavelength bound in nanometers.
+	MaxNM   float64   // Upper wavelength bound in nanometers.
+	Bins    int       // Number of wavelength intervals.
+	centers []float64 // Center wavelength of each interval.
+	pdfs    []float64 // Sampling probability density per interval.
+	cdf     []float64 // Cumulative distribution for sampling.
 }
 
 func NewWeightedWavelengthSampler(minNM, maxNM float64, bins int, weight WavelengthWeightFunc) WeightedWavelengthSampler {

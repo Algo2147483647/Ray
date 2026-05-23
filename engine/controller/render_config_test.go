@@ -6,10 +6,10 @@ import (
 	"github.com/Algo2147483647/ray/engine/controller/parser"
 )
 
-func TestResolveRenderConfigAcceptsWorkingSpaceAlias(t *testing.T) {
+func TestResolveRenderConfigAcceptsFilmColorSpaceAlias(t *testing.T) {
 	config := ResolveRenderConfig(&parser.Script{
 		Render: parser.RenderScript{
-			WorkingSpace: "acescg",
+			FilmColorSpace: "acescg",
 		},
 	}, RenderOverrides{})
 
@@ -21,8 +21,8 @@ func TestResolveRenderConfigAcceptsWorkingSpaceAlias(t *testing.T) {
 func TestResolveRenderConfigPrefersColorSpaceOverAlias(t *testing.T) {
 	config := ResolveRenderConfig(&parser.Script{
 		Render: parser.RenderScript{
-			ColorSpace:   "xyz",
-			WorkingSpace: "acescg",
+			ColorSpace:     "xyz",
+			FilmColorSpace: "acescg",
 		},
 	}, RenderOverrides{})
 

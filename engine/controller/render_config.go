@@ -190,8 +190,8 @@ func ResolveRenderConfig(script *parser.Script, overrides RenderOverrides) Rende
 		}
 		if script.Render.ColorSpace != "" {
 			config.ColorSpace = script.Render.ColorSpace
-		} else if script.Render.WorkingSpace != "" {
-			config.ColorSpace = script.Render.WorkingSpace
+		} else if script.Render.FilmColorSpace != "" {
+			config.ColorSpace = script.Render.FilmColorSpace
 		}
 	}
 

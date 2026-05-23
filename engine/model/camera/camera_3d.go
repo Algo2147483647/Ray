@@ -11,22 +11,22 @@ import (
 
 type Camera3D struct {
 	CameraBase
-	Position    *mat.VecDense // Camera position
-	Direction   *mat.VecDense // Viewing direction
-	Up          *mat.VecDense // Up vector
-	Width       int           // Film width (pixels)
-	Height      int           // Film height (pixels)
-	FieldOfView float64       // Field of view angle (degrees)
-	AspectRatio float64       // Aspect ratio
-	Ortho       bool          // Orthographic camera / perspective camera
-	dir         *mat.VecDense
-	up          *mat.VecDense
-	right       *mat.VecDense
-	halfWidth   float64
-	halfHeight  float64
-	invWidth2   float64
-	invHeight2  float64
-	prepared    bool
+	Position    *mat.VecDense // Camera origin in scene space.
+	Direction   *mat.VecDense // Forward viewing direction.
+	Up          *mat.VecDense // Up vector defining camera roll.
+	Width       int           // Film width in pixels.
+	Height      int           // Film height in pixels.
+	FieldOfView float64       // Field-of-view angle in degrees.
+	AspectRatio float64       // Film width-to-height ratio.
+	Ortho       bool          // Uses orthographic projection when true.
+	dir         *mat.VecDense // Normalized viewing direction.
+	up          *mat.VecDense // Normalized camera up vector.
+	right       *mat.VecDense // Normalized camera right vector.
+	halfWidth   float64       // Half-width of the view plane.
+	halfHeight  float64       // Half-height of the view plane.
+	invWidth2   float64       // Reciprocal of twice the film width.
+	invHeight2  float64       // Reciprocal of twice the film height.
+	prepared    bool          // Indicates cached camera basis is ready.
 }
 
 func NewCamera3D() *Camera3D {

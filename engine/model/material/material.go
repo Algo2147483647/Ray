@@ -19,13 +19,13 @@ type Emitter interface {
 }
 
 type MaterialMetadata struct {
-	Name                     string
-	Units                    string
-	ColorSpace               string
-	SpectrumMode             optics.SpectrumMode
-	NonReciprocal            bool
-	DifferentiabilitySupport bool
-	ParameterRanges          map[string]ParameterRange
+	Name                     string                    // Material name.
+	Units                    string                    // Units used by material parameters.
+	ColorSpace               string                    // Color space for color parameters.
+	SpectrumMode             optics.SpectrumMode       // Supported spectral representation mode.
+	NonReciprocal            bool                      // True for non-reciprocal scattering.
+	DifferentiabilitySupport bool                      // True if differentiable rendering is supported.
+	ParameterRanges          map[string]ParameterRange // Valid ranges for named parameters.
 }
 
 type ParameterRange struct {

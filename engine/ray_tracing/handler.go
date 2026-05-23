@@ -17,7 +17,7 @@ type Handler struct {
 	BlockRows            int                      `json:"block_rows"`
 	SpectrumMode         optics.SpectrumMode      `json:"spectrum_mode"`
 	WavelengthSamples    int                      `json:"wavelength_samples"`
-	WorkingSpace         camera.FilmColorSpace    `json:"working_space"`
+	FilmColorSpace       camera.FilmColorSpace    `json:"working_space"`
 	WavelengthSampler    optics.WavelengthSampler `json:"-"`
 	RayPool              sync.Pool                `json:"ray_pool"`
 }

@@ -14,12 +14,12 @@ import (
 )
 
 type Film struct {
-	Data          [3]math_lib.Tensor[float64] `json:"data"`
-	Samples       int64                       `json:"samples"`
-	ColorSpace    FilmColorSpace              `json:"color_space"`
-	SpectralBins  []math_lib.Tensor[float64]  `json:"spectral_bins,omitempty"`
-	SpectralMinNM float64                     `json:"spectral_min_nm,omitempty"`
-	SpectralMaxNM float64                     `json:"spectral_max_nm,omitempty"`
+	Data          [3]math_lib.Tensor[float64] `json:"data"`                      // RGB or tristimulus channel data.
+	Samples       int64                       `json:"samples"`                   // Number of accumulated samples.
+	ColorSpace    FilmColorSpace              `json:"color_space"`               // Color encoding used for output.
+	SpectralBins  []math_lib.Tensor[float64]  `json:"spectral_bins,omitempty"`   // Per-wavelength-band accumulated spectral data.
+	SpectralMinNM float64                     `json:"spectral_min_nm,omitempty"` // Lower bound of the spectral range, in nm.
+	SpectralMaxNM float64                     `json:"spectral_max_nm,omitempty"` // Upper bound of the spectral range, in nm.
 }
 
 type FilmColorSpace string
@@ -134,10 +134,12 @@ func (f *Film) RecordSpectralSample(pixel int, wavelengthNM, value float64) {
 	if !f.HasSpectralBins() || pixel < 0 || math.IsNaN(value) || math.IsInf(value, 0) {
 		return
 	}
+
 	bin := f.SpectralBinIndex(wavelengthNM)
 	if bin < 0 || bin >= len(f.SpectralBins) || pixel >= len(f.SpectralBins[bin].Data) {
 		return
 	}
+
 	f.SpectralBins[bin].Data[pixel] += value
 }
 
@@ -180,7 +182,7 @@ func (f *Film) compatibleSpectralBins(a *Film) bool {
 		f.SpectralMaxNM == a.SpectralMaxNM
 }
 
-func (f *Film) ConvertSpectralBinsToWorkingSpace() {
+func (f *Film) ConvertSpectralBinsToFilmColorSpace() {
 	if !f.HasSpectralBins() {
 		return
 	}

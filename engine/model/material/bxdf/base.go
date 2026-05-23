@@ -50,17 +50,17 @@ type RoughnessInfo struct {
 }
 
 type ShadingContext struct {
-	TransportMode  TransportMode
-	SpectrumMode   optics.SpectrumMode
-	CurrentIOR     float64
-	WavelengthNM   float64
-	WavelengthsNM  []float64
-	WavelengthPDF  float64
-	EtaIncident    float64
-	EtaTransmit    float64
-	IncidentMedium medium.MediumID
-	TransmitMedium medium.MediumID
-	Entering       bool
+	TransportMode  TransportMode       // Light transport evaluation mode.
+	SpectrumMode   optics.SpectrumMode // Spectral evaluation mode.
+	CurrentIOR     float64             // Index of refraction at the current point.
+	WavelengthNM   float64             // Selected wavelength in nanometers.
+	WavelengthsNM  []float64           // Sampled wavelengths in nanometers.
+	WavelengthPDF  float64             // Probability density of wavelength sampling.
+	EtaIncident    float64             // Incident-side index of refraction.
+	EtaTransmit    float64             // Transmitted-side index of refraction.
+	IncidentMedium medium.MediumID     // Medium on the incident side.
+	TransmitMedium medium.MediumID     // Medium on the transmitted side.
+	Entering       bool                // True when crossing into the surface.
 }
 
 func (ctx ShadingContext) SpectralWavelengthNM() float64 {
@@ -72,11 +72,11 @@ func (ctx ShadingContext) SpectralWavelengthsNM() []float64 {
 }
 
 type BxDFSample struct {
-	Wi             maths.Direction
-	F              optics.Spectrum
-	PDF            float64
-	Flags          DeltaFlags
-	Eta            float64
-	WavelengthNM   float64
-	TransmitMedium medium.MediumID
+	Wi             maths.Direction // Sampled incident direction.
+	F              optics.Spectrum // Sampled BxDF value.
+	PDF            float64         // Sampling probability density.
+	Flags          DeltaFlags      // Scattering event flags.
+	Eta            float64         // Relative index of refraction.
+	WavelengthNM   float64         // Sampled wavelength in nanometers.
+	TransmitMedium medium.MediumID // Medium entered after transmission.
 }

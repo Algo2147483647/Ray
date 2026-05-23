@@ -104,13 +104,13 @@ func TestFilmToImageConvertsACEScgColorSpace(t *testing.T) {
 	}
 }
 
-func TestFilmConvertsSpectralBinsToWorkingSpace(t *testing.T) {
+func TestFilmConvertsSpectralBinsToFilmColorSpace(t *testing.T) {
 	film := NewFilm(1, 1)
 	film.ColorSpace = FilmColorSpaceXYZ
 	film.InitSpectralBins(1, 549.5, 550.5)
 	film.RecordSpectralSample(0, 550, 1)
 
-	film.ConvertSpectralBinsToWorkingSpace()
+	film.ConvertSpectralBinsToFilmColorSpace()
 	want := optics.SpectralRadianceToXYZ(550, 1)
 
 	for ch := 0; ch < 3; ch++ {

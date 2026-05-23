@@ -11,13 +11,13 @@ import (
 
 type CameraNDim struct {
 	CameraBase
-	Position               *mat.VecDense
-	Coordinates            []*mat.VecDense
-	Width                  []int
-	FieldOfView            []float64
-	Ortho                  bool
-	orthonormalCoordinates []*mat.VecDense
-	fovTangents            []float64
+	Position               *mat.VecDense   // Camera origin in N-dimensional space.
+	Coordinates            []*mat.VecDense // Camera basis vectors.
+	Width                  []int           // Film resolution per dimension.
+	FieldOfView            []float64       // Field-of-view angle per dimension.
+	Ortho                  bool            // Uses orthographic projection when true.
+	orthonormalCoordinates []*mat.VecDense // Orthonormalized camera basis vectors.
+	fovTangents            []float64       // Tangents of half field-of-view angles.
 }
 
 func NewCameraNDim() *CameraNDim {

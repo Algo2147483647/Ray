@@ -2,86 +2,66 @@ package ray_tracing
 
 import (
 	"fmt"
-	"github.com/Algo2147483647/ray/engine/model/camera"
-	"github.com/Algo2147483647/ray/engine/model/object"
-	"github.com/Algo2147483647/ray/engine/model/optics"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/Algo2147483647/ray/engine/model/camera"
+	"github.com/Algo2147483647/ray/engine/model/object"
+	"github.com/Algo2147483647/ray/engine/model/optics"
 )
 
-const defaultSpectralBinCount = 64
+const (
+	defaultSpectralBinCount = 64
+	defaultTileSize         = 8
+	progressInterval        = 100 * time.Millisecond
+)
 
 // TraceScene renders the object tree from the supplied camera into the film.
-func (h *Handler) TraceScene(renderCamera camera.Camera, objectTree *object.ObjectTree, film *camera.Film, samples int64) {
-	if h.WorkingSpace == "" {
-		h.WorkingSpace = film.ColorSpace
-	}
-	if film.ColorSpace == "" {
-		film.ColorSpace = h.WorkingSpace
-	}
-	if h.SpectrumMode != optics.SpectrumModeRGB && !film.HasSpectralBins() {
-		film.InitSpectralBins(defaultSpectralBinCount, optics.WavelengthMin, optics.WavelengthMax)
-	}
+func (h *Handler) TraceScene(
+	renderCamera camera.Camera,
+	objectTree *object.ObjectTree,
+	film *camera.Film,
+	samples int64,
+) {
+	h.prepareFilm(film)
 
 	var (
-		nextTile    int64
-		progress    int64
+		shape       = film.Data[0].Shape
 		totalPixels = len(film.Data[0].Data)
-		tiles       = buildRenderTiles(film.Data[0].Shape, h.tileWidth(), h.tileHeight())
+		tiles       = buildTileCoordinates(shape, h.BlockCols, h.BlockRows)
+		progress    int64
+		done        = make(chan struct{})
+		workerCount = h.ThreadNum
+		nextTile    int64
 		wg          sync.WaitGroup
-		done        = make(chan bool)
 	)
 
-	go func() {
-		startTime := time.Now()
-		for {
-			select {
-			case <-done:
-				elapsed := time.Since(startTime).Round(time.Second)
-				fmt.Printf("\rRendering complete! Pixels: %d/%d (100%%) Time: %v\n",
-					totalPixels, totalPixels, elapsed)
-				return
-			default:
-				current := atomic.LoadInt64(&progress)
-				percent := float64(current) / float64(totalPixels) * 100
-				elapsed := time.Since(startTime).Round(time.Second)
-				fmt.Printf("\rRendering: %d/%d pixels (%.2f%%) Time: %v",
-					current, totalPixels, percent, elapsed)
-				time.Sleep(100 * time.Millisecond)
-			}
-		}
-	}()
+	if workerCount <= 0 {
+		workerCount = 1
+	}
 
-	for i := 0; i < h.ThreadNum; i++ {
-		wg.Add(1)
+	wg.Add(workerCount)
+
+	go reportProgress(done, &progress, int64(totalPixels))
+
+	for range workerCount {
 		go func() {
 			defer wg.Done()
+
 			for {
-				tileIndex := int(atomic.AddInt64(&nextTile, 1) - 1)
-				if tileIndex >= len(tiles) {
+				index := int(atomic.AddInt64(&nextTile, 1) - 1)
+				if index >= len(tiles) {
 					return
 				}
 
-				tile := tiles[tileIndex]
-				rendered := int64(0)
-				for y := tile.Y0; y < tile.Y1; y++ {
-					for x := tile.X0; x < tile.X1; x++ {
-						pixel := tile.pixelIndex(x, y, film.Data[0].Shape)
-						coords := film.Data[0].GetCoordinates(pixel)
-						if h.SpectrumMode != optics.SpectrumModeRGB && film.HasSpectralBins() {
-							for _, sample := range h.TracePixelSpectralSamples(renderCamera, objectTree, samples, coords...) {
-								film.RecordSpectralSample(pixel, sample.WavelengthNM, sample.Value)
-							}
-						} else {
-							color := h.TracePixel(renderCamera, objectTree, samples, coords...)
-							for ch := 0; ch < 3; ch++ {
-								film.Data[ch].Data[pixel] = color[ch]
-							}
-						}
-						rendered++
-					}
-				}
+				rendered := h.TraceTile(
+					renderCamera,
+					objectTree,
+					film,
+					samples,
+					tiles[index],
+				)
 
 				atomic.AddInt64(&progress, rendered)
 			}
@@ -89,82 +69,70 @@ func (h *Handler) TraceScene(renderCamera camera.Camera, objectTree *object.Obje
 	}
 
 	wg.Wait()
-	close(done)
-	time.Sleep(100 * time.Millisecond)
 
-	if h.SpectrumMode != optics.SpectrumModeRGB && film.HasSpectralBins() {
-		film.ConvertSpectralBinsToWorkingSpace()
+	close(done)
+
+	if h.usesSpectralRendering(film) {
+		film.ConvertSpectralBinsToFilmColorSpace()
 	}
+
 	film.Samples = h.EffectiveSampleCount(samples)
 }
 
-type renderTile struct {
-	X0 int
-	X1 int
-	Y0 int
-	Y1 int
+func (h *Handler) prepareFilm(film *camera.Film) {
+	if h.FilmColorSpace == "" {
+		h.FilmColorSpace = film.ColorSpace
+	}
+
+	if film.ColorSpace == "" {
+		film.ColorSpace = h.FilmColorSpace
+	}
+
+	if h.SpectrumMode != optics.SpectrumModeRGB && !film.HasSpectralBins() {
+		film.InitSpectralBins(
+			defaultSpectralBinCount,
+			optics.WavelengthMin,
+			optics.WavelengthMax,
+		)
+	}
 }
 
-func (t renderTile) pixelIndex(x, y int, shape []int) int {
-	if len(shape) == 2 {
-		return y*shape[0] + x
-	}
-	return x
+func (h *Handler) usesSpectralRendering(film *camera.Film) bool {
+	return h.SpectrumMode != optics.SpectrumModeRGB && film.HasSpectralBins()
 }
 
-func buildRenderTiles(shape []int, tileWidth, tileHeight int) []renderTile {
-	if tileWidth <= 0 {
-		tileWidth = 8
-	}
-	if tileHeight <= 0 {
-		tileHeight = 8
-	}
-	if len(shape) != 2 {
-		total := 1
-		for _, dim := range shape {
-			total *= dim
-		}
-		chunkSize := tileWidth * tileHeight
-		tiles := make([]renderTile, 0, (total+chunkSize-1)/chunkSize)
-		for start := 0; start < total; start += chunkSize {
-			end := start + chunkSize
-			if end > total {
-				end = total
-			}
-			tiles = append(tiles, renderTile{X0: start, X1: end, Y0: 0, Y1: 1})
-		}
-		return tiles
+func reportProgress(done <-chan struct{}, progress *int64, totalPixels int64) {
+	start := time.Now()
+	ticker := time.NewTicker(progressInterval)
+	defer ticker.Stop()
+
+	print := func(current int64) {
+		percent := float64(current) / float64(totalPixels) * 100
+		elapsed := time.Since(start).Round(time.Second)
+
+		fmt.Printf(
+			"\rRendering: %d/%d pixels (%.2f%%) Time: %v",
+			current,
+			totalPixels,
+			percent,
+			elapsed,
+		)
 	}
 
-	width := shape[0]
-	height := shape[1]
-	tiles := make([]renderTile, 0, ((width+tileWidth-1)/tileWidth)*((height+tileHeight-1)/tileHeight))
-	for y := 0; y < height; y += tileHeight {
-		y1 := y + tileHeight
-		if y1 > height {
-			y1 = height
-		}
-		for x := 0; x < width; x += tileWidth {
-			x1 := x + tileWidth
-			if x1 > width {
-				x1 = width
-			}
-			tiles = append(tiles, renderTile{X0: x, X1: x1, Y0: y, Y1: y1})
-		}
-	}
-	return tiles
-}
+	for {
+		select {
+		case <-done:
+			elapsed := time.Since(start).Round(time.Second)
+			fmt.Printf(
+				"\rRendering complete! Pixels: %d/%d (100%%) Time: %v\n",
+				totalPixels,
+				totalPixels,
+				elapsed,
+			)
+			return
 
-func (h *Handler) tileWidth() int {
-	if h.BlockCols <= 0 {
-		return 8
+		case <-ticker.C:
+			print(atomic.LoadInt64(progress))
+		}
 	}
-	return h.BlockCols
-}
-
-func (h *Handler) tileHeight() int {
-	if h.BlockRows <= 0 {
-		return 8
-	}
-	return h.BlockRows
 }
