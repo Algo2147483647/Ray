@@ -162,7 +162,7 @@ func parseSurface(def map[string]interface{}) (bsdf.BSDF, error) {
 	}
 }
 
-func parseEmission(def map[string]interface{}) (material.Emitter, error) {
+func parseEmission(def map[string]interface{}) (emission.Emitter, error) {
 	emissionType, err := utils.RequiredStringField(def, "type")
 	if err != nil {
 		return nil, err
