@@ -31,7 +31,7 @@ func (h *Handler) TracePixel(
 
 		for s := int64(0); s < samples; s++ {
 			for w := 0; w < wavelengthSamples; w++ {
-				u := stratifiedWavelengthSample(w, wavelengthSamples)
+				u := (float64(w) + rand.Float64()) / float64(wavelengthSamples)
 
 				color = color.Add(h.TraceSpectral(
 					renderCamera,
@@ -133,17 +133,22 @@ func (h *Handler) TracePixelSpectralSamples(
 		wavelengthSamples := h.wavelengthSampleCount()
 
 		for s := int64(0); s < samples; s++ {
-			spectralSamples = append(
-				spectralSamples,
-				h.collectSampledWavelengthsForPixelSample(
+			wavelengthBatch := make([]rendercamera.SpectralSample, 0, wavelengthSamples)
+
+			for w := 0; w < wavelengthSamples; w++ {
+				u := (float64(w) + rand.Float64()) / float64(wavelengthSamples)
+
+				wavelengthBatch = append(wavelengthBatch, h.traceSpectralSample(
 					renderCamera,
 					objTree,
 					ray,
 					wavelengthSampler,
-					wavelengthSamples,
+					u,
 					index...,
-				)...,
-			)
+				))
+			}
+
+			spectralSamples = append(spectralSamples, wavelengthBatch...)
 		}
 
 	case optics.SpectrumModeHeroWavelength:
@@ -163,32 +168,6 @@ func (h *Handler) TracePixelSpectralSamples(
 
 	normalizeSpectralSamples(spectralSamples)
 	return spectralSamples
-}
-
-func (h *Handler) collectSampledWavelengthsForPixelSample(
-	renderCamera rendercamera.Camera,
-	objTree *object.ObjectTree,
-	ray *optics.Ray,
-	wavelengthSampler optics.WavelengthSampler,
-	wavelengthSamples int,
-	index ...int,
-) []rendercamera.SpectralSample {
-	samples := make([]rendercamera.SpectralSample, 0, wavelengthSamples)
-
-	for w := 0; w < wavelengthSamples; w++ {
-		u := stratifiedWavelengthSample(w, wavelengthSamples)
-
-		samples = append(samples, h.traceSpectralSample(
-			renderCamera,
-			objTree,
-			ray,
-			wavelengthSampler,
-			u,
-			index...,
-		))
-	}
-
-	return samples
 }
 
 func (h *Handler) traceSpectralSample(
@@ -228,17 +207,10 @@ func (h *Handler) wavelengthSampleCount() int {
 func (h *Handler) estimatedSpectralSampleCount(samples int64) int {
 	if samples <= 0 {
 		return 0
-	}
-
-	if h.SpectrumMode == optics.SpectrumModeSampledWavelengths {
+	} else if h.SpectrumMode == optics.SpectrumModeSampledWavelengths {
 		return int(samples) * h.wavelengthSampleCount()
 	}
-
 	return int(samples)
-}
-
-func stratifiedWavelengthSample(index, count int) float64 {
-	return (float64(index) + rand.Float64()) / float64(count)
 }
 
 func normalizeSpectralSamples(samples []rendercamera.SpectralSample) {
