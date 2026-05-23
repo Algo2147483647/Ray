@@ -8,6 +8,13 @@ import (
 	"math"
 )
 
+type SpecularDielectric struct {
+	Reflectance   optics.SpectralParameter
+	Transmittance optics.SpectralParameter
+	EtaOutside    float64
+	InsideIOR     medium.Model
+}
+
 func NewSpecularDielectric(reflectance, transmittance optics.Spectrum, etaOutside float64, insideIOR medium.Model) SpecularDielectric {
 	return NewSpecularDielectricParameter(spectrum_parameter.NewRGBParameter(reflectance), spectrum_parameter.NewRGBParameter(transmittance), etaOutside, insideIOR)
 }

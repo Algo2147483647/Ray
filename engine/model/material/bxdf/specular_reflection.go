@@ -1,7 +1,6 @@
 package bxdf
 
 import (
-	"github.com/Algo2147483647/ray/engine/model/material/medium"
 	"github.com/Algo2147483647/ray/engine/model/optics"
 	"github.com/Algo2147483647/ray/engine/model/optics/spectrum_parameter"
 	"github.com/Algo2147483647/ray/engine/utils/maths"
@@ -52,11 +51,4 @@ func (s SpecularReflection) RoughnessInfo(ShadingContext) RoughnessInfo {
 
 func (s SpecularReflection) DeltaFlags() DeltaFlags {
 	return DeltaReflection
-}
-
-type SpecularDielectric struct {
-	Reflectance   optics.SpectralParameter
-	Transmittance optics.SpectralParameter
-	EtaOutside    float64
-	InsideIOR     medium.Model
 }
