@@ -48,6 +48,7 @@ func (s SpecularDielectric) Sample(ctx ShadingContext, wo maths.Direction, u mat
 	wavelengthNM, spectralSample := s.resolveWavelength(ctx)
 	spectralSample = spectralSample && insideIOR.IsDispersive()
 	etaInside := insideIOR.Evaluate(wavelengthNM)
+
 	if !medium.IsValidEta(s.EtaOutside) || !medium.IsValidEta(etaInside) {
 		return BxDFSample{}
 	}
@@ -156,58 +157,4 @@ func (s SpecularDielectric) insideIOR() medium.Model {
 		return medium.NewConstant(1.5)
 	}
 	return s.InsideIOR
-}
-
-func FresnelDielectric(cosThetaI, etaI, etaT float64) float64 {
-	cosThetaI = clamp(cosThetaI, -1, 1)
-	entering := cosThetaI > 0
-	if !entering {
-		etaI, etaT = etaT, etaI
-		cosThetaI = math.Abs(cosThetaI)
-	}
-
-	sinThetaI := math.Sqrt(math.Max(0, 1-cosThetaI*cosThetaI))
-	sinThetaT := etaI / etaT * sinThetaI
-	if sinThetaT >= 1 {
-		return 1
-	}
-
-	cosThetaT := math.Sqrt(math.Max(0, 1-sinThetaT*sinThetaT))
-	rParallel := ((etaT * cosThetaI) - (etaI * cosThetaT)) / ((etaT * cosThetaI) + (etaI * cosThetaT))
-	rPerpendicular := ((etaI * cosThetaI) - (etaT * cosThetaT)) / ((etaI * cosThetaI) + (etaT * cosThetaT))
-	return (rParallel*rParallel + rPerpendicular*rPerpendicular) * 0.5
-}
-
-func reflectLocal(wo maths.Direction) maths.Direction {
-	return maths.NewDirection(-wo.X, -wo.Y, wo.Z)
-}
-
-func refractLocal(wo maths.Direction, eta float64) (maths.Direction, bool) {
-	cosThetaO := wo.Z
-	sin2ThetaO := math.Max(0, 1-cosThetaO*cosThetaO)
-	sin2ThetaI := eta * eta * sin2ThetaO
-	if sin2ThetaI >= 1 {
-		return maths.Direction{}, false
-	}
-
-	cosThetaI := math.Sqrt(math.Max(0, 1-sin2ThetaI))
-	if cosThetaO > 0 {
-		cosThetaI = -cosThetaI
-	}
-
-	return maths.NewDirection(-eta*wo.X, -eta*wo.Y, cosThetaI).Normalize(), true
-}
-
-func clamp(v, lo, hi float64) float64 {
-	if v < lo {
-		return lo
-	}
-	if v > hi {
-		return hi
-	}
-	return v
-}
-
-func almostEqualIOR(a, b float64) bool {
-	return math.Abs(a-b) <= 1e-6
 }

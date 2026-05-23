@@ -9,19 +9,13 @@ import (
 
 type Sphere struct {
 	BaseShape
-	center    *mat.VecDense
-	centerXYZ [3]float64
-	has3D     bool
-	R         float64 `json:"r"`
+	center *mat.VecDense
+	R      float64 `json:"r"`
 }
 
 // NewSphere is the constructor.
 func NewSphere(center *mat.VecDense, R float64) *Sphere {
 	s := &Sphere{center: center, R: R}
-	if center.Len() == 3 {
-		s.centerXYZ = vecDenseXYZ(center)
-		s.has3D = true
-	}
 	return s
 }
 
@@ -49,7 +43,7 @@ func (s *Sphere) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64)
 }
 
 func (s *Sphere) IntersectCandidate(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceCandidate, bool) {
-	if s.has3D && raySt.Len() == 3 && rayDir.Len() == 3 {
+	if raySt.Len() == 3 && rayDir.Len() == 3 {
 		return s.intersectCandidate3D(raySt, rayDir, tMin, tMax)
 	}
 
@@ -92,9 +86,9 @@ func (s *Sphere) IntersectCandidate(raySt, rayDir *mat.VecDense, tMin, tMax floa
 }
 
 func (s *Sphere) intersectCandidate3D(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceCandidate, bool) {
-	ox := raySt.AtVec(0) - s.centerXYZ[0]
-	oy := raySt.AtVec(1) - s.centerXYZ[1]
-	oz := raySt.AtVec(2) - s.centerXYZ[2]
+	ox := raySt.AtVec(0) - s.center.AtVec(0)
+	oy := raySt.AtVec(1) - s.center.AtVec(1)
+	oz := raySt.AtVec(2) - s.center.AtVec(2)
 	dx, dy, dz := rayDir.AtVec(0), rayDir.AtVec(1), rayDir.AtVec(2)
 
 	a := dx*dx + dy*dy + dz*dz

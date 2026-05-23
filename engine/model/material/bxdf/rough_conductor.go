@@ -111,33 +111,3 @@ func (r RoughConductor) RoughnessInfo(ShadingContext) RoughnessInfo {
 func (r RoughConductor) DeltaFlags() DeltaFlags {
 	return DeltaNone
 }
-
-func reflectAbout(wo, wh maths.Direction) maths.Direction {
-	return wh.MulScalar(2 * wo.Dot(wh)).Add(wo.MulScalar(-1))
-}
-
-func compatibleWeightSpectrum(weight, target optics.Spectrum, ctx ShadingContext) optics.Spectrum {
-	if weight.HasSamples() == target.HasSamples() {
-		return weight
-	}
-	if target.HasSamples() && !weight.HasSamples() {
-		return weight.UpliftRGBReflectanceToSampled(ctx.WavelengthsNM)
-	}
-	if !target.HasSamples() && sampledSpectrumIsConstant(weight) {
-		return optics.ConstantSpectrum(weight.Sample(0))
-	}
-	return optics.Spectrum{}
-}
-
-func sampledSpectrumIsConstant(s optics.Spectrum) bool {
-	if !s.HasSamples() {
-		return false
-	}
-	first := s.Sample(0)
-	for i := 1; i < s.SampleCount(); i++ {
-		if math.Abs(s.Sample(i)-first) > 1e-12 {
-			return false
-		}
-	}
-	return true
-}
