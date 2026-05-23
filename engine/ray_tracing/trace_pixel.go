@@ -55,12 +55,12 @@ func (h *Handler) TraceRGB(
 	renderCamera.GenerateRay(ray, index...)
 	ray.DisableSpectralSampling()
 
-	contribution := h.TraceRay(objTree, ray, 0)
+	h.TraceRay(objTree, ray, 0)
 
 	r, g, b := rendercamera.LinearSRGBToFilmColorSpace(
-		contribution[0],
-		contribution[1],
-		contribution[2],
+		ray.Color[0],
+		ray.Color[1],
+		ray.Color[2],
 		h.FilmColorSpace,
 	)
 
@@ -134,10 +134,10 @@ func (h *Handler) TraceSpectralSample(
 	sample := wavelengthSampler.Sample(u)
 	ray.SetSpectralSample(sample)
 
-	traced := h.TraceRay(objTree, ray, 0)
+	h.TraceRay(objTree, ray, 0)
 
 	value := optics.SpectralSampleRadiance(
-		optics.SpectralRayToScalar(traced, ray),
+		optics.SpectralRayToScalar(ray),
 		ray.WavelengthPDF,
 	)
 

@@ -25,7 +25,7 @@ func SpectralRayToXYZ(color RGB, ray *Ray) XYZ {
 	)
 }
 
-func SpectralRayToScalar(color RGB, ray *Ray) float64 {
+func SpectralRayToScalar(ray *Ray) float64 {
 	if ray == nil || ray.WaveLength <= 0 {
 		return 0
 	}

@@ -27,16 +27,16 @@ func applySpectrum(ray *renderray.Ray, spectrum optics.Spectrum) {
 	ray.Color = ray.Color.Mul(spectrum.RGB)
 }
 
-func terminateRay(ray *renderray.Ray) optics.RGB {
+func terminateRay(ray *renderray.Ray) {
 	if ray == nil {
-		return optics.RGB{}
+		return
 	}
 	ray.Color = optics.RGB{}
 	ray.SpectralPower = 0
 	ray.SpectralPath = false
 	ray.RGBCompatibilityPath = false
 	ray.RGBCompatibility = optics.RGB{}
-	return ray.Color
+	return
 }
 
 func russianRouletteSurvivalProbability(ray *renderray.Ray) float64 {

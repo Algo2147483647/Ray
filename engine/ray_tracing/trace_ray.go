@@ -10,14 +10,16 @@ import (
 	"math/rand/v2"
 )
 
-func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level int64) optics.RGB {
+func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level int64) {
 	if level > h.MaxRayLevel {
-		return terminateRay(ray)
+		terminateRay(ray)
+		return
 	}
 
 	hit, ok := objTree.GetSurfaceHit(ray.Origin, ray.Direction)
 	if !ok {
-		return terminateRay(ray)
+		terminateRay(ray)
+		return
 	}
 
 	media := objTree.Media
@@ -39,7 +41,8 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level in
 	obj := hit.Object
 
 	if obj.Material == nil {
-		return terminateRay(ray)
+		terminateRay(ray)
+		return
 	}
 
 	ctx := bxdf.ShadingContext{
@@ -57,16 +60,19 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level in
 
 	frame, frameOK := maths.NewFrameFromNormal(normal)
 	if !frameOK {
-		return terminateRay(ray)
+		terminateRay(ray)
+		return
 	}
 
 	woLocal := frame.WorldToLocalNegated(ray.Direction)
 	if obj.Material.HasEmission() {
 		emitted := obj.Material.Emission.Emit(ctx, woLocal)
 		applySpectrum(ray, emitted)
-		return ray.Color
+		return
+
 	} else if !obj.Material.HasSurface() {
-		return terminateRay(ray)
+		terminateRay(ray)
+		return
 	}
 
 	sample := obj.Material.Surface.Sample(ctx, woLocal, maths.Sample2D{
@@ -74,7 +80,8 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level in
 		V: rand.Float64(),
 	})
 	if sample.PDF <= 0 || !sample.F.IsFinite() || !sample.F.IsNonNegative() {
-		return terminateRay(ray)
+		terminateRay(ray)
+		return
 	}
 
 	weight := maths.AbsCosTheta(sample.Wi) / sample.PDF
@@ -93,12 +100,14 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level in
 	if h.shouldApplyRussianRoulette(nextLevel) {
 		survival := russianRouletteSurvivalProbability(ray)
 		if survival <= 0 || rand.Float64() >= survival {
-			return terminateRay(ray)
+			terminateRay(ray)
+			return
 		}
 		scaleRayThroughput(ray, 1/survival)
 	}
 
-	return h.TraceRay(objTree, ray, nextLevel)
+	h.TraceRay(objTree, ray, nextLevel)
+	return
 }
 
 func (h *Handler) shouldApplyRussianRoulette(nextLevel int64) bool {
