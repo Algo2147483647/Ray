@@ -25,12 +25,27 @@ func (h *Handler) TracePixel(
 	defer h.RayPool.Put(ray)
 
 	switch h.SpectrumMode {
-	case optics.SpectrumModeRGB:
+	case optics.SpectrumModeSampledWavelengths:
+		wavelengthSampler := h.wavelengthSampler()
+		wavelengthSamples := h.wavelengthSampleCount()
+
 		for s := int64(0); s < samples; s++ {
-			color = color.Add(h.TraceRGB(renderCamera, objTree, ray, index...))
+			for w := 0; w < wavelengthSamples; w++ {
+				u := stratifiedWavelengthSample(w, wavelengthSamples)
+
+				color = color.Add(h.TraceSpectral(
+					renderCamera,
+					objTree,
+					ray,
+					wavelengthSampler,
+					u,
+					index...,
+				))
+			}
 		}
 
-		return color.MulScalar(1.0 / float64(samples))
+		totalTraces := samples * int64(wavelengthSamples)
+		return color.MulScalar(1.0 / float64(totalTraces))
 
 	case optics.SpectrumModeHeroWavelength:
 		wavelengthSampler := h.wavelengthSampler()
@@ -48,53 +63,16 @@ func (h *Handler) TracePixel(
 
 		return color.MulScalar(1.0 / float64(samples))
 
-	case optics.SpectrumModeSampledWavelengths:
-		wavelengthSampler := h.wavelengthSampler()
-		wavelengthSamples := h.wavelengthSampleCount()
-
+	case optics.SpectrumModeRGB:
 		for s := int64(0); s < samples; s++ {
-			color = color.Add(h.traceSampledWavelengthsForPixelSample(
-				renderCamera,
-				objTree,
-				ray,
-				wavelengthSampler,
-				wavelengthSamples,
-				index...,
-			))
+			color = color.Add(h.TraceRGB(renderCamera, objTree, ray, index...))
 		}
 
-		totalTraces := samples * int64(wavelengthSamples)
-		return color.MulScalar(1.0 / float64(totalTraces))
+		return color.MulScalar(1.0 / float64(samples))
 
 	default:
 		return optics.Color3{}
 	}
-}
-
-func (h *Handler) traceSampledWavelengthsForPixelSample(
-	renderCamera rendercamera.Camera,
-	objTree *object.ObjectTree,
-	ray *optics.Ray,
-	wavelengthSampler optics.WavelengthSampler,
-	wavelengthSamples int,
-	index ...int,
-) optics.Color3 {
-	color := optics.Color3{}
-
-	for w := 0; w < wavelengthSamples; w++ {
-		u := stratifiedWavelengthSample(w, wavelengthSamples)
-
-		color = color.Add(h.TraceSpectral(
-			renderCamera,
-			objTree,
-			ray,
-			wavelengthSampler,
-			u,
-			index...,
-		))
-	}
-
-	return color
 }
 
 func (h *Handler) TraceRGB(
@@ -134,7 +112,8 @@ func (h *Handler) TraceSpectral(
 	traced := h.TraceRay(objTree, ray, 0)
 	xyz := optics.SpectralRayToXYZ(traced, ray)
 
-	return xyzToWorkingColor(xyz, h.FilmColorSpace)
+	a, b, c := rendercamera.XYZToFilmColorSpace(xyz[0], xyz[1], xyz[2], h.FilmColorSpace)
+	return optics.Color3{a, b, c}
 }
 
 func (h *Handler) TracePixelSpectralSamples(
@@ -167,7 +146,7 @@ func (h *Handler) TracePixelSpectralSamples(
 			)
 		}
 
-	default:
+	case optics.SpectrumModeHeroWavelength:
 		for s := int64(0); s < samples; s++ {
 			spectralSamples = append(spectralSamples, h.traceSpectralSample(
 				renderCamera,
@@ -178,6 +157,8 @@ func (h *Handler) TracePixelSpectralSamples(
 				index...,
 			))
 		}
+
+	default:
 	}
 
 	normalizeSpectralSamples(spectralSamples)
@@ -269,9 +250,4 @@ func normalizeSpectralSamples(samples []rendercamera.SpectralSample) {
 	for i := range samples {
 		samples[i].Value *= scale
 	}
-}
-
-func xyzToWorkingColor(xyz optics.XYZ, space rendercamera.FilmColorSpace) optics.Color3 {
-	a, b, c := rendercamera.XYZToFilmColorSpace(xyz[0], xyz[1], xyz[2], space)
-	return optics.Color3{a, b, c}
 }
