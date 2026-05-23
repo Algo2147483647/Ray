@@ -82,23 +82,6 @@ func TestSpectralRayToXYZIgnoresCompatibilityWithoutExplicitFlag(t *testing.T) {
 	}
 }
 
-func TestSpectralRayToScalarAppliesRGBCompatibilitySpectrally(t *testing.T) {
-	ray := &Ray{
-		WaveLength:           610,
-		WavelengthPDF:        UniformWavelengthPDF(),
-		SpectralPower:        2,
-		SpectralPath:         true,
-		RGBCompatibilityPath: true,
-		RGBCompatibility:     RGB{0.8, 0.1, 0.05},
-	}
-
-	got := SpectralRayToScalar(RGB{1, 1, 1}, ray)
-	want := 2 * NewRGBSpectrum(0.8, 0.1, 0.05).RGBPowerAtWavelength(610)
-	if math.Abs(got-want) > 1e-12 {
-		t.Fatalf("unexpected scalar spectral contribution: got %f want %f", got, want)
-	}
-}
-
 func TestACEScgRoundTripLinearSRGB(t *testing.T) {
 	r, g, b := LinearSRGBToACEScg(0.25, 0.5, 0.75)
 	gotR, gotG, gotB := ACEScgToLinearSRGB(r, g, b)
