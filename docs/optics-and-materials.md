@@ -170,7 +170,13 @@ hero_wavelength
 sampled
 ```
 
-In spectral modes, the ray carries a sampled wavelength and PDF. After tracing, spectral power is converted through CIE 1931 XYZ matching functions in `engine/model/optics/wavelength.go`.
+In spectral modes, the ray carries a sampled wavelength and PDF. The traced path returns scalar spectral radiance for that wavelength. The renderer records those wavelength-tagged scalar samples into `camera.Film.SpectralBins`; after rendering, the film integrates the bins through CIE 1931 XYZ matching functions in `engine/model/optics/wavelength.go` and converts the result into the configured film working color space.
+
+The mode behavior is:
+
+- `rgb`: no wavelength sampling; paths return three-channel values and write directly to film channels.
+- `hero_wavelength`: one sampled wavelength path per camera sample.
+- `sampled`: multiple stratified wavelength subpaths per camera sample, controlled by `wavelength_samples`.
 
 ## 10. Current Limits
 

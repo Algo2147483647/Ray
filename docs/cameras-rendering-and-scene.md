@@ -115,7 +115,9 @@ Relevant code:
 
 ## 6. Pixel Sampling
 
-For each pixel, the renderer:
+For each pixel, the renderer branches by `spectrum_mode`.
+
+In `rgb` mode, the renderer:
 
 1. generates `N` rays,
 2. traces each ray recursively,
@@ -130,9 +132,23 @@ pixel(x, y) = (1 / N) sum_i TraceRay_i
 
 This is the discrete Monte Carlo estimator for the pixel intensity.
 
+In `hero_wavelength` and `sampled` modes, the renderer estimates the pixel through wavelength-tagged scalar samples instead of immediate RGB colors:
+
+1. generate a camera ray,
+2. sample one wavelength for `hero_wavelength`, or `wavelength_samples` stratified wavelengths for `sampled`,
+3. store the wavelength and wavelength PDF on the ray,
+4. trace the recursive path,
+5. convert the path contribution to scalar spectral radiance,
+6. normalize the spectral sample batch,
+7. record each sample into the film's spectral bins.
+
+Those bins are converted to the selected film working color space after all pixels finish. This means spectral modes perform color reconstruction at the film stage, while RGB mode writes three film channels directly.
+
 Relevant code:
 
 - `engine/ray_tracing/trace_pixel.go`
+- `engine/ray_tracing/trace_scene.go`
+- `engine/model/camera/film.go`
 
 ## 7. Recursive Ray Tracing
 
@@ -175,13 +191,21 @@ Relevant code:
 
 ## 9. Film as a Tensor-Valued Measurement Buffer
 
-The film stores three tensors, one for each RGB channel, plus a sample count.
+The film stores three tensors for the selected working/display color space, plus a sample count.
 
 This is mathematically a sampled function over a discrete grid:
 
 ```text
 Film: grid -> R^3
 ```
+
+For spectral render modes, the film also stores wavelength bins:
+
+```text
+SpectralBins: grid x wavelength_bin -> scalar radiance
+```
+
+Each spectral path contributes a scalar value to one wavelength bin. Once rendering finishes, the film integrates the bins through CIE 1931 XYZ matching functions and converts XYZ into the configured film color space.
 
 The design also supports more than two spatial axes. If the film tensor has three dimensions, the image export lays out slices vertically in one 2D image.
 
@@ -207,7 +231,9 @@ Relevant code:
 
 ## 11. Parallel Rendering
 
-The renderer parallelizes across pixels. Worker goroutines repeatedly claim the next pixel index using an atomic counter and write the corresponding RGB values into the film.
+The renderer parallelizes across tiles. Worker goroutines repeatedly claim the next tile index using an atomic counter. `TraceTile` walks the pixels in that tile and calls `TracePixel` for each pixel.
+
+`TracePixel` writes either averaged RGB values or spectral-bin contributions depending on the active spectrum mode.
 
 This is a standard task-parallel pattern for embarrassingly parallel rendering workloads:
 
@@ -218,6 +244,8 @@ This is a standard task-parallel pattern for embarrassingly parallel rendering w
 Relevant code:
 
 - `engine/ray_tracing/trace_scene.go`
+- `engine/ray_tracing/trace_tiles.go`
+- `engine/ray_tracing/trace_pixel.go`
 
 ## 12. Ray Pooling and Allocation Control
 

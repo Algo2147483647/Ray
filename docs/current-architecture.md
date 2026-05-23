@@ -26,7 +26,7 @@ SpectrumModeSampledWavelengths
 
 ## Film And Color Spaces
 
-`engine/model/camera/Film` stores three accumulation channels plus a `camera.FilmColorSpace`.
+`engine/model/camera/Film` stores three working/display channels plus a `camera.FilmColorSpace`.
 
 Current film spaces:
 
@@ -36,7 +36,7 @@ FilmColorSpaceACEScg
 FilmColorSpaceXYZ
 ```
 
-Spectral render modes accumulate scalar wavelength samples into `Film.SpectralBins` and convert those bins once into the selected film working space after rendering. This keeps wavelength energy available through accumulation instead of converting every traced path to three channels immediately.
+Spectral render modes also allocate `Film.SpectralBins`. During rendering, each wavelength path returns a scalar radiance value tagged with its wavelength. The film accumulates those values into spectral bins and converts the bins once into the selected film working space after rendering. This keeps wavelength energy available through accumulation instead of converting every traced path to three channels immediately.
 
 Material RGB input spaces are intentionally separate and live in `optics.RGBColorSpace`:
 
@@ -93,13 +93,39 @@ Parsed for future participating-media scattering:
 `engine/ray_tracing/` owns integration:
 
 ```text
+trace_scene.go        film preparation, workers, final spectral conversion
+trace_tiles.go        tile iteration and pixel dispatch
 trace_pixel.go        camera samples and wavelength samples
 trace_ray.go          recursive surface path tracing
 medium_transport.go   medium context, absorption, and boundary stack updates
 throughput.go         RGB/spectral throughput handling
 ```
 
-`trace_pixel.go` samples wavelengths according to `optics.SpectrumMode`. `trace_ray.go` builds `bxdf.ShadingContext`, samples surfaces, applies throughput, and delegates medium operations to `medium_transport.go`.
+The current render flow is:
+
+```text
+TraceScene
+-> prepareFilm
+-> worker goroutines over tiles
+-> TraceTile
+-> TracePixel
+-> TraceRGB or TraceSpectral
+-> TraceRay
+```
+
+`TraceScene` initializes spectral bins for non-RGB modes, then launches tile workers. `TraceTile` only maps tile coordinates to pixels and delegates each pixel to `TracePixel`.
+
+`TracePixel` owns the spectrum-mode branch:
+
+- `rgb`: trace `samples` RGB camera paths with `TraceRGB`, average the returned `Color3`, and write the three film channels directly.
+- `hero_wavelength`: trace one wavelength path per camera sample with `TraceSpectral`, record each scalar spectral sample into `Film.SpectralBins`.
+- `sampled`: for each camera sample, trace `wavelength_samples` stratified wavelength subpaths with `TraceSpectral`, record each scalar spectral sample into `Film.SpectralBins`.
+
+`TraceSpectral` returns wavelength-tagged scalar samples, not a final `Color3`. Each subpath sets the sampled wavelength and PDF on the ray, calls `TraceRay`, converts the traced spectral path to a scalar radiance estimate with `SpectralRayToScalar`, applies the wavelength PDF through `SpectralSampleRadiance`, and normalizes the batch before film recording.
+
+After all workers finish, `TraceScene` calls `Film.ConvertSpectralBinsToFilmColorSpace` for spectral modes. That final step integrates the stored spectral bins through the CIE 1931 matching functions and converts XYZ into the film working color space.
+
+`trace_ray.go` builds `bxdf.ShadingContext`, samples surfaces, applies throughput, and delegates medium operations to `medium_transport.go`.
 
 ## Math Utilities
 

@@ -14,7 +14,7 @@ The renderer has already moved through an important material architecture migrat
 
 The spectral pipeline is still incomplete:
 
-- Film still accumulates three display/working channels, even when the path is wavelength-sampled.
+- Film stores three display/working channels and, for spectral modes, accumulates scalar wavelength samples in spectral bins before converting them to the working color space.
 - Scene JSON does not yet expose a full display transform stack such as `display_space` or OCIO-style views.
 - Measured material libraries and metal presets are not implemented yet.
 - Packet-style multi-channel path transport is not implemented yet; sampled mode currently uses repeated wavelength subpaths.
@@ -263,21 +263,26 @@ rgb:
 
 hero_wavelength:
   path contribution is narrow-band
-  Film converts lambda contribution to XYZ before accumulation
+  Film records wavelength-tagged scalar samples in spectral bins
 
 sampled:
-  Film accumulates XYZ after spectral integration
+  Film records multiple stratified wavelength subpaths in spectral bins
 ```
 
-The current implementation uses the XYZ form internally for spectral modes:
+The current implementation stores spectral diagnostics and reconstruction data beside the three working/display channels:
 
 ```go
 type Film struct {
-    Data       [3]Tensor[float64]
-    Samples    int64
-    ColorSpace camera.FilmColorSpace
+    Data          [3]Tensor[float64]
+    Samples       int64
+    ColorSpace    camera.FilmColorSpace
+    SpectralBins  []Tensor[float64]
+    SpectralMinNM float64
+    SpectralMaxNM float64
 }
 ```
+
+After spectral rendering finishes, `Film.ConvertSpectralBinsToFilmColorSpace` integrates the bins through CIE XYZ matching functions and writes the selected working color space into `Data`.
 
 Authored RGB input spaces are a separate optics concept:
 
