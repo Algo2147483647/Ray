@@ -34,17 +34,7 @@ func (h *Handler) TraceTile(
 			pixel := tile.pixelIndex(x, y, film.Data[0].Shape)
 			coords := film.Data[0].GetCoordinates(pixel)
 
-			if h.usesSpectralRendering(film) {
-				for _, sample := range h.TracePixelSpectralSamples(renderCamera, objectTree, samples, coords...) {
-					film.RecordSpectralSample(pixel, sample.WavelengthNM, sample.Value)
-				}
-
-			} else {
-				color := h.TracePixel(renderCamera, objectTree, samples, coords...)
-				for ch := 0; ch < 3; ch++ {
-					film.Data[ch].Data[pixel] = color[ch]
-				}
-			}
+			h.TracePixel(renderCamera, objectTree, film, samples, pixel, coords...)
 
 			rendered++
 		}

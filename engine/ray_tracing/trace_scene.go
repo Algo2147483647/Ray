@@ -75,7 +75,6 @@ func (h *Handler) TraceScene(
 	if h.usesSpectralRendering(film) {
 		film.ConvertSpectralBinsToFilmColorSpace()
 	}
-
 	film.Samples = h.EffectiveSampleCount(samples)
 }
 
