@@ -235,6 +235,30 @@ func TestRussianRouletteDepthDefaultsToThirdBounce(t *testing.T) {
 	}
 }
 
+func TestTerminateBeforeBounceStopsPastMaxDepth(t *testing.T) {
+	handler := &Handler{MaxRayLevel: 2}
+	ray := &renderray.Ray{Color: renderray.RGB{1, 1, 1}}
+
+	if !handler.terminateBeforeBounce(ray, 3) {
+		t.Fatal("expected path to terminate beyond max depth")
+	}
+	if ray.Color != (renderray.RGB{}) {
+		t.Fatalf("expected terminated ray color to be cleared, got %v", ray.Color)
+	}
+}
+
+func TestTerminateBeforeBounceAllowsFullSurvivalRoulette(t *testing.T) {
+	handler := &Handler{MaxRayLevel: 8, RussianRouletteDepth: 3}
+	ray := &renderray.Ray{Color: renderray.RGB{1, 1, 1}}
+
+	if handler.terminateBeforeBounce(ray, 3) {
+		t.Fatal("did not expect roulette to terminate a unit-throughput RGB path")
+	}
+	if ray.Color != (renderray.RGB{1, 1, 1}) {
+		t.Fatalf("unexpected ray throughput after guaranteed survival: %v", ray.Color)
+	}
+}
+
 type sampledCoefficient struct {
 	value float64
 }

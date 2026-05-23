@@ -20,9 +20,7 @@ type SurfaceInteraction struct {
 }
 
 func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level int64) {
-	// Stop tracing when the recursion depth exceeds the configured limit.
-	if level > h.MaxRayLevel {
-		terminateRay(ray)
+	if h.terminateBeforeBounce(ray, level) {
 		return
 	}
 
@@ -67,14 +65,22 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level in
 	si.Frame.LocalToWorldInto(ray.Direction, sample.Wi)
 	math_lib.Normalize(ray.Direction)
 
-	// Probabilistically terminate low-contribution paths after enough bounces.
-	if h.killByRussianRoulette(ray, level+1) {
-		terminateRay(ray)
-		return
-	}
-
 	// Continue tracing the next bounce.
 	h.TraceRay(objTree, ray, level+1)
+}
+
+func (h *Handler) terminateBeforeBounce(ray *optics.Ray, level int64) bool {
+	if level > h.MaxRayLevel {
+		terminateRay(ray)
+		return true
+	}
+
+	if h.killByRussianRoulette(ray, level) {
+		terminateRay(ray)
+		return true
+	}
+
+	return false
 }
 
 func (h *Handler) prepareSurfaceInteraction(
