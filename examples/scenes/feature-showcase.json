@@ -309,16 +309,17 @@
     }
   ],
   "render": {
-    "samples": 1000,
+    "samples": 500,
     "thread_num": 0,
-    "width": 192,
-    "height": 192,
+    "width": 200,
+    "height": 200,
     "camera_index": 0,
-    "output_image": "../../outputs/feature-showcase-1000spp.png",
-    "output_film": "../../outputs/feature-showcase-1000spp.bin",
-    "debug_output": "../../outputs/feature-showcase-debug.json",
+    "output_image": "../outputs/feature-showcase-800x800-2000spp.png",
+    "output_film": "../outputs/feature-showcase-800x800-2000spp.bin",
     "exposure": 2.1,
     "tone_mapping": "reinhard",
-    "gamma": 2.2
+    "gamma": 2.2,
+    "spectrum_mode": "rgb",
+    "color_space": "linear_srgb"
   }
 }
