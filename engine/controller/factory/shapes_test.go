@@ -142,6 +142,92 @@ func TestParseShapeCubicEquation(t *testing.T) {
 	}
 }
 
+func TestParseShapeCubicEquationSparseFlatCoefficients(t *testing.T) {
+	shapes, err := ParseShape(map[string]interface{}{
+		"shape": "cubic equation",
+		"A": map[string]interface{}{
+			"21": 1,
+			"0":  -1,
+		},
+	})
+	if err != nil {
+		t.Fatalf("parse sparse cubic equation: %v", err)
+	}
+	cubic, ok := shapes[0].(*shape.CubicEquation)
+	if !ok {
+		t.Fatalf("expected *shape.CubicEquation, got %T", shapes[0])
+	}
+
+	interaction, ok := cubic.IntersectRange(
+		mat.NewVecDense(3, []float64{0, 0, 0}),
+		mat.NewVecDense(3, []float64{1, 0, 0}),
+		0,
+		math.MaxFloat64,
+	)
+	if !ok {
+		t.Fatal("expected sparse cubic to hit")
+	}
+	if math.Abs(interaction.Distance-1) > 1e-8 {
+		t.Fatalf("expected hit at distance 1, got %f", interaction.Distance)
+	}
+}
+
+func TestParseShapeFourOrderEquationSparseCoordinateCoefficients(t *testing.T) {
+	shapes, err := ParseShape(map[string]interface{}{
+		"shape": "four-order equation",
+		"a": map[string]interface{}{
+			"1, 1, 1, 1": 1,
+			"1, 1, 1, 0": -12,
+			"1, 1, 0, 0": 54,
+			"1, 0, 0, 0": -108,
+			"0, 0, 0, 0": 80,
+		},
+	})
+	if err != nil {
+		t.Fatalf("parse sparse four-order equation: %v", err)
+	}
+	quartic, ok := shapes[0].(*shape.FourOrderEquation)
+	if !ok {
+		t.Fatalf("expected *shape.FourOrderEquation, got %T", shapes[0])
+	}
+
+	interaction, ok := quartic.IntersectRange(
+		mat.NewVecDense(3, []float64{0, 0, 0}),
+		mat.NewVecDense(3, []float64{1, 0, 0}),
+		0,
+		math.MaxFloat64,
+	)
+	if !ok {
+		t.Fatal("expected sparse four-order equation to hit")
+	}
+	if math.Abs(interaction.Distance-2) > 1e-8 {
+		t.Fatalf("expected hit at distance 2, got %f", interaction.Distance)
+	}
+}
+
+func TestParseShapeRejectsInvalidSparsePolynomialCoefficientKey(t *testing.T) {
+	_, err := ParseShape(map[string]interface{}{
+		"shape": "cubic equation",
+		"a": map[string]interface{}{
+			"8, 4, 5": 123,
+		},
+	})
+	if err == nil {
+		t.Fatal("expected invalid sparse coordinate key to fail")
+	}
+}
+
+func TestParseShapeRejectsDuplicatePolynomialCoefficientFields(t *testing.T) {
+	_, err := ParseShape(map[string]interface{}{
+		"shape": "cubic equation",
+		"a":     map[string]interface{}{"0": -1},
+		"A":     map[string]interface{}{"21": 1},
+	})
+	if err == nil {
+		t.Fatal("expected duplicate coefficient fields to fail")
+	}
+}
+
 func TestParseShapeCubicEquationBakesCenterAndScalarScale(t *testing.T) {
 	coeffs := make([]interface{}, 64)
 	for i := range coeffs {

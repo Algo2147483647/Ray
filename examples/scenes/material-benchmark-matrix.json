@@ -1557,7 +1557,7 @@
     "camera_index": 0,
     "output_image": "../outputs/material-benchmark-matrix.png",
     "output_film": "../outputs/material-benchmark-matrix.bin",
-    "exposure": 2.35,
+    "exposure": 0.2,
     "tone_mapping": "aces",
     "gamma": 2.2,
     "spectrum_mode": "sampled",

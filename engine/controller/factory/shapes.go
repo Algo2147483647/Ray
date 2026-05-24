@@ -224,7 +224,7 @@ func parseCubicEquation(objDef map[string]interface{}) ([]shape.Shape, error) {
 		return nil, err
 	}
 
-	a, err := utils.RequiredFloat64SliceField(objDef, "a", 64)
+	a, err := requiredPolynomialCoefficients(objDef, 3)
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +239,7 @@ func parseFourOrderEquation(objDef map[string]interface{}) ([]shape.Shape, error
 		return nil, err
 	}
 
-	a, err := utils.RequiredFloat64SliceField(objDef, "a", 256)
+	a, err := requiredPolynomialCoefficients(objDef, 4)
 	if err != nil {
 		return nil, err
 	}
