@@ -7294,7 +7294,7 @@
   ],
   "render": {
     "dimension": 3,
-    "samples": 100,
+    "samples": 2000,
     "thread_num": 0,
     "width": 350,
     "height": 200,

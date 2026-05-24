@@ -9,20 +9,14 @@ import (
 
 type FourOrderEquation struct {
 	BaseShape
-	A      *maths.Tensor[float64] `json:"a"`
-	Center [3]float64
-	Scale  [3]float64
+	A *maths.Tensor[float64] `json:"a"`
 }
 
-func NewFourOrderEquation(A []float64, centerScale ...[]float64) *FourOrderEquation { // Index order: 1, x, y, z
-	center, scale := normalizePolynomialCenterScale(centerScale...)
-	baked := bakeFourOrderCoefficients(A, center, scale)
-	ATensor := maths.NewTensorFromSlice(baked, []int{4, 4, 4, 4})
+func NewFourOrderEquation(A []float64) *FourOrderEquation { // Index order: 1, x, y, z
+	ATensor := maths.NewTensorFromSlice(A, []int{4, 4, 4, 4})
 
 	return &FourOrderEquation{
-		A:      ATensor,
-		Center: center,
-		Scale:  scale,
+		A: ATensor,
 	}
 }
 
@@ -240,44 +234,4 @@ func (p *FourOrderEquation) GetNormalVector(intersect, res *mat.VecDense) *mat.V
 	res.SetVec(1, grad[1])
 	res.SetVec(2, grad[2])
 	return maths.Normalize(res)
-}
-
-func bakeFourOrderCoefficients(a []float64, center, scale [3]float64) []float64 {
-	if polynomialPlacementIsIdentity(center, scale) {
-		result := make([]float64, len(a))
-		copy(result, a)
-		return result
-	}
-
-	matrix := polynomialHomogeneousMatrix3D(center, scale)
-	result := make([]float64, 256)
-	for i := 0; i < 4; i++ {
-		for j := 0; j < 4; j++ {
-			for k := 0; k < 4; k++ {
-				for l := 0; l < 4; l++ {
-					coef := fourOrderCoeff(a, i, j, k, l)
-					if coef == 0 {
-						continue
-					}
-					for wi := 0; wi < 4; wi++ {
-						for wj := 0; wj < 4; wj++ {
-							for wk := 0; wk < 4; wk++ {
-								for wl := 0; wl < 4; wl++ {
-									result[fourOrderOffset(wi, wj, wk, wl)] += coef * matrix[i][wi] * matrix[j][wj] * matrix[k][wk] * matrix[l][wl]
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-	return result
-}
-func fourOrderCoeff(a []float64, i, j, k, l int) float64 {
-	return a[fourOrderOffset(i, j, k, l)]
-}
-
-func fourOrderOffset(i, j, k, l int) int {
-	return ((i*4+j)*4+k)*4 + l
 }

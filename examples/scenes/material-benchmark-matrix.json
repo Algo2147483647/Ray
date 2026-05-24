@@ -1550,7 +1550,7 @@
   ],
   "render": {
     "dimension": 3,
-    "samples": 1000,
+    "samples": 200,
     "thread_num": 0,
     "width": 1050,
     "height": 600,
@@ -1560,7 +1560,8 @@
     "exposure": 2.35,
     "tone_mapping": "aces",
     "gamma": 2.2,
-    "spectrum_mode": "rgb",
+    "spectrum_mode": "sampled",
+    "wavelength_samples": 4,
     "color_space": "linear_srgb"
   }
 }

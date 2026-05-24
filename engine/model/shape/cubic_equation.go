@@ -11,55 +11,13 @@ import (
 
 type CubicEquation struct {
 	BaseShape
-	A      *maths.Tensor[float64] `json:"a"`
-	Center [3]float64
-	Scale  [3]float64
+	A *maths.Tensor[float64] `json:"a"`
 }
 
-func NewCubicEquation(A []float64, centerScale ...[]float64) *CubicEquation {
-	center, scale := normalizePolynomialCenterScale(centerScale...)
-	baked := bakeCubicCoefficients(A, center, scale)
+func NewCubicEquation(A []float64) *CubicEquation {
 	return &CubicEquation{
-		A:      maths.NewTensorFromSlice(baked, []int{4, 4, 4}),
-		Center: center,
-		Scale:  scale,
+		A: maths.NewTensorFromSlice(A, []int{4, 4, 4}),
 	}
-}
-
-func bakeCubicCoefficients(a []float64, center, scale [3]float64) []float64 {
-	if polynomialPlacementIsIdentity(center, scale) {
-		result := make([]float64, len(a))
-		copy(result, a)
-		return result
-	}
-
-	matrix := polynomialHomogeneousMatrix3D(center, scale)
-	result := make([]float64, 64)
-	for i := 0; i < 4; i++ {
-		for j := 0; j < 4; j++ {
-			for k := 0; k < 4; k++ {
-				coef := cubicCoeff(a, i, j, k)
-				if coef == 0 {
-					continue
-				}
-				for wi := 0; wi < 4; wi++ {
-					for wj := 0; wj < 4; wj++ {
-						for wk := 0; wk < 4; wk++ {
-							result[cubicOffset(wi, wj, wk)] += coef * matrix[i][wi] * matrix[j][wj] * matrix[k][wk]
-						}
-					}
-				}
-			}
-		}
-	}
-	return result
-}
-func cubicCoeff(a []float64, i, j, k int) float64 {
-	return a[cubicOffset(i, j, k)]
-}
-
-func cubicOffset(i, j, k int) int {
-	return (i*4+j)*4 + k
 }
 
 func (p *CubicEquation) Name() string {

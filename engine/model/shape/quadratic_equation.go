@@ -7,69 +7,20 @@ import (
 	"math"
 )
 
-type QuadraticEquation struct { // f(x) = x^T A x + b^T x + c
+// QuadraticEquation f(x) = x^T A x + b^T x + c
+type QuadraticEquation struct {
 	BaseShape
-	A      *mat.Dense    `json:"a"`
-	B      *mat.VecDense `json:"b"`
-	C      float64       `json:"c"`
-	Center [3]float64
-	Scale  [3]float64
+	A *mat.Dense    `json:"a"`
+	B *mat.VecDense `json:"b"`
+	C float64       `json:"c"`
 }
 
-func NewQuadraticEquation(A *mat.Dense, B *mat.VecDense, C float64, centerScale ...[]float64) *QuadraticEquation {
-	center, scale := normalizePolynomialCenterScale(centerScale...)
-	worldA, worldB, worldC := bakeQuadraticCoefficients(A, B, C, center, scale)
+func NewQuadraticEquation(A *mat.Dense, B *mat.VecDense, C float64) *QuadraticEquation {
 	return &QuadraticEquation{
-		A:      worldA,
-		B:      worldB,
-		C:      worldC,
-		Center: center,
-		Scale:  scale,
+		A: A,
+		B: B,
+		C: C,
 	}
-}
-
-func bakeQuadraticCoefficients(a *mat.Dense, b *mat.VecDense, c float64, center, scale [3]float64) (*mat.Dense, *mat.VecDense, float64) {
-	if polynomialPlacementIsIdentity(center, scale) {
-		return mat.DenseCopyOf(a), mat.VecDenseCopyOf(b), c
-	}
-
-	d := mat.NewDense(3, 3, []float64{
-		1 / scale[0], 0, 0,
-		0, 1 / scale[1], 0,
-		0, 0, 1 / scale[2],
-	})
-	e := mat.NewVecDense(3, []float64{
-		-center[0] / scale[0],
-		-center[1] / scale[1],
-		-center[2] / scale[2],
-	})
-
-	var aD mat.Dense
-	aD.Mul(a, d)
-	var worldA mat.Dense
-	worldA.Mul(d.T(), &aD)
-
-	var aPlusAT mat.Dense
-	aPlusAT.Add(a, a.T())
-	tmp := mat.NewVecDense(3, nil)
-	tmp.MulVec(&aPlusAT, e)
-	worldB := mat.NewVecDense(3, nil)
-	worldB.MulVec(d.T(), tmp)
-	worldB.AddVec(worldB, scaledByDiagonal(b, d))
-
-	aE := mat.NewVecDense(3, nil)
-	aE.MulVec(a, e)
-	worldC := mat.Dot(e, aE) + mat.Dot(b, e) + c
-
-	return &worldA, worldB, worldC
-}
-
-func scaledByDiagonal(v *mat.VecDense, d *mat.Dense) *mat.VecDense {
-	result := mat.NewVecDense(3, nil)
-	for i := 0; i < 3; i++ {
-		result.SetVec(i, v.AtVec(i)*d.At(i, i))
-	}
-	return result
 }
 
 func (p *QuadraticEquation) Name() string {
@@ -88,10 +39,6 @@ func (p *QuadraticEquation) IntersectRange(
 	raySt, rayDir *mat.VecDense,
 	tMin, tMax float64,
 ) (SurfaceInteraction, bool) {
-	if raySt == nil || rayDir == nil || p == nil || p.A == nil || p.B == nil {
-		return SurfaceInteraction{}, false
-	}
-
 	n := raySt.Len()
 	if rayDir.Len() != n || p.B.Len() != n {
 		return SurfaceInteraction{}, false
@@ -101,30 +48,6 @@ func (p *QuadraticEquation) IntersectRange(
 	if ar != n || ac != n {
 		return SurfaceInteraction{}, false
 	}
-
-	// Ray:
-	//
-	//     x(t) = raySt + t * rayDir
-	//
-	// Surface:
-	//
-	//     x^T A x + B^T x + C = 0
-	//
-	// Substitute x(t):
-	//
-	//     a*t^2 + b*t + c = 0
-	//
-	// where:
-	//
-	//     a = d^T A d
-	//     b = s^T A d + d^T A s + B^T d
-	//     c = s^T A s + B^T s + C
-	//
-	// If A is guaranteed symmetric, then:
-	//
-	//     b = 2*s^T A d + B^T d
-	//
-	// But the general formula below is safer.
 
 	aDir := mat.NewVecDense(n, nil)
 	aSt := mat.NewVecDense(n, nil)

@@ -176,9 +176,6 @@ func TestParseShapeCubicEquationBakesCenterAndScalarScale(t *testing.T) {
 	if math.Abs(interaction.Distance-5) > 1e-8 {
 		t.Fatalf("expected hit at world x=5, got distance %f", interaction.Distance)
 	}
-	if cubic.Center != [3]float64{2, 0, 0} || cubic.Scale != [3]float64{3, 3, 3} {
-		t.Fatalf("unexpected center/scale metadata: center=%v scale=%v", cubic.Center, cubic.Scale)
-	}
 }
 
 func TestParseShapeRejectsInvalidPolynomialScale(t *testing.T) {

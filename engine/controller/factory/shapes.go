@@ -212,13 +212,8 @@ func parseQuadraticEquation(objDef map[string]interface{}) ([]shape.Shape, error
 		return nil, err
 	}
 
-	equation := shape.NewQuadraticEquation(
-		mat.NewDense(3, 3, a),
-		newVec(b),
-		c,
-		center,
-		scale,
-	)
+	worldA, worldB, worldC := bakeQuadraticCoefficients(mat.NewDense(3, 3, a), newVec(b), c, center, scale)
+	equation := shape.NewQuadraticEquation(worldA, worldB, worldC)
 
 	return wrapSingleShapeWithBounds(equation, objDef)
 }
@@ -234,7 +229,7 @@ func parseCubicEquation(objDef map[string]interface{}) ([]shape.Shape, error) {
 		return nil, err
 	}
 
-	equation := shape.NewCubicEquation(a, center, scale)
+	equation := shape.NewCubicEquation(bakeCubicCoefficients(a, center, scale))
 	return wrapSingleShapeWithBounds(equation, objDef)
 }
 
@@ -249,7 +244,7 @@ func parseFourOrderEquation(objDef map[string]interface{}) ([]shape.Shape, error
 		return nil, err
 	}
 
-	equation := shape.NewFourOrderEquation(a, center, scale)
+	equation := shape.NewFourOrderEquation(bakeFourOrderCoefficients(a, center, scale))
 	return wrapSingleShapeWithBounds(equation, objDef)
 }
 
@@ -379,23 +374,23 @@ func validateBoundsMinMax(pmin, pmax []float64) error {
 	return nil
 }
 
-func parsePolynomialCenterScale(objDef map[string]interface{}) ([]float64, []float64, error) {
+func parsePolynomialCenterScale(objDef map[string]interface{}) ([3]float64, [3]float64, error) {
 	center, hasCenter, err := utils.OptionalFloat64SliceField(objDef, "center", utils.Dimension)
 	if err != nil {
-		return nil, nil, err
+		return [3]float64{}, [3]float64{}, err
 	}
 
 	scale, err := parsePolynomialScale(objDef)
 	if err != nil {
-		return nil, nil, err
+		return [3]float64{}, [3]float64{}, err
 	}
 	if err := validatePolynomialScale(scale); err != nil {
-		return nil, nil, err
+		return [3]float64{}, [3]float64{}, err
 	}
 	if !hasCenter {
 		center = nil
 	}
-	return center, scale, nil
+	return normalizePolynomialCenterScale(center, scale)
 }
 
 func parsePolynomialScale(objDef map[string]interface{}) ([]float64, error) {
