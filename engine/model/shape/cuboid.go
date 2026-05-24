@@ -68,14 +68,22 @@ func (c *Cuboid) OverlapsRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) 
 }
 
 func (c *Cuboid) OverlapRangeNear(raySt, rayDir *mat.VecDense, tMin, tMax float64) (float64, bool) {
+	t0, _, ok := c.OverlapRange(raySt, rayDir, tMin, tMax)
+	return t0, ok
+}
+
+func (c *Cuboid) OverlapRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (float64, float64, bool) {
 	t0, t1, ok := c.intersectionInterval(raySt, rayDir)
 	if !ok || t1 < tMin || t0 > tMax {
-		return 0, false
+		return 0, 0, false
 	}
 	if t0 < tMin {
-		return tMin, true
+		t0 = tMin
 	}
-	return t0, true
+	if t1 > tMax {
+		t1 = tMax
+	}
+	return t0, t1, true
 }
 
 func (c *Cuboid) intersectionInterval(raySt, rayDir *mat.VecDense) (float64, float64, bool) {

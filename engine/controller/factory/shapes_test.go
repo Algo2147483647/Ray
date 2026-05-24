@@ -81,3 +81,53 @@ func TestParseShapeFiniteCylinderRejectsInvalidAxis(t *testing.T) {
 		t.Fatal("expected zero axis to fail")
 	}
 }
+
+func TestParseShapeWrapsOptionalBounds(t *testing.T) {
+	shapes, err := ParseShape(map[string]interface{}{
+		"shape": "quadratic equation",
+		"a": []interface{}{
+			1, 0, 0,
+			0, 1, 0,
+			0, 0, 1,
+		},
+		"b": []interface{}{0, 0, 0},
+		"c": -1,
+		"bounds": map[string]interface{}{
+			"pmin": []interface{}{-0.5, -0.25, -0.75},
+			"pmax": []interface{}{0.5, 0.25, 0.75},
+		},
+	})
+	if err != nil {
+		t.Fatalf("parse bounded quadratic: %v", err)
+	}
+	if len(shapes) != 1 {
+		t.Fatalf("expected one shape, got %d", len(shapes))
+	}
+	bounded, ok := shapes[0].(*shape.BoundedShape)
+	if !ok {
+		t.Fatalf("expected *shape.BoundedShape, got %T", shapes[0])
+	}
+	if _, ok := bounded.Shape.(*shape.QuadraticEquation); !ok {
+		t.Fatalf("expected bounded quadratic equation, got %T", bounded.Shape)
+	}
+
+	pmin, pmax := bounded.BuildBoundingBox()
+	if pmin.AtVec(0) != -0.5 || pmin.AtVec(2) != -0.75 || pmax.AtVec(0) != 0.5 || pmax.AtVec(2) != 0.75 {
+		t.Fatalf("unexpected bounds: pmin=%v pmax=%v", pmin.RawVector().Data, pmax.RawVector().Data)
+	}
+}
+
+func TestParseShapeRejectsInvalidBounds(t *testing.T) {
+	_, err := ParseShape(map[string]interface{}{
+		"shape":    "sphere",
+		"position": []interface{}{0, 0, 0},
+		"r":        1,
+		"bounds": map[string]interface{}{
+			"pmin": []interface{}{1, -1, -1},
+			"pmax": []interface{}{1, 1, 1},
+		},
+	})
+	if err == nil {
+		t.Fatal("expected invalid bounds to fail")
+	}
+}

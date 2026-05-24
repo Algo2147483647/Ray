@@ -156,6 +156,30 @@ Objects may declare the media separated by a closed dielectric boundary:
 
 `outside` defaults to `air`. `inside` is required when `medium_boundary` is present. `priority` participates in medium-stack overlap resolution. `thin: true` marks a non-container boundary and disables medium-stack mutation.
 
+Objects may also declare an optional `bounds` block to clip the visible portion
+of a shape to an axis-aligned box. This is primarily useful for finite previews
+of otherwise open or unbounded implicit surfaces such as paraboloids,
+hyperboloids, cones, and quartic sheets:
+
+```json
+{
+  "id": "bounded-paraboloid",
+  "shape": "quadratic equation",
+  "a": [10, 0, 0, 0, 10, 0, 0, 0, 0],
+  "b": [0, 0, -3],
+  "c": 0,
+  "bounds": {
+    "pmin": [-0.3, -0.3, 0],
+    "pmax": [0.3, 0.3, 0.4]
+  },
+  "material_id": "matte"
+}
+```
+
+`bounds` accepts either `pmin`/`pmax` or `position`/`size`. It clips only the
+surface intersection and does not add cap faces, so open clipped surfaces should
+not be treated as closed dielectric medium boundaries.
+
 ### Rough Conductor
 
 ```json

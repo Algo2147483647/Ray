@@ -40,7 +40,7 @@ func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 			if err := applyEngravingFunc(cuboid, objDef); err != nil {
 				return nil, err
 			}
-			return []shape.Shape{cuboid}, nil
+			return wrapShapesWithBounds([]shape.Shape{cuboid}, objDef)
 		}
 
 		pmin, err := utils.RequiredFloat64SliceField(objDef, "pmin", utils.Dimension)
@@ -59,7 +59,7 @@ func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 		if err := applyEngravingFunc(cuboid, objDef); err != nil {
 			return nil, err
 		}
-		return []shape.Shape{cuboid}, nil
+		return wrapShapesWithBounds([]shape.Shape{cuboid}, objDef)
 
 	case "sphere":
 		position, err := utils.RequiredFloat64SliceField(objDef, "position", utils.Dimension)
@@ -78,7 +78,7 @@ func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 		if err := applyEngravingFunc(sphere, objDef); err != nil {
 			return nil, err
 		}
-		return []shape.Shape{sphere}, nil
+		return wrapShapesWithBounds([]shape.Shape{sphere}, objDef)
 
 	case "circle":
 		position, err := utils.RequiredFloat64SliceField(objDef, "position", utils.Dimension)
@@ -105,7 +105,7 @@ func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 		if err := applyEngravingFunc(circle, objDef); err != nil {
 			return nil, err
 		}
-		return []shape.Shape{circle}, nil
+		return wrapShapesWithBounds([]shape.Shape{circle}, objDef)
 
 	case "finite cylinder", "cylinder":
 		position, err := utils.RequiredFloat64SliceField(objDef, "position", utils.Dimension)
@@ -139,7 +139,7 @@ func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 		if err := applyEngravingFunc(cylinder, objDef); err != nil {
 			return nil, err
 		}
-		return []shape.Shape{cylinder}, nil
+		return wrapShapesWithBounds([]shape.Shape{cylinder}, objDef)
 
 	case "triangle":
 		p1, err := utils.RequiredFloat64SliceField(objDef, "p1", utils.Dimension)
@@ -160,7 +160,7 @@ func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 			mat.NewVecDense(len(p2), p2),
 			mat.NewVecDense(len(p3), p3),
 		)
-		return []shape.Shape{triangle}, nil
+		return wrapShapesWithBounds([]shape.Shape{triangle}, objDef)
 
 	case "plane":
 		return nil, fmt.Errorf("shape %q is declared but not implemented", shapeName)
@@ -184,7 +184,7 @@ func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 			mat.NewVecDense(len(b), b),
 			c,
 		)
-		return []shape.Shape{equation}, nil
+		return wrapShapesWithBounds([]shape.Shape{equation}, objDef)
 
 	case "four-order equation":
 		a, err := utils.RequiredFloat64SliceField(objDef, "a", 256)
@@ -192,14 +192,93 @@ func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 			return nil, err
 		}
 		equation := shape.NewFourOrderEquation(a)
-		return []shape.Shape{equation}, nil
+		return wrapShapesWithBounds([]shape.Shape{equation}, objDef)
 
 	case "stl":
-		return ParseShapeForSTL(objDef)
+		shapes, err := ParseShapeForSTL(objDef)
+		if err != nil {
+			return nil, err
+		}
+		return wrapShapesWithBounds(shapes, objDef)
 
 	default:
 		return nil, fmt.Errorf("unsupported shape %q", shapeName)
 	}
+}
+
+func wrapShapesWithBounds(shapes []shape.Shape, objDef map[string]interface{}) ([]shape.Shape, error) {
+	bounds, ok, err := parseShapeBounds(objDef)
+	if err != nil || !ok {
+		return shapes, err
+	}
+
+	wrapped := make([]shape.Shape, len(shapes))
+	for i, inner := range shapes {
+		wrapped[i] = shape.NewBoundedShape(inner, bounds)
+	}
+	return wrapped, nil
+}
+
+func parseShapeBounds(objDef map[string]interface{}) (*shape.Cuboid, bool, error) {
+	boundsDef, ok, err := utils.OptionalMapField(objDef, "bounds")
+	if err != nil || !ok {
+		return nil, ok, err
+	}
+
+	if position, hasPosition, err := utils.OptionalFloat64SliceField(boundsDef, "position", utils.Dimension); err != nil {
+		return nil, true, err
+	} else if hasPosition {
+		size, err := utils.RequiredFloat64SliceField(boundsDef, "size", utils.Dimension)
+		if err != nil {
+			return nil, true, err
+		}
+		if err := validatePositiveBoundsSize(size); err != nil {
+			return nil, true, err
+		}
+
+		positionVec := mat.NewVecDense(len(position), position)
+		halfSize := math_lib.ScaleVec2(0.5, mat.NewVecDense(len(size), size))
+		pmax := mat.NewVecDense(positionVec.Len(), nil)
+		pmin := mat.NewVecDense(positionVec.Len(), nil)
+		return shape.NewCuboid(
+			math_lib.SubVec(pmin, positionVec, halfSize),
+			math_lib.AddVec(pmax, positionVec, halfSize),
+		), true, nil
+	}
+
+	pmin, err := utils.RequiredFloat64SliceField(boundsDef, "pmin", utils.Dimension)
+	if err != nil {
+		return nil, true, fmt.Errorf("bounds requires either position+size or pmin+pmax: %w", err)
+	}
+	pmax, err := utils.RequiredFloat64SliceField(boundsDef, "pmax", utils.Dimension)
+	if err != nil {
+		return nil, true, fmt.Errorf("bounds requires either position+size or pmin+pmax: %w", err)
+	}
+	if err := validateBoundsMinMax(pmin, pmax); err != nil {
+		return nil, true, err
+	}
+	return shape.NewCuboid(
+		mat.NewVecDense(len(pmin), pmin),
+		mat.NewVecDense(len(pmax), pmax),
+	), true, nil
+}
+
+func validatePositiveBoundsSize(size []float64) error {
+	for i, value := range size {
+		if value <= 0 {
+			return fmt.Errorf("bounds size index %d must be > 0", i)
+		}
+	}
+	return nil
+}
+
+func validateBoundsMinMax(pmin, pmax []float64) error {
+	for i := range pmin {
+		if pmin[i] >= pmax[i] {
+			return fmt.Errorf("bounds pmin index %d must be < pmax", i)
+		}
+	}
+	return nil
 }
 
 func ParseShapeForSTL(objDef map[string]interface{}) ([]shape.Shape, error) {
