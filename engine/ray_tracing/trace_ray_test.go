@@ -7,6 +7,8 @@ import (
 
 	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
 	"github.com/Algo2147483647/ray/engine/model/material/medium"
+	"github.com/Algo2147483647/ray/engine/model/object"
+	"github.com/Algo2147483647/ray/engine/utils/maths"
 )
 
 func TestPrepareMediumContextKeepsLegacyIORWithoutBoundary(t *testing.T) {
@@ -94,6 +96,40 @@ func TestApplyMediumTransmissionThinBoundaryDoesNotMutateStack(t *testing.T) {
 	}
 	if got := ray.RefractionIndex; got != 1 {
 		t.Fatalf("thin boundary should leave current ray IOR at air, got %f", got)
+	}
+}
+
+func TestApplySurfaceSampleUpdatesMediumForNonDeltaTransmission(t *testing.T) {
+	registry := medium.NewRegistry()
+	glassID, err := registry.RegisterHomogeneous("glass", medium.NewConstant(1.5))
+	if err != nil {
+		t.Fatalf("register glass: %v", err)
+	}
+	ray := &renderray.Ray{}
+	ray.Init()
+	ray.MediumStack.Reset(medium.MediumAir)
+	ctx := bxdf.ShadingContext{
+		Entering:       true,
+		TransmitMedium: glassID,
+	}
+	obj := &object.Object{
+		MediumBoundary: medium.Boundary{Outside: medium.MediumAir, Inside: glassID},
+	}
+
+	applySurfaceSample(registry, ray, ctx, obj, bxdf.BxDFSample{
+		Wi:             maths.NewDirection(0, 0, -1),
+		F:              renderray.NewSpectrum(1, 1, 1),
+		PDF:            1,
+		Flags:          bxdf.TransmissionEvent,
+		Eta:            1.5,
+		TransmitMedium: glassID,
+	})
+
+	if got := ray.MediumStack.Current(); got != glassID {
+		t.Fatalf("expected non-delta transmission to enter glass, got medium %d", got)
+	}
+	if got := ray.RefractionIndex; got != 1.5 {
+		t.Fatalf("expected ray IOR to update to glass, got %f", got)
 	}
 }
 

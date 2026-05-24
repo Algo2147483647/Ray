@@ -22,7 +22,6 @@ type TriangleCalculateStorage struct {
 	P1XYZ    [3]float64    // First vertex position in 3D.
 	Edge1XYZ [3]float64    // First edge vector in 3D.
 	Edge2XYZ [3]float64    // Second edge vector in 3D.
-	Has3D    bool          // True when 3D cache data is available.
 }
 
 func NewTriangle(P1, P2, P3 *mat.VecDense) *Triangle {
@@ -42,7 +41,6 @@ func NewTriangle(P1, P2, P3 *mat.VecDense) *Triangle {
 		res.Mem.P1XYZ = vecDenseXYZ(P1)
 		res.Mem.Edge1XYZ = vecDenseXYZ(res.Mem.Edge1)
 		res.Mem.Edge2XYZ = vecDenseXYZ(res.Mem.Edge2)
-		res.Mem.Has3D = true
 	}
 
 	return res
@@ -69,7 +67,7 @@ func (f *Triangle) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float6
 }
 
 func (f *Triangle) IntersectCandidate(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceCandidate, bool) {
-	if f.Mem.Has3D && raySt.Len() == 3 && rayDir.Len() == 3 {
+	if raySt.Len() == 3 && rayDir.Len() == 3 {
 		return f.intersectCandidate3D(raySt, rayDir, tMin, tMax)
 	}
 

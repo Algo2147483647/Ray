@@ -95,7 +95,7 @@ func (s SpecularDielectric) Sample(ctx ShadingContext, wo maths.Direction, u mat
 		Wi:             wi,
 		F:              s.Transmittance.Eval(ctx).MulScalar(1 - fresnel).DivScalar(cos),
 		PDF:            1 - fresnel,
-		Flags:          DeltaTransmission,
+		Flags:          DeltaTransmission | TransmissionEvent,
 		Eta:            etaT,
 		TransmitMedium: ctx.TransmitMedium,
 	}
@@ -124,7 +124,7 @@ func (s SpecularDielectric) RoughnessInfo(ShadingContext) RoughnessInfo {
 }
 
 func (s SpecularDielectric) DeltaFlags() DeltaFlags {
-	return DeltaReflection | DeltaTransmission
+	return DeltaReflection | DeltaTransmission | TransmissionEvent
 }
 
 func (s SpecularDielectric) resolveWavelength(ctx ShadingContext) (float64, bool) {

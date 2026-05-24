@@ -46,3 +46,40 @@ func TestParseRoughConductorWeight(t *testing.T) {
 		t.Fatalf("expected warm gold weight to be red-dominant, got %+v", bounds)
 	}
 }
+
+func TestParseRoughDielectricTransmission(t *testing.T) {
+	script := &parser.Script{
+		Materials: []map[string]interface{}{
+			{
+				"id": "frosted-glass",
+				"surface": map[string]interface{}{
+					"type":          "rough_dielectric_transmission",
+					"transmittance": []interface{}{0.9, 0.95, 1.0},
+					"eta_outside":   1.0,
+					"ior": map[string]interface{}{
+						"type": "constant",
+						"eta":  1.5,
+					},
+					"roughness": 0.45,
+				},
+			},
+		},
+	}
+
+	materials, err := ParseMaterials(script)
+	if err != nil {
+		t.Fatalf("ParseMaterials failed: %v", err)
+	}
+
+	single, ok := materials["frosted-glass"].Surface.(bsdf.Single)
+	if !ok {
+		t.Fatalf("expected single BSDF, got %T", materials["frosted-glass"].Surface)
+	}
+	got, ok := single.BxDF.(bxdf.RoughDielectricTransmission)
+	if !ok {
+		t.Fatalf("expected rough dielectric transmission, got %T", single.BxDF)
+	}
+	if got.Alpha <= 0 || got.Alpha > 1 {
+		t.Fatalf("expected clamped alpha in (0,1], got %f", got.Alpha)
+	}
+}

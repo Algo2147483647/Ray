@@ -86,12 +86,17 @@ engine/model/optics/
 Implemented surface and emission primitives:
 
 ```text
-lambert
+lambert diffuse reflection
 specular_reflection
 specular_dielectric
-rough_conductor
+rough_conductor GGX microfacet reflection
+rough_dielectric_transmission GGX microfacet transmission
 constant emission
 ```
+
+For a real-world material coverage matrix, including what is supported today,
+what is only an approximation, and which planned BxDFs are still missing, see
+[`material-capability-coverage.md`](material-capability-coverage.md).
 
 Implemented spectral and output features:
 
@@ -113,7 +118,8 @@ gamma encoding
 Current limitations:
 
 ```text
-rough dielectric is not implemented yet
+rough dielectric reflection is not implemented yet
+rough dielectric transmission is implemented without the matching reflection lobe
 Beckmann distribution is not implemented yet
 full spectral material databases are not implemented yet
 full packet-style multi-channel light transport is not implemented yet

@@ -9,6 +9,7 @@ This directory documents the mathematical, physical, and code-architecture ideas
 - [`03-optics-and-materials.md`](03-optics-and-materials.md): rays, spectra, reflection, refraction, Fresnel effects, wavelength sampling, dispersion, and BSDF/BxDF materials.
 - [`04-cameras-rendering-and-scene.md`](04-cameras-rendering-and-scene.md): camera projection, N-dimensional imaging, recursive ray tracing, film accumulation, concurrency, and scene scripts.
 - [`material-system-design.md`](material-system-design.md): current material/BxDF architecture, schema, validation rules, IOR/dispersion wiring, microfacet status, and output transform controls.
+- [`material-capability-coverage.md`](material-capability-coverage.md): current engine coverage for real-world material families, implemented BxDFs, and missing/planned material models.
 - [`scene-json-current.md`](scene-json-current.md): current JSON schema for media, materials, objects, cameras, render output controls, and showcase scenes.
 - [`controller-json-rules.md`](controller-json-rules.md): controller/parser/factory rules for consuming scene JSON.
 - [`spectral-modernization-plan.md`](spectral-modernization-plan.md): staged technical plan for moving from RGB/hero-wavelength rendering toward a modern spectral color pipeline.

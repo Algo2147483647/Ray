@@ -189,7 +189,7 @@ func applySurfaceSample(
 		ray.SpectralPath = true
 	}
 
-	if sample.Flags&bxdf.DeltaTransmission != 0 {
+	if sample.Flags&bxdf.TransmissionEvent != 0 {
 		applyMediumTransmission(media, ray, ctx, obj.MediumBoundary, sample)
 	}
 }

@@ -57,6 +57,8 @@ sigma_s: optional spectral scattering coefficient, parsed and stored but not yet
 ## Materials
 
 Each material requires an `id` and at least one of `surface` or `emission`.
+For a support matrix that maps these JSON material types to real-world material
+families, see [`material-capability-coverage.md`](material-capability-coverage.md).
 
 ### Lambert
 
@@ -169,6 +171,29 @@ Objects may declare the media separated by a closed dielectric boundary:
 ```
 
 `roughness` is optional and defaults to `0.25`. Internally the parser converts it to microfacet alpha with `alpha = roughness^2`.
+
+### Rough Dielectric Transmission
+
+```json
+{
+  "id": "frosted-glass",
+  "surface": {
+    "type": "rough_dielectric_transmission",
+    "transmittance": [0.9, 0.95, 1],
+    "eta_outside": 1,
+    "ior": {
+      "type": "constant",
+      "eta": 1.5
+    },
+    "roughness": 0.35
+  }
+}
+```
+
+`transmittance`, `eta_outside`, and `roughness` are optional. Like `rough_conductor`,
+the parser converts user-facing roughness to microfacet alpha with
+`alpha = roughness^2`. Use an object-level `medium_boundary` when this surface
+should update the ray's medium stack while transmitting.
 
 ### Constant Emission
 

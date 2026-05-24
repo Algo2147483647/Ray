@@ -157,6 +157,38 @@ func parseSurface(def map[string]interface{}) (bsdf.BSDF, error) {
 		conductor.Weight = weight
 		return bsdf.NewSingle(conductor), nil
 
+	case "rough_dielectric_transmission":
+		transmittance, _, err := optionalSpectralParameterField(def, "transmittance", spectrum_parameter.NewConstantParameter(1))
+		if err != nil {
+			return nil, err
+		}
+		etaOutside, ok, err := utils.OptionalFloat64Field(def, "eta_outside")
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			etaOutside = 1
+		}
+		if !medium.IsValidEta(etaOutside) {
+			return nil, fmt.Errorf("eta_outside must be > 0")
+		}
+		insideIOR, err := parseIORModel(def)
+		if err != nil {
+			return nil, err
+		}
+		roughness, ok, err := utils.OptionalFloat64Field(def, "roughness")
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			roughness = 0.25
+		}
+		if roughness < 0 || roughness > 1 {
+			return nil, fmt.Errorf("roughness must be in [0, 1]")
+		}
+		alpha := roughness * roughness
+		return bsdf.NewSingle(bxdf.NewRoughDielectricTransmissionParameter(transmittance, etaOutside, insideIOR, alpha)), nil
+
 	default:
 		return nil, fmt.Errorf("unsupported surface type %q", surfaceType)
 	}

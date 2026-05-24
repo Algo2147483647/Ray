@@ -60,6 +60,7 @@ lambert
 specular_reflection
 specular_dielectric
 rough_conductor
+rough_dielectric_transmission
 ```
 
 Supported `emission.type` values:
@@ -78,6 +79,9 @@ engine/model/material/emission/
 engine/model/material/medium/
 engine/model/material/microfacet/
 ```
+
+For the current coverage of real-world material families and implemented BxDFs,
+see [`material-capability-coverage.md`](material-capability-coverage.md).
 
 Legacy fields such as `color`, `reflectivity`, `refractivity`, `radiate`, and `diffuse_loss` are not translated by the current parser. Use `surface` and `emission` blocks instead.
 

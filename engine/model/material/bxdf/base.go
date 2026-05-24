@@ -41,6 +41,7 @@ const (
 	DeltaReflection   DeltaFlags = 1 << iota // Perfect specular reflection; the outgoing direction is deterministic.
 	DeltaTransmission                        // Perfect specular transmission/refraction; the outgoing direction is deterministic.
 	NonReciprocal                            // Scattering is not reciprocal; swapping wi and wo may change the value or PDF.
+	TransmissionEvent                        // The sampled event crosses the surface and should update medium state.
 )
 
 type RoughnessInfo struct {

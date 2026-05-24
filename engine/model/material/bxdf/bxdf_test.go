@@ -6,6 +6,7 @@ import (
 
 	"github.com/Algo2147483647/ray/engine/model/material"
 	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
+	"github.com/Algo2147483647/ray/engine/model/material/medium"
 	"github.com/Algo2147483647/ray/engine/model/material/microfacet"
 	"github.com/Algo2147483647/ray/engine/model/optics"
 	"github.com/Algo2147483647/ray/engine/model/optics/spectrum_parameter"
@@ -78,5 +79,119 @@ func TestRoughConductorKeepsSampledColorFromSampledParameters(t *testing.T) {
 	}
 	if got.Samples[1] <= got.Samples[0] {
 		t.Fatalf("expected gold-like rough conductor to keep stronger red response, got %v", got.Samples)
+	}
+}
+
+func TestRoughDielectricTransmissionSamplesOppositeHemisphere(t *testing.T) {
+	transmission := bxdf.NewRoughDielectricTransmission(
+		optics.NewSpectrum(0.9, 0.85, 0.8),
+		1,
+		1.5,
+		0.2,
+	)
+	ctx := bxdf.ShadingContext{
+		TransportMode: bxdf.TransportRadiance,
+		EtaIncident:   1,
+		EtaTransmit:   1.5,
+	}
+	wo := maths.NewDirection(0.15, -0.1, 0.98).Normalize()
+
+	sample := transmission.Sample(ctx, wo, maths.Sample2D{U: 0.37, V: 0.61})
+
+	if sample.PDF <= 0 {
+		t.Fatalf("expected positive PDF, got %+v", sample)
+	}
+	if !sample.F.IsFinite() || !sample.F.IsNonNegative() {
+		t.Fatalf("expected finite non-negative sample value, got %+v", sample.F)
+	}
+	if maths.SameHemisphere(sample.Wi, wo) {
+		t.Fatalf("expected transmission to cross hemispheres, got wi=%+v wo=%+v", sample.Wi, wo)
+	}
+	if sample.Flags&bxdf.TransmissionEvent == 0 {
+		t.Fatalf("expected transmission event flag, got %v", sample.Flags)
+	}
+	if sample.Flags&bxdf.DeltaTransmission != 0 {
+		t.Fatalf("rough transmission should not be marked as delta, got %v", sample.Flags)
+	}
+	if math.Abs(sample.Eta-1.5) > 1e-12 {
+		t.Fatalf("expected sample eta to carry transmitted-side IOR, got %f", sample.Eta)
+	}
+}
+
+func TestRoughDielectricTransmissionSamplesFromInsideToOutside(t *testing.T) {
+	transmission := bxdf.NewRoughDielectricTransmission(
+		optics.NewSpectrum(1, 1, 1),
+		1,
+		1.5,
+		0.3,
+	)
+	ctx := bxdf.ShadingContext{
+		TransportMode: bxdf.TransportRadiance,
+		EtaIncident:   1.5,
+		EtaTransmit:   1,
+	}
+	wo := maths.NewDirection(-0.1, 0.12, -0.98).Normalize()
+
+	sample := transmission.Sample(ctx, wo, maths.Sample2D{U: 0.44, V: 0.19})
+
+	if sample.PDF <= 0 {
+		t.Fatalf("expected inside-to-outside sample, got %+v", sample)
+	}
+	if !sample.F.AlmostEqual(transmission.Eval(ctx, sample.Wi, wo), 1e-12) {
+		t.Fatalf("sample/eval mismatch: sample=%+v eval=%+v", sample.F, transmission.Eval(ctx, sample.Wi, wo))
+	}
+	if got := transmission.PDF(ctx, sample.Wi, wo); math.Abs(got-sample.PDF) > 1e-12 {
+		t.Fatalf("sample/pdf mismatch: sample=%f pdf=%f", sample.PDF, got)
+	}
+	if maths.SameHemisphere(sample.Wi, wo) {
+		t.Fatalf("expected inside-to-outside transmission to cross hemispheres, got wi=%+v wo=%+v", sample.Wi, wo)
+	}
+	if math.Abs(sample.Eta-1) > 1e-12 {
+		t.Fatalf("expected sample eta to carry outside IOR, got %f", sample.Eta)
+	}
+}
+
+func TestRoughDielectricTransmissionDefaultsNilTransmittance(t *testing.T) {
+	transmission := bxdf.NewRoughDielectricTransmissionParameter(nil, 1, medium.NewConstant(1.5), 0.25)
+	ctx := bxdf.ShadingContext{
+		TransportMode: bxdf.TransportRadiance,
+		EtaIncident:   1,
+		EtaTransmit:   1.5,
+	}
+	wi := maths.NewDirection(0.02, -0.15, -0.98).Normalize()
+	wo := maths.NewDirection(0.05, 0.1, 0.99).Normalize()
+
+	got := transmission.Eval(ctx, wi, wo)
+
+	if !got.IsFinite() || !got.IsNonNegative() {
+		t.Fatalf("expected nil transmittance to default to finite non-negative value, got %+v", got)
+	}
+	if got.MaxComponent() == 0 {
+		t.Fatalf("expected nil transmittance fallback to contribute non-zero transmission, got %+v", got)
+	}
+}
+
+func TestRoughDielectricTransmissionUsesDispersiveIOR(t *testing.T) {
+	transmission := bxdf.NewRoughDielectricTransmissionParameter(
+		spectrum_parameter.NewConstantParameter(1),
+		1,
+		medium.NewCauchy(1.5046, 0.0042, 0),
+		0.35,
+	)
+	ctx := bxdf.ShadingContext{
+		TransportMode: bxdf.TransportRadiance,
+		SpectrumMode:  optics.SpectrumModeHeroWavelength,
+		WavelengthNM:  450,
+		WavelengthsNM: []float64{450},
+	}
+	wo := maths.NewDirection(0.05, 0.2, 0.97).Normalize()
+
+	sample := transmission.Sample(ctx, wo, maths.Sample2D{U: 0.2, V: 0.4})
+
+	if sample.PDF <= 0 {
+		t.Fatalf("expected sampled dispersive transmission, got %+v", sample)
+	}
+	if sample.WavelengthNM != 450 {
+		t.Fatalf("expected sample wavelength to be propagated, got %f", sample.WavelengthNM)
 	}
 }
