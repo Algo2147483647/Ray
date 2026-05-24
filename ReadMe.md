@@ -4,7 +4,7 @@ A Go-based ray tracing engine for optical simulation and physically inspired ren
 
 ![feature-showcase-800x800-2000spp.png](docs%2Fassets%2Ffeature-showcase-800x800-2000spp.png)
 ![material-benchmark-matrix.png](docs%2Fassets%2Fmaterial-benchmark-matrix.png)
-![RayTracingTest.png](docs%2Fassets%2FRayTracingTest.png)
+![geometry-benchmark-matrix.png](docs%2Fassets%2Fgeometry-benchmark-matrix.png)
 ![4D.png](docs%2Fassets%2F4D.png)
 
 ## Project Structure
