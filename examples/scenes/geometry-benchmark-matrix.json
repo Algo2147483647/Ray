@@ -7289,15 +7289,15 @@
       "field_of_view": 30,
       "width": 960,
       "height": 960,
-      "aspect_ratio": 1
+      "aspect_ratio": 1.5
     }
   ],
   "render": {
     "dimension": 3,
-    "samples": 20,
+    "samples": 200,
     "thread_num": 0,
-    "width": 300,
-    "height": 200,
+    "width": 900,
+    "height": 600,
     "camera_index": 0,
     "output_image": "../outputs/geometry-benchmark-matrix.png",
     "output_film": "../outputs/geometry-benchmark-matrix.bin",
