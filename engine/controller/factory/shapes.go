@@ -166,6 +166,10 @@ func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 		return nil, fmt.Errorf("shape %q is declared but not implemented", shapeName)
 
 	case "quadratic equation":
+		center, scale, err := parsePolynomialCenterScale(objDef)
+		if err != nil {
+			return nil, err
+		}
 		a, err := utils.RequiredFloat64SliceField(objDef, "a", 9)
 		if err != nil {
 			return nil, err
@@ -183,23 +187,33 @@ func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 			mat.NewDense(3, 3, a),
 			mat.NewVecDense(len(b), b),
 			c,
+			center,
+			scale,
 		)
 		return wrapShapesWithBounds([]shape.Shape{equation}, objDef)
 
 	case "cubic equation":
+		center, scale, err := parsePolynomialCenterScale(objDef)
+		if err != nil {
+			return nil, err
+		}
 		a, err := utils.RequiredFloat64SliceField(objDef, "a", 64)
 		if err != nil {
 			return nil, err
 		}
-		equation := shape.NewCubicEquation(a)
+		equation := shape.NewCubicEquation(a, center, scale)
 		return wrapShapesWithBounds([]shape.Shape{equation}, objDef)
 
 	case "four-order equation":
+		center, scale, err := parsePolynomialCenterScale(objDef)
+		if err != nil {
+			return nil, err
+		}
 		a, err := utils.RequiredFloat64SliceField(objDef, "a", 256)
 		if err != nil {
 			return nil, err
 		}
-		equation := shape.NewFourOrderEquation(a)
+		equation := shape.NewFourOrderEquation(a, center, scale)
 		return wrapShapesWithBounds([]shape.Shape{equation}, objDef)
 
 	case "stl":
@@ -284,6 +298,54 @@ func validateBoundsMinMax(pmin, pmax []float64) error {
 	for i := range pmin {
 		if pmin[i] >= pmax[i] {
 			return fmt.Errorf("bounds pmin index %d must be < pmax", i)
+		}
+	}
+	return nil
+}
+
+func parsePolynomialCenterScale(objDef map[string]interface{}) ([]float64, []float64, error) {
+	center, hasCenter, err := utils.OptionalFloat64SliceField(objDef, "center", utils.Dimension)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	scale, err := parsePolynomialScale(objDef)
+	if err != nil {
+		return nil, nil, err
+	}
+	if err := validatePolynomialScale(scale); err != nil {
+		return nil, nil, err
+	}
+	if !hasCenter {
+		center = nil
+	}
+	return center, scale, nil
+}
+
+func parsePolynomialScale(objDef map[string]interface{}) ([]float64, error) {
+	value, ok := objDef["scale"]
+	if !ok {
+		return nil, nil
+	}
+
+	if values, err := utils.ToFloat64Slice(value); err == nil {
+		if err := utils.RequireSliceLength("scale", values, utils.Dimension); err != nil {
+			return nil, err
+		}
+		return values, nil
+	}
+
+	scale, err := utils.RequiredFloat64Field(map[string]interface{}{"scale": value}, "scale")
+	if err != nil {
+		return nil, err
+	}
+	return []float64{scale, scale, scale}, nil
+}
+
+func validatePolynomialScale(scale []float64) error {
+	for i, value := range scale {
+		if value <= 0 {
+			return fmt.Errorf("scale index %d must be > 0", i)
 		}
 	}
 	return nil

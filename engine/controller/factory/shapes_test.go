@@ -1,9 +1,11 @@
 package factory
 
 import (
+	"math"
 	"testing"
 
 	"github.com/Algo2147483647/ray/engine/model/shape"
+	"gonum.org/v1/gonum/mat"
 )
 
 func TestParseShapeCircle(t *testing.T) {
@@ -137,6 +139,61 @@ func TestParseShapeCubicEquation(t *testing.T) {
 	}
 	if _, ok := shapes[0].(*shape.CubicEquation); !ok {
 		t.Fatalf("expected *shape.CubicEquation, got %T", shapes[0])
+	}
+}
+
+func TestParseShapeCubicEquationBakesCenterAndScalarScale(t *testing.T) {
+	coeffs := make([]interface{}, 64)
+	for i := range coeffs {
+		coeffs[i] = 0
+	}
+	coeffs[(1*4+1)*4+1] = 1
+	coeffs[0] = -1
+
+	shapes, err := ParseShape(map[string]interface{}{
+		"shape":  "cubic equation",
+		"a":      coeffs,
+		"center": []interface{}{2, 0, 0},
+		"scale":  3,
+	})
+	if err != nil {
+		t.Fatalf("parse transformed cubic equation: %v", err)
+	}
+	cubic, ok := shapes[0].(*shape.CubicEquation)
+	if !ok {
+		t.Fatalf("expected *shape.CubicEquation, got %T", shapes[0])
+	}
+
+	interaction, ok := cubic.IntersectRange(
+		mat.NewVecDense(3, []float64{0, 0, 0}),
+		mat.NewVecDense(3, []float64{1, 0, 0}),
+		0,
+		math.MaxFloat64,
+	)
+	if !ok {
+		t.Fatal("expected transformed cubic to hit")
+	}
+	if math.Abs(interaction.Distance-5) > 1e-8 {
+		t.Fatalf("expected hit at world x=5, got distance %f", interaction.Distance)
+	}
+	if cubic.Center != [3]float64{2, 0, 0} || cubic.Scale != [3]float64{3, 3, 3} {
+		t.Fatalf("unexpected center/scale metadata: center=%v scale=%v", cubic.Center, cubic.Scale)
+	}
+}
+
+func TestParseShapeRejectsInvalidPolynomialScale(t *testing.T) {
+	coeffs := make([]interface{}, 64)
+	for i := range coeffs {
+		coeffs[i] = 0
+	}
+
+	_, err := ParseShape(map[string]interface{}{
+		"shape": "cubic equation",
+		"a":     coeffs,
+		"scale": []interface{}{1, 0, 1},
+	})
+	if err == nil {
+		t.Fatal("expected invalid polynomial scale to fail")
 	}
 }
 

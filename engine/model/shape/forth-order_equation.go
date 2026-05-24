@@ -1,7 +1,6 @@
 package shape
 
 import (
-	"github.com/Algo2147483647/golang_toolkit/math/basic_algebra"
 	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
@@ -10,14 +9,20 @@ import (
 
 type FourOrderEquation struct {
 	BaseShape
-	A *math_lib.Tensor[float64] `json:"a"`
+	A      *math_lib.Tensor[float64] `json:"a"`
+	Center [3]float64
+	Scale  [3]float64
 }
 
-func NewFourOrderEquation(A []float64) *FourOrderEquation { // Index order: 1, x, y, z
-	ATensor := math_lib.NewTensorFromSlice(A, []int{4, 4, 4, 4})
+func NewFourOrderEquation(A []float64, centerScale ...[]float64) *FourOrderEquation { // Index order: 1, x, y, z
+	center, scale := normalizePolynomialCenterScale(centerScale...)
+	baked := bakeFourOrderCoefficients(A, center, scale)
+	ATensor := math_lib.NewTensorFromSlice(baked, []int{4, 4, 4, 4})
 
 	return &FourOrderEquation{
-		A: ATensor,
+		A:      ATensor,
+		Center: center,
+		Scale:  scale,
 	}
 }
 
@@ -89,11 +94,11 @@ func (p *FourOrderEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tM
 		}
 	}
 
-	roots := basic_algebra.SolveQuarticEquation(coeffs[4], coeffs[3], coeffs[2], coeffs[1], coeffs[0]) // Solve the quartic equation: a*t^4 + b*t^3 + c*t^2 + d*t + e = 0
-	res := math.MaxFloat64                                                                             // Find the smallest positive real root.
+	roots := solveQuarticEquationReal(coeffs[4], coeffs[3], coeffs[2], coeffs[1], coeffs[0])
+	res := math.MaxFloat64 // Find the smallest positive real root.
 	for _, root := range roots {
-		if math.Abs(imag(root)) < utils.EPS && distanceInRange(real(root), tMin, tMax) && real(root) < res {
-			res = real(root)
+		if distanceInRange(root, tMin, tMax) && root < res {
+			res = root
 		}
 	}
 	if res == math.MaxFloat64 {
@@ -103,6 +108,61 @@ func (p *FourOrderEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tM
 	point := pointAt(raySt, rayDir, res)
 	normal := p.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
 	return newSurfaceInteractionAt(point, res, normal), true
+}
+
+func solveQuarticEquationReal(a4, a3, a2, a1, a0 float64) []float64 {
+	if math.Abs(a4) < utils.EPS {
+		return solveCubicEquationReal(a3, a2, a1, a0)
+	}
+
+	bound := 1 + math.Max(math.Max(math.Abs(a3/a4), math.Abs(a2/a4)), math.Max(math.Abs(a1/a4), math.Abs(a0/a4)))
+	points := []float64{-bound}
+	points = append(points, solveCubicEquationReal(4*a4, 3*a3, 2*a2, a1)...)
+	points = append(points, bound)
+	points = uniqueSortedRoots(points)
+
+	const valueEpsilon = 1e-8
+	var roots []float64
+	for i, point := range points {
+		if math.Abs(evalQuartic(a4, a3, a2, a1, a0, point)) < valueEpsilon {
+			roots = append(roots, point)
+		}
+		if i == len(points)-1 {
+			continue
+		}
+
+		left, right := point, points[i+1]
+		fLeft := evalQuartic(a4, a3, a2, a1, a0, left)
+		fRight := evalQuartic(a4, a3, a2, a1, a0, right)
+		if fLeft == 0 || fRight == 0 || fLeft*fRight > 0 {
+			continue
+		}
+		roots = append(roots, bisectQuarticRoot(a4, a3, a2, a1, a0, left, right))
+	}
+
+	return uniqueSortedRoots(roots)
+}
+
+func bisectQuarticRoot(a4, a3, a2, a1, a0, left, right float64) float64 {
+	fLeft := evalQuartic(a4, a3, a2, a1, a0, left)
+	for i := 0; i < 96; i++ {
+		mid := 0.5 * (left + right)
+		fMid := evalQuartic(a4, a3, a2, a1, a0, mid)
+		if math.Abs(fMid) < 1e-12 {
+			return mid
+		}
+		if fLeft*fMid <= 0 {
+			right = mid
+		} else {
+			left = mid
+			fLeft = fMid
+		}
+	}
+	return 0.5 * (left + right)
+}
+
+func evalQuartic(a4, a3, a2, a1, a0, x float64) float64 {
+	return (((a4*x)+a3)*x+a2)*x*x + a1*x + a0
 }
 
 func (p *FourOrderEquation) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {
@@ -180,4 +240,44 @@ func (p *FourOrderEquation) GetNormalVector(intersect, res *mat.VecDense) *mat.V
 	res.SetVec(1, grad[1])
 	res.SetVec(2, grad[2])
 	return math_lib.Normalize(res)
+}
+
+func bakeFourOrderCoefficients(a []float64, center, scale [3]float64) []float64 {
+	if polynomialPlacementIsIdentity(center, scale) {
+		result := make([]float64, len(a))
+		copy(result, a)
+		return result
+	}
+
+	matrix := polynomialHomogeneousMatrix3D(center, scale)
+	result := make([]float64, 256)
+	for i := 0; i < 4; i++ {
+		for j := 0; j < 4; j++ {
+			for k := 0; k < 4; k++ {
+				for l := 0; l < 4; l++ {
+					coef := fourOrderCoeff(a, i, j, k, l)
+					if coef == 0 {
+						continue
+					}
+					for wi := 0; wi < 4; wi++ {
+						for wj := 0; wj < 4; wj++ {
+							for wk := 0; wk < 4; wk++ {
+								for wl := 0; wl < 4; wl++ {
+									result[fourOrderOffset(wi, wj, wk, wl)] += coef * matrix[i][wi] * matrix[j][wj] * matrix[k][wk] * matrix[l][wl]
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	return result
+}
+func fourOrderCoeff(a []float64, i, j, k, l int) float64 {
+	return a[fourOrderOffset(i, j, k, l)]
+}
+
+func fourOrderOffset(i, j, k, l int) int {
+	return ((i*4+j)*4+k)*4 + l
 }
