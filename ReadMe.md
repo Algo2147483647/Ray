@@ -3,7 +3,7 @@
 A Go-based ray tracing engine for optical simulation and physically inspired rendering. The repository contains the renderer, JSON scene examples, design notes, rendered examples, and a React scene editor.
 
 ![feature-showcase-800x800-2000spp.png](docs%2Fassets%2Ffeature-showcase-800x800-2000spp.png)
-![four-order-equation-wide-soft-gold-800x800-1000spp.png](docs%2Fassets%2Ffour-order-equation-wide-soft-gold-800x800-1000spp.png)
+![material-benchmark-matrix.png](docs%2Fassets%2Fmaterial-benchmark-matrix.png)
 ![RayTracingTest.png](docs%2Fassets%2FRayTracingTest.png)
 ![4D.png](docs%2Fassets%2F4D.png)
 
