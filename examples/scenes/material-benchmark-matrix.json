@@ -1,0 +1,1566 @@
+{
+  "media": {
+    "clear_glass": {
+      "type": "homogeneous",
+      "ior": {
+        "type": "constant",
+        "eta": 1.5
+      },
+      "sigma_a": {
+        "type": "constant",
+        "value": 0
+      }
+    },
+    "blue_glass": {
+      "type": "homogeneous",
+      "ior": {
+        "type": "constant",
+        "eta": 1.52
+      },
+      "sigma_a": {
+        "type": "rgb",
+        "value": [
+          0.22,
+          0.05,
+          0.01
+        ]
+      }
+    },
+    "amber_glass": {
+      "type": "homogeneous",
+      "ior": {
+        "type": "constant",
+        "eta": 1.48
+      },
+      "sigma_a": {
+        "type": "rgb",
+        "value": [
+          0.02,
+          0.18,
+          0.55
+        ]
+      }
+    },
+    "crystal": {
+      "type": "homogeneous",
+      "ior": {
+        "type": "cauchy",
+        "a": 1.47,
+        "b": 0.018,
+        "c": 0
+      },
+      "sigma_a": {
+        "type": "constant",
+        "value": 0
+      }
+    },
+    "frosted_glass": {
+      "type": "homogeneous",
+      "ior": {
+        "type": "constant",
+        "eta": 1.5
+      },
+      "sigma_a": {
+        "type": "rgb",
+        "value": [
+          0.02,
+          0.01,
+          0
+        ]
+      }
+    },
+    "ice": {
+      "type": "homogeneous",
+      "ior": {
+        "type": "constant",
+        "eta": 1.31
+      },
+      "sigma_a": {
+        "type": "rgb",
+        "value": [
+          0.02,
+          0.01,
+          0
+        ]
+      }
+    },
+    "jelly": {
+      "type": "homogeneous",
+      "ior": {
+        "type": "constant",
+        "eta": 1.36
+      },
+      "sigma_a": {
+        "type": "rgb",
+        "value": [
+          0.02,
+          0.65,
+          0.42
+        ]
+      }
+    },
+    "acrylic": {
+      "type": "homogeneous",
+      "ior": {
+        "type": "constant",
+        "eta": 1.49
+      },
+      "sigma_a": {
+        "type": "rgb",
+        "value": [
+          0.32,
+          0.26,
+          0.2
+        ]
+      }
+    }
+  },
+  "materials": [
+    {
+      "id": "softbox-key",
+      "emission": {
+        "type": "constant",
+        "radiance": {
+          "type": "blackbody",
+          "temperature": 5600,
+          "scale": 9
+        }
+      }
+    },
+    {
+      "id": "strip-warm",
+      "emission": {
+        "type": "constant",
+        "radiance": {
+          "type": "blackbody",
+          "temperature": 4200,
+          "scale": 3.2
+        }
+      }
+    },
+    {
+      "id": "strip-cool",
+      "emission": {
+        "type": "constant",
+        "color": [
+          1.8,
+          2.2,
+          3.2
+        ]
+      }
+    },
+    {
+      "id": "neutral-floor",
+      "surface": {
+        "type": "lambert",
+        "albedo": [
+          0.55,
+          0.55,
+          0.53
+        ]
+      }
+    },
+    {
+      "id": "neutral-wall",
+      "surface": {
+        "type": "lambert",
+        "albedo": [
+          0.62,
+          0.62,
+          0.6
+        ]
+      }
+    },
+    {
+      "id": "dark-baffle",
+      "surface": {
+        "type": "lambert",
+        "albedo": [
+          0.08,
+          0.085,
+          0.09
+        ]
+      }
+    },
+    {
+      "id": "white-card",
+      "surface": {
+        "type": "lambert",
+        "albedo": [
+          0.82,
+          0.82,
+          0.78
+        ]
+      }
+    },
+    {
+      "id": "mirror-polished-chrome",
+      "surface": {
+        "type": "specular_reflection",
+        "reflectance": [
+          0.96,
+          0.97,
+          0.98
+        ]
+      }
+    },
+    {
+      "id": "liquid-mercury",
+      "surface": {
+        "type": "specular_reflection",
+        "reflectance": [
+          0.86,
+          0.88,
+          0.89
+        ]
+      }
+    },
+    {
+      "id": "polished-gold",
+      "surface": {
+        "type": "specular_reflection",
+        "reflectance": [
+          1,
+          0.72,
+          0.32
+        ]
+      }
+    },
+    {
+      "id": "rough-gold",
+      "surface": {
+        "type": "rough_conductor",
+        "eta": [
+          0.17,
+          0.35,
+          1.5
+        ],
+        "k": [
+          3.1,
+          2.7,
+          1.9
+        ],
+        "roughness": 0.18
+      }
+    },
+    {
+      "id": "brushed-aluminum",
+      "surface": {
+        "type": "rough_conductor",
+        "eta": [
+          1.44,
+          0.93,
+          0.62
+        ],
+        "k": [
+          7.4,
+          6.6,
+          5.3
+        ],
+        "roughness": 0.32
+      }
+    },
+    {
+      "id": "matte-titanium",
+      "surface": {
+        "type": "rough_conductor",
+        "eta": [
+          2.7,
+          2.2,
+          1.8
+        ],
+        "k": [
+          3.1,
+          2.8,
+          2.5
+        ],
+        "roughness": 0.55
+      }
+    },
+    {
+      "id": "clear-glass",
+      "surface": {
+        "type": "specular_dielectric",
+        "reflectance": [
+          1,
+          1,
+          1
+        ],
+        "transmittance": [
+          1,
+          1,
+          1
+        ],
+        "eta_outside": 1,
+        "ior": {
+          "type": "constant",
+          "eta": 1.5
+        }
+      }
+    },
+    {
+      "id": "blue-glass",
+      "surface": {
+        "type": "specular_dielectric",
+        "reflectance": [
+          1,
+          1,
+          1
+        ],
+        "transmittance": [
+          0.55,
+          0.78,
+          1
+        ],
+        "eta_outside": 1,
+        "ior": {
+          "type": "constant",
+          "eta": 1.52
+        }
+      }
+    },
+    {
+      "id": "amber-glass",
+      "surface": {
+        "type": "specular_dielectric",
+        "reflectance": [
+          1,
+          1,
+          1
+        ],
+        "transmittance": [
+          1,
+          0.58,
+          0.18
+        ],
+        "eta_outside": 1,
+        "ior": {
+          "type": "constant",
+          "eta": 1.48
+        }
+      }
+    },
+    {
+      "id": "dispersive-crystal",
+      "surface": {
+        "type": "specular_dielectric",
+        "reflectance": [
+          1,
+          1,
+          1
+        ],
+        "transmittance": [
+          1,
+          1,
+          1
+        ],
+        "eta_outside": 1,
+        "ior": {
+          "type": "cauchy",
+          "a": 1.47,
+          "b": 0.018,
+          "c": 0
+        }
+      }
+    },
+    {
+      "id": "frosted-glass",
+      "surface": {
+        "type": "rough_dielectric_transmission",
+        "transmittance": [
+          0.82,
+          0.9,
+          1
+        ],
+        "eta_outside": 1,
+        "ior": {
+          "type": "constant",
+          "eta": 1.5
+        },
+        "roughness": 0.5
+      }
+    },
+    {
+      "id": "ice",
+      "surface": {
+        "type": "specular_dielectric",
+        "reflectance": [
+          0.95,
+          0.98,
+          1
+        ],
+        "transmittance": [
+          0.82,
+          0.92,
+          1
+        ],
+        "eta_outside": 1,
+        "ior": {
+          "type": "constant",
+          "eta": 1.31
+        }
+      }
+    },
+    {
+      "id": "jelly",
+      "surface": {
+        "type": "rough_dielectric_transmission",
+        "transmittance": [
+          1,
+          0.36,
+          0.48
+        ],
+        "eta_outside": 1,
+        "ior": {
+          "type": "constant",
+          "eta": 1.36
+        },
+        "roughness": 0.18
+      }
+    },
+    {
+      "id": "acrylic-smoke",
+      "surface": {
+        "type": "specular_dielectric",
+        "reflectance": [
+          0.9,
+          0.9,
+          0.9
+        ],
+        "transmittance": [
+          0.38,
+          0.42,
+          0.48
+        ],
+        "eta_outside": 1,
+        "ior": {
+          "type": "constant",
+          "eta": 1.49
+        }
+      }
+    },
+    {
+      "id": "ceramic-white",
+      "surface": {
+        "type": "lambert",
+        "albedo": [
+          0.86,
+          0.84,
+          0.78
+        ]
+      }
+    },
+    {
+      "id": "rubber-black",
+      "surface": {
+        "type": "lambert",
+        "albedo": [
+          0.015,
+          0.014,
+          0.013
+        ]
+      }
+    },
+    {
+      "id": "plastic-red",
+      "surface": {
+        "type": "lambert",
+        "albedo": [
+          0.85,
+          0.05,
+          0.035
+        ]
+      }
+    },
+    {
+      "id": "plastic-blue",
+      "surface": {
+        "type": "lambert",
+        "albedo": [
+          0.05,
+          0.16,
+          0.75
+        ]
+      }
+    },
+    {
+      "id": "wood-warm",
+      "surface": {
+        "type": "lambert",
+        "albedo": [
+          0.62,
+          0.36,
+          0.16
+        ]
+      }
+    },
+    {
+      "id": "stone-granite",
+      "surface": {
+        "type": "lambert",
+        "albedo": [
+          0.34,
+          0.35,
+          0.36
+        ]
+      }
+    },
+    {
+      "id": "marble-cool",
+      "surface": {
+        "type": "lambert",
+        "albedo": [
+          0.78,
+          0.8,
+          0.76
+        ]
+      }
+    },
+    {
+      "id": "fabric-teal",
+      "surface": {
+        "type": "lambert",
+        "albedo": [
+          0.05,
+          0.42,
+          0.38
+        ]
+      }
+    },
+    {
+      "id": "leather-brown",
+      "surface": {
+        "type": "lambert",
+        "albedo": [
+          0.28,
+          0.12,
+          0.055
+        ]
+      }
+    },
+    {
+      "id": "pearl",
+      "surface": {
+        "type": "lambert",
+        "albedo": [
+          0.92,
+          0.84,
+          0.68
+        ]
+      }
+    },
+    {
+      "id": "holographic-film",
+      "surface": {
+        "type": "specular_reflection",
+        "reflectance": [
+          0.55,
+          0.72,
+          1
+        ]
+      }
+    },
+    {
+      "id": "carbon-fiber-dark",
+      "surface": {
+        "type": "lambert",
+        "albedo": [
+          0.025,
+          0.028,
+          0.032
+        ]
+      }
+    },
+    {
+      "id": "concrete",
+      "surface": {
+        "type": "lambert",
+        "albedo": [
+          0.43,
+          0.42,
+          0.39
+        ]
+      }
+    },
+    {
+      "id": "sandstone",
+      "surface": {
+        "type": "lambert",
+        "albedo": [
+          0.64,
+          0.52,
+          0.34
+        ]
+      }
+    },
+    {
+      "id": "foam",
+      "surface": {
+        "type": "lambert",
+        "albedo": [
+          0.92,
+          0.91,
+          0.82
+        ]
+      }
+    },
+    {
+      "id": "rough-granules",
+      "surface": {
+        "type": "lambert",
+        "albedo": [
+          0.45,
+          0.34,
+          0.22
+        ]
+      }
+    },
+    {
+      "id": "emissive-cyan",
+      "emission": {
+        "type": "constant",
+        "color": [
+          0.5,
+          3.6,
+          4.8
+        ]
+      }
+    }
+  ],
+  "objects": [
+    {
+      "id": "floor-a",
+      "shape": "triangle",
+      "p1": [
+        -1.9,
+        -2.45,
+        0
+      ],
+      "p2": [
+        2.35,
+        -2.45,
+        0
+      ],
+      "p3": [
+        -1.9,
+        2.45,
+        0
+      ],
+      "material_id": "neutral-floor"
+    },
+    {
+      "id": "floor-b",
+      "shape": "triangle",
+      "p1": [
+        2.35,
+        2.45,
+        0
+      ],
+      "p2": [
+        -1.9,
+        2.45,
+        0
+      ],
+      "p3": [
+        2.35,
+        -2.45,
+        0
+      ],
+      "material_id": "neutral-floor"
+    },
+    {
+      "id": "back-wall-a",
+      "shape": "triangle",
+      "p1": [
+        2.35,
+        -2.45,
+        0
+      ],
+      "p2": [
+        2.35,
+        2.45,
+        0
+      ],
+      "p3": [
+        2.35,
+        -2.45,
+        2.45
+      ],
+      "material_id": "neutral-wall"
+    },
+    {
+      "id": "back-wall-b",
+      "shape": "triangle",
+      "p1": [
+        2.35,
+        2.45,
+        2.45
+      ],
+      "p2": [
+        2.35,
+        -2.45,
+        2.45
+      ],
+      "p3": [
+        2.35,
+        2.45,
+        0
+      ],
+      "material_id": "neutral-wall"
+    },
+    {
+      "id": "left-wall-a",
+      "shape": "triangle",
+      "p1": [
+        -1.9,
+        -2.45,
+        0
+      ],
+      "p2": [
+        2.35,
+        -2.45,
+        0
+      ],
+      "p3": [
+        -1.9,
+        -2.45,
+        2.45
+      ],
+      "material_id": "neutral-wall"
+    },
+    {
+      "id": "left-wall-b",
+      "shape": "triangle",
+      "p1": [
+        2.35,
+        -2.45,
+        2.45
+      ],
+      "p2": [
+        -1.9,
+        -2.45,
+        2.45
+      ],
+      "p3": [
+        2.35,
+        -2.45,
+        0
+      ],
+      "material_id": "neutral-wall"
+    },
+    {
+      "id": "right-wall-a",
+      "shape": "triangle",
+      "p1": [
+        -1.9,
+        2.45,
+        0
+      ],
+      "p2": [
+        -1.9,
+        2.45,
+        2.45
+      ],
+      "p3": [
+        2.35,
+        2.45,
+        0
+      ],
+      "material_id": "neutral-wall"
+    },
+    {
+      "id": "right-wall-b",
+      "shape": "triangle",
+      "p1": [
+        2.35,
+        2.45,
+        2.45
+      ],
+      "p2": [
+        2.35,
+        2.45,
+        0
+      ],
+      "p3": [
+        -1.9,
+        2.45,
+        2.45
+      ],
+      "material_id": "neutral-wall"
+    },
+    {
+      "id": "ceiling-a",
+      "shape": "triangle",
+      "p1": [
+        -1.9,
+        -2.45,
+        2.45
+      ],
+      "p2": [
+        -1.9,
+        2.45,
+        2.45
+      ],
+      "p3": [
+        2.35,
+        -2.45,
+        2.45
+      ],
+      "material_id": "neutral-wall"
+    },
+    {
+      "id": "ceiling-b",
+      "shape": "triangle",
+      "p1": [
+        2.35,
+        2.45,
+        2.45
+      ],
+      "p2": [
+        2.35,
+        -2.45,
+        2.45
+      ],
+      "p3": [
+        -1.9,
+        2.45,
+        2.45
+      ],
+      "material_id": "neutral-wall"
+    },
+    {
+      "id": "key-softbox-a",
+      "shape": "triangle",
+      "p1": [
+        -0.9,
+        -1.25,
+        2.43
+      ],
+      "p2": [
+        -0.15,
+        -1.25,
+        2.43
+      ],
+      "p3": [
+        -0.9,
+        1.25,
+        2.43
+      ],
+      "material_id": "softbox-key"
+    },
+    {
+      "id": "key-softbox-b",
+      "shape": "triangle",
+      "p1": [
+        -0.15,
+        1.25,
+        2.43
+      ],
+      "p2": [
+        -0.9,
+        1.25,
+        2.43
+      ],
+      "p3": [
+        -0.15,
+        -1.25,
+        2.43
+      ],
+      "material_id": "softbox-key"
+    },
+    {
+      "id": "cool-strip-a",
+      "shape": "triangle",
+      "p1": [
+        1.4,
+        2.42,
+        0.45
+      ],
+      "p2": [
+        1.95,
+        2.42,
+        0.45
+      ],
+      "p3": [
+        1.4,
+        2.42,
+        1.85
+      ],
+      "material_id": "strip-cool"
+    },
+    {
+      "id": "cool-strip-b",
+      "shape": "triangle",
+      "p1": [
+        1.95,
+        2.42,
+        1.85
+      ],
+      "p2": [
+        1.4,
+        2.42,
+        1.85
+      ],
+      "p3": [
+        1.95,
+        2.42,
+        0.45
+      ],
+      "material_id": "strip-cool"
+    },
+    {
+      "id": "warm-strip-a",
+      "shape": "triangle",
+      "p1": [
+        -0.95,
+        -2.42,
+        0.55
+      ],
+      "p2": [
+        -0.35,
+        -2.42,
+        0.55
+      ],
+      "p3": [
+        -0.95,
+        -2.42,
+        1.95
+      ],
+      "material_id": "strip-warm"
+    },
+    {
+      "id": "warm-strip-b",
+      "shape": "triangle",
+      "p1": [
+        -0.35,
+        -2.42,
+        1.95
+      ],
+      "p2": [
+        -0.95,
+        -2.42,
+        1.95
+      ],
+      "p3": [
+        -0.35,
+        -2.42,
+        0.55
+      ],
+      "material_id": "strip-warm"
+    },
+    {
+      "id": "rear-white-card-a",
+      "shape": "triangle",
+      "p1": [
+        2.32,
+        -0.72,
+        0.45
+      ],
+      "p2": [
+        2.32,
+        0.72,
+        0.45
+      ],
+      "p3": [
+        2.32,
+        -0.72,
+        1.7
+      ],
+      "material_id": "white-card"
+    },
+    {
+      "id": "rear-white-card-b",
+      "shape": "triangle",
+      "p1": [
+        2.32,
+        0.72,
+        1.7
+      ],
+      "p2": [
+        2.32,
+        -0.72,
+        1.7
+      ],
+      "p3": [
+        2.32,
+        0.72,
+        0.45
+      ],
+      "material_id": "white-card"
+    },
+    {
+      "id": "sample-01-mirror-polished-chrome",
+      "shape": "sphere",
+      "position": [
+        -0.9,
+        -1.44,
+        0.5
+      ],
+      "r": 0.16,
+      "material_id": "mirror-polished-chrome"
+    },
+    {
+      "id": "sample-02-polished-gold",
+      "shape": "sphere",
+      "position": [
+        -0.9,
+        -0.96,
+        0.5
+      ],
+      "r": 0.16,
+      "material_id": "polished-gold"
+    },
+    {
+      "id": "sample-03-rough-gold",
+      "shape": "sphere",
+      "position": [
+        -0.9,
+        -0.48,
+        0.5
+      ],
+      "r": 0.16,
+      "material_id": "rough-gold"
+    },
+    {
+      "id": "sample-04-brushed-aluminum",
+      "shape": "sphere",
+      "position": [
+        -0.9,
+        0,
+        0.5
+      ],
+      "r": 0.16,
+      "material_id": "brushed-aluminum"
+    },
+    {
+      "id": "sample-05-matte-titanium",
+      "shape": "sphere",
+      "position": [
+        -0.9,
+        0.48,
+        0.5
+      ],
+      "r": 0.16,
+      "material_id": "matte-titanium"
+    },
+    {
+      "id": "sample-06-liquid-mercury",
+      "shape": "sphere",
+      "position": [
+        -0.9,
+        0.96,
+        0.5
+      ],
+      "r": 0.16,
+      "material_id": "liquid-mercury"
+    },
+    {
+      "id": "sample-07-holographic-film",
+      "shape": "sphere",
+      "position": [
+        -0.9,
+        1.44,
+        0.5
+      ],
+      "r": 0.16,
+      "material_id": "holographic-film"
+    },
+    {
+      "id": "sample-08-clear-glass",
+      "shape": "sphere",
+      "position": [
+        -0.52,
+        -1.44,
+        0.72
+      ],
+      "r": 0.16,
+      "material_id": "clear-glass",
+      "medium_boundary": {
+        "outside": "air",
+        "inside": "clear_glass",
+        "priority": 10,
+        "thin": false
+      }
+    },
+    {
+      "id": "sample-09-blue-glass",
+      "shape": "sphere",
+      "position": [
+        -0.52,
+        -0.96,
+        0.72
+      ],
+      "r": 0.16,
+      "material_id": "blue-glass",
+      "medium_boundary": {
+        "outside": "air",
+        "inside": "blue_glass",
+        "priority": 10,
+        "thin": false
+      }
+    },
+    {
+      "id": "sample-10-amber-glass",
+      "shape": "sphere",
+      "position": [
+        -0.52,
+        -0.48,
+        0.72
+      ],
+      "r": 0.16,
+      "material_id": "amber-glass",
+      "medium_boundary": {
+        "outside": "air",
+        "inside": "amber_glass",
+        "priority": 10,
+        "thin": false
+      }
+    },
+    {
+      "id": "sample-11-dispersive-crystal",
+      "shape": "sphere",
+      "position": [
+        -0.52,
+        0,
+        0.72
+      ],
+      "r": 0.16,
+      "material_id": "dispersive-crystal",
+      "medium_boundary": {
+        "outside": "air",
+        "inside": "crystal",
+        "priority": 10,
+        "thin": false
+      }
+    },
+    {
+      "id": "sample-12-frosted-glass",
+      "shape": "sphere",
+      "position": [
+        -0.52,
+        0.48,
+        0.72
+      ],
+      "r": 0.16,
+      "material_id": "frosted-glass",
+      "medium_boundary": {
+        "outside": "air",
+        "inside": "frosted_glass",
+        "priority": 10,
+        "thin": false
+      }
+    },
+    {
+      "id": "sample-13-ice",
+      "shape": "sphere",
+      "position": [
+        -0.52,
+        0.96,
+        0.72
+      ],
+      "r": 0.16,
+      "material_id": "ice",
+      "medium_boundary": {
+        "outside": "air",
+        "inside": "ice",
+        "priority": 10,
+        "thin": false
+      }
+    },
+    {
+      "id": "sample-14-jelly",
+      "shape": "sphere",
+      "position": [
+        -0.52,
+        1.44,
+        0.72
+      ],
+      "r": 0.16,
+      "material_id": "jelly",
+      "medium_boundary": {
+        "outside": "air",
+        "inside": "jelly",
+        "priority": 10,
+        "thin": false
+      }
+    },
+    {
+      "id": "sample-15-acrylic-smoke",
+      "shape": "sphere",
+      "position": [
+        -0.14,
+        -1.44,
+        0.94
+      ],
+      "r": 0.16,
+      "material_id": "acrylic-smoke",
+      "medium_boundary": {
+        "outside": "air",
+        "inside": "acrylic",
+        "priority": 10,
+        "thin": false
+      }
+    },
+    {
+      "id": "sample-16-ceramic-white",
+      "shape": "sphere",
+      "position": [
+        -0.14,
+        -0.96,
+        0.94
+      ],
+      "r": 0.16,
+      "material_id": "ceramic-white"
+    },
+    {
+      "id": "sample-17-rubber-black",
+      "shape": "sphere",
+      "position": [
+        -0.14,
+        -0.48,
+        0.94
+      ],
+      "r": 0.16,
+      "material_id": "rubber-black"
+    },
+    {
+      "id": "sample-18-plastic-red",
+      "shape": "sphere",
+      "position": [
+        -0.14,
+        0,
+        0.94
+      ],
+      "r": 0.16,
+      "material_id": "plastic-red"
+    },
+    {
+      "id": "sample-19-plastic-blue",
+      "shape": "sphere",
+      "position": [
+        -0.14,
+        0.48,
+        0.94
+      ],
+      "r": 0.16,
+      "material_id": "plastic-blue"
+    },
+    {
+      "id": "sample-20-pearl",
+      "shape": "sphere",
+      "position": [
+        -0.14,
+        0.96,
+        0.94
+      ],
+      "r": 0.16,
+      "material_id": "pearl"
+    },
+    {
+      "id": "sample-21-emissive-cyan",
+      "shape": "sphere",
+      "position": [
+        -0.14,
+        1.44,
+        0.94
+      ],
+      "r": 0.145,
+      "material_id": "emissive-cyan"
+    },
+    {
+      "id": "sample-22-wood-warm",
+      "shape": "sphere",
+      "position": [
+        0.24,
+        -1.44,
+        1.16
+      ],
+      "r": 0.16,
+      "material_id": "wood-warm"
+    },
+    {
+      "id": "sample-23-stone-granite",
+      "shape": "sphere",
+      "position": [
+        0.24,
+        -0.96,
+        1.16
+      ],
+      "r": 0.16,
+      "material_id": "stone-granite"
+    },
+    {
+      "id": "sample-24-marble-cool",
+      "shape": "sphere",
+      "position": [
+        0.24,
+        -0.48,
+        1.16
+      ],
+      "r": 0.16,
+      "material_id": "marble-cool"
+    },
+    {
+      "id": "sample-25-fabric-teal",
+      "shape": "sphere",
+      "position": [
+        0.24,
+        0,
+        1.16
+      ],
+      "r": 0.16,
+      "material_id": "fabric-teal"
+    },
+    {
+      "id": "sample-26-leather-brown",
+      "shape": "sphere",
+      "position": [
+        0.24,
+        0.48,
+        1.16
+      ],
+      "r": 0.16,
+      "material_id": "leather-brown"
+    },
+    {
+      "id": "sample-27-carbon-fiber-dark",
+      "shape": "sphere",
+      "position": [
+        0.24,
+        0.96,
+        1.16
+      ],
+      "r": 0.16,
+      "material_id": "carbon-fiber-dark"
+    },
+    {
+      "id": "sample-28-concrete",
+      "shape": "sphere",
+      "position": [
+        0.24,
+        1.44,
+        1.16
+      ],
+      "r": 0.16,
+      "material_id": "concrete"
+    },
+    {
+      "id": "sample-29-sandstone",
+      "shape": "sphere",
+      "position": [
+        0.62,
+        -1.44,
+        1.38
+      ],
+      "r": 0.16,
+      "material_id": "sandstone"
+    },
+    {
+      "id": "sample-30-foam",
+      "shape": "sphere",
+      "position": [
+        0.62,
+        -0.96,
+        1.38
+      ],
+      "r": 0.16,
+      "material_id": "foam"
+    },
+    {
+      "id": "sample-31-rough-granules",
+      "shape": "sphere",
+      "position": [
+        0.62,
+        -0.48,
+        1.38
+      ],
+      "r": 0.16,
+      "material_id": "rough-granules"
+    },
+    {
+      "id": "sample-32-rough-gold",
+      "shape": "sphere",
+      "position": [
+        0.62,
+        0,
+        1.38
+      ],
+      "r": 0.16,
+      "material_id": "rough-gold"
+    },
+    {
+      "id": "sample-33-frosted-glass",
+      "shape": "sphere",
+      "position": [
+        0.62,
+        0.48,
+        1.38
+      ],
+      "r": 0.16,
+      "material_id": "frosted-glass",
+      "medium_boundary": {
+        "outside": "air",
+        "inside": "frosted_glass",
+        "priority": 10,
+        "thin": false
+      }
+    },
+    {
+      "id": "sample-34-clear-glass",
+      "shape": "sphere",
+      "position": [
+        0.62,
+        0.96,
+        1.38
+      ],
+      "r": 0.16,
+      "material_id": "clear-glass",
+      "medium_boundary": {
+        "outside": "air",
+        "inside": "clear_glass",
+        "priority": 10,
+        "thin": false
+      }
+    },
+    {
+      "id": "sample-35-brushed-aluminum",
+      "shape": "sphere",
+      "position": [
+        0.62,
+        1.44,
+        1.38
+      ],
+      "r": 0.16,
+      "material_id": "brushed-aluminum"
+    },
+    {
+      "id": "sample-36-plastic-red",
+      "shape": "sphere",
+      "position": [
+        1,
+        -1.44,
+        1.6
+      ],
+      "r": 0.16,
+      "material_id": "plastic-red"
+    },
+    {
+      "id": "sample-37-ceramic-white",
+      "shape": "sphere",
+      "position": [
+        1,
+        -0.96,
+        1.6
+      ],
+      "r": 0.16,
+      "material_id": "ceramic-white"
+    },
+    {
+      "id": "sample-38-amber-glass",
+      "shape": "sphere",
+      "position": [
+        1,
+        -0.48,
+        1.6
+      ],
+      "r": 0.16,
+      "material_id": "amber-glass",
+      "medium_boundary": {
+        "outside": "air",
+        "inside": "amber_glass",
+        "priority": 10,
+        "thin": false
+      }
+    },
+    {
+      "id": "sample-39-stone-granite",
+      "shape": "sphere",
+      "position": [
+        1,
+        0,
+        1.6
+      ],
+      "r": 0.16,
+      "material_id": "stone-granite"
+    },
+    {
+      "id": "sample-40-liquid-mercury",
+      "shape": "sphere",
+      "position": [
+        1,
+        0.48,
+        1.6
+      ],
+      "r": 0.16,
+      "material_id": "liquid-mercury"
+    },
+    {
+      "id": "sample-41-jelly",
+      "shape": "sphere",
+      "position": [
+        1,
+        0.96,
+        1.6
+      ],
+      "r": 0.16,
+      "material_id": "jelly",
+      "medium_boundary": {
+        "outside": "air",
+        "inside": "jelly",
+        "priority": 10,
+        "thin": false
+      }
+    },
+    {
+      "id": "sample-42-emissive-cyan",
+      "shape": "sphere",
+      "position": [
+        1,
+        1.44,
+        1.6
+      ],
+      "r": 0.145,
+      "material_id": "emissive-cyan"
+    }
+  ],
+  "cameras": [
+    {
+      "id": "benchmark-long-lens",
+      "type": "3d",
+      "position": [
+        -5.35,
+        0,
+        1.22
+      ],
+      "look_at": [
+        0.15,
+        0,
+        1.03
+      ],
+      "up": [
+        0,
+        0,
+        1
+      ],
+      "field_of_view": 27,
+      "width": 960,
+      "height": 640,
+      "aspect_ratio": 1.5
+    }
+  ],
+  "render": {
+    "dimension": 3,
+    "samples": 1000,
+    "thread_num": 0,
+    "width": 1050,
+    "height": 600,
+    "camera_index": 0,
+    "output_image": "../outputs/material-benchmark-matrix.png",
+    "output_film": "../outputs/material-benchmark-matrix.bin",
+    "exposure": 2.35,
+    "tone_mapping": "aces",
+    "gamma": 2.2,
+    "spectrum_mode": "rgb",
+    "color_space": "linear_srgb"
+  }
+}
