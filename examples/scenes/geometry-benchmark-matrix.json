@@ -117,6 +117,21 @@
   },
   "materials": [
     {
+      "id": "high-dispersion-prism",
+      "surface": {
+        "type": "specular_dielectric",
+        "reflectance": [1, 1, 1],
+        "transmittance": [1, 1, 1],
+        "eta_outside": 1,
+        "ior": {
+          "type": "cauchy",
+          "a": 1.42,
+          "b": 0.035,
+          "c": 0
+        }
+      }
+    },
+    {
       "id": "softbox-key",
       "emission": {
         "type": "constant",
@@ -3257,7 +3272,7 @@
           0.943
         ]
       },
-      "material_id": "frosted-glass"
+      "material_id": "brushed-aluminum"
     },
     {
       "id": "geo-r05-c03",
@@ -3570,14 +3585,39 @@
     },
     {
       "id": "geo-r06-c01",
-      "shape": "sphere",
-      "position": [
+      "shape": "cubic equation",
+      "center": [
         -0.9,
         1.68,
         0.38
       ],
-      "r": 0.09,
-      "material_id": "ceramic-white"
+      "a": {
+        "0, 1, 1": 0.3333333333333333,
+        "1, 0, 1": 0.3333333333333333,
+        "1, 1, 0": 0.3333333333333333,
+
+        "2, 2, 3": -0.3333333333333333,
+        "2, 3, 2": -0.3333333333333333,
+        "3, 2, 2": -0.3333333333333333
+      },
+      "scale": [
+        2,
+        2,
+        2
+      ],
+      "bounds": {
+        "pmin": [
+          -1.1,
+          1.48,
+          0.18
+        ],
+        "pmax": [
+          -0.7,
+          1.88,
+          0.58
+        ]
+      },
+      "material_id": "rough-gold"
     },
     {
       "id": "geo-r05-c01",
@@ -4043,7 +4083,7 @@
         0.34,
         0.34
       ],
-      "material_id": "rough-gold"
+      "material_id": "high-dispersion-prism"
     },
     {
       "id": "geo-r04-c05-face-01",

@@ -25,6 +25,7 @@ const (
 	ShapeQuadraticEquation = "quadratic equation"
 	ShapeCubicEquation     = "cubic equation"
 	ShapeFourOrderEquation = "four-order equation"
+	ShapePolynomialSurface = "polynomial surface"
 	ShapeSTL               = "stl"
 )
 
@@ -61,6 +62,9 @@ func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 
 	case ShapeFourOrderEquation:
 		return parseFourOrderEquation(objDef)
+
+	case ShapePolynomialSurface:
+		return parsePolynomialSurface(objDef)
 
 	case ShapeSTL:
 		shapes, err := ParseShapeForSTL(objDef)

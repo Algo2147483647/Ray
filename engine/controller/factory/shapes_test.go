@@ -280,6 +280,42 @@ func TestParseShapeRejectsInvalidPolynomialScale(t *testing.T) {
 	}
 }
 
+func TestParseShapePolynomialSurface(t *testing.T) {
+	shapes, err := ParseShape(map[string]interface{}{
+		"shape":     "polynomial surface",
+		"mode":      "implicit",
+		"input_dim": 3,
+		"degree":    2,
+		"coefficients": map[string]interface{}{
+			"format": "coo",
+			"terms": []interface{}{
+				map[string]interface{}{"index": []interface{}{2, 0, 0}, "value": 1},
+				map[string]interface{}{"index": []interface{}{0, 2, 0}, "value": 1},
+				map[string]interface{}{"index": []interface{}{0, 0, 2}, "value": 1},
+				map[string]interface{}{"index": []interface{}{0, 0, 0}, "value": -1},
+			},
+		},
+		"bounds": map[string]interface{}{
+			"pmin": []interface{}{-1, -1, -1},
+			"pmax": []interface{}{1, 1, 1},
+		},
+	})
+	if err != nil {
+		t.Fatalf("parse polynomial surface: %v", err)
+	}
+	if len(shapes) != 1 {
+		t.Fatalf("expected one shape, got %d", len(shapes))
+	}
+
+	bounded, ok := shapes[0].(*shape.BoundedShape)
+	if !ok {
+		t.Fatalf("expected bounded polynomial surface, got %T", shapes[0])
+	}
+	if _, ok := bounded.Shape.(*shape.PolynomialSurface); !ok {
+		t.Fatalf("expected polynomial surface, got %T", bounded.Shape)
+	}
+}
+
 func TestParseShapeRejectsInvalidBounds(t *testing.T) {
 	_, err := ParseShape(map[string]interface{}{
 		"shape":    "sphere",
