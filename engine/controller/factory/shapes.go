@@ -186,6 +186,14 @@ func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 		)
 		return wrapShapesWithBounds([]shape.Shape{equation}, objDef)
 
+	case "cubic equation":
+		a, err := utils.RequiredFloat64SliceField(objDef, "a", 64)
+		if err != nil {
+			return nil, err
+		}
+		equation := shape.NewCubicEquation(a)
+		return wrapShapesWithBounds([]shape.Shape{equation}, objDef)
+
 	case "four-order equation":
 		a, err := utils.RequiredFloat64SliceField(objDef, "a", 256)
 		if err != nil {

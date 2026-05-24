@@ -117,6 +117,29 @@ func TestParseShapeWrapsOptionalBounds(t *testing.T) {
 	}
 }
 
+func TestParseShapeCubicEquation(t *testing.T) {
+	coeffs := make([]interface{}, 64)
+	for i := range coeffs {
+		coeffs[i] = 0
+	}
+	coeffs[(1*4+1)*4+1] = 1
+	coeffs[0] = -1
+
+	shapes, err := ParseShape(map[string]interface{}{
+		"shape": "cubic equation",
+		"a":     coeffs,
+	})
+	if err != nil {
+		t.Fatalf("parse cubic equation: %v", err)
+	}
+	if len(shapes) != 1 {
+		t.Fatalf("expected one shape, got %d", len(shapes))
+	}
+	if _, ok := shapes[0].(*shape.CubicEquation); !ok {
+		t.Fatalf("expected *shape.CubicEquation, got %T", shapes[0])
+	}
+}
+
 func TestParseShapeRejectsInvalidBounds(t *testing.T) {
 	_, err := ParseShape(map[string]interface{}{
 		"shape":    "sphere",

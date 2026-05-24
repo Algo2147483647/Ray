@@ -159,7 +159,7 @@ Objects may declare the media separated by a closed dielectric boundary:
 Objects may also declare an optional `bounds` block to clip the visible portion
 of a shape to an axis-aligned box. This is primarily useful for finite previews
 of otherwise open or unbounded implicit surfaces such as paraboloids,
-hyperboloids, cones, and quartic sheets:
+hyperboloids, cones, cubic sheets, and quartic sheets:
 
 ```json
 {
@@ -179,6 +179,17 @@ hyperboloids, cones, and quartic sheets:
 `bounds` accepts either `pmin`/`pmax` or `position`/`size`. It clips only the
 surface intersection and does not add cap faces, so open clipped surfaces should
 not be treated as closed dielectric medium boundaries.
+
+Implicit polynomial surfaces support these JSON shapes:
+
+```text
+quadratic equation: 9 coefficients for x^T A x + b^T x + c
+cubic equation: 64 coefficients for A[i][j][k] factors
+four-order equation: 256 coefficients for A[i][j][k][l] factors
+```
+
+For cubic and four-order equations, tensor index `0` is the constant factor `1`,
+while `1`, `2`, and `3` are `x`, `y`, and `z`.
 
 ### Rough Conductor
 
