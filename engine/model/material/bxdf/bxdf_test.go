@@ -4,13 +4,13 @@ import (
 	"math"
 	"testing"
 
+	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/model/material"
 	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
 	"github.com/Algo2147483647/ray/engine/model/material/medium"
 	"github.com/Algo2147483647/ray/engine/model/material/microfacet"
 	"github.com/Algo2147483647/ray/engine/model/optics"
 	"github.com/Algo2147483647/ray/engine/model/optics/spectrum_parameter"
-	"github.com/Algo2147483647/ray/engine/utils/maths"
 )
 
 func TestLambertBasicPhysicalValidity(t *testing.T) {

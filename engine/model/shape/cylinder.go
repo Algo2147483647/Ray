@@ -3,7 +3,7 @@ package shape
 import (
 	"math"
 
-	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
+	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 )
@@ -18,7 +18,7 @@ type FiniteCylinder struct {
 
 func NewFiniteCylinder(center, axis *mat.VecDense, r, height float64) *FiniteCylinder {
 	normalized := mat.VecDenseCopyOf(axis)
-	math_lib.Normalize(normalized)
+	maths.Normalize(normalized)
 	return &FiniteCylinder{
 		Center: center,
 		Axis:   normalized,
@@ -156,7 +156,7 @@ func (c *FiniteCylinder) GetNormalVector(intersect, res *mat.VecDense) *mat.VecD
 	}
 
 	res.AddScaledVec(offset, -axisDistance, c.Axis)
-	return math_lib.Normalize(res)
+	return maths.Normalize(res)
 }
 
 func (c *FiniteCylinder) BuildBoundingBox() (pmin, pmax *mat.VecDense) {

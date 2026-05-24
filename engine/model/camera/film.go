@@ -3,7 +3,7 @@ package camera
 import (
 	"encoding/binary"
 	"errors"
-	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
+	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/model/optics"
 	"image"
 	"image/color"
@@ -14,12 +14,12 @@ import (
 )
 
 type Film struct {
-	Data          [3]math_lib.Tensor[float64] `json:"data"`                      // RGB or tristimulus channel data.
-	Samples       int64                       `json:"samples"`                   // Number of accumulated samples.
-	ColorSpace    FilmColorSpace              `json:"color_space"`               // Color encoding used for output.
-	SpectralBins  []math_lib.Tensor[float64]  `json:"spectral_bins,omitempty"`   // Per-wavelength-band accumulated spectral data.
-	SpectralMinNM float64                     `json:"spectral_min_nm,omitempty"` // Lower bound of the spectral range, in nm.
-	SpectralMaxNM float64                     `json:"spectral_max_nm,omitempty"` // Upper bound of the spectral range, in nm.
+	Data          [3]maths.Tensor[float64] `json:"data"`                      // RGB or tristimulus channel data.
+	Samples       int64                    `json:"samples"`                   // Number of accumulated samples.
+	ColorSpace    FilmColorSpace           `json:"color_space"`               // Color encoding used for output.
+	SpectralBins  []maths.Tensor[float64]  `json:"spectral_bins,omitempty"`   // Per-wavelength-band accumulated spectral data.
+	SpectralMinNM float64                  `json:"spectral_min_nm,omitempty"` // Lower bound of the spectral range, in nm.
+	SpectralMaxNM float64                  `json:"spectral_max_nm,omitempty"` // Upper bound of the spectral range, in nm.
 }
 
 type FilmColorSpace string
@@ -56,10 +56,10 @@ func NewFilm(width ...int) *Film {
 	copy(shape, width)
 
 	return &Film{
-		Data: [3]math_lib.Tensor[float64]{
-			*math_lib.NewTensor[float64](shape),
-			*math_lib.NewTensor[float64](shape),
-			*math_lib.NewTensor[float64](shape),
+		Data: [3]maths.Tensor[float64]{
+			*maths.NewTensor[float64](shape),
+			*maths.NewTensor[float64](shape),
+			*maths.NewTensor[float64](shape),
 		},
 		Samples:    0,
 		ColorSpace: FilmColorSpaceLinearSRGB,
@@ -70,10 +70,10 @@ func (f *Film) Init(width ...int) *Film {
 	shape := make([]int, len(width))
 	copy(shape, width)
 
-	f.Data = [3]math_lib.Tensor[float64]{
-		*math_lib.NewTensor[float64](shape),
-		*math_lib.NewTensor[float64](shape),
-		*math_lib.NewTensor[float64](shape),
+	f.Data = [3]maths.Tensor[float64]{
+		*maths.NewTensor[float64](shape),
+		*maths.NewTensor[float64](shape),
+		*maths.NewTensor[float64](shape),
 	}
 	f.Samples = 0
 	f.ColorSpace = FilmColorSpaceLinearSRGB
@@ -118,9 +118,9 @@ func (f *Film) InitSpectralBins(count int, minNM, maxNM float64) {
 	if maxNM <= minNM {
 		maxNM = 750
 	}
-	f.SpectralBins = make([]math_lib.Tensor[float64], count)
+	f.SpectralBins = make([]maths.Tensor[float64], count)
 	for i := range f.SpectralBins {
-		f.SpectralBins[i] = *math_lib.NewTensor[float64](append([]int(nil), f.Data[0].Shape...))
+		f.SpectralBins[i] = *maths.NewTensor[float64](append([]int(nil), f.Data[0].Shape...))
 	}
 	f.SpectralMinNM = minNM
 	f.SpectralMaxNM = maxNM
@@ -352,10 +352,10 @@ func (f *Film) LoadFromFile(filename string) error {
 		shape[i] = int(dim)
 	}
 
-	f.Data = [3]math_lib.Tensor[float64]{
-		*math_lib.NewTensor[float64](shape),
-		*math_lib.NewTensor[float64](shape),
-		*math_lib.NewTensor[float64](shape),
+	f.Data = [3]maths.Tensor[float64]{
+		*maths.NewTensor[float64](shape),
+		*maths.NewTensor[float64](shape),
+		*maths.NewTensor[float64](shape),
 	}
 	f.ColorSpace = FilmColorSpaceLinearSRGB
 

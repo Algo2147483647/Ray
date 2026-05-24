@@ -3,7 +3,6 @@ package maths
 import (
 	"math"
 
-	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -19,7 +18,7 @@ func NewFrameFromNormal(normal *mat.VecDense) (Frame, bool) {
 	}
 
 	n := mat.VecDenseCopyOf(normal)
-	math_lib.Normalize(n)
+	Normalize(n)
 
 	var tangent *mat.VecDense
 	if math.Abs(n.AtVec(2)) < 0.999999 {
@@ -27,10 +26,10 @@ func NewFrameFromNormal(normal *mat.VecDense) (Frame, bool) {
 	} else {
 		tangent = mat.NewVecDense(3, []float64{0, 1, 0})
 	}
-	math_lib.Normalize(tangent)
+	Normalize(tangent)
 
-	bitangent := math_lib.Cross2(n, tangent)
-	math_lib.Normalize(bitangent)
+	bitangent := Cross2(n, tangent)
+	Normalize(bitangent)
 
 	return Frame{
 		Tangent:   tangent,

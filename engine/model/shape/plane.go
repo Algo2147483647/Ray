@@ -1,7 +1,7 @@
 package shape
 
 import (
-	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
+	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 	"math"
@@ -42,5 +42,5 @@ func (p *Plane) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) 
 
 func (p *Plane) GetNormalVector(_, res *mat.VecDense) *mat.VecDense {
 	res.CloneFromVec(p.A)
-	return math_lib.Normalize(res)
+	return maths.Normalize(res)
 }

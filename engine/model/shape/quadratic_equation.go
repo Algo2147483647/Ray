@@ -1,8 +1,7 @@
 package shape
 
 import (
-	"github.com/Algo2147483647/golang_toolkit/math/basic_algebra"
-	"github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
+	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 	"math"
@@ -85,46 +84,84 @@ func (p *QuadraticEquation) Intersect(raySt, rayDir *mat.VecDense) float64 {
 	return interaction.Distance
 }
 
-func (p *QuadraticEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
-	t := utils.VectorPool.Get().(*mat.VecDense)
-	defer func() {
-		utils.VectorPool.Put(t)
-	}()
+func (p *QuadraticEquation) IntersectRange(
+	raySt, rayDir *mat.VecDense,
+	tMin, tMax float64,
+) (SurfaceInteraction, bool) {
+	if raySt == nil || rayDir == nil || p == nil || p.A == nil || p.B == nil {
+		return SurfaceInteraction{}, false
+	}
 
-	t.MulVec(p.A, rayDir)
-	a := mat.Dot(rayDir, t)                                                               // Compute the quadratic coefficient: rayDir^T A rayDir
-	b := 2*mat.Dot(raySt, t) + mat.Dot(p.B, rayDir)                                       // Compute the linear coefficient: 2 * raySt^T A rayDir + b^T rayDir
-	c := mat.Dot(raySt, linear_algebra.MulVec(t, p.A, raySt)) + mat.Dot(p.B, raySt) + p.C // Compute the constant term: raySt^T A raySt + b^T raySt + c
-	t1, t2, count := basic_algebra.SolveQuadraticEquationReal(a, b, c)                    // Solve the quadratic equation a*t^2 + b*t + c = 0.
+	n := raySt.Len()
+	if rayDir.Len() != n || p.B.Len() != n {
+		return SurfaceInteraction{}, false
+	}
 
-	switch count {
-	case 1:
-		if distanceInRange(t1, tMin, tMax) {
-			point := pointAt(raySt, rayDir, t1)
-			normal := p.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
-			return newSurfaceInteractionAt(point, t1, normal), true
-		}
-	case 2:
-		minValidRoots := math.MaxFloat64 // Filter positive roots and choose the smallest one.
-		if distanceInRange(t1, tMin, tMax) {
-			minValidRoots = math.Min(minValidRoots, t1)
-		}
-		if distanceInRange(t2, tMin, tMax) {
-			minValidRoots = math.Min(minValidRoots, t2)
-		}
-		if minValidRoots != math.MaxFloat64 {
-			point := pointAt(raySt, rayDir, minValidRoots)
-			normal := p.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
-			return newSurfaceInteractionAt(point, minValidRoots, normal), true
+	ar, ac := p.A.Dims()
+	if ar != n || ac != n {
+		return SurfaceInteraction{}, false
+	}
+
+	// Ray:
+	//
+	//     x(t) = raySt + t * rayDir
+	//
+	// Surface:
+	//
+	//     x^T A x + B^T x + C = 0
+	//
+	// Substitute x(t):
+	//
+	//     a*t^2 + b*t + c = 0
+	//
+	// where:
+	//
+	//     a = d^T A d
+	//     b = s^T A d + d^T A s + B^T d
+	//     c = s^T A s + B^T s + C
+	//
+	// If A is guaranteed symmetric, then:
+	//
+	//     b = 2*s^T A d + B^T d
+	//
+	// But the general formula below is safer.
+
+	aDir := mat.NewVecDense(n, nil)
+	aSt := mat.NewVecDense(n, nil)
+
+	aDir.MulVec(p.A, rayDir) // A * d
+	aSt.MulVec(p.A, raySt)   // A * s
+
+	a := mat.Dot(rayDir, aDir)
+	b := mat.Dot(raySt, aDir) + mat.Dot(rayDir, aSt) + mat.Dot(p.B, rayDir)
+	c := mat.Dot(raySt, aSt) + mat.Dot(p.B, raySt) + p.C
+
+	roots, err := maths.SolveQuadraticEquationReal(a, b, c)
+	if err != nil {
+		return SurfaceInteraction{}, false
+	}
+
+	bestT := math.Inf(1)
+
+	for _, root := range roots {
+		if distanceInRange(root, tMin, tMax) && root < bestT {
+			bestT = root
 		}
 	}
 
-	return SurfaceInteraction{}, false
+	if math.IsInf(bestT, 1) {
+		return SurfaceInteraction{}, false
+	}
+
+	point := pointAt(raySt, rayDir, bestT)
+	normal := p.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
+
+	return newSurfaceInteractionAt(point, bestT, normal), true
 }
 
 func (p *QuadraticEquation) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {
 	// Compute the gradient: df(x) = 2A x + b.
 	res.MulVec(p.A, intersect)
-	linear_algebra.ScaleVec(res, 2, res)
-	return linear_algebra.Normalize(linear_algebra.AddVec(res, res, p.B))
+	maths.ScaleVec(res, 2, res)
+	return maths.Normalize(maths.AddVec(res, res, p.B))
 }

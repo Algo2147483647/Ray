@@ -3,7 +3,7 @@ package shape
 import (
 	"math"
 
-	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
+	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 )
@@ -17,7 +17,7 @@ type Circle struct {
 
 func NewCircle(center, normal *mat.VecDense, r float64) *Circle {
 	normalized := mat.VecDenseCopyOf(normal)
-	math_lib.Normalize(normalized)
+	maths.Normalize(normalized)
 	return &Circle{
 		Center: center,
 		Normal: normalized,

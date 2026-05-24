@@ -1,7 +1,7 @@
 package shape
 
 import (
-	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
+	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 	"math"
@@ -32,8 +32,8 @@ func NewTriangle(P1, P2, P3 *mat.VecDense) *Triangle {
 		P2: P2,
 		P3: P3,
 		Mem: TriangleCalculateStorage{
-			Edge1: math_lib.SubVec(edge1, P2, P1),
-			Edge2: math_lib.SubVec(edge2, P3, P1),
+			Edge1: maths.SubVec(edge1, P2, P1),
+			Edge2: maths.SubVec(edge2, P3, P1),
 		},
 	}
 	res.Mem.Normal = res.GetNormalVectorPure()
@@ -80,7 +80,7 @@ func (f *Triangle) IntersectCandidate(raySt, rayDir *mat.VecDense, tMin, tMax fl
 		utils.VectorPool.Put(q)
 	}()
 
-	math_lib.Cross(p, rayDir, f.Mem.Edge2)
+	maths.Cross(p, rayDir, f.Mem.Edge2)
 	a := mat.Dot(f.Mem.Edge1, p)
 	if a > 0 {
 		t.SubVec(raySt, f.P1)
@@ -92,7 +92,7 @@ func (f *Triangle) IntersectCandidate(raySt, rayDir *mat.VecDense, tMin, tMax fl
 		return SurfaceCandidate{}, false
 	}
 
-	math_lib.Cross(q, t, f.Mem.Edge1)
+	maths.Cross(q, t, f.Mem.Edge1)
 	u := mat.Dot(t, p) / a
 	v := mat.Dot(rayDir, q) / a
 	if u < 0 || u > 1 {
@@ -197,7 +197,7 @@ func (f *Triangle) GetNormalVector(_, res *mat.VecDense) *mat.VecDense {
 func (f *Triangle) GetNormalVectorPure() *mat.VecDense {
 	edge1 := mat.NewVecDense(f.P1.Len(), nil)
 	edge2 := mat.NewVecDense(f.P1.Len(), nil)
-	return math_lib.Normalize(math_lib.Cross2(math_lib.SubVec(edge1, f.P2, f.P1), math_lib.SubVec(edge2, f.P3, f.P1)))
+	return maths.Normalize(maths.Cross2(maths.SubVec(edge1, f.P2, f.P1), maths.SubVec(edge2, f.P3, f.P1)))
 }
 
 func (f *Triangle) BuildBoundingBox() (pmin, pmax *mat.VecDense) {

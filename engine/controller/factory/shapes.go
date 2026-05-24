@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"encoding/binary"
 	"fmt"
-	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
+	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/model/shape"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"github.com/Algo2147483647/ray/engine/utils/example_lib"
@@ -30,12 +30,12 @@ func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 			}
 
 			positionVec := mat.NewVecDense(len(position), position)
-			halfSize := math_lib.ScaleVec2(0.5, mat.NewVecDense(len(size), size))
+			halfSize := maths.ScaleVec2(0.5, mat.NewVecDense(len(size), size))
 			pmax := mat.NewVecDense(positionVec.Len(), nil)
 			pmin := mat.NewVecDense(positionVec.Len(), nil)
 			cuboid := shape.NewCuboid(
-				math_lib.SubVec(pmin, positionVec, halfSize),
-				math_lib.AddVec(pmax, positionVec, halfSize),
+				maths.SubVec(pmin, positionVec, halfSize),
+				maths.AddVec(pmax, positionVec, halfSize),
 			)
 			if err := applyEngravingFunc(cuboid, objDef); err != nil {
 				return nil, err
@@ -259,12 +259,12 @@ func parseShapeBounds(objDef map[string]interface{}) (*shape.Cuboid, bool, error
 		}
 
 		positionVec := mat.NewVecDense(len(position), position)
-		halfSize := math_lib.ScaleVec2(0.5, mat.NewVecDense(len(size), size))
+		halfSize := maths.ScaleVec2(0.5, mat.NewVecDense(len(size), size))
 		pmax := mat.NewVecDense(positionVec.Len(), nil)
 		pmin := mat.NewVecDense(positionVec.Len(), nil)
 		return shape.NewCuboid(
-			math_lib.SubVec(pmin, positionVec, halfSize),
-			math_lib.AddVec(pmax, positionVec, halfSize),
+			maths.SubVec(pmin, positionVec, halfSize),
+			maths.AddVec(pmax, positionVec, halfSize),
 		), true, nil
 	}
 
@@ -380,8 +380,8 @@ func ParseShapeForSTL(objDef map[string]interface{}) ([]shape.Shape, error) {
 	defer file.Close()
 
 	positionVec := mat.NewVecDense(len(position), position)
-	zDirVec := math_lib.Normalize(mat.NewVecDense(len(zDir), zDir))
-	xDirVec := math_lib.Normalize(mat.NewVecDense(len(xDir), xDir))
+	zDirVec := maths.Normalize(mat.NewVecDense(len(zDir), zDir))
+	xDirVec := maths.Normalize(mat.NewVecDense(len(xDir), xDir))
 	scaleVec := mat.NewVecDense(len(scale), scale)
 
 	transformMatrix := mat.NewDense(4, 4, []float64{
@@ -391,7 +391,7 @@ func ParseShapeForSTL(objDef map[string]interface{}) ([]shape.Shape, error) {
 		0, 0, 0, 1,
 	})
 
-	yDir := math_lib.Normalize(math_lib.Cross2(zDirVec, xDirVec))
+	yDir := maths.Normalize(maths.Cross2(zDirVec, xDirVec))
 
 	for i := 0; i < 3; i++ {
 		transformMatrix.Set(i, 0, xDirVec.AtVec(i))

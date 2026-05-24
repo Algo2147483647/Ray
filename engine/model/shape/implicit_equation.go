@@ -1,7 +1,7 @@
 package shape
 
 import (
-	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
+	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 	"math"
@@ -37,7 +37,7 @@ func (f *ImplicitEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMa
 }
 
 func (f *ImplicitEquation) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {
-	return math_lib.Normalize(res)
+	return maths.Normalize(res)
 }
 
 func (f *ImplicitEquation) BuildBoundingBox() (pmin, pmax *mat.VecDense) {

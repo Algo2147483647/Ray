@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"testing"
 
-	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
+	"github.com/Algo2147483647/ray/engine/maths"
 )
 
 func TestFourOrderEquation(t *testing.T) {
 	t.Run("(x - 1)^4 + y^4 + z^4 = 1", func(t *testing.T) {
-		a := math_lib.NewTensor[float64]([]int{4, 4, 4, 4})
+		a := maths.NewTensor[float64]([]int{4, 4, 4, 4})
 
 		a.Set(1, 0, 0, 0, 0)
 		a.Set(-1, 1, 1, 1, 1)
@@ -39,7 +39,7 @@ func TestFourOrderEquation(t *testing.T) {
 	})
 
 	t.Run("Tanglecube: sum_{i=1}^3 (x_i^4 - 5 x_i^2 ) + 11.8 = 0, (x - 1.5), ", func(t *testing.T) {
-		a := math_lib.NewTensor[float64]([]int{4, 4, 4, 4})
+		a := maths.NewTensor[float64]([]int{4, 4, 4, 4})
 
 		a.Set(11.8, 0, 0, 0, 0)
 		a.Set(1, 1, 1, 1, 1)

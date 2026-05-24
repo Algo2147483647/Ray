@@ -1,7 +1,7 @@
 package shape
 
 import (
-	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
+	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 	"math"
@@ -9,7 +9,7 @@ import (
 
 type FourOrderEquation struct {
 	BaseShape
-	A      *math_lib.Tensor[float64] `json:"a"`
+	A      *maths.Tensor[float64] `json:"a"`
 	Center [3]float64
 	Scale  [3]float64
 }
@@ -17,7 +17,7 @@ type FourOrderEquation struct {
 func NewFourOrderEquation(A []float64, centerScale ...[]float64) *FourOrderEquation { // Index order: 1, x, y, z
 	center, scale := normalizePolynomialCenterScale(centerScale...)
 	baked := bakeFourOrderCoefficients(A, center, scale)
-	ATensor := math_lib.NewTensorFromSlice(baked, []int{4, 4, 4, 4})
+	ATensor := maths.NewTensorFromSlice(baked, []int{4, 4, 4, 4})
 
 	return &FourOrderEquation{
 		A:      ATensor,
@@ -239,7 +239,7 @@ func (p *FourOrderEquation) GetNormalVector(intersect, res *mat.VecDense) *mat.V
 	res.SetVec(0, grad[0])
 	res.SetVec(1, grad[1])
 	res.SetVec(2, grad[2])
-	return math_lib.Normalize(res)
+	return maths.Normalize(res)
 }
 
 func bakeFourOrderCoefficients(a []float64, center, scale [3]float64) []float64 {

@@ -3,12 +3,11 @@ package ray_tracing
 import (
 	"math/rand/v2"
 
-	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
+	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
 	"github.com/Algo2147483647/ray/engine/model/material/medium"
 	"github.com/Algo2147483647/ray/engine/model/object"
 	"github.com/Algo2147483647/ray/engine/model/optics"
-	"github.com/Algo2147483647/ray/engine/utils/maths"
 )
 
 type SurfaceInteraction struct {
@@ -63,7 +62,7 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level in
 
 	// Transform the sampled local direction back to world space.
 	si.Frame.LocalToWorldInto(ray.Direction, sample.Wi)
-	math_lib.Normalize(ray.Direction)
+	maths.Normalize(ray.Direction)
 
 	// Continue tracing the next bounce.
 	h.TraceRay(objTree, ray, level+1)

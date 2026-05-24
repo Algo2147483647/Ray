@@ -1,7 +1,7 @@
 package shape
 
 import (
-	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
+	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 	"math"
@@ -123,7 +123,7 @@ func (s *Sphere) intersectCandidate3D(raySt, rayDir *mat.VecDense, tMin, tMax fl
 }
 
 func (s *Sphere) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {
-	return math_lib.Normalize(math_lib.SubVec(res, intersect, s.center))
+	return maths.Normalize(maths.SubVec(res, intersect, s.center))
 }
 
 func (s *Sphere) BuildBoundingBox() (pmin, pmax *mat.VecDense) {

@@ -1,8 +1,7 @@
 package shape
 
 import (
-	"github.com/Algo2147483647/golang_toolkit/math/basic_algebra"
-	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
+	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 	"math"
@@ -44,37 +43,78 @@ func (f *ParametricEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, t
 	return newSurfaceInteractionAt(point, distance, normal), true
 }
 
-func (f *ParametricEquation) IntersectPure(raySt, rayDir *mat.VecDense, u0, v0, tol float64, maxIter int) float64 {
-	equations := func(x []float64) []float64 { // Define the equation system: ray(t) - surface(u, v) = 0. // 2D parametric surface.
+func (f *ParametricEquation) IntersectPure(
+	raySt, rayDir *mat.VecDense,
+	u0, v0, tol float64,
+	maxIter int,
+) float64 {
+	if f == nil || raySt == nil || rayDir == nil {
+		return math.Inf(1)
+	}
+
+	if raySt.Len() != rayDir.Len() || raySt.Len() < 3 {
+		return math.Inf(1)
+	}
+
+	if len(f.URange) < 2 || len(f.VRange) < 2 {
+		return math.Inf(1)
+	}
+
+	equations := func(x []float64) []float64 {
 		t, u, v := x[0], x[1], x[2]
-		pointOnRay := mat.NewVecDense(raySt.Len(), nil)
-		pointOnRay.AddVec(raySt, math_lib.ScaleVec2(t, rayDir))
+
 		pointOnSurface := f.Function(u, v)
+		if pointOnSurface == nil || pointOnSurface.Len() < 3 {
+			return []float64{
+				math.Inf(1),
+				math.Inf(1),
+				math.Inf(1),
+			}
+		}
 
 		result := make([]float64, 3)
+
 		for i := 0; i < 3; i++ {
-			result[i] = pointOnRay.AtVec(i) - pointOnSurface.AtVec(i)
+			pointOnRayI := raySt.AtVec(i) + t*rayDir.AtVec(i)
+			result[i] = pointOnRayI - pointOnSurface.AtVec(i)
 		}
+
 		return result
 	}
 
-	x := []float64{0.0, u0, v0}                                                  // Initial guess
-	solution, success := basic_algebra.NewtonRaphson(equations, x, tol, maxIter) // Solve with the Newton-Raphson method.
-	if success {
-		t, u, v := solution[0], solution[1], solution[2]
-		if f.URange[0] <= u && u <= f.URange[1] && // Check whether parameters are in valid range.
-			f.VRange[0] <= v && v <= f.VRange[1] {
-			if t > utils.EPS {
-				return t
-			}
-		}
+	options := &maths.NewtonOptions{
+		Tol:         tol,
+		MaxIter:     maxIter,
+		JacobianEps: 1e-6,
+		Damping:     true,
 	}
 
-	return math.MaxFloat64
+	x0 := []float64{utils.EPS, u0, v0}
+
+	solution, err := maths.NewtonRaphson(equations, x0, options)
+	if err != nil {
+		return math.Inf(1)
+	}
+
+	t, u, v := solution[0], solution[1], solution[2]
+
+	if t <= utils.EPS {
+		return math.Inf(1)
+	}
+
+	if u < f.URange[0] || u > f.URange[1] {
+		return math.Inf(1)
+	}
+
+	if v < f.VRange[0] || v > f.VRange[1] {
+		return math.Inf(1)
+	}
+
+	return t
 }
 
 func (f *ParametricEquation) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {
-	return math_lib.Normalize(res)
+	return maths.Normalize(res)
 }
 
 func (f *ParametricEquation) BuildBoundingBox() (pmin, pmax *mat.VecDense) {

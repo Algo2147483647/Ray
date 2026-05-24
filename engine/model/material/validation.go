@@ -2,9 +2,9 @@ package material
 
 import (
 	"fmt"
+	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
 	"github.com/Algo2147483647/ray/engine/model/optics"
-	"github.com/Algo2147483647/ray/engine/utils/maths"
 	"math"
 )
 

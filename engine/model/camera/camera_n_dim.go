@@ -2,7 +2,7 @@ package camera
 
 import (
 	"fmt"
-	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
+	"github.com/Algo2147483647/ray/engine/maths"
 	renderray "github.com/Algo2147483647/ray/engine/model/optics"
 	"gonum.org/v1/gonum/mat"
 	"math"
@@ -42,7 +42,7 @@ func (c *CameraNDim) Prepare() error {
 	}
 
 	// Compute
-	c.orthonormalCoordinates = math_lib.GramSchmidt(c.Coordinates...)
+	c.orthonormalCoordinates = maths.GramSchmidt(c.Coordinates...)
 	c.fovTangents = make([]float64, len(c.FieldOfView))
 	for i, fov := range c.FieldOfView {
 		c.fovTangents[i] = math.Tan(fov * math.Pi / 180 / 2.0)
@@ -71,7 +71,7 @@ func (c *CameraNDim) GenerateRay(res *renderray.Ray, x ...int) *renderray.Ray {
 	for i := 0; i < len(x); i++ {
 		res.Direction.AddScaledVec(res.Direction, u[i]*c.fovTangents[i], c.orthonormalCoordinates[i+1])
 	}
-	math_lib.Normalize(res.Direction)
+	maths.Normalize(res.Direction)
 
 	return res
 }

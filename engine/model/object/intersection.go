@@ -1,7 +1,7 @@
 package object
 
 import (
-	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
+	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/model/shape"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
@@ -141,7 +141,7 @@ func (t *ObjectTree) GetSurfaceHit(raySt, rayDir *mat.VecDense) (*SurfaceHit, bo
 		geometricNormal = obj.Shape.GetNormalVector(interaction.Point, mat.NewVecDense(interaction.Point.Len(), nil))
 	}
 	geometricNormal = mat.VecDenseCopyOf(geometricNormal)
-	math_lib.Normalize(geometricNormal)
+	maths.Normalize(geometricNormal)
 
 	frontFace := mat.Dot(geometricNormal, rayDir) < 0
 	shadingNormal := geometricNormal

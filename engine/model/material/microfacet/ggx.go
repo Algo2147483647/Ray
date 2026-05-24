@@ -1,7 +1,7 @@
 package microfacet
 
 import (
-	"github.com/Algo2147483647/ray/engine/utils/maths"
+	"github.com/Algo2147483647/ray/engine/maths"
 	"math"
 )
 

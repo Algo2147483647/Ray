@@ -2,7 +2,7 @@ package camera
 
 import (
 	"fmt"
-	math_lib "github.com/Algo2147483647/golang_toolkit/math/linear_algebra"
+	"github.com/Algo2147483647/ray/engine/maths"
 	renderray "github.com/Algo2147483647/ray/engine/model/optics"
 	"gonum.org/v1/gonum/mat"
 	"math"
@@ -55,14 +55,14 @@ func (c *Camera3D) Prepare() error {
 	}
 
 	c.dir = mat.VecDenseCopyOf(c.Direction)
-	math_lib.Normalize(c.dir)
+	maths.Normalize(c.dir)
 	c.up = mat.VecDenseCopyOf(c.Up)
-	math_lib.Normalize(c.up)
-	right := math_lib.Cross2(c.dir, c.up)
+	maths.Normalize(c.up)
+	right := maths.Cross2(c.dir, c.up)
 	if mat.Norm(right, 2) == 0 {
 		return fmt.Errorf("camera direction and up vector must not be parallel")
 	}
-	c.right = math_lib.Normalize(right)
+	c.right = maths.Normalize(right)
 
 	fovRad := c.FieldOfView * math.Pi / 180
 	c.halfHeight = math.Tan(fovRad / 2)
@@ -96,7 +96,7 @@ func (c *Camera3D) GenerateRay(res *renderray.Ray, index ...int) *renderray.Ray 
 	res.Direction.CloneFromVec(c.dir)
 	res.Direction.AddScaledVec(res.Direction, u*c.halfWidth, c.right)
 	res.Direction.AddScaledVec(res.Direction, -v*c.halfHeight, c.up)
-	math_lib.Normalize(res.Direction)
+	maths.Normalize(res.Direction)
 
 	return res
 }
@@ -105,7 +105,7 @@ func (c *Camera3D) GenerateRay(res *renderray.Ray, index ...int) *renderray.Ray 
 func (c *Camera3D) SetLookAt(lookAt *mat.VecDense) *Camera3D {
 	c.Direction = mat.NewVecDense(lookAt.Len(), nil)
 	c.Direction.SubVec(lookAt, c.Position)
-	math_lib.Normalize(c.Direction)
+	maths.Normalize(c.Direction)
 	c.prepared = false
 	return c
 }
