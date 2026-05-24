@@ -19,7 +19,7 @@ import (
 //	3: cubic
 //	4: quartic
 //
-// For degree > 4, this function returns ErrDegreeTooHigh.
+// For degree > 4, this function falls back to numeric real-root isolation.
 func SolvePolynomialReal(coeffs []float64) ([]float64, error) {
 	coeffs = trimLeadingZerosReal(coeffs)
 	if len(coeffs) == 0 {

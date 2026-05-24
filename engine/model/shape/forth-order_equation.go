@@ -34,7 +34,7 @@ func (p *FourOrderEquation) Intersect(raySt, rayDir *mat.VecDense) float64 {
 
 func (p *FourOrderEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
 	var (
-		coeffs = []float64{0, 0, 0, 0, 0} // Initialize coefficients from the constant term to the fourth-degree term.
+		coeffs = []float64{0, 0, 0, 0, 0} // Coefficients from the fourth-degree term to the constant term.
 		stx    = raySt.At(0, 0)           // Get ray origin and direction components.
 		sty    = raySt.At(1, 0)
 		stz    = raySt.At(2, 0)
@@ -80,15 +80,15 @@ func (p *FourOrderEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tM
 						poly = newPoly
 					}
 
-					for d, coef := range poly { // Multiply the current term polynomial coefficients by c and accumulate them.
-						coeffs[d] += c * coef
+					for degree, coef := range poly { // Multiply the current term polynomial coefficients by c and accumulate them.
+						coeffs[len(coeffs)-1-degree] += c * coef
 					}
 				}
 			}
 		}
 	}
 
-	roots, err := maths.SolvePolynomialReal([]float64{coeffs[4], coeffs[3], coeffs[2], coeffs[1], coeffs[0]})
+	roots, err := maths.SolvePolynomialReal(coeffs)
 	if err != nil {
 		return SurfaceInteraction{}, false
 	}

@@ -74,14 +74,14 @@ func (p *CubicEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax f
 					poly = next
 				}
 
-				for d, coef := range poly {
-					coeffs[d] += c * coef
+				for degree, coef := range poly {
+					coeffs[len(coeffs)-1-degree] += c * coef
 				}
 			}
 		}
 	}
 
-	roots, err := maths.SolvePolynomialReal([]float64{coeffs[3], coeffs[2], coeffs[1], coeffs[0]})
+	roots, err := maths.SolvePolynomialReal(coeffs)
 	if err != nil {
 		return SurfaceInteraction{}, false
 	}
