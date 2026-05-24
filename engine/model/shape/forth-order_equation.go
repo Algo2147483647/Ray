@@ -34,8 +34,8 @@ func (p *FourOrderEquation) Intersect(raySt, rayDir *mat.VecDense) float64 {
 
 func (p *FourOrderEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
 	var (
-		coeffs = [5]float64{0, 0, 0, 0, 0} // Initialize coefficients from the constant term to the fourth-degree term.
-		stx    = raySt.At(0, 0)            // Get ray origin and direction components.
+		coeffs = []float64{0, 0, 0, 0, 0} // Initialize coefficients from the constant term to the fourth-degree term.
+		stx    = raySt.At(0, 0)           // Get ray origin and direction components.
 		sty    = raySt.At(1, 0)
 		stz    = raySt.At(2, 0)
 		dirx   = rayDir.At(0, 0)
@@ -88,7 +88,11 @@ func (p *FourOrderEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tM
 		}
 	}
 
-	roots := solveQuarticEquationReal(coeffs[4], coeffs[3], coeffs[2], coeffs[1], coeffs[0])
+	roots, err := maths.SolvePolynomialReal(coeffs)
+	if err != nil {
+		return SurfaceInteraction{}, false
+	}
+
 	res := math.MaxFloat64 // Find the smallest positive real root.
 	for _, root := range roots {
 		if distanceInRange(root, tMin, tMax) && root < res {
@@ -102,61 +106,6 @@ func (p *FourOrderEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tM
 	point := pointAt(raySt, rayDir, res)
 	normal := p.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
 	return newSurfaceInteractionAt(point, res, normal), true
-}
-
-func solveQuarticEquationReal(a4, a3, a2, a1, a0 float64) []float64 {
-	if math.Abs(a4) < utils.EPS {
-		return solveCubicEquationReal(a3, a2, a1, a0)
-	}
-
-	bound := 1 + math.Max(math.Max(math.Abs(a3/a4), math.Abs(a2/a4)), math.Max(math.Abs(a1/a4), math.Abs(a0/a4)))
-	points := []float64{-bound}
-	points = append(points, solveCubicEquationReal(4*a4, 3*a3, 2*a2, a1)...)
-	points = append(points, bound)
-	points = uniqueSortedRoots(points)
-
-	const valueEpsilon = 1e-8
-	var roots []float64
-	for i, point := range points {
-		if math.Abs(evalQuartic(a4, a3, a2, a1, a0, point)) < valueEpsilon {
-			roots = append(roots, point)
-		}
-		if i == len(points)-1 {
-			continue
-		}
-
-		left, right := point, points[i+1]
-		fLeft := evalQuartic(a4, a3, a2, a1, a0, left)
-		fRight := evalQuartic(a4, a3, a2, a1, a0, right)
-		if fLeft == 0 || fRight == 0 || fLeft*fRight > 0 {
-			continue
-		}
-		roots = append(roots, bisectQuarticRoot(a4, a3, a2, a1, a0, left, right))
-	}
-
-	return uniqueSortedRoots(roots)
-}
-
-func bisectQuarticRoot(a4, a3, a2, a1, a0, left, right float64) float64 {
-	fLeft := evalQuartic(a4, a3, a2, a1, a0, left)
-	for i := 0; i < 96; i++ {
-		mid := 0.5 * (left + right)
-		fMid := evalQuartic(a4, a3, a2, a1, a0, mid)
-		if math.Abs(fMid) < 1e-12 {
-			return mid
-		}
-		if fLeft*fMid <= 0 {
-			right = mid
-		} else {
-			left = mid
-			fLeft = fMid
-		}
-	}
-	return 0.5 * (left + right)
-}
-
-func evalQuartic(a4, a3, a2, a1, a0, x float64) float64 {
-	return (((a4*x)+a3)*x+a2)*x*x + a1*x + a0
 }
 
 func (p *FourOrderEquation) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {

@@ -1,12 +1,10 @@
 package shape
 
 import (
-	"math"
-	"sort"
-
 	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
+	"math"
 )
 
 type CubicEquation struct {
@@ -34,7 +32,7 @@ func (p *CubicEquation) Intersect(raySt, rayDir *mat.VecDense) float64 {
 
 func (p *CubicEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
 	var (
-		coeffs = [4]float64{}
+		coeffs = []float64{}
 		stx    = raySt.AtVec(0)
 		sty    = raySt.AtVec(1)
 		stz    = raySt.AtVec(2)
@@ -83,7 +81,11 @@ func (p *CubicEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax f
 		}
 	}
 
-	roots := solveCubicEquationReal(coeffs[3], coeffs[2], coeffs[1], coeffs[0])
+	roots, err := maths.SolvePolynomialReal(coeffs)
+	if err != nil {
+		return SurfaceInteraction{}, false
+	}
+
 	res := math.MaxFloat64
 	for _, root := range roots {
 		if distanceInRange(root, tMin, tMax) && root < res {
@@ -153,107 +155,4 @@ func (p *CubicEquation) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDe
 	res.SetVec(1, grad[1])
 	res.SetVec(2, grad[2])
 	return maths.Normalize(res)
-}
-func solveCubicEquationReal(a, b, c, d float64) []float64 {
-	if math.Abs(a) < utils.EPS {
-		roots, err := maths.SolveQuadraticEquationReal(b, c, d)
-		if err != nil {
-			return nil
-		}
-		return uniqueSortedRoots(roots)
-	}
-
-	// Normalize:
-	//
-	//     x^3 + aa*x^2 + bb*x + cc = 0
-	//
-	aa := b / a
-	bb := c / a
-	cc := d / a
-
-	// Depressed cubic:
-	//
-	//     y^3 + p*y + q = 0
-	//     x = y - aa/3
-	//
-	p := bb - aa*aa/3
-	q := 2*aa*aa*aa/27 - aa*bb/3 + cc
-	shift := aa / 3
-
-	discriminant := q*q/4 + p*p*p/27
-
-	roots := make([]float64, 0, 3)
-
-	switch {
-	case discriminant > utils.EPS:
-		// One real root.
-		sqrtDiscriminant := math.Sqrt(discriminant)
-
-		u := math.Cbrt(-q/2 + sqrtDiscriminant)
-		v := math.Cbrt(-q/2 - sqrtDiscriminant)
-
-		roots = append(roots, u+v-shift)
-
-	case discriminant < -utils.EPS:
-		// Three distinct real roots.
-		//
-		// This branch requires p < 0. Due to floating-point noise, guard it.
-		if p >= 0 {
-			return nil
-		}
-
-		r := math.Sqrt(-p / 3)
-		if r <= 0 {
-			return nil
-		}
-
-		denom := 2 * r * r * r
-		if math.Abs(denom) < utils.EPS {
-			return nil
-		}
-
-		arg := clamp(-q/denom, -1, 1)
-		phi := math.Acos(arg)
-
-		for k := 0; k < 3; k++ {
-			angle := (phi + 2*math.Pi*float64(k)) / 3
-			roots = append(roots, 2*r*math.Cos(angle)-shift)
-		}
-
-	default:
-		// discriminant ~= 0.
-		// Multiple roots.
-		if math.Abs(q) < utils.EPS && math.Abs(p) < utils.EPS {
-			// Triple root.
-			roots = append(roots, -shift)
-		} else {
-			u := math.Cbrt(-q / 2)
-
-			// Double root case:
-			//
-			//     y1 = 2u
-			//     y2 = -u
-			//
-			roots = append(roots, 2*u-shift, -u-shift)
-		}
-	}
-
-	return uniqueSortedRoots(roots)
-}
-func uniqueSortedRoots(roots []float64) []float64 {
-	sort.Float64s(roots)
-	result := roots[:0]
-	for _, root := range roots {
-		if math.IsNaN(root) || math.IsInf(root, 0) {
-			continue
-		}
-		if len(result) == 0 || math.Abs(root-result[len(result)-1]) > 1e-8 {
-			result = append(result, root)
-		}
-	}
-	return result
-}
-
-func clamp(value, minValue, maxValue float64) float64 {
-	return math.Max(minValue, math.Min(maxValue, value))
 }
