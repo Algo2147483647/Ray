@@ -349,6 +349,7 @@ Use `surface` and `emission` blocks instead.
 
 ```text
 examples/scenes/feature-showcase.json
+examples/scenes/material-benchmark-matrix.json
 examples/scenes/dispersion-three-balls.json
 examples/scenes/prism refraction.json
 examples/scenes/true-spectral-prism-dispersion-200spp.json
@@ -356,3 +357,4 @@ examples/scenes/spectral-acescg-prism-showcase.json
 ```
 
 `feature-showcase.json` exercises Lambert color bleeding, constant emission, specular reflection, constant-IOR glass, Cauchy-dispersive glass, GGX rough conductor, spectral sampling, and tone-mapped PNG output.
+`material-benchmark-matrix.json` is a controlled gray studio box with a stepped arc of material sample spheres for comparing diffuse, mirror, rough conductor, ideal dielectric, rough dielectric transmission, absorbing media, and emissive materials.
