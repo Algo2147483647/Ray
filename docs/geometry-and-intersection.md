@@ -189,7 +189,53 @@ Relevant code:
 
 - `engine/model/shape/forth-order_equation.go`
 
-## 9. Implicit Surfaces as a Design Direction
+## 9. Sparse Polynomial Surfaces
+
+`PolynomialSurface` is the generic sparse polynomial shape. It extends the
+fixed quadratic, cubic, and fourth-order implementations without replacing
+them.
+
+Implicit mode represents:
+
+```text
+F(x_1, ..., x_n) = sum c_alpha * product x_i^alpha_i = 0
+```
+
+Explicit mode represents `z=P(x,y)` by converting it internally to:
+
+```text
+F(x,y,z) = P(x,y) - z = 0
+```
+
+Coefficients are stored in `maths.SparseTensor[float64]`, so only non-zero
+monomial coefficients need to be present. For a 3D implicit sextic, the tensor
+shape is usually `[7, 7, 7]`, and an entry such as:
+
+```json
+{ "index": [4, 2, 0], "value": -27.41640786499874 }
+```
+
+means:
+
+```text
+-27.41640786499874 * x^4 * y^2
+```
+
+Ray intersection follows the same algebraic idea as the fixed-order surfaces:
+
+1. Transform the ray into local polynomial coordinates with `local = (world - center) / scale`.
+2. Substitute `x(t) = rayStart + t * rayDir` into the sparse polynomial.
+3. Accumulate the resulting one-variable polynomial coefficients.
+4. Solve the real roots and keep the closest valid hit.
+5. Compute the hit normal from the polynomial gradient.
+
+Relevant code:
+
+- `engine/maths/sparse_tensor.go`
+- `engine/model/shape/polynomial_surface.go`
+- `engine/controller/factory/polynomial_surface.go`
+
+## 10. Implicit Surfaces as a Design Direction
 
 `ImplicitEquation` exists as a conceptual placeholder for a more generic implicit-surface framework:
 
@@ -208,7 +254,7 @@ Relevant code:
 
 - `engine/model/shape/implicit_equation.go`
 
-## 10. STL Meshes and Coordinate Transforms
+## 11. STL Meshes and Coordinate Transforms
 
 The parser can load STL geometry and convert each facet into a triangle.
 
@@ -227,7 +273,7 @@ Relevant code:
 
 - `engine/controller/factory/shapes.go`
 
-## 11. Bounding Boxes and Spatial Acceleration
+## 12. Bounding Boxes and Spatial Acceleration
 
 Every shape provides a bounding box. Those boxes are used to build an object tree that functions like a simple bounding-volume hierarchy.
 

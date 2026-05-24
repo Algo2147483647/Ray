@@ -186,6 +186,7 @@ Implicit polynomial surfaces support these JSON shapes:
 quadratic equation: 9 coefficients for x^T A x + b^T x + c
 cubic equation: 64 coefficients for A[i][j][k] factors
 four-order equation: 256 coefficients for A[i][j][k][l] factors
+polynomial surface: sparse arbitrary-degree coefficients
 ```
 
 For cubic and four-order equations, tensor index `0` is the constant factor `1`,
@@ -204,6 +205,66 @@ time, so ray intersection still evaluates only the final stored coefficients.
 `scale` may be either a single positive number or a 3-value vector. `bounds`
 remain a world-space clipping box and are not transformed by `center` or
 `scale`.
+
+`polynomial surface` is the generic sparse polynomial shape. It stores
+coefficients in a sparse tensor under `coefficients.terms`, where each `index`
+is the exponent tuple `[alpha_x, alpha_y, alpha_z]` for the monomial:
+
+```text
+c * x^alpha_x * y^alpha_y * z^alpha_z
+```
+
+The shape currently supports `mode: "implicit"` for `F(x,y,z)=0` and
+`mode: "explicit"` for `z=P(x,y)` by default. The `center` and `scale` fields
+transform world coordinates into local polynomial coordinates at evaluation
+time:
+
+```text
+local = (world - center) / scale
+```
+
+Example Barth sextic surface:
+
+```json
+{
+  "id": "barth-sextic",
+  "shape": "polynomial surface",
+  "mode": "implicit",
+  "input_dim": 3,
+  "degree": 6,
+  "center": [-0.9, 1.68, 0.38],
+  "scale": 0.2,
+  "coefficients": {
+    "format": "coo",
+    "shape": [7, 7, 7],
+    "degree_policy": "total",
+    "terms": [
+      { "index": [4, 2, 0], "value": -27.41640786499874 },
+      { "index": [4, 0, 2], "value": 10.47213595499958 },
+      { "index": [4, 0, 0], "value": -4.23606797749979 },
+      { "index": [2, 4, 0], "value": 10.47213595499958 },
+      { "index": [2, 2, 2], "value": 67.77708763999664 },
+      { "index": [2, 2, 0], "value": -8.47213595499958 },
+      { "index": [2, 0, 4], "value": -27.41640786499874 },
+      { "index": [2, 0, 2], "value": -8.47213595499958 },
+      { "index": [2, 0, 0], "value": 8.47213595499958 },
+      { "index": [0, 4, 2], "value": -27.41640786499874 },
+      { "index": [0, 4, 0], "value": -4.23606797749979 },
+      { "index": [0, 2, 4], "value": 10.47213595499958 },
+      { "index": [0, 2, 2], "value": -8.47213595499958 },
+      { "index": [0, 2, 0], "value": 8.47213595499958 },
+      { "index": [0, 0, 4], "value": -4.23606797749979 },
+      { "index": [0, 0, 2], "value": 8.47213595499958 },
+      { "index": [0, 0, 0], "value": -4.23606797749979 }
+    ]
+  },
+  "bounds": {
+    "position": [-0.9, 1.68, 0.38],
+    "size": [0.4, 0.4, 0.4]
+  },
+  "material_id": "matte"
+}
+```
 
 ### Rough Conductor
 

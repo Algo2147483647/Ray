@@ -160,7 +160,9 @@ cylinder
 finite cylinder
 triangle
 quadratic equation
+cubic equation
 four-order equation
+polynomial surface
 stl
 ```
 
@@ -176,10 +178,37 @@ Important shape fields:
 | `cylinder` / `finite cylinder` | `position`, `axis`, `r`, `height` |
 | `triangle` | `p1`, `p2`, `p3` |
 | `quadratic equation` | `a` length 9, `b` length `render.dimension`, `c` |
+| `cubic equation` | `a` length 64 |
 | `four-order equation` | `a` length 256 |
+| `polynomial surface` | `input_dim`, `degree`, `coefficients.terms` |
 | `stl` | `file`, `position`, `z_dir`, `x_dir`, `scale` |
 
 `stl` expands into many `triangle` shapes.
+
+`polynomial surface` is a sparse arbitrary-degree polynomial shape. It accepts
+`mode: "implicit"` for `F(x,y,z)=0` or `mode: "explicit"` for `z=P(x,y)`.
+Coefficients are stored as sparse tensor terms:
+
+```json
+{
+  "shape": "polynomial surface",
+  "mode": "implicit",
+  "input_dim": 3,
+  "degree": 2,
+  "coefficients": {
+    "format": "coo",
+    "shape": [3, 3, 3],
+    "terms": [
+      { "index": [2, 0, 0], "value": 1 },
+      { "index": [0, 2, 0], "value": 1 },
+      { "index": [0, 0, 2], "value": 1 },
+      { "index": [0, 0, 0], "value": -1 }
+    ]
+  }
+}
+```
+
+The example above represents `x^2 + y^2 + z^2 - 1 = 0`.
 
 ## Cameras
 

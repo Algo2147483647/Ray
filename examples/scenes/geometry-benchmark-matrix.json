@@ -6920,7 +6920,7 @@
   ],
   "render": {
     "dimension": 3,
-    "samples": 10,
+    "samples": 500,
     "thread_num": 0,
     "width": 900,
     "height": 600,
