@@ -32,7 +32,7 @@ func (p *CubicEquation) Intersect(raySt, rayDir *mat.VecDense) float64 {
 
 func (p *CubicEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
 	var (
-		coeffs = []float64{}
+		coeffs = []float64{0, 0, 0, 0}
 		stx    = raySt.AtVec(0)
 		sty    = raySt.AtVec(1)
 		stz    = raySt.AtVec(2)
@@ -81,7 +81,7 @@ func (p *CubicEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax f
 		}
 	}
 
-	roots, err := maths.SolvePolynomialReal(coeffs)
+	roots, err := maths.SolvePolynomialReal([]float64{coeffs[3], coeffs[2], coeffs[1], coeffs[0]})
 	if err != nil {
 		return SurfaceInteraction{}, false
 	}

@@ -88,7 +88,7 @@ func (p *FourOrderEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tM
 		}
 	}
 
-	roots, err := maths.SolvePolynomialReal(coeffs)
+	roots, err := maths.SolvePolynomialReal([]float64{coeffs[4], coeffs[3], coeffs[2], coeffs[1], coeffs[0]})
 	if err != nil {
 		return SurfaceInteraction{}, false
 	}

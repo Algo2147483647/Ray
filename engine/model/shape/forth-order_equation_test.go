@@ -2,9 +2,11 @@ package shape
 
 import (
 	"fmt"
+	"math"
 	"testing"
 
 	"github.com/Algo2147483647/ray/engine/maths"
+	"gonum.org/v1/gonum/mat"
 )
 
 func TestFourOrderEquation(t *testing.T) {
@@ -63,4 +65,35 @@ func TestFourOrderEquation(t *testing.T) {
 		}
 		println()
 	})
+}
+
+func TestFourOrderEquationIntersectsQuarticWithShiftedRoots(t *testing.T) {
+	quartic := NewFourOrderEquation(fourOrderCoefficients(map[[4]int]float64{
+		[4]int{1, 1, 1, 1}: 1,
+		[4]int{1, 1, 1, 0}: -12,
+		[4]int{1, 1, 0, 0}: 54,
+		[4]int{1, 0, 0, 0}: -108,
+		[4]int{0, 0, 0, 0}: 80,
+	}))
+
+	interaction, ok := quartic.IntersectRange(
+		mat.NewVecDense(3, []float64{0, 0, 0}),
+		mat.NewVecDense(3, []float64{1, 0, 0}),
+		0,
+		math.MaxFloat64,
+	)
+	if !ok {
+		t.Fatal("expected ray to hit (x - 3)^4 - 1 = 0")
+	}
+	if math.Abs(interaction.Distance-2) > 1e-8 {
+		t.Fatalf("expected closest hit at distance 2, got %f", interaction.Distance)
+	}
+}
+
+func fourOrderCoefficients(values map[[4]int]float64) []float64 {
+	coeffs := make([]float64, 256)
+	for index, value := range values {
+		coeffs[((index[0]*4+index[1])*4+index[2])*4+index[3]] = value
+	}
+	return coeffs
 }
