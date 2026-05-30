@@ -266,6 +266,40 @@ Example Barth sextic surface:
 }
 ```
 
+Non-polynomial implicit surfaces use `shape: "implicit equation"` with a
+registered field type and field-specific parameters. The renderer owns the
+field registry and numeric intersection logic; scene JSON owns the selected
+field, parameters, placement, bounds, and tolerances:
+
+```json
+{
+  "id": "gyroid-cell",
+  "shape": "implicit equation",
+  "field": {
+    "type": "gyroid",
+    "frequency": 3.2,
+    "offset": 0.0
+  },
+  "bounds": {
+    "position": [0, 0, 0],
+    "size": [2, 2, 2]
+  },
+  "step": 0.01,
+  "value_tol": 1e-7,
+  "material_id": "matte"
+}
+```
+
+Supported built-in implicit fields:
+
+```text
+torus: major_radius, minor_radius
+gyroid: frequency, offset
+```
+
+The legacy top-level `"function": "torus"` / `"function": "gyroid"` form is
+still accepted, but new scenes should prefer the `field.type` form.
+
 ### Rough Conductor
 
 ```json

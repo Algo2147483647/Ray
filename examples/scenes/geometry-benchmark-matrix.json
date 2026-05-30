@@ -455,6 +455,15 @@
       }
     },
     {
+      "id": "porcelain-glaze-cyan-blue",
+      "surface": {
+        "type": "specular_reflection",
+        "reflectance": [
+          0.62, 0.82, 0.78
+        ]
+      }
+    },
+    {
       "id": "rubber-black",
       "surface": {
         "type": "lambert",
@@ -2999,18 +3008,18 @@
       "offset": 0.08,
       "step": 0.0014,
       "bounds": {
-        "pmin": [
-          -0.695,
-          -0.175,
-          0.525
+        "position": [
+          -0.52,
+          0,
+          0.7
         ],
-        "pmax": [
-          -0.345,
-          0.175,
-          0.875
+        "size": [
+          0.38,
+          0.38,
+          0.38
         ]
       },
-      "material_id": "plastic-blue"
+      "material_id": "porcelain-glaze-cyan-blue"
     },
     {
       "id": "geo-r05-c03",
@@ -6657,10 +6666,10 @@
   ],
   "render": {
     "dimension": 3,
-    "samples": 500,
+    "samples": 200,
     "thread_num": 0,
-    "width": 900,
-    "height": 600,
+    "width": 300,
+    "height": 200,
     "camera_index": 0,
     "output_image": "../outputs/geometry-benchmark-matrix.png",
     "output_film": "../outputs/geometry-benchmark-matrix.bin",

@@ -235,24 +235,45 @@ Relevant code:
 - `engine/model/shape/polynomial_surface.go`
 - `engine/controller/factory/polynomial_surface.go`
 
-## 10. Implicit Surfaces as a Design Direction
+## 10. Non-Polynomial Implicit Surfaces
 
-`ImplicitEquation` exists as a conceptual placeholder for a more generic implicit-surface framework:
+`ImplicitEquation` supports scalar fields whose surface is:
 
 ```text
 F(x) = 0
 ```
 
-The current `IntersectPure` implementation returns no hit, so this type documents an intended architectural direction rather than a completed feature.
+The controller/factory layer uses a small field registry for built-in
+non-polynomial fields such as torus and gyroid. Scene JSON selects the field
+type and provides parameters:
 
-What it suggests mathematically:
+```json
+{
+  "shape": "implicit equation",
+  "field": {
+    "type": "gyroid",
+    "frequency": 3.2,
+    "offset": 0
+  },
+  "bounds": {
+    "position": [0, 0, 0],
+    "size": [2, 2, 2]
+  }
+}
+```
 
-- the project is designed to grow from analytic primitives toward general numerical root-finding on arbitrary scalar fields,
-- future implementations could use Newton iteration, interval methods, sphere tracing, or subdivision.
+Intersection is numerical rather than analytic:
+
+1. Clip the ray to the required bounding box.
+2. Scan the ray interval with a configurable step size.
+3. Detect sign changes or near-zero field values.
+4. Refine roots with bisection.
+5. Compute normals from the registered gradient, or from a numerical gradient fallback.
 
 Relevant code:
 
 - `engine/model/shape/implicit_equation.go`
+- `engine/controller/factory/implicit_equation.go`
 
 ## 11. STL Meshes and Coordinate Transforms
 
