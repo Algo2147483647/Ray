@@ -21,6 +21,7 @@ const (
 
 type RenderOverrides struct {
 	ScriptPath        string
+	ScriptPaths       []string
 	Dimension         int
 	CameraIndex       int
 	ThreadNum         int
@@ -61,10 +62,11 @@ func ParseRenderOverrides(args []string) (RenderOverrides, error) {
 	overrides := RenderOverrides{
 		CameraIndex: -1,
 	}
+	scriptPaths := stringListFlag{}
 
 	flagSet := flag.NewFlagSet("ray", flag.ContinueOnError)
 	flagSet.SetOutput(io.Discard)
-	flagSet.StringVar(&overrides.ScriptPath, "script", "", "path to the scene script")
+	flagSet.Var(&scriptPaths, "script", "path to a scene script; repeat to merge multiple scripts")
 	flagSet.IntVar(&overrides.Dimension, "dimension", 0, "scene dimension")
 	flagSet.IntVar(&overrides.CameraIndex, "camera-index", -1, "camera index to render")
 	flagSet.IntVar(&overrides.ThreadNum, "threads", 0, "worker thread count")
@@ -85,11 +87,16 @@ func ParseRenderOverrides(args []string) (RenderOverrides, error) {
 		return RenderOverrides{}, err
 	}
 
-	if overrides.ScriptPath == "" && len(flagSet.Args()) > 0 {
-		overrides.ScriptPath = flagSet.Args()[0]
+	overrides.ScriptPaths = append(overrides.ScriptPaths, scriptPaths...)
+	if len(overrides.ScriptPaths) == 0 && len(flagSet.Args()) > 0 {
+		overrides.ScriptPaths = append(overrides.ScriptPaths, flagSet.Args()...)
 	}
-	if overrides.ScriptPath == "" {
-		overrides.ScriptPath = defaultScriptPath
+	if len(overrides.ScriptPaths) == 0 {
+		overrides.ScriptPaths = []string{defaultScriptPath}
+	}
+	overrides.ScriptPath = overrides.ScriptPaths[0]
+	if len(overrides.ScriptPaths) == 1 {
+		overrides.ScriptPath = overrides.ScriptPaths[0]
 	}
 	if overrides.CameraIndex < -1 {
 		return RenderOverrides{}, fmt.Errorf("camera-index must be >= -1")
@@ -149,7 +156,7 @@ func ResolveRenderConfig(script *parser.Script, overrides RenderOverrides) Rende
 		if script.Render.Dimension > 0 {
 			config.Dimension = script.Render.Dimension
 		}
-		if script.Render.CameraIndex >= 0 {
+		if script.Render.CameraIndexSet {
 			config.CameraIndex = script.Render.CameraIndex
 		}
 		if script.Render.ThreadNum > 0 {
@@ -245,6 +252,144 @@ func ResolveRenderConfig(script *parser.Script, overrides RenderOverrides) Rende
 	}
 
 	return config
+}
+
+func ResolveRenderConfigs(script *parser.Script, overrides RenderOverrides) []RenderConfig {
+	base := ResolveRenderConfig(script, RenderOverrides{
+		ScriptPath:  overrides.ScriptPath,
+		ScriptPaths: append([]string(nil), overrides.ScriptPaths...),
+		CameraIndex: -1,
+	})
+
+	jobs := []RenderConfig{base}
+	if script != nil && len(script.Renders) > 0 {
+		jobs = make([]RenderConfig, 0, len(script.Renders))
+		for _, render := range script.Renders {
+			config := applyRenderScriptToConfig(base, render)
+			jobs = append(jobs, applyRenderOverridesToConfig(config, overrides))
+		}
+		return jobs
+	}
+
+	jobs[0] = applyRenderOverridesToConfig(jobs[0], overrides)
+	return jobs
+}
+
+func applyRenderScriptToConfig(config RenderConfig, render parser.RenderScript) RenderConfig {
+	if render.Dimension > 0 {
+		config.Dimension = render.Dimension
+	}
+	if render.CameraIndexSet {
+		config.CameraIndex = render.CameraIndex
+	}
+	if render.ThreadNum > 0 {
+		config.ThreadNum = render.ThreadNum
+	}
+	if render.Width > 0 {
+		config.Width = render.Width
+	}
+	if render.Height > 0 {
+		config.Height = render.Height
+	}
+	if render.Samples > 0 {
+		config.Samples = render.Samples
+	}
+	if render.OutputImage != "" {
+		config.OutputImage = render.OutputImage
+	}
+	if render.OutputFilm != "" {
+		config.OutputFilm = render.OutputFilm
+	}
+	if render.ResumeFilm != "" {
+		config.ResumeFilm = render.ResumeFilm
+	}
+	if render.Exposure > 0 {
+		config.Exposure = render.Exposure
+	}
+	if render.ToneMapping != "" {
+		config.ToneMapping = render.ToneMapping
+	}
+	if render.Gamma > 0 {
+		config.Gamma = render.Gamma
+	}
+	if render.SpectrumMode != "" {
+		config.SpectrumMode = render.SpectrumMode
+	}
+	if render.WavelengthSamples > 0 {
+		config.WavelengthSamples = render.WavelengthSamples
+	}
+	if render.ColorSpace != "" {
+		config.ColorSpace = render.ColorSpace
+	} else if render.FilmColorSpace != "" {
+		config.ColorSpace = render.FilmColorSpace
+	}
+	if config.SpectrumMode == "sampled" && config.WavelengthSamples <= 1 {
+		config.WavelengthSamples = 4
+	}
+	return config
+}
+
+func applyRenderOverridesToConfig(config RenderConfig, overrides RenderOverrides) RenderConfig {
+	if overrides.CameraIndex >= 0 {
+		config.CameraIndex = overrides.CameraIndex
+	}
+	if overrides.Dimension > 0 {
+		config.Dimension = overrides.Dimension
+	}
+	if overrides.ThreadNum > 0 {
+		config.ThreadNum = overrides.ThreadNum
+	}
+	if overrides.Width > 0 {
+		config.Width = overrides.Width
+	}
+	if overrides.Height > 0 {
+		config.Height = overrides.Height
+	}
+	if overrides.Samples > 0 {
+		config.Samples = overrides.Samples
+	}
+	if overrides.OutputImage != "" {
+		config.OutputImage = overrides.OutputImage
+	}
+	if overrides.OutputFilm != "" {
+		config.OutputFilm = overrides.OutputFilm
+	}
+	if overrides.ResumeFilm != "" {
+		config.ResumeFilm = overrides.ResumeFilm
+	}
+	if overrides.Exposure > 0 {
+		config.Exposure = overrides.Exposure
+	}
+	if overrides.ToneMapping != "" {
+		config.ToneMapping = overrides.ToneMapping
+	}
+	if overrides.Gamma > 0 {
+		config.Gamma = overrides.Gamma
+	}
+	if overrides.SpectrumMode != "" {
+		config.SpectrumMode = overrides.SpectrumMode
+	}
+	if overrides.WavelengthSamples > 0 {
+		config.WavelengthSamples = overrides.WavelengthSamples
+	}
+	if overrides.ColorSpace != "" {
+		config.ColorSpace = overrides.ColorSpace
+	}
+	if config.SpectrumMode == "sampled" && config.WavelengthSamples <= 1 {
+		config.WavelengthSamples = 4
+	}
+	return config
+}
+
+type stringListFlag []string
+
+func (s *stringListFlag) String() string {
+	return fmt.Sprint([]string(*s))
+}
+
+func (s *stringListFlag) Set(value string) error {
+	*s = append(*s, value)
+	return nil
 }
 
 func isSupportedSpectrumMode(value string) bool {

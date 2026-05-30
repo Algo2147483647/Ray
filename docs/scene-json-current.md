@@ -6,15 +6,87 @@ This document records the current scene JSON fields used by the Go renderer afte
 
 ```json
 {
+  "includes": [],
   "media": {},
   "materials": [],
   "objects": [],
   "cameras": [],
-  "render": {}
+  "render": {},
+  "renders": []
 }
 ```
 
 Use `cameras` for camera definitions. If the list is omitted or empty, the render handler creates a default 3D camera at render time.
+
+## Composing Multiple JSON Files
+
+Scene files may include other scene JSON files. Include paths are resolved
+relative to the JSON file that declares them. Included files are loaded first,
+then the including file is merged on top:
+
+```json
+{
+  "includes": [
+    "studio.json",
+    "geometry-heart.json",
+    "materials-red.json"
+  ],
+  "render": {
+    "samples": 64,
+    "width": 960,
+    "height": 960
+  }
+}
+```
+
+Merge rules:
+
+```text
+media: merged by id; duplicate ids fail
+materials: appended by id; duplicate ids fail
+objects: appended by id; duplicate ids fail
+cameras: appended by id when present; duplicate camera ids fail
+render: scalar render fields inherit from includes and are overridden by later files
+renders: appended as separate render jobs
+```
+
+The CLI also accepts repeated `--script` flags. They are merged in the order
+provided, using the same duplicate-id rules:
+
+```bash
+npm run ray -- --script studio.json --script geometry-heart.json --script renders.json
+```
+
+## Multiple Render Jobs
+
+Use `renders` when one merged scene should produce multiple outputs. Each item
+inherits defaults from the top-level `render` block and overrides only the
+fields it declares:
+
+```json
+{
+  "render": {
+    "samples": 128,
+    "width": 960,
+    "height": 960,
+    "thread_num": 8
+  },
+  "renders": [
+    {
+      "camera_index": 0,
+      "output_image": "../outputs/front.png"
+    },
+    {
+      "camera_index": 1,
+      "samples": 512,
+      "output_image": "../outputs/detail.png"
+    }
+  ]
+}
+```
+
+When `renders` is omitted, the renderer behaves as before and runs the single
+top-level `render` job.
 
 ## Media
 

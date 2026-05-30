@@ -1,5 +1,7 @@
 package parser
 
+import "encoding/json"
+
 type CameraScript struct {
 	ID           string      `json:"id"`             // Unique camera identifier.
 	Type         string      `json:"type"`           // Camera model or script type.
@@ -22,6 +24,7 @@ type RenderScript struct {
 	Samples           int64   `json:"samples"`
 	ThreadNum         int     `json:"thread_num"`
 	CameraIndex       int     `json:"camera_index"`
+	CameraIndexSet    bool    `json:"-"`
 	Width             int     `json:"width"`
 	Height            int     `json:"height"`
 	OutputImage       string  `json:"output_image"`
@@ -36,10 +39,29 @@ type RenderScript struct {
 	FilmColorSpace    string  `json:"working_space"`
 }
 
+func (r *RenderScript) UnmarshalJSON(data []byte) error {
+	type renderScript RenderScript
+	var decoded renderScript
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	decoded.CameraIndexSet = raw["camera_index"] != nil
+
+	*r = RenderScript(decoded)
+	return nil
+}
+
 type Script struct {
+	Includes  []string                          `json:"includes"`
 	Materials []map[string]interface{}          `json:"materials"`
 	Media     map[string]map[string]interface{} `json:"media"`
 	Objects   []map[string]interface{}          `json:"objects"`
 	Cameras   []CameraScript                    `json:"cameras"`
 	Render    RenderScript                      `json:"render"`
+	Renders   []RenderScript                    `json:"renders"`
 }

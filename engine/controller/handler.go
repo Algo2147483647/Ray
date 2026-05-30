@@ -36,16 +36,13 @@ func Run(args []string) int {
 		return 1
 	}
 
-	if overrides.ScriptPath == defaultScriptPath {
+	if len(overrides.ScriptPaths) == 1 && overrides.ScriptPath == defaultScriptPath {
 		fmt.Printf("Using default script: %s\n", overrides.ScriptPath)
 	}
 
 	h := NewHandler().
-		LoadScript(overrides.ScriptPath).
-		ConfigureRender(overrides).
-		Render().
-		ResumeFilm().
-		SaveOutputs()
+		LoadScripts(overrides.ScriptPaths).
+		RenderJobs(overrides)
 
 	if h.err != nil {
 		fmt.Printf("Error: %v\n", h.err)
@@ -57,13 +54,24 @@ func Run(args []string) int {
 }
 
 func (h *Handler) LoadScript(scriptPath string) *Handler {
+	return h.LoadScripts([]string{scriptPath})
+}
+
+func (h *Handler) LoadScripts(scriptPaths []string) *Handler {
 	if h.err != nil {
 		return h
 	}
 
-	fmt.Printf("Loading scene from: %s\n", scriptPath)
+	if len(scriptPaths) == 1 {
+		fmt.Printf("Loading scene from: %s\n", scriptPaths[0])
+	} else {
+		fmt.Printf("Loading scene from %d scripts:\n", len(scriptPaths))
+		for _, scriptPath := range scriptPaths {
+			fmt.Printf("  %s\n", scriptPath)
+		}
+	}
 
-	script, err := parser.ReadScriptFile(scriptPath)
+	script, err := parser.ReadScriptFiles(scriptPaths)
 	if err != nil {
 		h.err = err
 		return h
@@ -79,11 +87,15 @@ func (h *Handler) LoadScript(scriptPath string) *Handler {
 }
 
 func (h *Handler) ConfigureRender(overrides RenderOverrides) *Handler {
+	config := ResolveRenderConfig(h.Script, overrides)
+	return h.ConfigureRenderConfig(config)
+}
+
+func (h *Handler) ConfigureRenderConfig(config RenderConfig) *Handler {
 	if h.err != nil {
 		return h
 	}
 
-	config := ResolveRenderConfig(h.Script, overrides)
 	renderCamera, filmShape, err := h.selectRenderCamera(config.CameraIndex, config.Width, config.Height)
 	if err != nil {
 		h.err = err
@@ -100,6 +112,27 @@ func (h *Handler) ConfigureRender(overrides RenderOverrides) *Handler {
 	h.ActiveCamera = renderCamera
 	h.Film = camera.NewFilm(filmShape...)
 	h.Film.ColorSpace = renderColorSpace(config.ColorSpace)
+	return h
+}
+
+func (h *Handler) RenderJobs(overrides RenderOverrides) *Handler {
+	if h.err != nil {
+		return h
+	}
+
+	jobs := ResolveRenderConfigs(h.Script, overrides)
+	for idx, config := range jobs {
+		if len(jobs) > 1 {
+			fmt.Printf("Starting render job %d/%d\n", idx+1, len(jobs))
+		}
+		h.ConfigureRenderConfig(config).
+			Render().
+			ResumeFilm().
+			SaveOutputs()
+		if h.err != nil {
+			return h
+		}
+	}
 	return h
 }
 

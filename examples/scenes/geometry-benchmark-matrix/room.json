@@ -1,0 +1,364 @@
+{
+  "objects": [
+    {
+      "id": "floor-a",
+      "shape": "triangle",
+      "p1": [
+        -1.9,
+        -2.45,
+        0
+      ],
+      "p2": [
+        2.35,
+        -2.45,
+        0
+      ],
+      "p3": [
+        -1.9,
+        2.45,
+        0
+      ],
+      "material_id": "neutral-floor"
+    },
+    {
+      "id": "floor-b",
+      "shape": "triangle",
+      "p1": [
+        2.35,
+        2.45,
+        0
+      ],
+      "p2": [
+        -1.9,
+        2.45,
+        0
+      ],
+      "p3": [
+        2.35,
+        -2.45,
+        0
+      ],
+      "material_id": "neutral-floor"
+    },
+    {
+      "id": "back-wall-a",
+      "shape": "triangle",
+      "p1": [
+        2.35,
+        -2.45,
+        0
+      ],
+      "p2": [
+        2.35,
+        2.45,
+        0
+      ],
+      "p3": [
+        2.35,
+        -2.45,
+        2.95
+      ],
+      "material_id": "neutral-wall"
+    },
+    {
+      "id": "back-wall-b",
+      "shape": "triangle",
+      "p1": [
+        2.35,
+        2.45,
+        2.95
+      ],
+      "p2": [
+        2.35,
+        -2.45,
+        2.95
+      ],
+      "p3": [
+        2.35,
+        2.45,
+        0
+      ],
+      "material_id": "neutral-wall"
+    },
+    {
+      "id": "left-wall-a",
+      "shape": "triangle",
+      "p1": [
+        -1.9,
+        -2.45,
+        0
+      ],
+      "p2": [
+        2.35,
+        -2.45,
+        0
+      ],
+      "p3": [
+        -1.9,
+        -2.45,
+        2.95
+      ],
+      "material_id": "neutral-wall"
+    },
+    {
+      "id": "left-wall-b",
+      "shape": "triangle",
+      "p1": [
+        2.35,
+        -2.45,
+        2.95
+      ],
+      "p2": [
+        -1.9,
+        -2.45,
+        2.95
+      ],
+      "p3": [
+        2.35,
+        -2.45,
+        0
+      ],
+      "material_id": "neutral-wall"
+    },
+    {
+      "id": "right-wall-a",
+      "shape": "triangle",
+      "p1": [
+        -1.9,
+        2.45,
+        0
+      ],
+      "p2": [
+        -1.9,
+        2.45,
+        2.95
+      ],
+      "p3": [
+        2.35,
+        2.45,
+        0
+      ],
+      "material_id": "neutral-wall"
+    },
+    {
+      "id": "right-wall-b",
+      "shape": "triangle",
+      "p1": [
+        2.35,
+        2.45,
+        2.95
+      ],
+      "p2": [
+        2.35,
+        2.45,
+        0
+      ],
+      "p3": [
+        -1.9,
+        2.45,
+        2.95
+      ],
+      "material_id": "neutral-wall"
+    },
+    {
+      "id": "ceiling-a",
+      "shape": "triangle",
+      "p1": [
+        -1.9,
+        -2.45,
+        2.95
+      ],
+      "p2": [
+        -1.9,
+        2.45,
+        2.95
+      ],
+      "p3": [
+        2.35,
+        -2.45,
+        2.95
+      ],
+      "material_id": "neutral-wall"
+    },
+    {
+      "id": "ceiling-b",
+      "shape": "triangle",
+      "p1": [
+        2.35,
+        2.45,
+        2.95
+      ],
+      "p2": [
+        2.35,
+        -2.45,
+        2.95
+      ],
+      "p3": [
+        -1.9,
+        2.45,
+        2.95
+      ],
+      "material_id": "neutral-wall"
+    },
+    {
+      "id": "key-softbox-a",
+      "shape": "triangle",
+      "p1": [
+        -0.9,
+        -1.25,
+        2.93
+      ],
+      "p2": [
+        -0.15,
+        -1.25,
+        2.93
+      ],
+      "p3": [
+        -0.9,
+        1.25,
+        2.93
+      ],
+      "material_id": "softbox-key"
+    },
+    {
+      "id": "key-softbox-b",
+      "shape": "triangle",
+      "p1": [
+        -0.15,
+        1.25,
+        2.93
+      ],
+      "p2": [
+        -0.9,
+        1.25,
+        2.93
+      ],
+      "p3": [
+        -0.15,
+        -1.25,
+        2.93
+      ],
+      "material_id": "softbox-key"
+    },
+    {
+      "id": "cool-strip-a",
+      "shape": "triangle",
+      "p1": [
+        1.4,
+        2.42,
+        0.35
+      ],
+      "p2": [
+        1.95,
+        2.42,
+        0.35
+      ],
+      "p3": [
+        1.4,
+        2.42,
+        2.55
+      ],
+      "material_id": "strip-cool"
+    },
+    {
+      "id": "cool-strip-b",
+      "shape": "triangle",
+      "p1": [
+        1.95,
+        2.42,
+        2.55
+      ],
+      "p2": [
+        1.4,
+        2.42,
+        2.55
+      ],
+      "p3": [
+        1.95,
+        2.42,
+        0.35
+      ],
+      "material_id": "strip-cool"
+    },
+    {
+      "id": "warm-strip-a",
+      "shape": "triangle",
+      "p1": [
+        -0.95,
+        -2.42,
+        0.35
+      ],
+      "p2": [
+        -0.35,
+        -2.42,
+        0.35
+      ],
+      "p3": [
+        -0.95,
+        -2.42,
+        2.65
+      ],
+      "material_id": "strip-warm"
+    },
+    {
+      "id": "warm-strip-b",
+      "shape": "triangle",
+      "p1": [
+        -0.35,
+        -2.42,
+        2.65
+      ],
+      "p2": [
+        -0.95,
+        -2.42,
+        2.65
+      ],
+      "p3": [
+        -0.35,
+        -2.42,
+        0.35
+      ],
+      "material_id": "strip-warm"
+    },
+    {
+      "id": "rear-white-card-a",
+      "shape": "triangle",
+      "p1": [
+        2.32,
+        -0.72,
+        0.45
+      ],
+      "p2": [
+        2.32,
+        0.72,
+        0.45
+      ],
+      "p3": [
+        2.32,
+        -0.72,
+        1.7
+      ],
+      "material_id": "white-card"
+    },
+    {
+      "id": "rear-white-card-b",
+      "shape": "triangle",
+      "p1": [
+        2.32,
+        0.72,
+        1.7
+      ],
+      "p2": [
+        2.32,
+        -0.72,
+        1.7
+      ],
+      "p3": [
+        2.32,
+        0.72,
+        0.45
+      ],
+      "material_id": "white-card"
+    }
+  ]
+}
