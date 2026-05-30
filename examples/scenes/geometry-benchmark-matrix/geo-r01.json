@@ -828,7 +828,7 @@
     {
       "id": "geo-r01-c04",
       "shape": "cuboid",
-      "position": [
+      "center": [
         1,
         0,
         2.06
@@ -1118,7 +1118,7 @@
     {
       "id": "geo-r01-c02",
       "shape": "cylinder",
-      "position": [
+      "center": [
         1,
         1.12,
         2.06
@@ -1135,7 +1135,7 @@
     {
       "id": "geo-r01-c01",
       "shape": "circle",
-      "position": [
+      "center": [
         1,
         1.68,
         2.06

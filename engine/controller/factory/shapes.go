@@ -83,7 +83,7 @@ func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 }
 
 func parseCuboid(objDef map[string]interface{}) ([]shape.Shape, error) {
-	if position, ok, err := utils.OptionalFloat64SliceField(objDef, "position", utils.Dimension); err != nil {
+	if center, ok, err := utils.OptionalFloat64SliceField(objDef, "center", utils.Dimension); err != nil {
 		return nil, err
 	} else if ok {
 		size, err := utils.RequiredFloat64SliceField(objDef, "size", utils.Dimension)
@@ -91,15 +91,15 @@ func parseCuboid(objDef map[string]interface{}) ([]shape.Shape, error) {
 			return nil, err
 		}
 
-		positionVec := newVec(position)
+		centerVec := newVec(center)
 		halfSize := maths.ScaleVec2(0.5, newVec(size))
 
-		pmin := mat.NewVecDense(positionVec.Len(), nil)
-		pmax := mat.NewVecDense(positionVec.Len(), nil)
+		pmin := mat.NewVecDense(centerVec.Len(), nil)
+		pmax := mat.NewVecDense(centerVec.Len(), nil)
 
 		cuboid := shape.NewCuboid(
-			maths.SubVec(pmin, positionVec, halfSize),
-			maths.AddVec(pmax, positionVec, halfSize),
+			maths.SubVec(pmin, centerVec, halfSize),
+			maths.AddVec(pmax, centerVec, halfSize),
 		)
 
 		return finishEngravableShape(cuboid, objDef)
@@ -120,7 +120,7 @@ func parseCuboid(objDef map[string]interface{}) ([]shape.Shape, error) {
 }
 
 func parseSphere(objDef map[string]interface{}) ([]shape.Shape, error) {
-	position, err := requiredVec(objDef, "position")
+	center, err := requiredVec(objDef, "center")
 	if err != nil {
 		return nil, err
 	}
@@ -130,12 +130,12 @@ func parseSphere(objDef map[string]interface{}) ([]shape.Shape, error) {
 		return nil, err
 	}
 
-	sphere := shape.NewSphere(position, radius)
+	sphere := shape.NewSphere(center, radius)
 	return finishEngravableShape(sphere, objDef)
 }
 
 func parseCircle(objDef map[string]interface{}) ([]shape.Shape, error) {
-	position, err := requiredVec(objDef, "position")
+	center, err := requiredVec(objDef, "center")
 	if err != nil {
 		return nil, err
 	}
@@ -150,12 +150,12 @@ func parseCircle(objDef map[string]interface{}) ([]shape.Shape, error) {
 		return nil, err
 	}
 
-	circle := shape.NewCircle(position, normal, radius)
+	circle := shape.NewCircle(center, normal, radius)
 	return finishEngravableShape(circle, objDef)
 }
 
 func parseFiniteCylinder(objDef map[string]interface{}) ([]shape.Shape, error) {
-	position, err := requiredVec(objDef, "position")
+	center, err := requiredVec(objDef, "center")
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +175,7 @@ func parseFiniteCylinder(objDef map[string]interface{}) ([]shape.Shape, error) {
 		return nil, err
 	}
 
-	cylinder := shape.NewFiniteCylinder(position, axis, radius, height)
+	cylinder := shape.NewFiniteCylinder(center, axis, radius, height)
 	return finishEngravableShape(cylinder, objDef)
 }
 
@@ -326,7 +326,7 @@ func parseShapeBounds(objDef map[string]interface{}) (*shape.Cuboid, bool, error
 		return nil, ok, err
 	}
 
-	if position, hasPosition, err := utils.OptionalFloat64SliceField(boundsDef, "position", utils.Dimension); err != nil {
+	if center, hasPosition, err := utils.OptionalFloat64SliceField(boundsDef, "center", utils.Dimension); err != nil {
 		return nil, true, err
 	} else if hasPosition {
 		size, err := utils.RequiredFloat64SliceField(boundsDef, "size", utils.Dimension)
@@ -337,7 +337,7 @@ func parseShapeBounds(objDef map[string]interface{}) (*shape.Cuboid, bool, error
 			return nil, true, err
 		}
 
-		positionVec := mat.NewVecDense(len(position), position)
+		positionVec := mat.NewVecDense(len(center), center)
 		halfSize := maths.ScaleVec2(0.5, mat.NewVecDense(len(size), size))
 		pmax := mat.NewVecDense(positionVec.Len(), nil)
 		pmin := mat.NewVecDense(positionVec.Len(), nil)
@@ -435,7 +435,7 @@ func ParseShapeForSTL(objDef map[string]interface{}) ([]shape.Shape, error) {
 	if err != nil {
 		return nil, err
 	}
-	position, err := utils.RequiredFloat64SliceField(objDef, "position", utils.Dimension)
+	center, err := utils.RequiredFloat64SliceField(objDef, "center", utils.Dimension)
 	if err != nil {
 		return nil, err
 	}
@@ -458,7 +458,7 @@ func ParseShapeForSTL(objDef map[string]interface{}) ([]shape.Shape, error) {
 	}
 	defer file.Close()
 
-	positionVec := mat.NewVecDense(len(position), position)
+	positionVec := mat.NewVecDense(len(center), center)
 	zDirVec := maths.Normalize(mat.NewVecDense(len(zDir), zDir))
 	xDirVec := maths.Normalize(mat.NewVecDense(len(xDir), xDir))
 	scaleVec := mat.NewVecDense(len(scale), scale)

@@ -2367,7 +2367,7 @@
       "offset": 0.08,
       "step": 0.0014,
       "bounds": {
-        "position": [
+        "center": [
           -0.52,
           0,
           0.7
@@ -2738,7 +2738,7 @@
     {
       "id": "geo-r05-c01",
       "shape": "sphere",
-      "position": [
+      "center": [
         -0.52,
         1.68,
         0.7
@@ -2829,7 +2829,7 @@
     {
       "id": "geo-r04-c06",
       "shape": "cuboid",
-      "position": [
+      "center": [
         -0.14,
         -1.12,
         1.04
@@ -4124,7 +4124,7 @@
     {
       "id": "geo-r04-c02",
       "shape": "cylinder",
-      "position": [
+      "center": [
         -0.14,
         1.12,
         1.04
@@ -4169,7 +4169,7 @@
     {
       "id": "geo-r03-c07",
       "shape": "cylinder",
-      "position": [
+      "center": [
         0.24,
         -1.68,
         1.38
@@ -4186,7 +4186,7 @@
     {
       "id": "geo-r03-c06",
       "shape": "cylinder",
-      "position": [
+      "center": [
         0.24,
         -1.12,
         1.38
@@ -4203,7 +4203,7 @@
     {
       "id": "geo-r03-c05",
       "shape": "circle",
-      "position": [
+      "center": [
         0.24,
         -0.56,
         1.38
@@ -4239,7 +4239,7 @@
     {
       "id": "geo-r03-c03",
       "shape": "cuboid",
-      "position": [
+      "center": [
         0.24,
         0.56,
         1.38
@@ -4357,7 +4357,7 @@
     {
       "id": "geo-r02-c06",
       "shape": "cylinder",
-      "position": [
+      "center": [
         0.62,
         -1.12,
         1.72
@@ -4428,7 +4428,7 @@
     {
       "id": "geo-r02-c03",
       "shape": "cuboid",
-      "position": [
+      "center": [
         0.62,
         0.56,
         1.72
@@ -4477,7 +4477,7 @@
     {
       "id": "geo-r02-c01",
       "shape": "cuboid",
-      "position": [
+      "center": [
         0.62,
         1.68,
         1.72
