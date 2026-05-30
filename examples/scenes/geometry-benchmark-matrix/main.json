@@ -3,7 +3,7 @@
     {
       "id": "geometry-benchmark-stage-wide",
       "type": "3d",
-      "position": [-2, 0, 1.65],
+      "position": [-2.45, 0, 1.65],
       "look_at": [0, 0, 1.35],
       "up": [0, 0, 1],
       "field_of_view": 60,
