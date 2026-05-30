@@ -1,0 +1,1 @@
+npm run ray -- --script ../examples/scenes/geometry-benchmark-matrix/room.json --script ../examples/scenes/geometry-benchmark-matrix/main.json --script ../examples/scenes/geometry-benchmark-matrix/materials.json  --script ../examples/scenes/geometry-benchmark-matrix/geo_example.json
