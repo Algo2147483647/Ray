@@ -108,6 +108,26 @@ where `e0` is the forward basis vector and the other `e_i` are image-axis direct
 
 This is one of the most distinctive ideas in the codebase. It shows that the renderer is not only about standard 3D imaging, but also about experimenting with generalized projection in higher-dimensional spaces.
 
+For a 4D geometry experiment, an `n_dim` camera commonly uses a three-dimensional film:
+
+```json
+{
+  "type": "n_dim",
+  "position": [-3.97836, -0.716105, 0.477403, -1.67091],
+  "coordinates": [
+    [1.0, 0.18, -0.12, 0.42],
+    [0.24, 1.0, 0.12, -0.58],
+    [-0.32, 0.08, 1.0, 0.36],
+    [0.42, -0.50, 0.34, 1.0]
+  ],
+  "widths": [100, 100, 100],
+  "field_of_views": [120, 120, 120],
+  "ortho": true
+}
+```
+
+In this case, the ambient space is 4D, but the measurement domain is 3D. The resulting film is a tensor whose samples can be inspected as a volume or exported as a slice atlas.
+
 Relevant code:
 
 - `engine/model/camera/camera_n_dim.go`
@@ -334,10 +354,12 @@ To understand the project accurately, it helps to separate implemented capabilit
 
 Currently true:
 
-- runtime spatial dimension is fixed to `3` via `utils.Dimension`,
-- `CameraNDim` and 4D diffuse sampling exist as generalized experiments,
+- runtime spatial dimension is selected from `render.dimension` and defaults to `3`,
+- the `3d` camera is restricted to 3D scenes,
+- `CameraNDim` supports higher-dimensional scene coordinates and tensor-shaped films,
+- hypercube/hypercuboid and hypersphere geometry are available through the cuboid and sphere implementations in the active dimension,
 - plane geometry exists in code but is blocked in script parsing,
-- `ImplicitEquation` is a stub rather than a finished numeric intersector.
+- non-polynomial implicit equations are implemented through a bounded numerical intersector and a small field registry.
 
 This means the codebase contains both:
 
@@ -356,5 +378,7 @@ The rendering subsystem embeds the following ideas:
 - sample-consistent film merging,
 - parallel workload distribution,
 - declarative optical scene specification.
+- runtime higher-dimensional scene setup through `render.dimension`,
+- N-dimensional camera sampling and tensor film export.
 
 Together, these pieces turn the geometry and optics layers into a complete simulation-and-rendering pipeline.

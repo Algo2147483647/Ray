@@ -496,6 +496,7 @@ Supported object forms:
 ```json
 {
   "render": {
+    "dimension": 3,
     "samples": 1000,
     "thread_num": 0,
     "camera_index": 0,
@@ -512,6 +513,10 @@ Supported object forms:
   }
 }
 ```
+
+`dimension` selects the scene's runtime spatial dimension and defaults to `3`.
+Set it to `4` for 4D experiments such as hypercube and hypersphere scenes. All
+vectors in object and camera definitions must then have four components.
 
 Supported tone mappers:
 
@@ -547,6 +552,73 @@ CLI overrides:
 go -C engine run . --script ../examples/scenes/feature-showcase.json --width 800 --height 800 --samples 2000 --exposure 2.1 --tone-mapping reinhard --gamma 2.2
 ```
 
+## N-Dimensional Cameras and 4D Shapes
+
+Use `type: "n_dim"` when the camera observes an N-dimensional scene. The camera
+requires:
+
+```text
+position: N values
+coordinates: width-count + 1 vectors, each with N values
+widths: film resolution for each sampled camera axis
+field_of_views: one value per width, or field_of_view as a shared fallback
+ortho: optional orthographic mode
+```
+
+Example 4D camera with a 3D film:
+
+```json
+{
+  "id": "outside-4d-orthographic-geometry-camera",
+  "type": "n_dim",
+  "position": [-3.97836, -0.716105, 0.477403, -1.67091],
+  "coordinates": [
+    [1.0, 0.18, -0.12, 0.42],
+    [0.24, 1.0, 0.12, -0.58],
+    [-0.32, 0.08, 1.0, 0.36],
+    [0.42, -0.50, 0.34, 1.0]
+  ],
+  "widths": [100, 100, 100],
+  "field_of_views": [120, 120, 120],
+  "ortho": true
+}
+```
+
+The current higher-dimensional shape aliases are:
+
+```text
+hypercube: equal-sided N-dimensional cuboid
+hypercuboid: N-dimensional cuboid
+hypersphere: N-dimensional sphere
+```
+
+Example:
+
+```json
+{
+  "id": "main-hypercube",
+  "shape": "hypercube",
+  "center": [0, 0, 0, 0],
+  "size": [1.65, 1.65, 1.65, 1.65],
+  "material_id": "cell-palette-debug"
+}
+```
+
+`cell_palette` emission is useful for hypercube geometry because it colors cells
+by the dominant normal axis. In 4D, this gives separate colors to the eight
+cubic cells of the hypercube boundary:
+
+```json
+{
+  "id": "cell-palette-debug",
+  "emission": {
+    "type": "cell_palette",
+    "shading": "solid",
+    "intensity": 1.0
+  }
+}
+```
+
 ## Legacy Material Fields
 
 These old fields are not part of the current material schema and are intentionally not translated by the new parser:
@@ -571,8 +643,11 @@ examples/scenes/dispersion-three-balls.json
 examples/scenes/prism refraction.json
 examples/scenes/true-spectral-prism-dispersion-200spp.json
 examples/scenes/spectral-acescg-prism-showcase.json
+examples/scenes/4d-hypercube/4d-hypercube-geometry-focus.json
+examples/scenes/4d-hypercube/4d-hypercube-geometry-focus-direct.json
 ```
 
 `feature-showcase.json` exercises Lambert color bleeding, constant emission, specular reflection, constant-IOR glass, Cauchy-dispersive glass, GGX rough conductor, spectral sampling, and tone-mapped PNG output.
 `material-benchmark-matrix.json` is a controlled gray studio box with a stepped arc of material sample spheres for comparing diffuse, mirror, rough conductor, ideal dielectric, rough dielectric transmission, absorbing media, and emissive materials.
 `geometry-benchmark-matrix.json` reuses the controlled gray studio layout with a 6x7 sample matrix covering sphere, cuboid, cylinder, circle, triangle, quadratic-equation, and four-order-equation geometry.
+The `4d-hypercube` scenes exercise `render.dimension: 4`, `n_dim` cameras, hypercube/hypersphere geometry, Lambertian exterior observation, and cell-palette cell decomposition.
