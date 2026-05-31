@@ -207,9 +207,108 @@ func parseEmission(def map[string]interface{}) (emission.Emitter, error) {
 			return nil, err
 		}
 		return emission.NewConstantParameter(radiance), nil
+	case "cell_palette":
+		return parseCellPaletteEmission(def)
 	default:
 		return nil, fmt.Errorf("unsupported emission type %q", emissionType)
 	}
+}
+
+// parseCellPaletteEmission builds a CellPalette debug emitter from a scene
+// definition. All fields are optional:
+//
+//   - "palette":         array of N RGB triples (defaults to DefaultCellPalette;
+//     cells beyond palette length wrap modulo).
+//   - "intensity":       scalar applied to every palette entry, useful when the
+//     engine's exposure makes the default [0..1] colors look dim.
+//   - "shading":         "solid" (default) or "boundary_grid".
+//   - "grid_color":      RGB triple for boundary stripes (defaults to white).
+//   - "grid_thickness":  world-space half-width of the grid in scene units
+//     (defaults to 0.02 of the smallest object extent at parse
+//     time — but here we just default to a small absolute value
+//     of 0.02 and rely on the user to tune).
+func parseCellPaletteEmission(def map[string]interface{}) (emission.Emitter, error) {
+	cp := emission.NewCellPalette()
+
+	if rawPalette, ok := def["palette"]; ok {
+		entries, ok := rawPalette.([]interface{})
+		if !ok {
+			return nil, fmt.Errorf("palette: expected an array of RGB triples")
+		}
+		if len(entries) == 0 {
+			return nil, fmt.Errorf("palette: must contain at least one color")
+		}
+		palette := make([]optics.Spectrum, 0, len(entries))
+		for i, entry := range entries {
+			values, err := utils.ToFloat64Slice(entry)
+			if err != nil {
+				return nil, fmt.Errorf("palette[%d]: %w", i, err)
+			}
+			if len(values) != 3 {
+				return nil, fmt.Errorf("palette[%d]: expected 3 RGB values, got %d", i, len(values))
+			}
+			if err := utils.ValidateNonNegativeSlice(fmt.Sprintf("palette[%d]", i), values); err != nil {
+				return nil, err
+			}
+			palette = append(palette, optics.NewSpectrum(values[0], values[1], values[2]))
+		}
+		cp.Palette = palette
+	}
+
+	if intensity, ok, err := utils.OptionalFloat64Field(def, "intensity"); err != nil {
+		return nil, err
+	} else if ok {
+		if intensity < 0 {
+			return nil, fmt.Errorf("intensity must be >= 0")
+		}
+		for i := range cp.Palette {
+			cp.Palette[i] = cp.Palette[i].MulScalar(intensity)
+		}
+	}
+
+	if shading, ok, err := utils.OptionalStringField(def, "shading"); err != nil {
+		return nil, err
+	} else if ok {
+		switch shading {
+		case "solid", "emission", "":
+			cp.Shading = emission.CellPaletteShadingEmission
+		case "boundary_grid", "grid":
+			cp.Shading = emission.CellPaletteShadingBoundaryGrid
+		default:
+			return nil, fmt.Errorf("shading must be \"solid\" or \"boundary_grid\", got %q", shading)
+		}
+	}
+
+	if cp.Shading == emission.CellPaletteShadingBoundaryGrid {
+		if rawGrid, ok := def["grid_color"]; ok {
+			values, err := utils.ToFloat64Slice(rawGrid)
+			if err != nil {
+				return nil, fmt.Errorf("grid_color: %w", err)
+			}
+			if len(values) != 3 {
+				return nil, fmt.Errorf("grid_color: expected 3 RGB values")
+			}
+			if err := utils.ValidateNonNegativeSlice("grid_color", values); err != nil {
+				return nil, err
+			}
+			cp.GridColor = optics.NewSpectrum(values[0], values[1], values[2])
+		}
+
+		thickness, ok, err := utils.OptionalFloat64Field(def, "grid_thickness")
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			thickness = 0.02
+		}
+		if thickness < 0 {
+			return nil, fmt.Errorf("grid_thickness must be >= 0")
+		}
+		cp.GridThickness = thickness
+	}
+
+	return cp, nil
+
 }
 
 func parseIORModel(def map[string]interface{}) (medium.Model, error) {

@@ -99,6 +99,20 @@ func (h *Handler) prepareSurfaceInteraction(
 	ctx.TransportMode = bxdf.TransportRadiance
 	ctx.CurrentIOR = ray.RefractionIndex
 
+	if hit.GeometricNormal != nil {
+		ctx.GeometricNormal = maths.NewDirectionFromComponents(hit.GeometricNormal.RawVector().Data)
+	}
+	if hit.Point != nil {
+		ctx.HitPoint = maths.NewDirectionFromComponents(hit.Point.RawVector().Data)
+	}
+	if obj.Shape != nil {
+		pmin, pmax := obj.Shape.BuildBoundingBox()
+		if pmin != nil && pmax != nil {
+			ctx.HitObjectAABBMin = maths.NewDirectionFromComponents(pmin.RawVector().Data)
+			ctx.HitObjectAABBMax = maths.NewDirectionFromComponents(pmax.RawVector().Data)
+		}
+	}
+
 	prepareMediumContext(&ctx, media, ray, obj.MediumBoundary, hit.FrontFace)
 
 	frame, ok := maths.NewFrameFromNormal(hit.ShadingNormal)

@@ -101,7 +101,7 @@ def visualize_3d_volume(volume_data, threshold=50):
 
 def main():
     # 图像路径
-    image_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../outputs/output.png"))
+    image_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "D:/Algo/Projects/Ray/docs/assets/4d-hypercube-geometry-focus-centered.png"))
 
     # 检查图像文件是否存在
     if not os.path.exists(image_path):
