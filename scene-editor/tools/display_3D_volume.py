@@ -1,123 +1,224 @@
+#!/usr/bin/env python3
+"""Render a Ray Film .bin volume as static Matplotlib previews.
+
+This tool is intentionally simple and offline-friendly: it reads the structured
+.bin file format used by the renderer, tone maps RGB values, and writes a 3D
+colored point-cloud PNG plus optional middle slices.
+"""
+
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+from typing import Optional, Sequence
+
 import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from PIL import Image
-import os
+
 import matplotlib
-matplotlib.use('TkAgg')  # 使用TkAgg后端支持交互
-def load_and_reshape_image(image_path, width, height, depth):
-    """
-    从图像文件加载数据并将其重塑为3D体积数据
 
-    Args:
-        image_path: 图像文件路径
-        width: 原始数据的宽度 (x维度)
-        height: 原始数据的高度 (y维度)
-        depth: 原始数据的深度 (z维度)
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 
-    Returns:
-        reshaped_data: 重塑后的3D数据 (width x height x depth x 3)
-    """
-    # 加载图像
-    img = Image.open(image_path)
-    img_array = np.array(img)
 
-    # 确保图像是RGBA格式
-    if len(img_array.shape) == 2:
-        # 灰度图转RGBA
-        img_array = np.stack([img_array, img_array, img_array, np.full_like(img_array, 255)], axis=-1)
-    elif img_array.shape[2] == 3:
-        # RGB转RGBA
-        img_array = np.concatenate([img_array, np.full((img_array.shape[0], img_array.shape[1], 1), 255)], axis=-1)
+TOOLS_DIR = Path(__file__).resolve().parent
+if str(TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(TOOLS_DIR))
 
-    # 重塑数据为3D体积
-    # 根据Go代码，数据被压平为(width, height*depth)的图像
-    # 所以我们需要将其重塑为(width, height, depth)的3D体积
-    reshaped_data = np.zeros((width, height, depth, 4), dtype=np.uint8)
+from view_bin_volume import collapse_extra_axes, parse_film, tone_map_to_srgb_uint8
 
-    for z in range(depth):
-        # 从压平的图像中提取每个z层
-        layer = img_array[z*height:(z+1)*height, :width]
-        reshaped_data[:, :, z, :] = layer
 
-    return reshaped_data
+def choose_visible_voxels(
+    rgb_u8: np.ndarray,
+    *,
+    luminance_floor: float,
+    max_points: int,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Return visible voxel coordinates, RGB colors, and luminance values."""
+    if rgb_u8.ndim != 4 or rgb_u8.shape[-1] != 3:
+        raise ValueError(f"expected (Z,Y,X,3) uint8 volume, got {rgb_u8.shape}")
 
-def visualize_3d_volume(volume_data, threshold=50):
-    """
-    使用散点图在3D查看器中显示体积数据
+    z, y, x = np.mgrid[0 : rgb_u8.shape[0], 0 : rgb_u8.shape[1], 0 : rgb_u8.shape[2]]
+    rgb_flat = rgb_u8.reshape(-1, 3)
+    lum = (
+        0.2126 * rgb_flat[:, 0].astype(np.float32)
+        + 0.7152 * rgb_flat[:, 1].astype(np.float32)
+        + 0.0722 * rgb_flat[:, 2].astype(np.float32)
+    )
 
-    Args:
-        volume_data: 4D数组 (width, height, depth, 4) - RGBA格式
-        threshold: 透明度阈值，低于此值的像素将不显示
-    """
-    # 获取数据维度
-    width, height, depth, _ = volume_data.shape
+    keep = lum >= float(luminance_floor)
+    kept = int(keep.sum())
+    if kept == 0:
+        keep = lum > 0
+        kept = int(keep.sum())
+        print(
+            "warning: no voxels above luminance floor; falling back to non-black voxels"
+        )
 
-    # 创建坐标网格
-    x, y, z = np.meshgrid(np.arange(width), np.arange(height), np.arange(depth), indexing='ij')
+    if kept > max_points:
+        idx = np.flatnonzero(keep)
+        order = np.argpartition(lum[idx], kept - max_points)[kept - max_points :]
+        mask = np.zeros_like(keep)
+        mask[idx[order]] = True
+        keep = mask
+        print(f"info: {kept} visible voxels, keeping brightest {max_points}")
 
-    # 将数据展平用于散点图
-    x_flat = x.flatten()
-    y_flat = y.flatten()
-    z_flat = z.flatten()
-    colors_flat = volume_data.reshape(-1, 4)
+    return (
+        x.ravel()[keep],
+        y.ravel()[keep],
+        z.ravel()[keep],
+        rgb_flat[keep],
+        lum[keep],
+    )
 
-    # 计算透明度
-    alphas = colors_flat[:, 3] / 255.0
 
-    # 过滤掉透明度低于阈值的点
-    mask = alphas >= (threshold / 255.0)
-    x_filtered = x_flat[mask]
-    y_filtered = y_flat[mask]
-    z_filtered = z_flat[mask]
-    colors_filtered = colors_flat[mask]
-    alphas_filtered = alphas[mask]
+def render_point_cloud(
+    rgb_u8: np.ndarray,
+    png_out: Path,
+    *,
+    title: str,
+    luminance_floor: float,
+    max_points: int,
+    point_size: float,
+    elev: float,
+    azim: float,
+) -> None:
+    xs, ys, zs, colors_u8, lum = choose_visible_voxels(
+        rgb_u8,
+        luminance_floor=luminance_floor,
+        max_points=max_points,
+    )
+    if xs.size == 0:
+        raise ValueError("no visible voxels to render")
 
-    # 创建3D图形
-    fig = plt.figure(figsize=(12, 9))
-    ax = fig.add_subplot(111, projection='3d')
+    colors = colors_u8.astype(np.float32) / 255.0
+    alpha = 0.18 + 0.72 * (lum / lum.max()) if lum.max() > 0 else 0.6
+    rgba = np.column_stack([colors, alpha])
 
-    # 归一化颜色值
-    rgb_colors = colors_filtered[:, :3] / 255.0
+    fig = plt.figure(figsize=(10, 10), facecolor="black")
+    ax = fig.add_subplot(111, projection="3d", facecolor="black")
+    ax.scatter(xs, ys, zs, c=rgba, s=point_size, linewidths=0, depthshade=False)
 
-    # 绘制散点图，每个点只有20%的透明度
-    scatter = ax.scatter(x_filtered, y_filtered, z_filtered,
-                        c=rgb_colors, alpha=0.05, s=1)
+    ax.set_title(title, color="white", pad=18)
+    ax.set_xlabel("X", color="white")
+    ax.set_ylabel("Y", color="white")
+    ax.set_zlabel("Z", color="white")
+    ax.tick_params(colors="white")
+    ax.view_init(elev=elev, azim=azim)
+    ax.set_box_aspect(rgb_u8.shape[:3][::-1])
 
-    # 设置标签
-    ax.set_xlabel('X Axis')
-    ax.set_ylabel('Y Axis')
-    ax.set_zlabel('Z Axis')
-    ax.set_title('3D Volume Visualization')
+    for axis in (ax.xaxis, ax.yaxis, ax.zaxis):
+        axis.pane.set_facecolor((0.0, 0.0, 0.0, 1.0))
+        axis.pane.set_edgecolor((0.35, 0.35, 0.35, 1.0))
 
-    # 设置视角
-    ax.view_init(elev=20, azim=45)
+    fig.tight_layout()
+    fig.savefig(png_out, dpi=180, facecolor="black")
+    plt.close(fig)
+    print(f"Wrote 3D point-cloud preview: {png_out}")
 
-    # 根据项目规范设置坐标轴比例
-    ax.set_box_aspect([1,1,1])
 
-    plt.tight_layout()
-    plt.show()
+def save_rgb_slices(rgb_u8: np.ndarray, png_out: Path) -> None:
+    zc, yc, xc = [s // 2 for s in rgb_u8.shape[:3]]
+    fig, axes = plt.subplots(1, 3, figsize=(12, 4), constrained_layout=True)
+    fig.patch.set_facecolor("black")
 
-def main():
-    # 图像路径
-    image_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "D:/Algo/Projects/Ray/docs/assets/4d-hypercube-geometry-focus-centered.png"))
+    axes[0].imshow(rgb_u8[zc, :, :, :])
+    axes[0].set_title(f"XY slice, z={zc}", color="white")
+    axes[1].imshow(rgb_u8[:, yc, :, :], aspect="auto")
+    axes[1].set_title(f"XZ slice, y={yc}", color="white")
+    axes[2].imshow(rgb_u8[:, :, xc, :], aspect="auto")
+    axes[2].set_title(f"YZ slice, x={xc}", color="white")
 
-    # 检查图像文件是否存在
-    if not os.path.exists(image_path):
-        print(f"图像文件 {image_path} 不存在")
-        return
+    for ax in axes:
+        ax.set_axis_off()
 
-    # 加载并重塑图像数据
-    print("正在加载和重塑图像数据...")
-    n = 200
-    volume_data = load_and_reshape_image(image_path, n, n, n)
+    fig.savefig(png_out, dpi=180, facecolor="black")
+    plt.close(fig)
+    print(f"Wrote RGB middle-slice preview: {png_out}")
 
-    # 显示3D体积
-    print("正在显示3D体积数据...")
-    visualize_3d_volume(volume_data)
 
-    print("可视化完成")
+def default_output_paths(bin_file: Path, png_arg: Optional[Path], slices_arg: Optional[Path]) -> tuple[Path, Path]:
+    png = png_arg if png_arg is not None else bin_file.with_suffix(".matplotlib-volume.png")
+    slices = slices_arg if slices_arg is not None else bin_file.with_suffix(".matplotlib-slices.png")
+    return png, slices
+
+
+def main(argv: Optional[Sequence[str]] = None) -> None:
+    parser = argparse.ArgumentParser(description="Render a Film .bin volume as static PNG previews.")
+    parser.add_argument("bin_file", type=Path, help="input .bin file")
+    parser.add_argument("--png", type=Path, help="output 3D point-cloud PNG")
+    parser.add_argument("--slices", type=Path, help="output middle-slice PNG")
+    parser.add_argument(
+        "--reduce",
+        default="mean",
+        choices=["mean", "max", "sum", "first", "last"],
+        help="for >3D films, collapse extra leading axes with this reducer",
+    )
+    parser.add_argument("--exposure", type=float, default=1.0, help="multiplicative exposure")
+    parser.add_argument(
+        "--tone",
+        default="aces",
+        choices=["linear", "reinhard", "aces"],
+        help="tone mapping operator",
+    )
+    parser.add_argument("--gamma", type=float, default=2.2, help="output gamma")
+    parser.add_argument(
+        "--luminance-floor",
+        type=float,
+        default=8.0,
+        help="drop encoded voxels below this Rec.709 luminance threshold",
+    )
+    parser.add_argument("--max-points", type=int, default=180_000, help="maximum scatter points")
+    parser.add_argument("--point-size", type=float, default=0.8, help="scatter marker size")
+    parser.add_argument("--elev", type=float, default=22.0, help="camera elevation")
+    parser.add_argument("--azim", type=float, default=42.0, help="camera azimuth")
+    parser.add_argument("--no-slices", action="store_true", help="skip slice PNG")
+    args = parser.parse_args(argv)
+
+    png_out, slices_out = default_output_paths(
+        args.bin_file,
+        args.png,
+        None if args.no_slices else args.slices,
+    )
+
+    vol, _spectral, meta = parse_film(args.bin_file)
+    rgb_3d = collapse_extra_axes(vol, args.reduce, keep_trailing=4)
+    if rgb_3d.ndim != 4 or rgb_3d.shape[-1] < 3:
+        raise SystemExit(f"expected RGB volume after reduction, got {rgb_3d.shape}")
+
+    print("Parsed Film .bin")
+    print(f"  go dims:        {meta.dims_go}")
+    print(f"  numpy shape:    {vol.shape}")
+    print(f"  render shape:   {rgb_3d.shape}")
+    print(f"  samples:        {meta.samples}")
+    print(f"  color space:    {meta.color_space!r}")
+
+    rgb_u8 = tone_map_to_srgb_uint8(
+        rgb_3d,
+        exposure=args.exposure,
+        tone=args.tone,
+        gamma=args.gamma,
+    )
+    visible_pct = float((rgb_u8.any(axis=-1)).mean()) * 100.0
+    print(
+        f"  sRGB encode:    exposure={args.exposure} tone={args.tone} gamma={args.gamma} "
+        f"-> {visible_pct:.2f}% non-black voxels"
+    )
+
+    render_point_cloud(
+        rgb_u8,
+        png_out,
+        title=args.bin_file.name,
+        luminance_floor=args.luminance_floor,
+        max_points=args.max_points,
+        point_size=args.point_size,
+        elev=args.elev,
+        azim=args.azim,
+    )
+
+    if not args.no_slices:
+        save_rgb_slices(rgb_u8, slices_out)
+
 
 if __name__ == "__main__":
     main()
