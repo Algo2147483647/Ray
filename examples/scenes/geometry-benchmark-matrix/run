@@ -1,1 +1,12 @@
-npm run ray -- --script ../examples/scenes/geometry-benchmark-matrix/room.json --script ../examples/scenes/geometry-benchmark-matrix/main.json --script ../examples/scenes/geometry-benchmark-matrix/materials.json  --script ../examples/scenes/geometry-benchmark-matrix/geo_example.json
+#!/usr/bin/env sh
+set -eu
+
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+repo_root=$(CDPATH= cd -- "$script_dir/../../.." && pwd)
+
+npm --prefix "$repo_root" run ray -- \
+  --script "$script_dir/room.json" \
+  --script "$script_dir/main.json" \
+  --script "$script_dir/materials.json" \
+  --script "$script_dir/geo_example.json" \
+  "$@"
