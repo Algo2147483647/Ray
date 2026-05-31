@@ -6,9 +6,12 @@ import (
 	"testing"
 
 	"github.com/Algo2147483647/ray/engine/maths"
+	"github.com/Algo2147483647/ray/engine/model/material"
+	"github.com/Algo2147483647/ray/engine/model/material/bsdf"
 	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
 	"github.com/Algo2147483647/ray/engine/model/material/medium"
 	"github.com/Algo2147483647/ray/engine/model/object"
+	"gonum.org/v1/gonum/mat"
 )
 
 func TestPrepareMediumContextKeepsLegacyIORWithoutBoundary(t *testing.T) {
@@ -130,6 +133,45 @@ func TestApplySurfaceSampleUpdatesMediumForNonDeltaTransmission(t *testing.T) {
 	}
 	if got := ray.RefractionIndex; got != 1.5 {
 		t.Fatalf("expected ray IOR to update to glass, got %f", got)
+	}
+}
+
+func TestPrepareSurfaceInteractionSamplesLambertIn4D(t *testing.T) {
+	handler := &Handler{}
+	ray := &renderray.Ray{
+		Origin:    mat.NewVecDense(4, []float64{-1, 0, 0, 0}),
+		Direction: mat.NewVecDense(4, []float64{1, 0, 0, 0}),
+	}
+	ray.Init()
+	ray.Origin.CopyVec(mat.NewVecDense(4, []float64{-1, 0, 0, 0}))
+	ray.Direction.CopyVec(mat.NewVecDense(4, []float64{1, 0, 0, 0}))
+
+	obj := &object.Object{
+		Material: &material.Material{
+			Surface: bsdf.NewSingle(bxdf.NewLambert(renderray.NewSpectrum(1, 1, 1))),
+		},
+	}
+	hit := &object.SurfaceHit{
+		Distance:      1,
+		Point:         mat.NewVecDense(4, []float64{0, 0, 0, 0}),
+		ShadingNormal: mat.NewVecDense(4, []float64{-1, 0, 0, 0}),
+		FrontFace:     true,
+		Object:        obj,
+	}
+
+	si, ok := handler.prepareSurfaceInteraction(medium.NewRegistry(), ray, hit)
+	if !ok {
+		t.Fatal("expected 4D surface interaction to prepare")
+	}
+	if si.WoLocal.Len() != 4 {
+		t.Fatalf("expected 4D local outgoing direction, got %dD", si.WoLocal.Len())
+	}
+	sample, ok := sampleSurface(obj, si.Context, si.WoLocal)
+	if !ok {
+		t.Fatal("expected 4D Lambert sample")
+	}
+	if sample.Wi.Len() != 4 {
+		t.Fatalf("expected 4D sampled direction, got %dD", sample.Wi.Len())
 	}
 }
 

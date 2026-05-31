@@ -7,6 +7,15 @@ import (
 )
 
 func reflectLocal(wo maths.Direction) maths.Direction {
+	if wo.Len() != 3 || len(wo.Components) > 0 {
+		components := make([]float64, wo.Len())
+		normalAxis := len(components) - 1
+		for i := range components {
+			components[i] = -wo.Component(i)
+		}
+		components[normalAxis] = wo.Component(normalAxis)
+		return maths.NewDirectionFromComponents(components)
+	}
 	return maths.NewDirection(-wo.X, -wo.Y, wo.Z)
 }
 

@@ -46,3 +46,30 @@ func TestCuboidNormalUsesPminAndPmaxDirection(t *testing.T) {
 		t.Fatalf("unexpected pmax normal: %v", maxNormal.RawVector().Data)
 	}
 }
+
+func TestHypercuboidIntersectRange4D(t *testing.T) {
+	cuboid := NewCuboid(
+		mat.NewVecDense(4, []float64{-1, -1, -1, -1}),
+		mat.NewVecDense(4, []float64{1, 1, 1, 1}),
+	)
+
+	interaction, ok := cuboid.IntersectRange(
+		mat.NewVecDense(4, []float64{-3, 0, 0, 0}),
+		mat.NewVecDense(4, []float64{1, 0, 0, 0}),
+		1e-6,
+		math.MaxFloat64,
+	)
+
+	if !ok {
+		t.Fatal("expected 4D hypercuboid hit")
+	}
+	if interaction.Point.Len() != 4 || interaction.GeometricNormal.Len() != 4 {
+		t.Fatalf("expected 4D interaction, got point=%d normal=%d", interaction.Point.Len(), interaction.GeometricNormal.Len())
+	}
+	if math.Abs(interaction.Distance-2) > 1e-9 {
+		t.Fatalf("expected nearest distance 2, got %f", interaction.Distance)
+	}
+	if interaction.GeometricNormal.AtVec(0) != -1 {
+		t.Fatalf("expected hit on negative x face, got normal %v", interaction.GeometricNormal.RawVector().Data)
+	}
+}

@@ -64,14 +64,10 @@ func (c *FiniteCylinder) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax 
 }
 
 func (c *FiniteCylinder) intersectSide(raySt, rayDir *mat.VecDense, tMin, tMax float64) float64 {
-	oc := utils.VectorPool.Get().(*mat.VecDense)
-	dPerp := utils.VectorPool.Get().(*mat.VecDense)
-	ocPerp := utils.VectorPool.Get().(*mat.VecDense)
-	defer func() {
-		utils.VectorPool.Put(oc)
-		utils.VectorPool.Put(dPerp)
-		utils.VectorPool.Put(ocPerp)
-	}()
+	dim := raySt.Len()
+	oc := mat.NewVecDense(dim, nil)
+	dPerp := mat.NewVecDense(dim, nil)
+	ocPerp := mat.NewVecDense(dim, nil)
 
 	oc.SubVec(raySt, c.Center)
 	dParallel := mat.Dot(rayDir, c.Axis)
@@ -114,16 +110,11 @@ func (c *FiniteCylinder) intersectCap(raySt, rayDir *mat.VecDense, axisDistance,
 		return math.MaxFloat64
 	}
 
-	center := utils.VectorPool.Get().(*mat.VecDense)
-	toCap := utils.VectorPool.Get().(*mat.VecDense)
-	hit := utils.VectorPool.Get().(*mat.VecDense)
-	offset := utils.VectorPool.Get().(*mat.VecDense)
-	defer func() {
-		utils.VectorPool.Put(center)
-		utils.VectorPool.Put(toCap)
-		utils.VectorPool.Put(hit)
-		utils.VectorPool.Put(offset)
-	}()
+	dim := raySt.Len()
+	center := mat.NewVecDense(dim, nil)
+	toCap := mat.NewVecDense(dim, nil)
+	hit := mat.NewVecDense(dim, nil)
+	offset := mat.NewVecDense(dim, nil)
 
 	center.AddScaledVec(c.Center, axisDistance, c.Axis)
 	toCap.SubVec(center, raySt)
@@ -141,8 +132,7 @@ func (c *FiniteCylinder) intersectCap(raySt, rayDir *mat.VecDense, axisDistance,
 }
 
 func (c *FiniteCylinder) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {
-	offset := utils.VectorPool.Get().(*mat.VecDense)
-	defer utils.VectorPool.Put(offset)
+	offset := mat.NewVecDense(intersect.Len(), nil)
 
 	offset.SubVec(intersect, c.Center)
 	axisDistance := mat.Dot(offset, c.Axis)

@@ -71,14 +71,9 @@ func (f *Triangle) IntersectCandidate(raySt, rayDir *mat.VecDense, tMin, tMax fl
 		return f.intersectCandidate3D(raySt, rayDir, tMin, tMax)
 	}
 
-	t := utils.VectorPool.Get().(*mat.VecDense)
-	p := utils.VectorPool.Get().(*mat.VecDense)
-	q := utils.VectorPool.Get().(*mat.VecDense)
-	defer func() {
-		utils.VectorPool.Put(t)
-		utils.VectorPool.Put(p)
-		utils.VectorPool.Put(q)
-	}()
+	t := mat.NewVecDense(raySt.Len(), nil)
+	p := mat.NewVecDense(raySt.Len(), nil)
+	q := mat.NewVecDense(raySt.Len(), nil)
 
 	maths.Cross(p, rayDir, f.Mem.Edge2)
 	a := mat.Dot(f.Mem.Edge1, p)

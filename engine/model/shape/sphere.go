@@ -47,12 +47,8 @@ func (s *Sphere) IntersectCandidate(raySt, rayDir *mat.VecDense, tMin, tMax floa
 		return s.intersectCandidate3D(raySt, rayDir, tMin, tMax)
 	}
 
-	t := utils.VectorPool.Get().(*mat.VecDense)
-	defer func() {
-		utils.VectorPool.Put(t)
-	}()
-
 	// Compute coefficients.
+	t := mat.NewVecDense(raySt.Len(), nil)
 	t.SubVec(raySt, s.center)
 	A := mat.Dot(rayDir, rayDir)
 	B := 2 * mat.Dot(rayDir, t)

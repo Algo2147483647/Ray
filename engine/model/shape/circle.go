@@ -43,21 +43,15 @@ func (c *Circle) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64)
 		return SurfaceInteraction{}, false
 	}
 
-	toCenter := utils.VectorPool.Get().(*mat.VecDense)
-	hit := utils.VectorPool.Get().(*mat.VecDense)
-	offset := utils.VectorPool.Get().(*mat.VecDense)
-	defer func() {
-		utils.VectorPool.Put(toCenter)
-		utils.VectorPool.Put(hit)
-		utils.VectorPool.Put(offset)
-	}()
-
+	toCenter := mat.NewVecDense(raySt.Len(), nil)
 	toCenter.SubVec(c.Center, raySt)
 	distance := mat.Dot(c.Normal, toCenter) / denominator
 	if !distanceInRange(distance, tMin, tMax) {
 		return SurfaceInteraction{}, false
 	}
 
+	hit := mat.NewVecDense(raySt.Len(), nil)
+	offset := mat.NewVecDense(raySt.Len(), nil)
 	hit.AddScaledVec(raySt, distance, rayDir)
 	offset.SubVec(hit, c.Center)
 	if mat.Dot(offset, offset) > c.R*c.R+utils.EPS {

@@ -4,7 +4,6 @@ import (
 	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/model/optics"
 	"github.com/Algo2147483647/ray/engine/model/optics/spectrum_parameter"
-	"math"
 )
 
 type Lambert struct {
@@ -23,7 +22,7 @@ func (l Lambert) Eval(ctx ShadingContext, wi, wo maths.Direction) optics.Spectru
 	if !maths.IsUpperHemisphere(wi) || !maths.IsUpperHemisphere(wo) {
 		return optics.Spectrum{}
 	}
-	return l.Albedo.Eval(ctx).MulScalar(1 / math.Pi)
+	return l.Albedo.Eval(ctx).MulScalar(1 / maths.CosineHemisphereIntegral(wi.Len()))
 }
 
 func (l Lambert) Sample(ctx ShadingContext, wo maths.Direction, u maths.Sample2D) BxDFSample {
@@ -31,7 +30,7 @@ func (l Lambert) Sample(ctx ShadingContext, wo maths.Direction, u maths.Sample2D
 		return BxDFSample{}
 	}
 
-	wi := maths.CosineSampleHemisphere(u)
+	wi := maths.CosineSampleHemisphereND(u, wo.Len())
 	return BxDFSample{
 		Wi:    wi,
 		F:     l.Eval(ctx, wi, wo),

@@ -11,5 +11,4 @@ func SetDimension(dimension int) {
 		dimension = 3
 	}
 	Dimension = dimension
-	ResetVectorPool()
 }

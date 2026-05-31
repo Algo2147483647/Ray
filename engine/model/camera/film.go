@@ -227,20 +227,41 @@ func (f *Film) ToImageWithOptions(options ImageOptions) *image.RGBA {
 		}
 
 		return imgout
-	} else if len(f.Data[0].Shape) == 3 {
-		imgout := image.NewRGBA(image.Rect(0, 0, f.Data[0].Shape[0], f.Data[0].Shape[1]*f.Data[0].Shape[2]))
+	} else if len(f.Data[0].Shape) > 2 {
+		width := f.Data[0].Shape[0]
+		height := f.Data[0].Shape[1]
+		slices := 1
+		for _, extent := range f.Data[0].Shape[2:] {
+			slices *= extent
+		}
+		atlasCols := int(math.Ceil(math.Sqrt(float64(slices))))
+		atlasRows := (slices + atlasCols - 1) / atlasCols
+		imgout := image.NewRGBA(image.Rect(0, 0, width*atlasCols, height*atlasRows))
 		for i := 0; i < len(f.Data[0].Data); i++ {
 			red, green, blue := f.outputRGBAt(i)
 			r := encodeOutputChannel(red, options)
 			g := encodeOutputChannel(green, options)
 			b := encodeOutputChannel(blue, options)
 			ind := f.Data[0].GetCoordinates(i)
-			imgout.Set(ind[0], ind[1]+ind[2]*f.Data[0].Shape[1], color.RGBA{r, g, b, 255})
+			slice := flattenedSliceIndex(ind[2:], f.Data[0].Shape[2:])
+			atlasX := slice % atlasCols
+			atlasY := slice / atlasCols
+			imgout.Set(ind[0]+atlasX*width, ind[1]+atlasY*height, color.RGBA{r, g, b, 255})
 		}
 
 		return imgout
 	}
 	return nil
+}
+
+func flattenedSliceIndex(coords, shape []int) int {
+	index := 0
+	stride := 1
+	for i := 0; i < len(coords) && i < len(shape); i++ {
+		index += coords[i] * stride
+		stride *= shape[i]
+	}
+	return index
 }
 
 func (f *Film) outputRGBAt(i int) (float64, float64, float64) {

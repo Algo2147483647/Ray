@@ -39,6 +39,46 @@ func TestSpecularReflectionSampleIsDeltaDiscrete(t *testing.T) {
 	}
 }
 
+func TestLambertSamples4DUpperHemisphere(t *testing.T) {
+	lambert := bxdf.NewLambert(optics.NewSpectrum(0.6, 0.4, 0.2))
+	wo := maths.NewDirectionFromComponents([]float64{0.1, -0.2, 0.3, 0.9}).Normalize()
+
+	sample := lambert.Sample(bxdf.ShadingContext{}, wo, maths.Sample2D{U: 0.3, V: 0.7})
+
+	if sample.Wi.Len() != 4 {
+		t.Fatalf("expected 4D sampled direction, got %dD", sample.Wi.Len())
+	}
+	if !maths.IsUpperHemisphere(sample.Wi) {
+		t.Fatalf("expected upper hemisphere sample, got %+v", sample.Wi)
+	}
+	if math.Abs(sample.Wi.Length()-1) > 1e-12 {
+		t.Fatalf("expected normalized direction, got length %f", sample.Wi.Length())
+	}
+	if sample.PDF <= 0 || !sample.F.IsFinite() {
+		t.Fatalf("expected finite positive Lambert sample, got %+v", sample)
+	}
+}
+
+func TestSpecularReflectionReflects4DLocalDirection(t *testing.T) {
+	specular := bxdf.NewSpecularReflection(optics.NewSpectrum(1, 1, 1))
+	wo := maths.NewDirectionFromComponents([]float64{0.1, -0.2, 0.3, 0.9}).Normalize()
+
+	sample := specular.Sample(bxdf.ShadingContext{}, wo, maths.Sample2D{})
+
+	if sample.Wi.Len() != 4 {
+		t.Fatalf("expected 4D reflected direction, got %dD", sample.Wi.Len())
+	}
+	for i := 0; i < sample.Wi.Len()-1; i++ {
+		if math.Abs(sample.Wi.Component(i)+wo.Component(i)) > 1e-12 {
+			t.Fatalf("component %d was not reflected: got %f want %f", i, sample.Wi.Component(i), -wo.Component(i))
+		}
+	}
+	normalAxis := sample.Wi.Len() - 1
+	if math.Abs(sample.Wi.Component(normalAxis)-wo.Component(normalAxis)) > 1e-12 {
+		t.Fatalf("normal component changed: got %f want %f", sample.Wi.Component(normalAxis), wo.Component(normalAxis))
+	}
+}
+
 func TestFresnelConductorProducesChannelColor(t *testing.T) {
 	eta := optics.NewSpectrum(0.2, 0.5, 1.5)
 	k := optics.NewSpectrum(3.5, 2.4, 1.8)

@@ -49,11 +49,22 @@ func TestFrameWorldToLocalNegated(t *testing.T) {
 	assertNear(t, negated.Z, -local.Z)
 }
 
-func TestFrameRejectsNon3DNormal(t *testing.T) {
-	_, ok := NewFrameFromNormal(mat.NewVecDense(2, []float64{0, 1}))
+func TestFrameSupports4DNormal(t *testing.T) {
+	frame, ok := NewFrameFromNormal(mat.NewVecDense(4, []float64{0, 0, 0, 1}))
 	if ok {
-		t.Fatal("expected non-3D normal to be rejected")
+		if len(frame.Tangents) != 3 {
+			t.Fatalf("expected three 4D tangent vectors, got %d", len(frame.Tangents))
+		}
+		for i, tangent := range frame.Tangents {
+			assertNear(t, mat.Norm(tangent, 2), 1)
+			assertNear(t, mat.Dot(tangent, frame.Normal), 0)
+			for j := 0; j < i; j++ {
+				assertNear(t, mat.Dot(tangent, frame.Tangents[j]), 0)
+			}
+		}
+		return
 	}
+	t.Fatal("expected a frame for a 4D normal")
 }
 
 func assertVecNear(t *testing.T, got, want *mat.VecDense) {

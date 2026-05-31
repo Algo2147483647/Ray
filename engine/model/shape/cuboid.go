@@ -171,12 +171,8 @@ func (c *Cuboid) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {
 		res.Zero()
 	}
 
-	a := utils.VectorPool.Get().(*mat.VecDense)
-	b := utils.VectorPool.Get().(*mat.VecDense)
-	defer func() {
-		utils.VectorPool.Put(a)
-		utils.VectorPool.Put(b)
-	}()
+	a := mat.NewVecDense(intersect.Len(), nil)
+	b := mat.NewVecDense(intersect.Len(), nil)
 	a.SubVec(intersect, c.Pmin)
 	b.SubVec(intersect, c.Pmax)
 

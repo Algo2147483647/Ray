@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/Algo2147483647/ray/engine/utils/example_lib"
+	"math"
 	"os"
 	"strings"
 
@@ -16,7 +17,10 @@ import (
 
 const (
 	ShapeCuboid            = "cuboid"
+	ShapeHypercube         = "hypercube"
+	ShapeHypercuboid       = "hypercuboid"
 	ShapeSphere            = "sphere"
+	ShapeHypersphere       = "hypersphere"
 	ShapeCircle            = "circle"
 	ShapeCylinder          = "cylinder"
 	ShapeFiniteCylinder    = "finite cylinder"
@@ -37,10 +41,13 @@ func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 	}
 
 	switch shapeName {
-	case ShapeCuboid:
+	case ShapeCuboid, ShapeHypercuboid:
 		return parseCuboid(objDef)
 
-	case ShapeSphere:
+	case ShapeHypercube:
+		return parseHypercube(objDef)
+
+	case ShapeSphere, ShapeHypersphere:
 		return parseSphere(objDef)
 
 	case ShapeCircle:
@@ -82,6 +89,31 @@ func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 	}
 }
 
+func parseHypercube(objDef map[string]interface{}) ([]shape.Shape, error) {
+	shapes, err := parseCuboid(objDef)
+	if err != nil {
+		return nil, err
+	}
+	for _, s := range shapes {
+		cuboid, ok := s.(*shape.Cuboid)
+		if !ok {
+			if bounded, boundedOK := s.(*shape.BoundedShape); boundedOK {
+				cuboid, ok = bounded.Shape.(*shape.Cuboid)
+			}
+		}
+		if !ok {
+			continue
+		}
+		side := cuboid.Pmax.AtVec(0) - cuboid.Pmin.AtVec(0)
+		for axis := 1; axis < cuboid.Pmin.Len(); axis++ {
+			if diff := cuboid.Pmax.AtVec(axis) - cuboid.Pmin.AtVec(axis); math.Abs(diff-side) > utils.EPS {
+				return nil, fmt.Errorf("hypercube requires equal side lengths, axis %d has %g instead of %g", axis, diff, side)
+			}
+		}
+	}
+	return shapes, nil
+}
+
 func parseCuboid(objDef map[string]interface{}) ([]shape.Shape, error) {
 	if center, ok, err := utils.OptionalFloat64SliceField(objDef, "center", utils.Dimension); err != nil {
 		return nil, err
@@ -103,6 +135,13 @@ func parseCuboid(objDef map[string]interface{}) ([]shape.Shape, error) {
 		)
 
 		return finishEngravableShape(cuboid, objDef)
+	}
+	if position, ok, err := utils.OptionalFloat64SliceField(objDef, "position", utils.Dimension); err != nil {
+		return nil, err
+	} else if ok {
+		objDef = cloneObjectDef(objDef)
+		objDef["center"] = position
+		return parseCuboid(objDef)
 	}
 
 	pmin, err := utils.RequiredFloat64SliceField(objDef, "pmin", utils.Dimension)
@@ -263,10 +302,23 @@ func newVec(values []float64) *mat.VecDense {
 func requiredVec(objDef map[string]interface{}, name string) (*mat.VecDense, error) {
 	values, err := utils.RequiredFloat64SliceField(objDef, name, utils.Dimension)
 	if err != nil {
+		if name == "center" {
+			if fallback, fallbackErr := utils.RequiredFloat64SliceField(objDef, "position", utils.Dimension); fallbackErr == nil {
+				return newVec(fallback), nil
+			}
+		}
 		return nil, err
 	}
 
 	return newVec(values), nil
+}
+
+func cloneObjectDef(objDef map[string]interface{}) map[string]interface{} {
+	clone := make(map[string]interface{}, len(objDef)+1)
+	for key, value := range objDef {
+		clone[key] = value
+	}
+	return clone
 }
 
 func requiredNonZeroVec(objDef map[string]interface{}, name string) (*mat.VecDense, error) {
