@@ -68,6 +68,14 @@ func (c *CameraNDim) GenerateRay(res *renderray.Ray, x ...int) *renderray.Ray {
 
 	res.Origin.CloneFromVec(c.Position)
 	res.Direction.CloneFromVec(c.orthonormalCoordinates[0])
+	if c.Ortho {
+		for i := 0; i < len(x); i++ {
+			res.Origin.AddScaledVec(res.Origin, u[i]*c.fovTangents[i], c.orthonormalCoordinates[i+1])
+		}
+		maths.Normalize(res.Direction)
+		return res
+	}
+
 	for i := 0; i < len(x); i++ {
 		res.Direction.AddScaledVec(res.Direction, u[i]*c.fovTangents[i], c.orthonormalCoordinates[i+1])
 	}

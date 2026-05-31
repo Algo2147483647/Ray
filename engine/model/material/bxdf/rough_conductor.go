@@ -35,7 +35,7 @@ func (r RoughConductor) Eval(ctx ShadingContext, wi, wo maths.Direction) optics.
 	}
 
 	wh := wi.Add(wo).Normalize()
-	if wh.Z <= 0 || wh.Length() == 0 {
+	if maths.CosTheta(wh) <= 0 || wh.Length() == 0 {
 		return optics.Spectrum{}
 	}
 
@@ -78,7 +78,7 @@ func (r RoughConductor) PDF(_ ShadingContext, wi, wo maths.Direction) float64 {
 	}
 
 	wh := wi.Add(wo).Normalize()
-	if wh.Z <= 0 || wh.Length() == 0 {
+	if maths.CosTheta(wh) <= 0 || wh.Length() == 0 {
 		return 0
 	}
 

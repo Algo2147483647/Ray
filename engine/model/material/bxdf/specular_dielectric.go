@@ -40,7 +40,7 @@ func (s SpecularDielectric) Eval(ShadingContext, maths.Direction, maths.Directio
 }
 
 func (s SpecularDielectric) Sample(ctx ShadingContext, wo maths.Direction, u maths.Sample2D) BxDFSample {
-	if wo.Z == 0 {
+	if maths.CosTheta(wo) == 0 {
 		return BxDFSample{}
 	}
 
@@ -55,7 +55,7 @@ func (s SpecularDielectric) Sample(ctx ShadingContext, wo maths.Direction, u mat
 
 	etaI, etaT := s.resolveEta(ctx, etaInside)
 
-	fresnel := FresnelDielectric(math.Abs(wo.Z), etaI, etaT)
+	fresnel := FresnelDielectric(math.Abs(maths.CosTheta(wo)), etaI, etaT)
 	if u.U < fresnel {
 		wi := reflectLocal(wo)
 		cos := maths.AbsCosTheta(wi)

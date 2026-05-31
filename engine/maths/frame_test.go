@@ -44,9 +44,9 @@ func TestFrameWorldToLocalNegated(t *testing.T) {
 	local := frame.WorldToLocal(world)
 	negated := frame.WorldToLocalNegated(world)
 
-	assertNear(t, negated.X, -local.X)
-	assertNear(t, negated.Y, -local.Y)
-	assertNear(t, negated.Z, -local.Z)
+	assertNear(t, negated.Component(0), -local.Component(0))
+	assertNear(t, negated.Component(1), -local.Component(1))
+	assertNear(t, negated.Component(2), -local.Component(2))
 }
 
 func TestFrameSupports4DNormal(t *testing.T) {

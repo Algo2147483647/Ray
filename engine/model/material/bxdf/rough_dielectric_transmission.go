@@ -52,7 +52,7 @@ func NewRoughDielectricTransmissionParameter(
 }
 
 func (r RoughDielectricTransmission) Eval(ctx ShadingContext, wi, wo maths.Direction) optics.Spectrum {
-	if wi.Z == 0 || wo.Z == 0 {
+	if maths.CosTheta(wi) == 0 || maths.CosTheta(wo) == 0 {
 		return optics.Spectrum{}
 	}
 
@@ -94,7 +94,7 @@ func (r RoughDielectricTransmission) Eval(ctx ShadingContext, wi, wo maths.Direc
 	}
 
 	wh := sum.Normalize()
-	if wh.Z < 0 {
+	if maths.CosTheta(wh) < 0 {
 		wh = wh.MulScalar(-1)
 	}
 
@@ -139,7 +139,7 @@ func (r RoughDielectricTransmission) Eval(ctx ShadingContext, wi, wo maths.Direc
 }
 
 func (r RoughDielectricTransmission) Sample(ctx ShadingContext, wo maths.Direction, u maths.Sample2D) BxDFSample {
-	if wo.Z == 0 {
+	if maths.CosTheta(wo) == 0 {
 		return BxDFSample{}
 	}
 
@@ -160,7 +160,7 @@ func (r RoughDielectricTransmission) Sample(ctx ShadingContext, wo maths.Directi
 	distribution := microfacet.NewGGX(r.Alpha)
 	wh := distribution.SampleVisibleNormal(owo, u)
 
-	if wh.Z <= 0 || wh.Length() == 0 {
+	if maths.CosTheta(wh) <= 0 || wh.Length() == 0 {
 		return BxDFSample{}
 	}
 
@@ -205,7 +205,7 @@ func (r RoughDielectricTransmission) Sample(ctx ShadingContext, wo maths.Directi
 }
 
 func (r RoughDielectricTransmission) PDF(ctx ShadingContext, wi, wo maths.Direction) float64 {
-	if wi.Z == 0 || wo.Z == 0 {
+	if maths.CosTheta(wi) == 0 || maths.CosTheta(wo) == 0 {
 		return 0
 	}
 
@@ -233,7 +233,7 @@ func (r RoughDielectricTransmission) PDF(ctx ShadingContext, wi, wo maths.Direct
 	}
 
 	wh := sum.Normalize()
-	if wh.Z < 0 {
+	if maths.CosTheta(wh) < 0 {
 		wh = wh.MulScalar(-1)
 	}
 
@@ -289,7 +289,7 @@ func (r RoughDielectricTransmission) resolveEta(ctx ShadingContext, etaInside fl
 	}
 
 	// Prefer the geometric direction if explicit eta information is unavailable.
-	if wo.Z >= 0 {
+	if maths.CosTheta(wo) >= 0 {
 		return r.EtaOutside, etaInside
 	}
 
@@ -302,7 +302,7 @@ func (r RoughDielectricTransmission) resolveOrientedEta(ctx ShadingContext, etaI
 }
 
 func orientEtaPair(etaI, etaT float64, wo maths.Direction) (float64, float64) {
-	if wo.Z < 0 {
+	if maths.CosTheta(wo) < 0 {
 		return etaT, etaI
 	}
 	return etaI, etaT
@@ -316,14 +316,14 @@ func (r RoughDielectricTransmission) insideIOR() medium.Model {
 }
 
 func orientOutgoingToUpper(wo maths.Direction) (maths.Direction, bool) {
-	if wo.Z < 0 {
+	if maths.CosTheta(wo) < 0 {
 		return wo.MulScalar(-1), true
 	}
 	return wo, false
 }
 
 func orientTransmissionPair(wi, wo maths.Direction) (maths.Direction, maths.Direction) {
-	if wo.Z < 0 {
+	if maths.CosTheta(wo) < 0 {
 		return wi.MulScalar(-1), wo.MulScalar(-1)
 	}
 	return wi, wo

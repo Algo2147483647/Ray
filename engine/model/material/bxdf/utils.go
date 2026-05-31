@@ -7,16 +7,13 @@ import (
 )
 
 func reflectLocal(wo maths.Direction) maths.Direction {
-	if wo.Len() != 3 || len(wo.Components) > 0 {
-		components := make([]float64, wo.Len())
-		normalAxis := len(components) - 1
-		for i := range components {
-			components[i] = -wo.Component(i)
-		}
-		components[normalAxis] = wo.Component(normalAxis)
-		return maths.NewDirectionFromComponents(components)
+	components := make([]float64, wo.Len())
+	normalAxis := len(components) - 1
+	for i := range components {
+		components[i] = -wo.Component(i)
 	}
-	return maths.NewDirection(-wo.X, -wo.Y, wo.Z)
+	components[normalAxis] = wo.Component(normalAxis)
+	return maths.NewDirectionFromComponents(components)
 }
 
 func reflectAbout(wo, wh maths.Direction) maths.Direction {
@@ -24,7 +21,7 @@ func reflectAbout(wo, wh maths.Direction) maths.Direction {
 }
 
 func refractLocal(wo maths.Direction, eta float64) (maths.Direction, bool) {
-	cosThetaO := wo.Z
+	cosThetaO := maths.CosTheta(wo)
 	sin2ThetaO := math.Max(0, 1-cosThetaO*cosThetaO)
 	sin2ThetaI := eta * eta * sin2ThetaO
 	if sin2ThetaI >= 1 {
@@ -36,7 +33,13 @@ func refractLocal(wo maths.Direction, eta float64) (maths.Direction, bool) {
 		cosThetaI = -cosThetaI
 	}
 
-	return maths.NewDirection(-eta*wo.X, -eta*wo.Y, cosThetaI).Normalize(), true
+	components := make([]float64, wo.Len())
+	normalAxis := len(components) - 1
+	for i := 0; i < normalAxis; i++ {
+		components[i] = -eta * wo.Component(i)
+	}
+	components[normalAxis] = cosThetaI
+	return maths.NewDirectionFromComponents(components).Normalize(), true
 }
 
 func clamp(v, lo, hi float64) float64 {

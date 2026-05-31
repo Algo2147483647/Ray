@@ -13,7 +13,7 @@ func CosineSampleHemisphere(sample Sample2D) Direction {
 	x := r * math.Cos(theta)
 	y := r * math.Sin(theta)
 	z := math.Sqrt(math.Max(0, 1-x*x-y*y))
-	return Direction{X: x, Y: y, Z: z}
+	return NewDirection(x, y, z)
 }
 
 func CosineHemispherePDF(w Direction) float64 {
@@ -105,17 +105,13 @@ func bitsRotateLeft64(x uint64, k int) uint64 {
 
 func UniformHemisphereDirection(i, n int) Direction {
 	if n <= 0 {
-		return Direction{Z: 1}
+		return NewDirection(0, 0, 1)
 	}
 	u := (float64(i) + 0.5) / float64(n)
 	z := u
 	r := math.Sqrt(math.Max(0, 1-z*z))
 	phi := math.Pi * (3 - math.Sqrt(5)) * float64(i)
-	return Direction{
-		X: r * math.Cos(phi),
-		Y: r * math.Sin(phi),
-		Z: z,
-	}
+	return NewDirection(r*math.Cos(phi), r*math.Sin(phi), z)
 }
 
 func clamp01(v float64) float64 {

@@ -26,13 +26,13 @@ func ClampAlpha(alpha float64) float64 {
 }
 
 func (g GGX) D(wh maths.Direction) float64 {
-	if wh.Z <= 0 {
+	if maths.CosTheta(wh) <= 0 {
 		return 0
 	}
 
 	alpha := ClampAlpha(g.Alpha)
 	a2 := alpha * alpha
-	cos2 := wh.Z * wh.Z
+	cos2 := maths.CosTheta(wh) * maths.CosTheta(wh)
 	denom := cos2*(a2-1) + 1
 	return a2 / (math.Pi * denom * denom)
 }
@@ -62,18 +62,18 @@ func (g GGX) G(wi, wo maths.Direction) float64 {
 }
 
 func (g GGX) SampleVisibleNormal(wo maths.Direction, u maths.Sample2D) maths.Direction {
-	if wo.Z <= 0 {
-		return maths.Direction{Z: 1}
+	if maths.CosTheta(wo) <= 0 {
+		return maths.NewDirection(0, 0, 1)
 	}
 
 	alpha := ClampAlpha(g.Alpha)
-	vh := maths.NewDirection(alpha*wo.X, alpha*wo.Y, wo.Z).Normalize()
+	vh := maths.NewDirection(alpha*wo.Component(0), alpha*wo.Component(1), maths.CosTheta(wo)).Normalize()
 
 	var t1 maths.Direction
-	lensq := vh.X*vh.X + vh.Y*vh.Y
+	lensq := vh.Component(0)*vh.Component(0) + vh.Component(1)*vh.Component(1)
 	if lensq > 0 {
 		invLen := 1 / math.Sqrt(lensq)
-		t1 = maths.NewDirection(-vh.Y*invLen, vh.X*invLen, 0)
+		t1 = maths.NewDirection(-vh.Component(1)*invLen, vh.Component(0)*invLen, 0)
 	} else {
 		t1 = maths.NewDirection(1, 0, 0)
 	}
@@ -83,22 +83,22 @@ func (g GGX) SampleVisibleNormal(wo maths.Direction, u maths.Sample2D) maths.Dir
 	phi := 2 * math.Pi * clamp01(u.V)
 	t1v := r * math.Cos(phi)
 	t2v := r * math.Sin(phi)
-	s := 0.5 * (1 + vh.Z)
+	s := 0.5 * (1 + maths.CosTheta(vh))
 	t2v = (1-s)*math.Sqrt(math.Max(0, 1-t1v*t1v)) + s*t2v
 
 	nh := t1.MulScalar(t1v).
 		Add(t2.MulScalar(t2v)).
 		Add(vh.MulScalar(math.Sqrt(math.Max(0, 1-t1v*t1v-t2v*t2v))))
 
-	wh := maths.NewDirection(alpha*nh.X, alpha*nh.Y, math.Max(0, nh.Z)).Normalize()
-	if wh.Z <= 0 {
-		return maths.Direction{Z: 1}
+	wh := maths.NewDirection(alpha*nh.Component(0), alpha*nh.Component(1), math.Max(0, maths.CosTheta(nh))).Normalize()
+	if maths.CosTheta(wh) <= 0 {
+		return maths.NewDirection(0, 0, 1)
 	}
 	return wh
 }
 
 func (g GGX) PDFVisibleNormal(wo, wh maths.Direction) float64 {
-	if wo.Z <= 0 || wh.Z <= 0 || wo.Dot(wh) <= 0 {
+	if maths.CosTheta(wo) <= 0 || maths.CosTheta(wh) <= 0 || wo.Dot(wh) <= 0 {
 		return 0
 	}
 	return g.D(wh) * g.G1(wo) * math.Abs(wo.Dot(wh)) / maths.AbsCosTheta(wo)
@@ -106,9 +106,9 @@ func (g GGX) PDFVisibleNormal(wo, wh maths.Direction) float64 {
 
 func cross(a, b maths.Direction) maths.Direction {
 	return maths.NewDirection(
-		a.Y*b.Z-a.Z*b.Y,
-		a.Z*b.X-a.X*b.Z,
-		a.X*b.Y-a.Y*b.X,
+		a.Component(1)*b.Component(2)-a.Component(2)*b.Component(1),
+		a.Component(2)*b.Component(0)-a.Component(0)*b.Component(2),
+		a.Component(0)*b.Component(1)-a.Component(1)*b.Component(0),
 	)
 }
 

@@ -117,6 +117,44 @@ def save_slice_montage(rgb: np.ndarray, out_path: Path, columns: int = 10) -> No
     canvas.save(out_path)
 
 
+def save_mask_montage(mask: np.ndarray, out_path: Path, title_color: tuple[int, int, int], columns: int = 10) -> None:
+    width, height, depth = mask.shape
+    rows = math.ceil(depth / columns)
+    canvas = Image.new("RGB", (columns * width, rows * height), "black")
+    draw = ImageDraw.Draw(canvas)
+
+    for z in range(depth):
+        tile_data = np.zeros((height, width, 3), dtype=np.uint8)
+        tile_data[mask[:, :, z].transpose(1, 0)] = title_color
+        tile = Image.fromarray(tile_data, "RGB")
+        x = (z % columns) * width
+        y = (z // columns) * height
+        canvas.paste(tile, (x, y))
+        draw.text((x + 3, y + 3), f"z={z:02d}", fill=(190, 210, 230))
+
+    canvas.save(out_path)
+
+
+def geometry_mask(rgb: np.ndarray, threshold_percentile: float) -> tuple[np.ndarray, float]:
+    lum = luminance(rgb)
+    positive = lum[lum > 0]
+    threshold = np.percentile(positive, threshold_percentile) if positive.size else 1.0
+    return lum >= threshold, float(threshold)
+
+
+def edge_mask(mask: np.ndarray) -> np.ndarray:
+    padded = np.pad(mask, 1, mode="constant", constant_values=False)
+    center = padded[1:-1, 1:-1, 1:-1]
+    eroded = center.copy()
+    eroded &= padded[:-2, 1:-1, 1:-1]
+    eroded &= padded[2:, 1:-1, 1:-1]
+    eroded &= padded[1:-1, :-2, 1:-1]
+    eroded &= padded[1:-1, 2:, 1:-1]
+    eroded &= padded[1:-1, 1:-1, :-2]
+    eroded &= padded[1:-1, 1:-1, 2:]
+    return mask & ~eroded
+
+
 def save_projection_panel(rgb: np.ndarray, out_path: Path) -> None:
     projections = [
         ("XY max over film-z", rgb.max(axis=2).transpose(1, 0, 2)),
@@ -127,6 +165,28 @@ def save_projection_panel(rgb: np.ndarray, out_path: Path) -> None:
     fig, axes = plt.subplots(1, 3, figsize=(15, 5), facecolor="black")
     for ax, (title, img) in zip(axes, projections):
         ax.imshow(np.clip(img, 0, 1), origin="lower")
+        ax.set_title(title, color="white", fontsize=11)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_facecolor("black")
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=160, facecolor=fig.get_facecolor())
+    plt.close(fig)
+
+
+def save_geometry_projection_panel(mask: np.ndarray, edges: np.ndarray, out_path: Path) -> None:
+    panels = [
+        ("XY occupancy", mask.max(axis=2).transpose(1, 0)),
+        ("XZ occupancy", mask.max(axis=1).transpose(1, 0)),
+        ("YZ occupancy", mask.max(axis=0).transpose(1, 0)),
+        ("XY edges", edges.max(axis=2).transpose(1, 0)),
+        ("XZ edges", edges.max(axis=1).transpose(1, 0)),
+        ("YZ edges", edges.max(axis=0).transpose(1, 0)),
+    ]
+
+    fig, axes = plt.subplots(2, 3, figsize=(15, 9), facecolor="black")
+    for ax, (title, img) in zip(axes.ravel(), panels):
+        ax.imshow(img, origin="lower", cmap="gray", vmin=0, vmax=1)
         ax.set_title(title, color="white", fontsize=11)
         ax.set_xticks([])
         ax.set_yticks([])
@@ -190,6 +250,53 @@ def save_point_cloud(
     }
 
 
+def save_geometry_profile(mask: np.ndarray, out_path: Path) -> dict:
+    depth = mask.shape[2]
+    occupied = mask.sum(axis=(0, 1))
+    x_min = np.full(depth, np.nan)
+    x_max = np.full(depth, np.nan)
+    y_min = np.full(depth, np.nan)
+    y_max = np.full(depth, np.nan)
+
+    for z in range(depth):
+        coords = np.argwhere(mask[:, :, z])
+        if coords.size == 0:
+            continue
+        x_min[z], y_min[z] = coords.min(axis=0)
+        x_max[z], y_max[z] = coords.max(axis=0)
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(11, 7), facecolor="black", sharex=True)
+    for ax in (ax1, ax2):
+        ax.set_facecolor("black")
+        ax.tick_params(colors="white")
+        ax.grid(color="#333333", linewidth=0.5)
+
+    ax1.plot(occupied, color="#7fd4ff")
+    ax1.set_ylabel("occupied voxels", color="#7fd4ff")
+    ax1.set_title("Thresholded hypercube slice occupancy", color="white")
+
+    ax2.plot(x_min, color="#fca5a5", label="x min")
+    ax2.plot(x_max, color="#ef4444", label="x max")
+    ax2.plot(y_min, color="#bfdbfe", label="y min")
+    ax2.plot(y_max, color="#3b82f6", label="y max")
+    ax2.set_xlabel("film z slice", color="white")
+    ax2.set_ylabel("2D slice bounds", color="white")
+    ax2.legend(facecolor="black", edgecolor="#555555", labelcolor="white", loc="best")
+
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=170, facecolor=fig.get_facecolor())
+    plt.close(fig)
+
+    non_empty = np.flatnonzero(occupied)
+    return {
+        "geometry_non_empty_slices": int(non_empty.size),
+        "geometry_first_slice": int(non_empty[0]) if non_empty.size else None,
+        "geometry_last_slice": int(non_empty[-1]) if non_empty.size else None,
+        "geometry_occupied_voxels": int(mask.sum()),
+        "geometry_peak_slice": int(np.argmax(occupied)) if occupied.size else None,
+    }
+
+
 def save_luminance_profile(rgb: np.ndarray, out_path: Path) -> dict:
     lum = luminance(rgb)
     profile = lum.mean(axis=(0, 1))
@@ -228,6 +335,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--percentile", type=float, default=99.5, help="white point percentile for display tone mapping")
     parser.add_argument("--gamma", type=float, default=2.2)
     parser.add_argument("--threshold-percentile", type=float, default=82.0)
+    parser.add_argument("--geometry-threshold-percentile", type=float, default=74.0)
     parser.add_argument("--max-points", type=int, default=60000)
     parser.add_argument("--seed", type=int, default=7)
     return parser.parse_args()
@@ -252,6 +360,10 @@ def main() -> None:
     projections_path = args.out_dir / f"{stem}-projections.png"
     cloud_path = args.out_dir / f"{stem}-point-cloud.png"
     profile_path = args.out_dir / f"{stem}-slice-profile.png"
+    occupancy_path = args.out_dir / f"{stem}-occupancy-slices.png"
+    edges_path = args.out_dir / f"{stem}-edge-slices.png"
+    geometry_projection_path = args.out_dir / f"{stem}-geometry-projections.png"
+    geometry_profile_path = args.out_dir / f"{stem}-geometry-profile.png"
 
     save_slice_montage(display_rgb, montage_path)
     save_projection_panel(display_rgb, projections_path)
@@ -263,6 +375,12 @@ def main() -> None:
         seed=args.seed,
     )
     profile_stats = save_luminance_profile(display_rgb, profile_path)
+    mask, geometry_threshold = geometry_mask(display_rgb, args.geometry_threshold_percentile)
+    edges = edge_mask(mask)
+    save_mask_montage(mask, occupancy_path, (232, 236, 244))
+    save_mask_montage(edges, edges_path, (248, 250, 252))
+    save_geometry_projection_panel(mask, edges, geometry_projection_path)
+    geometry_stats = save_geometry_profile(mask, geometry_profile_path)
 
     print("3D film visualization complete")
     print(f"source: {meta['source']}")
@@ -272,8 +390,14 @@ def main() -> None:
     print(f"projections: {projections_path}")
     print(f"point cloud: {cloud_path}")
     print(f"slice profile: {profile_path}")
+    print(f"occupancy slices: {occupancy_path}")
+    print(f"edge slices: {edges_path}")
+    print(f"geometry projections: {geometry_projection_path}")
+    print(f"geometry profile: {geometry_profile_path}")
     print(f"point cloud stats: {cloud_stats}")
     print(f"profile stats: {profile_stats}")
+    print(f"geometry threshold: {geometry_threshold}")
+    print(f"geometry stats: {geometry_stats}")
 
 
 if __name__ == "__main__":
