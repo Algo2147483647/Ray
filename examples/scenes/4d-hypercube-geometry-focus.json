@@ -4,7 +4,7 @@
       "id": "warm-hypersphere-light",
       "emission": {
         "type": "constant",
-        "color": [10.0, 8.0, 5.8]
+        "color": [10.0, 8.0, 8.0]
       }
     },
     {
