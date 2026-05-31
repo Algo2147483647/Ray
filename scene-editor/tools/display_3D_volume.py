@@ -100,6 +100,7 @@ def render_point_cloud(
     luminance_floor: float,
     max_points: int,
     point_size: float,
+    alpha: float,
     elev: float,
     azim: float,
     show: bool,
@@ -116,12 +117,19 @@ def render_point_cloud(
         raise ValueError("no visible voxels to render")
 
     colors = colors_u8.astype(np.float32) / 255.0
-    alpha = 0.18 + 0.72 * (lum / lum.max()) if lum.max() > 0 else 0.6
-    rgba = np.column_stack([colors, alpha])
 
     fig = plt.figure(figsize=(10, 10), facecolor="black")
     ax = fig.add_subplot(111, projection="3d", facecolor="black")
-    ax.scatter(xs, ys, zs, c=rgba, s=point_size, linewidths=0, depthshade=False)
+    ax.scatter(
+        xs,
+        ys,
+        zs,
+        c=colors,
+        alpha=alpha,
+        s=point_size,
+        linewidths=0,
+        depthshade=False,
+    )
 
     ax.set_title(title, color="white", pad=18)
     ax.set_xlabel("X", color="white")
@@ -198,8 +206,19 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         default=8.0,
         help="drop encoded voxels below this Rec.709 luminance threshold",
     )
-    parser.add_argument("--max-points", type=int, default=180_000, help="maximum scatter points")
-    parser.add_argument("--point-size", type=float, default=0.8, help="scatter marker size")
+    parser.add_argument("--max-points", type=int, default=800_000, help="maximum scatter points")
+    parser.add_argument(
+        "--point-size",
+        type=float,
+        default=2.0,
+        help="scatter marker size; old interactive viewer used s=1",
+    )
+    parser.add_argument(
+        "--alpha",
+        type=float,
+        default=0.05,
+        help="scatter alpha; old interactive viewer used 0.05",
+    )
     parser.add_argument("--elev", type=float, default=22.0, help="camera elevation")
     parser.add_argument("--azim", type=float, default=42.0, help="camera azimuth")
     parser.add_argument("--show", action="store_true", help="open an interactive Matplotlib 3D window")
@@ -250,6 +269,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         luminance_floor=args.luminance_floor,
         max_points=args.max_points,
         point_size=args.point_size,
+        alpha=args.alpha,
         elev=args.elev,
         azim=args.azim,
         show=args.show,
