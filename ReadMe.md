@@ -33,9 +33,15 @@ Together, the two results demonstrate a useful trade-off. The Lambertian renderi
 
 ![4d-hypercube-geometry-focus-centered-combined.png](docs%2Fassets%2F4d-hypercube-geometry-focus-centered-combined.png)
 
+The volume visualization experiment was designed to examine how a four-dimensional hypercube can be interpreted after projection into a three-dimensional volumetric domain. Unlike a conventional 2D image projection, this result emphasizes the spatial occupancy of the projected object, allowing the internal arrangement of the hypercube’s cells to be inspected more explicitly.
 
+The scene uses the same 4D hypercube configuration as the colored-cell rendering: a unit-centered hypercube with equal extent along all four dimensions, observed by an external orthographic 4D camera. The material is defined as a solid cell-palette emission model, assigning distinct colors to the constituent cubic cells. This design intentionally removes lighting and reflectance effects so that the visualization focuses on geometric classification rather than photometric realism.
 
-![4D.png](docs%2Fassets%2F4D.png)
+In the rendering process, the 4D object is sampled through the camera’s three-dimensional image domain, producing a volumetric representation of the projected hypercube. Each colored region corresponds to a different 3D cell of the original 4D structure, making it possible to observe how the eight boundary cells overlap, separate, and occlude one another under the chosen 4D view basis.
+
+The resulting volume image demonstrates that the renderer can preserve cell identity during dimensional projection. Compared with the flat cell-palette image, the volumetric result provides a stronger sense of spatial depth and internal organization. It shows that the projected hypercube is not merely a collection of colored faces, but a structured 3D volume derived from a higher-dimensional object. This supports the usefulness of volume-based visualization for analyzing 4D geometry, especially when the goal is to understand adjacency, cell decomposition, and the spatial consequences of projecting four-dimensional forms into observable three-dimensional space.
+
+![4d-hypercube-geometry-focus-centered2.volume.png](docs%2Fassets%2F4d-hypercube-geometry-focus-centered2.volume.png)
 
 ## Project Structure
 
