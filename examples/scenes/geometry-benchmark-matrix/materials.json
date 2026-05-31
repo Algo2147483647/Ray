@@ -135,11 +135,11 @@
       "id": "softbox-key",
       "emission": {
         "type": "constant",
-        "color": [
-          1,
-          1,
-          1
-        ]
+        "radiance": {
+          "type": "blackbody",
+          "temperature": 5600,
+          "scale": 2
+        }
       }
     },
     {
