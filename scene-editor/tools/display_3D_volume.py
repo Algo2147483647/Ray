@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Render a Ray Film .bin volume as static Matplotlib previews.
+"""Render a Ray Film .bin volume with Matplotlib.
 
-This tool is intentionally simple and offline-friendly: it reads the structured
-.bin file format used by the renderer, tone maps RGB values, and writes a 3D
-colored point-cloud PNG plus optional middle slices.
+The default mode is offline-friendly and writes PNG previews. Pass --show to
+open an interactive Matplotlib 3D window that can be rotated, zoomed, and panned
+with the standard toolbar.
 """
 
 from __future__ import annotations
@@ -17,15 +17,35 @@ import numpy as np
 
 import matplotlib
 
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-
 
 TOOLS_DIR = Path(__file__).resolve().parent
 if str(TOOLS_DIR) not in sys.path:
     sys.path.insert(0, str(TOOLS_DIR))
 
 from view_bin_volume import collapse_extra_axes, parse_film, tone_map_to_srgb_uint8
+
+plt = None
+
+
+def configure_matplotlib(*, show: bool, backend: str) -> None:
+    """Select a Matplotlib backend before importing pyplot."""
+    global plt
+    if plt is not None:
+        return
+
+    if show:
+        try:
+            matplotlib.use(backend, force=True)
+        except Exception as exc:
+            print(f"warning: failed to use interactive backend {backend!r}: {exc}")
+            print("warning: falling back to Agg; interactive window will not open")
+            matplotlib.use("Agg", force=True)
+    else:
+        matplotlib.use("Agg", force=True)
+
+    import matplotlib.pyplot as pyplot
+
+    plt = pyplot
 
 
 def choose_visible_voxels(
@@ -82,7 +102,11 @@ def render_point_cloud(
     point_size: float,
     elev: float,
     azim: float,
+    show: bool,
 ) -> None:
+    if plt is None:
+        raise RuntimeError("configure_matplotlib must be called before rendering")
+
     xs, ys, zs, colors_u8, lum = choose_visible_voxels(
         rgb_u8,
         luminance_floor=luminance_floor,
@@ -113,11 +137,17 @@ def render_point_cloud(
 
     fig.tight_layout()
     fig.savefig(png_out, dpi=180, facecolor="black")
-    plt.close(fig)
     print(f"Wrote 3D point-cloud preview: {png_out}")
+    if show:
+        print("Opening interactive Matplotlib 3D window. Close the window to finish.")
+        plt.show()
+    plt.close(fig)
 
 
 def save_rgb_slices(rgb_u8: np.ndarray, png_out: Path) -> None:
+    if plt is None:
+        raise RuntimeError("configure_matplotlib must be called before rendering")
+
     zc, yc, xc = [s // 2 for s in rgb_u8.shape[:3]]
     fig, axes = plt.subplots(1, 3, figsize=(12, 4), constrained_layout=True)
     fig.patch.set_facecolor("black")
@@ -144,7 +174,7 @@ def default_output_paths(bin_file: Path, png_arg: Optional[Path], slices_arg: Op
 
 
 def main(argv: Optional[Sequence[str]] = None) -> None:
-    parser = argparse.ArgumentParser(description="Render a Film .bin volume as static PNG previews.")
+    parser = argparse.ArgumentParser(description="Render a Film .bin volume with Matplotlib.")
     parser.add_argument("bin_file", type=Path, help="input .bin file")
     parser.add_argument("--png", type=Path, help="output 3D point-cloud PNG")
     parser.add_argument("--slices", type=Path, help="output middle-slice PNG")
@@ -172,8 +202,16 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     parser.add_argument("--point-size", type=float, default=0.8, help="scatter marker size")
     parser.add_argument("--elev", type=float, default=22.0, help="camera elevation")
     parser.add_argument("--azim", type=float, default=42.0, help="camera azimuth")
+    parser.add_argument("--show", action="store_true", help="open an interactive Matplotlib 3D window")
+    parser.add_argument(
+        "--backend",
+        default="TkAgg",
+        help="Matplotlib backend to use with --show; default: TkAgg",
+    )
     parser.add_argument("--no-slices", action="store_true", help="skip slice PNG")
     args = parser.parse_args(argv)
+
+    configure_matplotlib(show=args.show, backend=args.backend)
 
     png_out, slices_out = default_output_paths(
         args.bin_file,
@@ -214,6 +252,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         point_size=args.point_size,
         elev=args.elev,
         azim=args.azim,
+        show=args.show,
     )
 
     if not args.no_slices:
