@@ -1,0 +1,61 @@
+{
+  "materials": [
+    {
+      "id": "warm-hypersphere-light",
+      "emission": {
+        "type": "constant",
+        "color": [10.0, 8.0, 5.8]
+      }
+    },
+    {
+      "id": "matte-hypercube",
+      "surface": {
+        "type": "lambert",
+        "albedo": [0.86, 0.88, 0.92]
+      }
+    }
+  ],
+  "objects": [
+    {
+      "id": "main-hypercube",
+      "shape": "hypercube",
+      "center": [0, 0, 0, 0],
+      "size": [1.65, 1.65, 1.65, 1.65],
+      "material_id": "matte-hypercube"
+    },
+    {
+      "id": "hypersphere-light",
+      "shape": "hypersphere",
+      "center": [-1.6, 1.9, 1.15, -1.35],
+      "r": 0.7,
+      "material_id": "warm-hypersphere-light"
+    }
+  ],
+  "cameras": [
+    {
+      "id": "outside-4d-orthographic-geometry-camera",
+      "type": "n_dim",
+      "position": [-3.97836, -0.716105, 0.477403, -1.67091],
+      "coordinates": [
+        [1.0, 0.18, -0.12, 0.42],
+        [0.24, 1.0, 0.12, -0.58],
+        [-0.32, 0.08, 1.0, 0.36],
+        [0.42, -0.50, 0.34, 1.0]
+      ],
+      "widths": [100, 100, 100],
+      "field_of_views": [120, 120, 120],
+      "ortho": true
+    }
+  ],
+  "render": {
+    "dimension": 4,
+    "samples": 160,
+    "thread_num": 8,
+    "spectrum_mode": "rgb",
+    "exposure": 1.8,
+    "tone_mapping": "reinhard",
+    "gamma": 2.2,
+    "output_image": "../outputs/4d-hypercube-geometry-focus.png",
+    "output_film": "../outputs/4d-hypercube-geometry-focus.bin"
+  }
+}
