@@ -56,6 +56,11 @@ func (r *RenderScript) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+type GeometryScript struct {
+	Type   string  `json:"type"`    // "euclidean" | "klein" | "spherical"
+	MaxArc float64 `json:"max_arc"` // total geodesic budget per ray; 0 ⇒ defaults (∞ for klein/euclidean, 2π for spherical)
+}
+
 type Script struct {
 	Includes  []string                          `json:"includes"`
 	Materials []map[string]interface{}          `json:"materials"`
@@ -63,5 +68,6 @@ type Script struct {
 	Objects   []map[string]interface{}          `json:"objects"`
 	Cameras   []CameraScript                    `json:"cameras"`
 	Render    RenderScript                      `json:"render"`
+	Geometry  *GeometryScript                   `json:"geometry"`
 	Renders   []RenderScript                    `json:"renders"`
 }

@@ -3,8 +3,11 @@ package factory
 import (
 	"errors"
 	"fmt"
-	"github.com/Algo2147483647/ray/engine/controller/parser"
+	"math"
+	"strings"
 
+	"github.com/Algo2147483647/ray/engine/controller/parser"
+	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"github.com/Algo2147483647/ray/engine/model"
 	"github.com/Algo2147483647/ray/engine/model/object"
 	"github.com/Algo2147483647/ray/engine/utils"
@@ -20,6 +23,24 @@ func LoadSceneFromScript(script *parser.Script, scene *model.Scene) error {
 
 	scene.ObjectTree = &object.ObjectTree{}
 	scene.Cameras = nil
+
+	// Resolve scene geometry. Default is Euclidean (nil sentinel).
+	if script.Geometry != nil {
+		switch strings.ToLower(script.Geometry.Type) {
+		case "", "euclidean":
+			scene.Geometry = nil
+		case "klein", "hyperbolic":
+			scene.Geometry = geometry.Klein()
+		case "spherical", "sphere":
+			scene.Geometry = geometry.Spherical()
+		default:
+			return fmt.Errorf("unsupported geometry type %q", script.Geometry.Type)
+		}
+		scene.MaxArc = script.Geometry.MaxArc
+		if scene.MaxArc == 0 && scene.Geometry == geometry.Spherical() {
+			scene.MaxArc = 2 * math.Pi
+		}
+	}
 
 	dimension := script.Render.Dimension
 	if dimension <= 0 {

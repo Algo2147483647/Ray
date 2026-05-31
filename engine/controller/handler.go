@@ -203,6 +203,8 @@ func (h *Handler) Render() *Handler {
 	renderHandler.SpectrumMode = renderSpectrumMode(h.Config.SpectrumMode)
 	renderHandler.WavelengthSamples = h.Config.WavelengthSamples
 	renderHandler.FilmColorSpace = h.Film.ColorSpace
+	renderHandler.SceneGeometry = h.Scene.Geometry
+	renderHandler.MaxArc = h.Scene.MaxArc
 	renderHandler.TraceScene(h.ActiveCamera, h.Scene.ObjectTree, h.Film, h.Config.Samples)
 
 	fmt.Printf("Rendering completed in %v\n", time.Since(start))

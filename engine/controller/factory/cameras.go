@@ -180,9 +180,56 @@ func BuildCameraFromScript(def parser.CameraScript) (modelcamera.Camera, error) 
 		return BuildCamera3DFromScript(def)
 	case "n_dim", "ndim", "n-dimensional":
 		return BuildCameraNDimFromScript(def)
+	case "hyperbolic", "klein":
+		return BuildHyperbolicCameraFromScript(def)
+	case "spherical", "s3":
+		return BuildSphericalCameraFromScript(def)
 	default:
 		return nil, fmt.Errorf("unsupported camera type %q", def.Type)
 	}
+}
+
+func BuildHyperbolicCameraFromScript(def parser.CameraScript) (*modelcamera.HyperbolicCamera, error) {
+	base, err := BuildCamera3DFromScript(def)
+	if err != nil {
+		return nil, err
+	}
+	return &modelcamera.HyperbolicCamera{Camera3D: *base}, nil
+}
+
+func BuildSphericalCameraFromScript(def parser.CameraScript) (*modelcamera.SphericalCamera, error) {
+	if utils.Dimension != 4 {
+		return nil, fmt.Errorf("spherical camera requires render dimension 4, got %d", utils.Dimension)
+	}
+	position, err := vectorFromScript("position", def.Position)
+	if err != nil {
+		return nil, err
+	}
+	forward, err := vectorFromScript("direction", def.Direction)
+	if err != nil {
+		return nil, err
+	}
+	up, err := vectorFromScript("up", def.Up)
+	if err != nil {
+		return nil, err
+	}
+	aspect := def.AspectRatio
+	if aspect <= 0 && def.Width > 0 && def.Height > 0 {
+		aspect = float64(def.Width) / float64(def.Height)
+	}
+	cam := &modelcamera.SphericalCamera{
+		Position:    position,
+		Forward:     forward,
+		Up:          up,
+		Width:       def.Width,
+		Height:      def.Height,
+		FieldOfView: def.FieldOfView,
+		AspectRatio: aspect,
+	}
+	if err := cam.Prepare(); err != nil {
+		return nil, err
+	}
+	return cam, nil
 }
 
 func vectorFromScript(name string, values []float64) (*mat.VecDense, error) {
