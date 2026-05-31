@@ -1,6 +1,7 @@
 package ray_tracing
 
 import (
+	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"github.com/Algo2147483647/ray/engine/model/camera"
 	"github.com/Algo2147483647/ray/engine/model/optics"
 	"github.com/Algo2147483647/ray/engine/utils"
@@ -12,6 +13,8 @@ import (
 type Handler struct {
 	MaxRayLevel          int64                    `json:"max_ray_level"`
 	RussianRouletteDepth int64                    `json:"russian_roulette_depth"`
+	MaxArc               float64                  `json:"max_arc"` // total geodesic distance budget per ray (0 ⇒ unbounded)
+	SceneGeometry        geometry.Geometry        `json:"-"`
 	ThreadNum            int                      `json:"thread_num"`
 	BlockCols            int                      `json:"block_cols"`
 	BlockRows            int                      `json:"block_rows"`
@@ -26,6 +29,7 @@ func NewHandler() *Handler {
 	return &Handler{
 		MaxRayLevel:          64,
 		RussianRouletteDepth: 3,
+		MaxArc:               0, // 0 means unbounded; set by scene factory for spherical scenes.
 		ThreadNum:            runtime.NumCPU(),
 		BlockCols:            8,
 		BlockRows:            8,

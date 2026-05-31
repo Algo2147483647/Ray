@@ -1,0 +1,136 @@
+{
+  "render": {
+    "dimension": 3,
+    "samples": 200,
+    "thread_num": 0,
+    "width": 400,
+    "height": 400,
+    "camera_index": 0,
+    "output_image": "../outputs/hyperbolic_gallery.png",
+    "output_film": "../outputs/hyperbolic_gallery.bin",
+    "exposure": 1.0,
+    "tone_mapping": "aces",
+    "gamma": 2.2,
+    "spectrum_mode": "rgb",
+    "color_space": "linear_srgb"
+  },
+  "geometry": {
+    "type": "klein",
+    "max_arc": 0
+  },
+
+  "_comment_air": "Override the default 'air' medium so the entire H^3 world has volumetric absorption. The integrator multiplies transmittance = exp(-sigma_a * arc_H) for every segment, where arc_H is the hyperbolic (not Euclidean) arc length. This makes the metric visible: anything close to the unit-ball boundary is hyperbolically far away and fades to black exponentially, far harder than any Euclidean fog could fall off.",
+  "media": {
+    "air": {
+      "type": "homogeneous",
+      "sigma_a": [0.18, 0.32, 0.55]
+    }
+  },
+
+  "_comment_camera": "Camera placed near the Klein boundary (|p| ~ 0.92) and looking across the ball. From here, hyperbolic distance to the origin is ~1.6 and to a point at x=0.95 is ~3.4 — the chord is short Euclideanly but very long hyperbolically.",
+  "cameras": [
+    {
+      "id": "main",
+      "type": "hyperbolic",
+      "position": [-0.88, 0.0, 0.10],
+      "look_at":  [ 0.92, 0.0, 0.08],
+      "up":       [ 0.0,  0.0, 1.0],
+      "width": 400, "height": 400,
+      "field_of_view": 100.0,
+      "aspect_ratio": 1.0
+    }
+  ],
+
+  "materials": [
+    { "id": "floor_white",   "surface": { "type": "lambert", "albedo": [0.92, 0.92, 0.92] } },
+    { "id": "floor_dark",    "surface": { "type": "lambert", "albedo": [0.06, 0.06, 0.08] } },
+    { "id": "wall_warm",     "surface": { "type": "lambert", "albedo": [0.72, 0.42, 0.32] } },
+    { "id": "wall_cool",     "surface": { "type": "lambert", "albedo": [0.30, 0.42, 0.65] } },
+    { "id": "wall_back",     "surface": { "type": "lambert", "albedo": [0.85, 0.85, 0.88] } },
+    { "id": "ruler_a",       "surface": { "type": "lambert", "albedo": [0.95, 0.20, 0.18] } },
+    { "id": "ruler_b",       "surface": { "type": "lambert", "albedo": [0.96, 0.55, 0.12] } },
+    { "id": "ruler_c",       "surface": { "type": "lambert", "albedo": [0.95, 0.92, 0.20] } },
+    { "id": "ruler_d",       "surface": { "type": "lambert", "albedo": [0.20, 0.85, 0.30] } },
+    { "id": "ruler_e",       "surface": { "type": "lambert", "albedo": [0.18, 0.62, 0.95] } },
+    { "id": "ruler_f",       "surface": { "type": "lambert", "albedo": [0.55, 0.30, 0.95] } },
+    { "id": "ruler_g",       "surface": { "type": "lambert", "albedo": [0.95, 0.95, 0.95] } },
+    { "id": "ball_mirror",   "surface": { "type": "specular_reflection", "reflectance": [0.96, 0.96, 0.96] } },
+
+    { "_comment": "Strong key light placed near the camera so even very-far hyperbolic points still receive enough flux to read against the volumetric absorption.",
+      "id": "key_light",
+      "emission": { "type": "constant", "radiance": { "type": "blackbody", "temperature": 5800, "scale": 14.0 } } },
+    { "_comment": "Brighter fill at the far end so the long hyperbolic path lights the deep ruler against the cool fog without over-clipping the near end.",
+      "id": "fill_light",
+      "emission": { "type": "constant", "radiance": { "type": "blackbody", "temperature": 7200, "scale": 28.0 } } }
+  ],
+
+  "objects": [
+    { "_comment_floor": "Floor is built from a regular Euclidean checker grid in Klein coordinates. Because Klein metric distorts the spatial scale near the boundary, the squares closer to the camera look enormous while the ones near +x crowd into a thin strip — a much stronger 'hyperbolic perspective' than uniform Euclidean perspective.",
+
+      "id": "tile_-3_-3", "material_id": "floor_white", "shape": "cuboid", "center": [-0.75, -0.75, -0.005], "size": [0.30, 0.30, 0.01] },
+    { "id": "tile_-3_-2", "material_id": "floor_dark",  "shape": "cuboid", "center": [-0.75, -0.45, -0.005], "size": [0.30, 0.30, 0.01] },
+    { "id": "tile_-3_-1", "material_id": "floor_white", "shape": "cuboid", "center": [-0.75, -0.15, -0.005], "size": [0.30, 0.30, 0.01] },
+    { "id": "tile_-3_+0", "material_id": "floor_dark",  "shape": "cuboid", "center": [-0.75,  0.15, -0.005], "size": [0.30, 0.30, 0.01] },
+    { "id": "tile_-3_+1", "material_id": "floor_white", "shape": "cuboid", "center": [-0.75,  0.45, -0.005], "size": [0.30, 0.30, 0.01] },
+    { "id": "tile_-3_+2", "material_id": "floor_dark",  "shape": "cuboid", "center": [-0.75,  0.75, -0.005], "size": [0.30, 0.30, 0.01] },
+
+    { "id": "tile_-2_-3", "material_id": "floor_dark",  "shape": "cuboid", "center": [-0.45, -0.75, -0.005], "size": [0.30, 0.30, 0.01] },
+    { "id": "tile_-2_-2", "material_id": "floor_white", "shape": "cuboid", "center": [-0.45, -0.45, -0.005], "size": [0.30, 0.30, 0.01] },
+    { "id": "tile_-2_-1", "material_id": "floor_dark",  "shape": "cuboid", "center": [-0.45, -0.15, -0.005], "size": [0.30, 0.30, 0.01] },
+    { "id": "tile_-2_+0", "material_id": "floor_white", "shape": "cuboid", "center": [-0.45,  0.15, -0.005], "size": [0.30, 0.30, 0.01] },
+    { "id": "tile_-2_+1", "material_id": "floor_dark",  "shape": "cuboid", "center": [-0.45,  0.45, -0.005], "size": [0.30, 0.30, 0.01] },
+    { "id": "tile_-2_+2", "material_id": "floor_white", "shape": "cuboid", "center": [-0.45,  0.75, -0.005], "size": [0.30, 0.30, 0.01] },
+
+    { "id": "tile_-1_-3", "material_id": "floor_white", "shape": "cuboid", "center": [-0.15, -0.75, -0.005], "size": [0.30, 0.30, 0.01] },
+    { "id": "tile_-1_-2", "material_id": "floor_dark",  "shape": "cuboid", "center": [-0.15, -0.45, -0.005], "size": [0.30, 0.30, 0.01] },
+    { "id": "tile_-1_-1", "material_id": "floor_white", "shape": "cuboid", "center": [-0.15, -0.15, -0.005], "size": [0.30, 0.30, 0.01] },
+    { "id": "tile_-1_+0", "material_id": "floor_dark",  "shape": "cuboid", "center": [-0.15,  0.15, -0.005], "size": [0.30, 0.30, 0.01] },
+    { "id": "tile_-1_+1", "material_id": "floor_white", "shape": "cuboid", "center": [-0.15,  0.45, -0.005], "size": [0.30, 0.30, 0.01] },
+    { "id": "tile_-1_+2", "material_id": "floor_dark",  "shape": "cuboid", "center": [-0.15,  0.75, -0.005], "size": [0.30, 0.30, 0.01] },
+
+    { "id": "tile_+0_-3", "material_id": "floor_dark",  "shape": "cuboid", "center": [ 0.15, -0.75, -0.005], "size": [0.30, 0.30, 0.01] },
+    { "id": "tile_+0_-2", "material_id": "floor_white", "shape": "cuboid", "center": [ 0.15, -0.45, -0.005], "size": [0.30, 0.30, 0.01] },
+    { "id": "tile_+0_-1", "material_id": "floor_dark",  "shape": "cuboid", "center": [ 0.15, -0.15, -0.005], "size": [0.30, 0.30, 0.01] },
+    { "id": "tile_+0_+0", "material_id": "floor_white", "shape": "cuboid", "center": [ 0.15,  0.15, -0.005], "size": [0.30, 0.30, 0.01] },
+    { "id": "tile_+0_+1", "material_id": "floor_dark",  "shape": "cuboid", "center": [ 0.15,  0.45, -0.005], "size": [0.30, 0.30, 0.01] },
+    { "id": "tile_+0_+2", "material_id": "floor_white", "shape": "cuboid", "center": [ 0.15,  0.75, -0.005], "size": [0.30, 0.30, 0.01] },
+
+    { "id": "tile_+1_-3", "material_id": "floor_white", "shape": "cuboid", "center": [ 0.45, -0.75, -0.005], "size": [0.30, 0.30, 0.01] },
+    { "id": "tile_+1_-2", "material_id": "floor_dark",  "shape": "cuboid", "center": [ 0.45, -0.45, -0.005], "size": [0.30, 0.30, 0.01] },
+    { "id": "tile_+1_-1", "material_id": "floor_white", "shape": "cuboid", "center": [ 0.45, -0.15, -0.005], "size": [0.30, 0.30, 0.01] },
+    { "id": "tile_+1_+0", "material_id": "floor_dark",  "shape": "cuboid", "center": [ 0.45,  0.15, -0.005], "size": [0.30, 0.30, 0.01] },
+    { "id": "tile_+1_+1", "material_id": "floor_white", "shape": "cuboid", "center": [ 0.45,  0.45, -0.005], "size": [0.30, 0.30, 0.01] },
+    { "id": "tile_+1_+2", "material_id": "floor_dark",  "shape": "cuboid", "center": [ 0.45,  0.75, -0.005], "size": [0.30, 0.30, 0.01] },
+
+    { "id": "tile_+2_-3", "material_id": "floor_dark",  "shape": "cuboid", "center": [ 0.75, -0.75, -0.005], "size": [0.30, 0.30, 0.01] },
+    { "id": "tile_+2_-2", "material_id": "floor_white", "shape": "cuboid", "center": [ 0.75, -0.45, -0.005], "size": [0.30, 0.30, 0.01] },
+    { "id": "tile_+2_-1", "material_id": "floor_dark",  "shape": "cuboid", "center": [ 0.75, -0.15, -0.005], "size": [0.30, 0.30, 0.01] },
+    { "id": "tile_+2_+0", "material_id": "floor_white", "shape": "cuboid", "center": [ 0.75,  0.15, -0.005], "size": [0.30, 0.30, 0.01] },
+    { "id": "tile_+2_+1", "material_id": "floor_dark",  "shape": "cuboid", "center": [ 0.75,  0.45, -0.005], "size": [0.30, 0.30, 0.01] },
+    { "id": "tile_+2_+2", "material_id": "floor_white", "shape": "cuboid", "center": [ 0.75,  0.75, -0.005], "size": [0.30, 0.30, 0.01] },
+
+    { "_comment_walls": "Side walls pushed close to the boundary on each side. Most of their surface is hyperbolically far from the camera, so they read as deeply attenuated coloured horizons rather than flat planes.",
+      "id": "wall_-y", "material_id": "wall_warm", "shape": "cuboid", "center": [ 0.0, -0.93, 0.18], "size": [1.80, 0.02, 0.36] },
+    { "id": "wall_+y", "material_id": "wall_cool", "shape": "cuboid", "center": [ 0.0,  0.93, 0.18], "size": [1.80, 0.02, 0.36] },
+    { "id": "wall_+x", "material_id": "wall_back", "shape": "cuboid", "center": [ 0.96, 0.0,  0.18], "size": [0.02, 1.80, 0.36] },
+
+    { "_comment_ruler": "Hyperbolic ruler: seven spheres at uniformly spaced Klein x = 0..0.96. Hyperbolic distances from x=-0.92 to these points are ~1.59, 1.91, 2.16, 2.41, 2.69, 3.09, 3.46 — i.e. the row is uniformly spaced in Klein coords yet looks crowded near the far end and shows visibly stronger hyperbolic-fog absorption with each step.",
+      "id": "ruler_0", "material_id": "ruler_a", "shape": "sphere", "position": [-0.32,  0.18, 0.06], "r": 0.05 },
+    { "id": "ruler_1", "material_id": "ruler_b", "shape": "sphere", "position": [-0.05, -0.18, 0.06], "r": 0.05 },
+    { "id": "ruler_2", "material_id": "ruler_c", "shape": "sphere", "position": [ 0.22,  0.18, 0.06], "r": 0.05 },
+    { "id": "ruler_3", "material_id": "ruler_d", "shape": "sphere", "position": [ 0.48, -0.18, 0.06], "r": 0.05 },
+    { "id": "ruler_4", "material_id": "ruler_e", "shape": "sphere", "position": [ 0.70,  0.18, 0.06], "r": 0.05 },
+    { "id": "ruler_5", "material_id": "ruler_f", "shape": "sphere", "position": [ 0.84, -0.16, 0.06], "r": 0.045 },
+    { "id": "ruler_6", "material_id": "ruler_g", "shape": "sphere", "position": [ 0.92,  0.13, 0.06], "r": 0.035 },
+
+    { "_comment_mirror": "Chrome balls flanking the corridor catch wide reflections of the curved checker grid + warm/cool walls; reflected paths also accrue hyperbolic absorption, so the reflection itself is visibly tinted by the metric.",
+      "id": "mirror_ball",  "material_id": "ball_mirror", "shape": "sphere", "position": [-0.30, -0.55, 0.08], "r": 0.08 },
+    { "id": "mirror_ball2", "material_id": "ball_mirror", "shape": "sphere", "position": [-0.30,  0.55, 0.08], "r": 0.08 },
+
+    { "_comment_lights": "Key light is right above the camera so its rays mostly travel short hyperbolic distances and stay bright. Fill at +x is hyperbolically far, so its contribution is heavily absorbed and tints the back of the scene.",
+      "id": "light_key",  "material_id": "key_light",
+      "shape": "cuboid", "center": [-0.45, 0.0, 0.40], "size": [0.40, 0.80, 0.02] },
+    { "id": "light_fill", "material_id": "fill_light",
+      "shape": "cuboid", "center": [ 0.55, 0.0, 0.40], "size": [0.40, 0.80, 0.02] }
+  ]
+}

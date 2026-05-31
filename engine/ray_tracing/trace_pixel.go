@@ -20,6 +20,7 @@ func (h *Handler) TracePixel(
 ) {
 	color := optics.Color3{}
 	ray := h.RayPool.Get().(*optics.Ray)
+	ray.Geometry = h.SceneGeometry
 	defer h.RayPool.Put(ray)
 
 	switch h.SpectrumMode {
@@ -74,6 +75,7 @@ func (h *Handler) TraceSpectral(
 	index ...int,
 ) []rendercamera.SpectralSample {
 	ray := h.RayPool.Get().(*optics.Ray)
+	ray.Geometry = h.SceneGeometry
 	defer h.RayPool.Put(ray)
 
 	wavelengthSampler := h.wavelengthSampler()

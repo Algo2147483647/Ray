@@ -1,13 +1,13 @@
 package ray_tracing
 
 import (
-	"math/rand/v2"
-
 	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
 	"github.com/Algo2147483647/ray/engine/model/material/medium"
 	"github.com/Algo2147483647/ray/engine/model/object"
 	"github.com/Algo2147483647/ray/engine/model/optics"
+	"math"
+	"math/rand/v2"
 )
 
 type SurfaceInteraction struct {
@@ -26,14 +26,45 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level in
 	// Find the closest surface intersection along the current ray.
 	hit, ok := objTree.GetSurfaceHit(ray.Origin, ray.Direction)
 	if !ok {
+		// Spherical: the chord may have left the visible hemisphere without
+		// hitting anything; wrap past the antipode and continue tracing if
+		// we still have arc budget.
+		if newO, newD, wrapped := ray.G().WrapBeyond(ray.Origin, ray.Direction, math.Pi); wrapped {
+			advance := math.Pi
+			if h.MaxArc > 0 && ray.ArcTraveled+advance > h.MaxArc {
+				terminateRay(ray)
+				return
+			}
+			ray.Origin.CopyVec(newO)
+			ray.Direction.CopyVec(newD)
+			ray.ArcTraveled += advance
+			h.TraceRay(objTree, ray, level+1)
+			return
+		}
 		terminateRay(ray)
 		return
 	}
 
+	// Translate the embedded-domain ray parameter into geodesic arc length
+	// before doing anything physical with it (absorption, direction update,
+	// arc-budget bookkeeping).
+	g := ray.G()
+	arcLen := g.ArcLengthFromEmbedT(ray.Origin, ray.Direction, hit.Distance)
+
 	// Apply medium absorption accumulated along the segment before the hit point.
 	media := getMediumRegistry(objTree)
 	mediumCtx := h.newShadingContext(ray)
-	applyMediumAbsorption(media, ray, hit.Distance, mediumCtx)
+	applyMediumAbsorption(media, ray, arcLen, mediumCtx)
+
+	// Track total geodesic distance traveled (used by the S^3 wrap loop and
+	// as a fail-safe even on flat geometries).
+	ray.ArcTraveled += arcLen
+
+	// Geodesic-budget kill (used primarily by S^3 to bound the wrap loop).
+	if h.MaxArc > 0 && ray.ArcTraveled >= h.MaxArc {
+		terminateRay(ray)
+		return
+	}
 
 	// Prepare all surface-local interaction data for this hit.
 	si, ok := h.prepareSurfaceInteraction(media, ray, hit)
@@ -62,6 +93,11 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level in
 
 	// Transform the sampled local direction back to world space.
 	si.Frame.LocalToWorldInto(ray.Direction, sample.Wi)
+
+	// Project the sampled outgoing direction back into T_p of the current
+	// geometry, then renormalize using the geometry's inner product so the
+	// next embedded-ray intersection is parameterized correctly.
+	ray.G().ProjectTangent(ray.Origin, ray.Direction, ray.Direction)
 	maths.Normalize(ray.Direction)
 
 	// Continue tracing the next bounce.
@@ -115,7 +151,7 @@ func (h *Handler) prepareSurfaceInteraction(
 
 	prepareMediumContext(&ctx, media, ray, obj.MediumBoundary, hit.FrontFace)
 
-	frame, ok := maths.NewFrameFromNormal(hit.ShadingNormal)
+	frame, ok := maths.NewFrameFromNormalInGeometry(ray.G(), hit.Point, hit.ShadingNormal)
 	if !ok {
 		return SurfaceInteraction{}, false
 	}
