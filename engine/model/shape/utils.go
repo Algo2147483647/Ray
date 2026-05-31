@@ -7,6 +7,7 @@ import (
 
 type SurfaceInteraction struct {
 	Distance        float64
+	ArcLength       float64
 	Point           *mat.VecDense
 	GeometricNormal *mat.VecDense
 	ShadingNormal   *mat.VecDense
@@ -18,6 +19,7 @@ type SurfaceInteraction struct {
 
 type SurfaceCandidate struct {
 	Distance        float64
+	ArcLength       float64
 	Point           *mat.VecDense
 	GeometricNormal *mat.VecDense
 	ShadingNormal   *mat.VecDense
@@ -70,6 +72,7 @@ func SurfaceInteractionFromCandidate(rayStart, rayDir *mat.VecDense, candidate S
 	}
 	return SurfaceInteraction{
 		Distance:        candidate.Distance,
+		ArcLength:       candidate.ArcLength,
 		Point:           point,
 		GeometricNormal: candidate.GeometricNormal,
 		ShadingNormal:   candidate.ShadingNormal,
@@ -83,6 +86,7 @@ func SurfaceInteractionFromCandidate(rayStart, rayDir *mat.VecDense, candidate S
 func newSurfaceInteractionAt(point *mat.VecDense, distance float64, normal *mat.VecDense) SurfaceInteraction {
 	return SurfaceInteraction{
 		Distance:        distance,
+		ArcLength:       0,
 		Point:           point,
 		GeometricNormal: normal,
 		ShadingNormal:   normal,

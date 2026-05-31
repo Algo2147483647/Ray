@@ -10,6 +10,7 @@ import (
 
 type SurfaceHit struct {
 	Distance        float64
+	ArcLength       float64
 	Point           *mat.VecDense
 	GeometricNormal *mat.VecDense
 	ShadingNormal   *mat.VecDense
@@ -130,12 +131,61 @@ func surfaceCandidate(raySt, rayDir *mat.VecDense, s shape.Shape, tMin, tMax flo
 }
 
 func (t *ObjectTree) GetSurfaceHit(raySt, rayDir *mat.VecDense) (*SurfaceHit, bool) {
-	candidate, obj, ok := t.getSurfaceCandidate(raySt, rayDir, t.Root, utils.EPS, math.MaxFloat64)
+	return t.GetSurfaceHitRange(raySt, rayDir, utils.EPS, math.MaxFloat64)
+}
+
+func (t *ObjectTree) GetSurfaceHitRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (*SurfaceHit, bool) {
+	candidate, obj, ok := t.getSurfaceCandidate(raySt, rayDir, t.Root, tMin, tMax)
 	if !ok || obj == nil {
 		return nil, false
 	}
 	interaction := shape.SurfaceInteractionFromCandidate(raySt, rayDir, candidate)
+	return newSurfaceHitFromInteraction(interaction, obj, rayDir), true
+}
 
+func (t *ObjectTree) GetSphericalSurfaceHit(raySt, rayDir *mat.VecDense, sMin, sMax float64) (*SurfaceHit, bool) {
+	var (
+		bestInteraction shape.SurfaceInteraction
+		bestObj         *Object
+		bestDirection   *mat.VecDense
+		bestOK          bool
+	)
+
+	for _, obj := range t.Objects {
+		if obj == nil || obj.Shape == nil {
+			continue
+		}
+		provider, ok := obj.Shape.(shape.SphericalSurfaceCandidateProvider)
+		if !ok {
+			continue
+		}
+		candidate, ok := provider.IntersectSphericalCandidate(raySt, rayDir, sMin, sMax)
+		if !ok {
+			continue
+		}
+		interaction := shape.SurfaceInteractionFromCandidate(raySt, rayDir, candidate)
+		arcLen := interaction.ArcLength
+		if arcLen <= 0 {
+			arcLen = interaction.Distance
+		}
+		if !bestOK || arcLen < bestInteraction.ArcLength {
+			direction := sphericalDirectionAt(raySt, rayDir, arcLen)
+			bestInteraction = interaction
+			bestInteraction.Distance = arcLen
+			bestInteraction.ArcLength = arcLen
+			bestObj = obj
+			bestDirection = direction
+			bestOK = true
+		}
+	}
+
+	if !bestOK {
+		return nil, false
+	}
+	return newSurfaceHitFromInteraction(bestInteraction, bestObj, bestDirection), true
+}
+
+func newSurfaceHitFromInteraction(interaction shape.SurfaceInteraction, obj *Object, frontFaceDir *mat.VecDense) *SurfaceHit {
 	geometricNormal := interaction.GeometricNormal
 	if geometricNormal == nil {
 		geometricNormal = obj.Shape.GetNormalVector(interaction.Point, mat.NewVecDense(interaction.Point.Len(), nil))
@@ -143,7 +193,7 @@ func (t *ObjectTree) GetSurfaceHit(raySt, rayDir *mat.VecDense) (*SurfaceHit, bo
 	geometricNormal = mat.VecDenseCopyOf(geometricNormal)
 	maths.Normalize(geometricNormal)
 
-	frontFace := mat.Dot(geometricNormal, rayDir) < 0
+	frontFace := mat.Dot(geometricNormal, frontFaceDir) < 0
 	shadingNormal := geometricNormal
 	if !frontFace {
 		shadingNormal = mat.VecDenseCopyOf(geometricNormal)
@@ -152,6 +202,7 @@ func (t *ObjectTree) GetSurfaceHit(raySt, rayDir *mat.VecDense) (*SurfaceHit, bo
 
 	return &SurfaceHit{
 		Distance:        interaction.Distance,
+		ArcLength:       interaction.ArcLength,
 		Point:           interaction.Point,
 		GeometricNormal: geometricNormal,
 		ShadingNormal:   shadingNormal,
@@ -161,5 +212,22 @@ func (t *ObjectTree) GetSurfaceHit(raySt, rayDir *mat.VecDense) (*SurfaceHit, bo
 		PrimitiveID:     interaction.PrimitiveID,
 		FrontFace:       frontFace,
 		Object:          obj,
-	}, true
+	}
+}
+
+func sphericalDirectionAt(raySt, rayDir *mat.VecDense, arcLen float64) *mat.VecDense {
+	v := mat.NewVecDense(rayDir.Len(), nil)
+	v.CopyVec(rayDir)
+	v.AddScaledVec(v, -mat.Dot(v, raySt), raySt)
+	n := mat.Norm(v, 2)
+	if n == 0 {
+		return v
+	}
+	v.ScaleVec(1/n, v)
+
+	direction := mat.NewVecDense(rayDir.Len(), nil)
+	direction.CopyVec(raySt)
+	direction.ScaleVec(-math.Sin(arcLen), direction)
+	direction.AddScaledVec(direction, math.Cos(arcLen), v)
+	return maths.Normalize(direction)
 }

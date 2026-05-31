@@ -120,6 +120,82 @@ func TestSurfaceHitDoesNotMutateShapeOwnedNormal(t *testing.T) {
 	}
 }
 
+func TestSurfaceHitRangeHonorsTMax(t *testing.T) {
+	tree := &ObjectTree{}
+	sphere := shape.NewSphere(mat.NewVecDense(3, []float64{2, 0, 0}), 0.25)
+	tree.AddObject(&Object{Shape: sphere})
+	tree.Build()
+
+	_, ok := tree.GetSurfaceHitRange(
+		mat.NewVecDense(3, []float64{0, 0, 0}),
+		mat.NewVecDense(3, []float64{1, 0, 0}),
+		1e-6,
+		1,
+	)
+	if ok {
+		t.Fatal("did not expect a hit beyond tMax")
+	}
+
+	hit, ok := tree.GetSurfaceHitRange(
+		mat.NewVecDense(3, []float64{0, 0, 0}),
+		mat.NewVecDense(3, []float64{1, 0, 0}),
+		1e-6,
+		math.MaxFloat64,
+	)
+	if !ok {
+		t.Fatal("expected hit when tMax includes the sphere")
+	}
+	if math.Abs(hit.Distance-1.75) > 1e-9 {
+		t.Fatalf("unexpected hit distance: got %f want 1.75", hit.Distance)
+	}
+}
+
+func TestSphericalSurfaceHitUsesGreatCirclePoint(t *testing.T) {
+	const (
+		centerArc = math.Pi / 3
+		radius    = 0.1
+	)
+	center := mat.NewVecDense(4, []float64{math.Cos(centerArc), math.Sin(centerArc), 0, 0})
+	tree := &ObjectTree{}
+	tree.AddObject(&Object{Shape: shape.NewSphere(center, radius)})
+	tree.Build()
+
+	start := mat.NewVecDense(4, []float64{1, 0, 0, 0})
+	dir := mat.NewVecDense(4, []float64{0, 1, 0, 0})
+	hit, ok := tree.GetSphericalSurfaceHit(start, dir, 1e-6, math.Pi)
+	if !ok {
+		t.Fatal("expected spherical geodesic hit")
+	}
+
+	wantArc := centerArc - 2*math.Asin(radius/2)
+	if math.Abs(hit.ArcLength-wantArc) > 5e-4 {
+		t.Fatalf("unexpected spherical arc: got %.9f want %.9f", hit.ArcLength, wantArc)
+	}
+	if math.Abs(mat.Norm(hit.Point, 2)-1) > 1e-9 {
+		t.Fatalf("expected hit point to remain on S3, got norm %.12f", mat.Norm(hit.Point, 2))
+	}
+	if math.Abs(hit.Point.AtVec(0)-math.Cos(hit.ArcLength)) > 1e-6 ||
+		math.Abs(hit.Point.AtVec(1)-math.Sin(hit.ArcLength)) > 1e-6 {
+		t.Fatalf("hit point is not on the traced great circle: %v", hit.Point.RawVector().Data)
+	}
+}
+
+func TestSphericalSurfaceHitStopsAtAntipode(t *testing.T) {
+	tree := &ObjectTree{}
+	tree.AddObject(&Object{Shape: shape.NewSphere(mat.NewVecDense(4, []float64{0, -1, 0, 0}), 0.05)})
+	tree.Build()
+
+	_, ok := tree.GetSphericalSurfaceHit(
+		mat.NewVecDense(4, []float64{1, 0, 0, 0}),
+		mat.NewVecDense(4, []float64{0, 1, 0, 0}),
+		1e-6,
+		math.Pi,
+	)
+	if ok {
+		t.Fatal("did not expect the first S3 half-circle to see beyond the antipode")
+	}
+}
+
 func testBox(x0, y0, z0, x1, y1, z1 float64) *shape.Cuboid {
 	return shape.NewCuboid(
 		mat.NewVecDense(3, []float64{x0, y0, z0}),

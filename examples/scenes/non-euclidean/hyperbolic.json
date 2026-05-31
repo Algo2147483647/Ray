@@ -19,14 +19,6 @@
     "max_arc": 0
   },
 
-  "_comment_air": "Override the default 'air' medium so the entire H^3 world has volumetric absorption. The integrator multiplies transmittance = exp(-sigma_a * arc_H) for every segment, where arc_H is the hyperbolic (not Euclidean) arc length. This makes the metric visible: anything close to the unit-ball boundary is hyperbolically far away and fades to black exponentially, far harder than any Euclidean fog could fall off.",
-  "media": {
-    "air": {
-      "type": "homogeneous",
-      "sigma_a": [0.18, 0.32, 0.55]
-    }
-  },
-
   "_comment_camera": "Camera placed near the Klein boundary (|p| ~ 0.92) and looking across the ball. From here, hyperbolic distance to the origin is ~1.6 and to a point at x=0.95 is ~3.4 — the chord is short Euclideanly but very long hyperbolically.",
   "cameras": [
     {

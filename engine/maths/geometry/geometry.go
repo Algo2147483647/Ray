@@ -2,11 +2,10 @@
 //
 // Rays in this engine always carry embedded coordinates: Klein in the unit
 // ball of R^3, Spherical as unit vectors in R^4, Euclidean as plain R^3.
-// Because both Klein and Spherical models keep geodesics as Euclidean line
-// segments in the embedded domain, all BVH and Shape intersection code is
-// reused unchanged. The Geometry interface only mediates the few places
-// where distance, tangent frames, or direction reprojection care about the
-// metric.
+// Klein geodesics are Euclidean chords in the embedded ball, so ordinary
+// Shape intersection can be reused with a model-boundary tMax. Spherical
+// geodesics are great circles, so surface intersection must evaluate the
+// geodesic itself instead of an affine ambient ray.
 package geometry
 
 import (
@@ -40,8 +39,9 @@ type Geometry interface {
 
 	// EmbeddedRay returns the (origin, direction) to hand to BVH/Shape
 	// intersection, plus the natural maximum embedded t after which the ray
-	// leaves the model (Klein ball boundary; S^3 half-circle limit). For
-	// Euclidean tMaxEmbed is +Inf. The returned vectors may alias the inputs.
+	// leaves the model. For Euclidean tMaxEmbed is +Inf; for Klein it is the
+	// unit-ball boundary. Spherical has no affine embedded-ray representation
+	// for great-circle tracing and may return tMaxEmbed=0.
 	EmbeddedRay(p, dir *mat.VecDense) (eo, ed *mat.VecDense, tMaxEmbed float64)
 
 	// WrapBeyond is used by S^3: advance the ray by arcAdvance along its

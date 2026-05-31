@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/Algo2147483647/ray/engine/controller/parser"
+	"github.com/Algo2147483647/ray/engine/model/camera"
+	"gonum.org/v1/gonum/mat"
 )
 
 func TestResolveRenderConfigAcceptsFilmColorSpaceAlias(t *testing.T) {
@@ -89,5 +91,49 @@ func TestResolveRenderConfigsRenderJobInheritsCameraIndexWhenOmitted(t *testing.
 	}
 	if configs[1].CameraIndex != 0 {
 		t.Fatalf("expected second render job to override camera index to 0, got %d", configs[1].CameraIndex)
+	}
+}
+
+func TestSelectRenderCameraAppliesOverridesToHyperbolicCamera(t *testing.T) {
+	cam := &camera.HyperbolicCamera{Camera3D: camera.Camera3D{
+		Position:    mat.NewVecDense(3, []float64{0, 0, 0}),
+		Direction:   mat.NewVecDense(3, []float64{1, 0, 0}),
+		Up:          mat.NewVecDense(3, []float64{0, 0, 1}),
+		Width:       400,
+		Height:      400,
+		FieldOfView: 70,
+		AspectRatio: 1,
+	}}
+	h := NewHandler()
+	h.Scene.Cameras = []camera.Camera{cam}
+
+	_, shape, err := h.selectRenderCamera(0, 120, 80)
+	if err != nil {
+		t.Fatalf("select camera: %v", err)
+	}
+	if cam.Width != 120 || cam.Height != 80 || shape[0] != 120 || shape[1] != 80 {
+		t.Fatalf("expected hyperbolic camera dimensions to update, got camera=%dx%d shape=%v", cam.Width, cam.Height, shape)
+	}
+}
+
+func TestSelectRenderCameraAppliesOverridesToSphericalCamera(t *testing.T) {
+	cam := &camera.SphericalCamera{
+		Position:    mat.NewVecDense(4, []float64{1, 0, 0, 0}),
+		Forward:     mat.NewVecDense(4, []float64{0, 1, 0, 0}),
+		Up:          mat.NewVecDense(4, []float64{0, 0, 1, 0}),
+		Width:       400,
+		Height:      400,
+		FieldOfView: 70,
+		AspectRatio: 1,
+	}
+	h := NewHandler()
+	h.Scene.Cameras = []camera.Camera{cam}
+
+	_, shape, err := h.selectRenderCamera(0, 160, 100)
+	if err != nil {
+		t.Fatalf("select camera: %v", err)
+	}
+	if cam.Width != 160 || cam.Height != 100 || shape[0] != 160 || shape[1] != 100 {
+		t.Fatalf("expected spherical camera dimensions to update, got camera=%dx%d shape=%v", cam.Width, cam.Height, shape)
 	}
 }

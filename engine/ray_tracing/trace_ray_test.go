@@ -6,11 +6,13 @@ import (
 	"testing"
 
 	"github.com/Algo2147483647/ray/engine/maths"
+	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"github.com/Algo2147483647/ray/engine/model/material"
 	"github.com/Algo2147483647/ray/engine/model/material/bsdf"
 	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
 	"github.com/Algo2147483647/ray/engine/model/material/medium"
 	"github.com/Algo2147483647/ray/engine/model/object"
+	"github.com/Algo2147483647/ray/engine/model/shape"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -172,6 +174,24 @@ func TestPrepareSurfaceInteractionSamplesLambertIn4D(t *testing.T) {
 	}
 	if sample.Wi.Len() != 4 {
 		t.Fatalf("expected 4D sampled direction, got %dD", sample.Wi.Len())
+	}
+}
+
+func TestSurfaceHitInGeometryHonorsKleinBoundary(t *testing.T) {
+	tree := &object.ObjectTree{}
+	tree.AddObject(&object.Object{
+		Shape: shape.NewSphere(mat.NewVecDense(3, []float64{2, 0, 0}), 0.25),
+	})
+	tree.Build()
+
+	ray := &renderray.Ray{
+		Origin:    mat.NewVecDense(3, []float64{0, 0, 0}),
+		Direction: mat.NewVecDense(3, []float64{1, 0, 0}),
+		Geometry:  geometry.Klein(),
+	}
+
+	if _, ok := surfaceHitInGeometry(tree, ray, ray.G()); ok {
+		t.Fatal("Klein tracing should not hit objects beyond the unit-ball boundary")
 	}
 }
 

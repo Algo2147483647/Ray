@@ -161,6 +161,26 @@ func (h *Handler) selectRenderCamera(cameraIndex, width, height int) (camera.Cam
 			return nil, nil, err
 		}
 		return c, []int{resolvedWidth, resolvedHeight}, nil
+	case *camera.HyperbolicCamera:
+		resolvedWidth := firstPositiveInt(width, c.Width, defaultRenderWidth)
+		resolvedHeight := firstPositiveInt(height, c.Height, defaultRenderHeight)
+		c.Width = resolvedWidth
+		c.Height = resolvedHeight
+		c.AspectRatio = float64(resolvedWidth) / float64(resolvedHeight)
+		if err := c.Prepare(); err != nil {
+			return nil, nil, err
+		}
+		return c, []int{resolvedWidth, resolvedHeight}, nil
+	case *camera.SphericalCamera:
+		resolvedWidth := firstPositiveInt(width, c.Width, defaultRenderWidth)
+		resolvedHeight := firstPositiveInt(height, c.Height, defaultRenderHeight)
+		c.Width = resolvedWidth
+		c.Height = resolvedHeight
+		c.AspectRatio = float64(resolvedWidth) / float64(resolvedHeight)
+		if err := c.Prepare(); err != nil {
+			return nil, nil, err
+		}
+		return c, []int{resolvedWidth, resolvedHeight}, nil
 	case *camera.CameraNDim:
 		if len(c.Width) == 0 {
 			return nil, nil, fmt.Errorf("n_dim camera has no film widths")

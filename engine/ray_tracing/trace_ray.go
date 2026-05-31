@@ -2,10 +2,12 @@ package ray_tracing
 
 import (
 	"github.com/Algo2147483647/ray/engine/maths"
+	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
 	"github.com/Algo2147483647/ray/engine/model/material/medium"
 	"github.com/Algo2147483647/ray/engine/model/object"
 	"github.com/Algo2147483647/ray/engine/model/optics"
+	"github.com/Algo2147483647/ray/engine/utils"
 	"math"
 	"math/rand/v2"
 )
@@ -23,13 +25,14 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level in
 		return
 	}
 
+	g := ray.G()
+
 	// Find the closest surface intersection along the current ray.
-	hit, ok := objTree.GetSurfaceHit(ray.Origin, ray.Direction)
+	hit, ok := surfaceHitInGeometry(objTree, ray, g)
 	if !ok {
-		// Spherical: the chord may have left the visible hemisphere without
-		// hitting anything; wrap past the antipode and continue tracing if
-		// we still have arc budget.
-		if newO, newD, wrapped := ray.G().WrapBeyond(ray.Origin, ray.Direction, math.Pi); wrapped {
+		// Spherical: the current half-great-circle reached the antipode without
+		// hitting anything; wrap and continue tracing if we still have arc budget.
+		if newO, newD, wrapped := g.WrapBeyond(ray.Origin, ray.Direction, math.Pi); wrapped {
 			advance := math.Pi
 			if h.MaxArc > 0 && ray.ArcTraveled+advance > h.MaxArc {
 				terminateRay(ray)
@@ -48,8 +51,10 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level in
 	// Translate the embedded-domain ray parameter into geodesic arc length
 	// before doing anything physical with it (absorption, direction update,
 	// arc-budget bookkeeping).
-	g := ray.G()
-	arcLen := g.ArcLengthFromEmbedT(ray.Origin, ray.Direction, hit.Distance)
+	arcLen := hit.ArcLength
+	if arcLen <= 0 {
+		arcLen = g.ArcLengthFromEmbedT(ray.Origin, ray.Direction, hit.Distance)
+	}
 
 	// Apply medium absorption accumulated along the segment before the hit point.
 	media := getMediumRegistry(objTree)
@@ -64,6 +69,13 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level in
 	if h.MaxArc > 0 && ray.ArcTraveled >= h.MaxArc {
 		terminateRay(ray)
 		return
+	}
+
+	if g.Name() == "spherical" {
+		if newO, newD, wrapped := g.WrapBeyond(ray.Origin, ray.Direction, arcLen); wrapped {
+			hit.Point = newO
+			ray.Direction.CopyVec(newD)
+		}
 	}
 
 	// Prepare all surface-local interaction data for this hit.
@@ -102,6 +114,17 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level in
 
 	// Continue tracing the next bounce.
 	h.TraceRay(objTree, ray, level+1)
+}
+
+func surfaceHitInGeometry(objTree *object.ObjectTree, ray *optics.Ray, g geometry.Geometry) (*object.SurfaceHit, bool) {
+	if g.Name() == "spherical" {
+		return objTree.GetSphericalSurfaceHit(ray.Origin, ray.Direction, utils.EPS, math.Pi)
+	}
+	embeddedOrigin, embeddedDirection, tMax := g.EmbeddedRay(ray.Origin, ray.Direction)
+	if tMax <= 0 {
+		return nil, false
+	}
+	return objTree.GetSurfaceHitRange(embeddedOrigin, embeddedDirection, utils.EPS, tMax)
 }
 
 func (h *Handler) terminateBeforeBounce(ray *optics.Ray, level int64) bool {
