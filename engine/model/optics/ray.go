@@ -4,23 +4,26 @@ import (
 	"math"
 	"math/rand/v2"
 
+	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"github.com/Algo2147483647/ray/engine/model/material/medium"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 )
 
 type Ray struct {
-	Origin               *mat.VecDense `json:"origin"`
-	Direction            *mat.VecDense `json:"direction"`
-	Color                RGB           `json:"color"`
-	SpectralPower        float64       `json:"spectral_power"`
-	SpectralPath         bool          `json:"spectral_path"`
-	RGBCompatibility     RGB           `json:"rgb_compatibility"`
-	RGBCompatibilityPath bool          `json:"rgb_compatibility_path"`
-	WaveLength           float64       `json:"wave_length"` // (nm)
-	WavelengthPDF        float64       `json:"wavelength_pdf"`
-	RefractionIndex      float64       `json:"refraction_index"`
-	MediumStack          medium.Stack  `json:"-"`
+	Origin               *mat.VecDense     `json:"origin"`
+	Direction            *mat.VecDense     `json:"direction"`
+	Color                RGB               `json:"color"`
+	SpectralPower        float64           `json:"spectral_power"`
+	SpectralPath         bool              `json:"spectral_path"`
+	RGBCompatibility     RGB               `json:"rgb_compatibility"`
+	RGBCompatibilityPath bool              `json:"rgb_compatibility_path"`
+	WaveLength           float64           `json:"wave_length"` // (nm)
+	WavelengthPDF        float64           `json:"wavelength_pdf"`
+	RefractionIndex      float64           `json:"refraction_index"`
+	MediumStack          medium.Stack      `json:"-"`
+	Geometry             geometry.Geometry `json:"-"` // nil ⇒ Euclidean (back-compat default)
+	ArcTraveled          float64           `json:"-"` // geodesic arc length traveled so far (S^3 wrap)
 }
 
 func (r *Ray) Init() {
@@ -46,6 +49,12 @@ func (r *Ray) Init() {
 	r.MediumStack.Reset(0)
 	r.WaveLength = 0
 	r.WavelengthPDF = 0
+
+	r.ArcTraveled = 0
+	// Geometry is intentionally NOT reset: it is set per-render by the
+	// renderer when handing out a Ray, and Init may be called from a
+	// pool that pre-assigns it. Setting it to nil here would break the
+	// non-Euclidean integrator.
 }
 
 func (r *Ray) ConvertToMonochrome() {
@@ -89,4 +98,9 @@ func (r *Ray) DisableSpectralSampling() {
 	r.RGBCompatibilityPath = false
 	r.Color = RGB{1, 1, 1}
 	r.RGBCompatibility = RGB{1, 1, 1}
+}
+
+// G returns the ray's geometry, falling back to Euclidean if unset.
+func (r *Ray) G() geometry.Geometry {
+	return geometry.Get(r.Geometry)
 }
