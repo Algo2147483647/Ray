@@ -1,6 +1,6 @@
 # Ray Tracing
 
-A Go-based ray tracing engine for optical simulation and physically inspired rendering. The repository contains the renderer, JSON scene examples, design notes, rendered examples, and a React scene editor.
+A high-performance, physically-accurate ray tracing engine for optical simulation and photorealistic rendering. Simulate light propagation, reflection, refraction, and complex optical phenomena with scientific precision.
 
 ## Rendering Result Demonstration
 
@@ -33,15 +33,27 @@ Together, the two results demonstrate a useful trade-off. The Lambertian renderi
 
 ![4d-hypercube-geometry-focus-centered-combined.png](docs%2Fassets%2F4d-hypercube-geometry-focus-centered-combined.png)
 
-The volume visualization experiment was designed to examine how a four-dimensional hypercube can be interpreted after projection into a three-dimensional volumetric domain. Unlike a conventional 2D image projection, this result emphasizes the spatial occupancy of the projected object, allowing the internal arrangement of the hypercube’s cells to be inspected more explicitly.
+The experiment visualizes a four-dimensional hypercube from an exterior viewpoint and examines how its eight cubic cells appear after projection into a three-dimensional volume. In the figure, the projected object is shown from several viewing angles, together with a bottom-surface projection. The most important feature is that the object does not appear as a single undifferentiated solid. Instead, it is divided into several colored volumetric regions, each corresponding to one cubic cell of the original 4D hypercube.
 
-The scene uses the same 4D hypercube configuration as the colored-cell rendering: a unit-centered hypercube with equal extent along all four dimensions, observed by an external orthographic 4D camera. The material is defined as a solid cell-palette emission model, assigning distinct colors to the constituent cubic cells. This design intentionally removes lighting and reflectance effects so that the visualization focuses on geometric classification rather than photometric realism.
+The visible red, cyan, yellow, and blue regions should be interpreted as projected 3D cells rather than as ordinary colored faces. From the outside, these cells form a cube-like envelope, but their boundaries reveal the higher-dimensional structure behind it. In particular, different colored volumes meet along shared planes, edges, and vertices, showing how the 4D hypercube’s boundary is assembled from cubic components. This is the direct 4D analogue of a 3D cube being assembled from six square faces, except that the hypercube is assembled from eight cubes.
 
-In the rendering process, the 4D object is sampled through the camera’s three-dimensional image domain, producing a volumetric representation of the projected hypercube. Each colored region corresponds to a different 3D cell of the original 4D structure, making it possible to observe how the eight boundary cells overlap, separate, and occlude one another under the chosen 4D view basis.
+The point-sampled volume representation makes this incidence structure easier to observe. The dotted layers expose the spatial distribution of the projected cells, while the color labels preserve their identity after projection. In the upper and oblique views, the red cell occupies the upper region, the yellow and cyan cells occupy lateral or lower regions, and the blue cell appears on another side of the projected body. As the viewpoint changes across the figure, the apparent proportions of these regions change, but the same cell contacts remain visible. This indicates that the colored partitions are not arbitrary visual artifacts; they encode the adjacency relations among the hypercube’s cubic boundary cells.
 
-The resulting volume image demonstrates that the renderer can preserve cell identity during dimensional projection. Compared with the flat cell-palette image, the volumetric result provides a stronger sense of spatial depth and internal organization. It shows that the projected hypercube is not merely a collection of colored faces, but a structured 3D volume derived from a higher-dimensional object. This supports the usefulness of volume-based visualization for analyzing 4D geometry, especially when the goal is to understand adjacency, cell decomposition, and the spatial consequences of projecting four-dimensional forms into observable three-dimensional space.
+The bottom projection further clarifies the geometric result. Seen from below, the projected volume separates into four major colored domains, meeting near a central junction. This view demonstrates that multiple cubic cells can overlap or become adjacent within the same 3D projection, even though they are distinct cells in 4D space. Thus, the experiment shows both the external shape of the projected hypercube and the internal cell decomposition responsible for that shape.
+
+The geometric conclusion is that the boundary of a 4D hypercube is composed of eight cubic cells, and this structure remains observable after projection when cell identity is preserved by color. The image therefore provides a concrete way to inspect the hypercube not merely as a projected outline, but as a volume assembled from eight mutually connected 3D cubes.
 
 ![4d-hypercube-geometry-focus-centered2.volume.png](docs%2Fassets%2F4d-hypercube-geometry-focus-centered2.volume.png)
+
+The experiment visualizes the local corner structure of a four-dimensional hypercube from an interior viewpoint. In the image grid, each panel shows the camera looking from inside the hypercube toward one of its vertices. The visible colored regions are not ordinary 2D faces, but projected views of the cubic cells that meet at that vertex. The green, red, cyan, and blue regions form four wall-like volumes converging into the same corner, which is the key geometric observation of the experiment.
+
+This result should be read by analogy with a three-dimensional cube. When standing inside a cube and looking at a corner, one sees three mutually perpendicular square faces meeting at a point. In the four-dimensional case, the corresponding boundary elements are not squares but cubes. Therefore, a vertex of the hypercube is incident to four cubic cells. The image makes this relation visible: around the observed corner, four differently oriented cubic regions appear simultaneously, each occupying a distinct direction in the projected view.
+
+The hyperspherical light source provides an additional geometric cue. Its bright white projections and reflected illumination reveal how these cubic cells occupy different directions around the camera. In several panels, the light appears as circular or elliptical highlights against different colored regions, while the colored cell boundaries remain aligned toward the same corner. This helps distinguish the light source from the hypercube structure itself: the light produces local brightness, but the persistent four-region arrangement is caused by the incidence relation of the hypercube.
+
+The mathematical conclusion is therefore observed directly from the convergence pattern. The corner is not bounded by three surfaces, as in a 3D cube, but by four cubic cells meeting orthogonally in 4D space. The grid presentation reinforces this conclusion by showing the same structure under slightly varying views: although the apparent sizes and brightness of the colored regions change, the four-cell meeting pattern remains stable. This stability indicates that the observed structure is not a rendering artifact, but the expected local geometry of a tesseract vertex.
+
+![4D-2000-grid-20x10.png](docs%2Fassets%2F4D-2000-grid-20x10.png)![4D.png](docs%2Fassets%2F4D.png)
 
 ## Project Structure
 
