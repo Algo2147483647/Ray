@@ -1,0 +1,53 @@
+{
+  "_comment": "Diagnostic 4D Klein bottle view. The camera looks along x1/y, so each tile shows the familiar 3D projection in x0/x and x2/z. The atlas depth axis is x3/w. Apparent 3D crossings separate into different w slices, exposing why the 4D embedding has no self-intersection.",
+  "materials": [
+    {
+      "id": "klein-uv",
+      "emission": {
+        "type": "uv_klein",
+        "saturation": 1.0,
+        "lightness": 0.58,
+        "v_stripes": 2,
+        "intensity": 1.25
+      }
+    }
+  ],
+  "objects": [
+    {
+      "id": "klein-4d-tube",
+      "shape": "klein_bottle",
+      "center": [0, 0, 0, 0],
+      "r_major": 1.35,
+      "r_minor": 0.62,
+      "thickness": 0.075,
+      "material_id": "klein-uv"
+    }
+  ],
+  "cameras": [
+    {
+      "id": "x-z-view-w-slices",
+      "type": "n_dim",
+      "position": [0, -5.0, 0, 0],
+      "coordinates": [
+        [0, 1, 0, 0],
+        [1, 0, 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, 0, 1]
+      ],
+      "widths": [40, 40, 25],
+      "field_of_views": [132, 58, 64],
+      "ortho": true
+    }
+  ],
+  "render": {
+    "dimension": 4,
+    "samples": 200,
+    "thread_num": 8,
+    "spectrum_mode": "rgb",
+    "exposure": 1.0,
+    "tone_mapping": "linear",
+    "gamma": 1.0,
+    "output_image": "../outputs/4d-klein-nonselfintersection-200spp.png",
+    "output_film": "../outputs/4d-klein-nonselfintersection-200spp.bin"
+  }
+}

@@ -168,6 +168,7 @@ func (h *Handler) prepareSurfaceInteraction(
 	if hit.Point != nil {
 		ctx.HitPoint = maths.NewDirectionFromComponents(hit.Point.RawVector().Data)
 	}
+	ctx.UV = hit.UV
 	if obj.Shape != nil {
 		pmin, pmax := obj.Shape.BuildBoundingBox()
 		if pmin != nil && pmax != nil {

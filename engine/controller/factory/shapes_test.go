@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/Algo2147483647/ray/engine/model/shape"
+	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -81,6 +82,51 @@ func TestParseShapeFiniteCylinderRejectsInvalidAxis(t *testing.T) {
 	})
 	if err == nil {
 		t.Fatal("expected zero axis to fail")
+	}
+}
+
+func TestParseShapeKleinBottle4D(t *testing.T) {
+	oldDim := utils.Dimension
+	utils.SetDimension(4)
+	t.Cleanup(func() { utils.SetDimension(oldDim) })
+
+	shapes, err := ParseShape(map[string]interface{}{
+		"shape":     "klein_bottle",
+		"center":    []interface{}{0, 1, 2, 3},
+		"r_major":   1.5,
+		"r_minor":   0.5,
+		"thickness": 0.06,
+	})
+	if err != nil {
+		t.Fatalf("parse Klein bottle: %v", err)
+	}
+	if len(shapes) != 1 {
+		t.Fatalf("expected one shape, got %d", len(shapes))
+	}
+
+	klein, ok := shapes[0].(*shape.KleinBottle4D)
+	if !ok {
+		t.Fatalf("expected *shape.KleinBottle4D, got %T", shapes[0])
+	}
+	if klein.Center.AtVec(3) != 3 || klein.R != 1.5 || klein.Minor != 0.5 || klein.Thickness != 0.06 {
+		t.Fatalf("unexpected Klein bottle data: center=%v major=%f minor=%f thickness=%f", klein.Center.RawVector().Data, klein.R, klein.Minor, klein.Thickness)
+	}
+}
+
+func TestParseShapeKleinBottle4DRequiresDimension4(t *testing.T) {
+	oldDim := utils.Dimension
+	utils.SetDimension(3)
+	t.Cleanup(func() { utils.SetDimension(oldDim) })
+
+	_, err := ParseShape(map[string]interface{}{
+		"shape":     "klein_bottle",
+		"center":    []interface{}{0, 0, 0, 0},
+		"r_major":   1.5,
+		"r_minor":   0.5,
+		"thickness": 0.06,
+	})
+	if err == nil {
+		t.Fatal("expected Klein bottle to require render dimension 4")
 	}
 }
 

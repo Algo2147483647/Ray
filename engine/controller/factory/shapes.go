@@ -31,6 +31,7 @@ const (
 	ShapeFourOrderEquation = "four-order equation"
 	ShapeImplicitEquation  = "implicit equation"
 	ShapePolynomialSurface = "polynomial surface"
+	ShapeKleinBottle       = "klein_bottle"
 	ShapeSTL               = "stl"
 )
 
@@ -76,6 +77,9 @@ func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 
 	case ShapePolynomialSurface:
 		return parsePolynomialSurface(objDef)
+
+	case ShapeKleinBottle:
+		return parseKleinBottle4D(objDef)
 
 	case ShapeSTL:
 		shapes, err := ParseShapeForSTL(objDef)
@@ -216,6 +220,39 @@ func parseFiniteCylinder(objDef map[string]interface{}) ([]shape.Shape, error) {
 
 	cylinder := shape.NewFiniteCylinder(center, axis, radius, height)
 	return finishEngravableShape(cylinder, objDef)
+}
+
+func parseKleinBottle4D(objDef map[string]interface{}) ([]shape.Shape, error) {
+	if utils.Dimension != 4 {
+		return nil, fmt.Errorf("shape %q requires render dimension 4, got %d", ShapeKleinBottle, utils.Dimension)
+	}
+
+	center, err := requiredVec(objDef, "center")
+	if err != nil {
+		return nil, err
+	}
+
+	majorR, err := requiredPositiveFloat(objDef, "r_major")
+	if err != nil {
+		return nil, err
+	}
+
+	minorR, err := requiredPositiveFloat(objDef, "r_minor")
+	if err != nil {
+		return nil, err
+	}
+
+	thickness, err := requiredPositiveFloat(objDef, "thickness")
+	if err != nil {
+		return nil, err
+	}
+
+	if majorR <= minorR {
+		return nil, fmt.Errorf("shape %q requires r_major > r_minor", ShapeKleinBottle)
+	}
+
+	klein := shape.NewKleinBottle4D(center, majorR, minorR, thickness)
+	return wrapSingleShapeWithBounds(klein, objDef)
 }
 
 func parseTriangle(objDef map[string]interface{}) ([]shape.Shape, error) {

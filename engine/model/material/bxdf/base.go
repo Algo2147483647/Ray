@@ -64,6 +64,7 @@ type ShadingContext struct {
 	Entering         bool                // True when crossing into the surface.
 	GeometricNormal  maths.Direction     // World-space geometric normal at the hit point (length-N components).
 	HitPoint         maths.Direction     // World-space hit point coordinates (length-N components).
+	UV               [2]float64          // Surface-local UV coordinates when provided by the shape.
 	HitObjectAABBMin maths.Direction     // World-space AABB lower corner of the hit object, when known.
 	HitObjectAABBMax maths.Direction     // World-space AABB upper corner of the hit object, when known.
 }

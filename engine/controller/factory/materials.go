@@ -209,9 +209,60 @@ func parseEmission(def map[string]interface{}) (emission.Emitter, error) {
 		return emission.NewConstantParameter(radiance), nil
 	case "cell_palette":
 		return parseCellPaletteEmission(def)
+	case "uv_klein":
+		return parseUVKleinEmission(def)
 	default:
 		return nil, fmt.Errorf("unsupported emission type %q", emissionType)
 	}
+}
+
+func parseUVKleinEmission(def map[string]interface{}) (emission.Emitter, error) {
+	saturation, ok, err := utils.OptionalFloat64Field(def, "saturation")
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		saturation = 1
+	}
+	if saturation < 0 || saturation > 1 {
+		return nil, fmt.Errorf("saturation must be in [0, 1]")
+	}
+
+	lightness, ok, err := utils.OptionalFloat64Field(def, "lightness")
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		lightness = 0.55
+	}
+	if lightness < 0 || lightness > 1 {
+		return nil, fmt.Errorf("lightness must be in [0, 1]")
+	}
+
+	vStripeValue, ok, err := utils.OptionalFloat64Field(def, "v_stripes")
+	if err != nil {
+		return nil, err
+	}
+	vStripes := int(vStripeValue)
+	if !ok {
+		vStripes = 1
+	}
+	if vStripes <= 0 || float64(vStripes) != vStripeValue {
+		return nil, fmt.Errorf("v_stripes must be a positive integer")
+	}
+
+	intensity, ok, err := utils.OptionalFloat64Field(def, "intensity")
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		intensity = 1
+	}
+	if intensity < 0 {
+		return nil, fmt.Errorf("intensity must be >= 0")
+	}
+
+	return emission.NewUVKlein(saturation, lightness, vStripes, intensity), nil
 }
 
 // parseCellPaletteEmission builds a CellPalette debug emitter from a scene

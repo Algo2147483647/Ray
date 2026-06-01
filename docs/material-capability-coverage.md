@@ -20,6 +20,25 @@ engine/model/material/microfacet/
 engine/ray_tracing/medium_transport.go
 ```
 
+## Current Material Detail Table
+
+The table below lists every material-related construct that can currently be
+authored from scene JSON. A `material` may contain a `surface`, an `emission`,
+or both.
+
+| Category | JSON selector | Required fields | Optional fields and defaults | Implemented primitive | Typical use and caveats |
+| --- | --- | --- | --- | --- | --- |
+| Surface | `surface.type: "lambert"` | `albedo` | Any supported spectral parameter form. | `bxdf.Lambert` through `bsdf.Single` | Matte diffuse surfaces, simple paint, chalk, plaster approximation. This is Lambertian, not Oren-Nayar rough diffuse. |
+| Surface | `surface.type: "specular_reflection"` | None beyond `type` | `reflectance`, default constant `1`. | `bxdf.SpecularReflection` through `bsdf.Single` | Perfect mirror or tinted ideal metal mirror. No roughness or conductor eta/k Fresnel. |
+| Surface | `surface.type: "specular_dielectric"` | None beyond `type` | `reflectance` = `1`, `transmittance` = `1`, `eta_outside` = `1`, `ior` or legacy `eta_inside` = `1.5`. | `bxdf.SpecularDielectric` through `bsdf.Single` | Ideal glass, water, diamond, prisms, transparent crystals. Reflection/refraction is delta; use `ior.type: "cauchy"` for dispersion. |
+| Surface | `surface.type: "rough_conductor"` | `eta`, `k` | `roughness` = `0.25`, `weight` = `1`. | `bxdf.RoughConductor` through `bsdf.Single` | GGX rough metal with spectral/RGB eta and k. The engine does not provide named metal presets. |
+| Surface | `surface.type: "rough_dielectric_transmission"` | None beyond `type` | `transmittance` = `1`, `eta_outside` = `1`, `ior` or legacy `eta_inside` = `1.5`, `roughness` = `0.25`. | `bxdf.RoughDielectricTransmission` through `bsdf.Single` | Frosted glass / rough transparent plastic transmission lobe. It does not include the matching rough reflection lobe yet. |
+| Emission | `emission.type: "constant"` | `radiance` or legacy `color` | Any supported spectral parameter form. | `emission.Constant` | Constant area emitter. Paths terminate and contribute emitted radiance when hit. |
+| Emission | `emission.type: "cell_palette"` | None beyond `type` | `palette` = built-in 8-color palette, `intensity`, `shading` = `solid`, optional `boundary_grid` mode with `grid_color` and `grid_thickness` = `0.02`. | `emission.CellPalette` | Debug/visualization emitter for face or cell identity, especially cuboids and 4D hypercubes. |
+| Emission | `emission.type: "uv_klein"` | None beyond `type` | `saturation` = `1`, `lightness` = `0.55`, `v_stripes` = `1`, `intensity` = `1`. | `emission.UVKlein` | Debug/visualization emitter for Klein bottle UV charts. Hue follows `u`; brightness stripes follow `v`. |
+| Medium | `media.<id>.type: "homogeneous"` | None beyond registry id | `ior` defaults to constant eta `1`; `sigma_a` and `sigma_s` accept spectral parameters. | `medium.Homogeneous` plus coefficient wrappers | Supplies IOR and homogeneous absorption/scattering coefficients. `sigma_a` is transported as Beer-Lambert absorption; `sigma_s` is parsed but scattering events are not sampled yet. |
+| Object boundary | `objects[*].medium_boundary` | `inside` | `outside` = `air`, `priority` = `0`, `thin` = `false`. | `medium.Boundary`, `medium.Stack` | Associates a closed object with inside/outside media for nested IOR decisions and absorption. The surface still needs a material. |
+
 ## Current Material Coverage
 
 | Material family | Current support | Recommended authoring | Notes |
@@ -60,6 +79,8 @@ instantiate it through `materials[*].surface` or `materials[*].emission`.
 | Single-BxDF BSDF container | `bsdf.Single` | Used by all current surface types | Depends on child | Depends on child | Wraps one BxDF as a material surface. |
 | Weighted BxDF mixture | `bsdf.WeightedMixture` | No | Depends on children | Depends on children | Implemented in code, but not exposed by the current JSON factory. |
 | Constant emission | `emission.Constant` | `emission.type: "constant"` | N/A | N/A | Area lights and emissive objects. |
+| Cell-palette emission | `emission.CellPalette` | `emission.type: "cell_palette"` | N/A | N/A | Debug/visualization color by dominant normal axis, with optional boundary grid. |
+| Klein UV emission | `emission.UVKlein` | `emission.type: "uv_klein"` | N/A | N/A | Debug/visualization color from Klein bottle UV coordinates. |
 | Medium boundary and absorption | `medium.Boundary`, `medium.Stack`, `sigma_a` | `objects[*].medium_boundary`, `media` | N/A | N/A | Nested IOR decisions and homogeneous Beer-Lambert absorption. |
 
 ## BxDF Roadmap Status
