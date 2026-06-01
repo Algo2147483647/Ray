@@ -5,15 +5,16 @@ This directory documents the mathematical, physical, and code-architecture ideas
 ## Document Map
 
 - [`mathematical-foundations.md`](mathematical-foundations.md): linear algebra, coordinate systems, root solving, gradients, and Monte Carlo estimation.
-- [`geometry-and-intersection.md`](geometry-and-intersection.md): geometric primitives, implicit surfaces, mesh handling, and the bounding-volume hierarchy.
+- [`geometry-intersection-theory.md`](geometry-intersection-theory.md): geometric primitives, implicit surfaces, mesh handling, and the bounding-volume hierarchy.
+- [`geometry-shape-details.md`](geometry-shape-details.md): current geometry shape support matrix, JSON fields, bounds rules, dimensions, and implementation status.
 - [`optics-and-materials.md`](optics-and-materials.md): rays, spectra, reflection, refraction, Fresnel effects, wavelength sampling, dispersion, and BSDF/BxDF materials.
-- [`cameras-rendering-and-scene.md`](cameras-rendering-and-scene.md): camera projection, N-dimensional imaging, recursive ray tracing, film accumulation, concurrency, and scene scripts.
+- [`rendering-flow-cameras-and-scenes.md`](rendering-flow-cameras-and-scenes.md): camera projection, N-dimensional imaging, recursive ray tracing, film accumulation, concurrency, and scene scripts.
 - [`material-system-design.md`](material-system-design.md): current material/BxDF architecture, schema, validation rules, IOR/dispersion wiring, microfacet status, and output transform controls.
 - [`material-capability-coverage.md`](material-capability-coverage.md): current engine coverage for real-world material families, implemented BxDFs, and missing/planned material models.
-- [`scene-json-current.md`](scene-json-current.md): current JSON schema for media, materials, objects, cameras, render output controls, and showcase scenes.
+- [`current-scene-json.md`](current-scene-json.md): current JSON schema for media, materials, objects, cameras, render output controls, and showcase scenes.
 - [`controller-json-rules.md`](controller-json-rules.md): controller/parser/factory rules for consuming scene JSON.
 - [`spectral-modernization-plan.md`](spectral-modernization-plan.md): staged technical plan for moving from RGB/hero-wavelength rendering toward a modern spectral color pipeline.
-- [`current-architecture.md`](current-architecture.md): current package boundaries for optics, materials, media, ray tracing, spectrum modes, and color-space types.
+- [`current-renderer-architecture.md`](current-renderer-architecture.md): current package boundaries for optics, materials, media, ray tracing, spectrum modes, and color-space types.
 - [`medium-and-caustics-modernization-plan.md`](medium-and-caustics-modernization-plan.md): staged plan for nested dielectric media, explicit medium boundaries, homogeneous absorption, participating-media scattering, and caustic-capable prism validation.
 - [`multidimensional-rendering.md`](multidimensional-rendering.md): implemented N-dimensional camera/film support, 4D hypercube and hypersphere scenes, and the geometric interpretation of exterior and interior hypercube experiments.
 - [`ray-tracing-map.json`](ray-tracing-map.json): exported architecture/map data used by external diagramming or note tools.
@@ -53,10 +54,10 @@ The project combines five layers of knowledge:
 If you want to understand the project from first principles, read:
 
 1. `mathematical-foundations.md`
-2. `geometry-and-intersection.md`
+2. `geometry-intersection-theory.md`
 3. `optics-and-materials.md`
-4. `cameras-rendering-and-scene.md`
+4. `rendering-flow-cameras-and-scenes.md`
 5. `material-system-design.md`
 6. `multidimensional-rendering.md`
 
-If you want to extend the renderer, start from `cameras-rendering-and-scene.md`, then jump to the subsystem-specific document.
+If you want to extend the renderer, start from `rendering-flow-cameras-and-scenes.md`, then jump to the subsystem-specific document.

@@ -171,7 +171,7 @@ Scenes are JSON files containing optional media, materials, objects, cameras, an
 }
 ```
 
-See [`docs/scene-json-current.md`](docs/scene-json-current.md) for the current schema.
+See [`docs/current-scene-json.md`](docs/current-scene-json.md) for the current schema.
 
 ## Extending The Engine
 

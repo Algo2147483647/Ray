@@ -1,0 +1,53 @@
+{
+  "_comment": "Camera placed off the (x0,x1) loop plane, sighting along x2. The 4D Klein-bottle parametrisation is S(u,v) = ((R+r cos v)cos u, (R+r cos v)sin u, r sin v cos(u/2), r sin v sin(u/2)) — i.e. its 'big loop' lives in (x0,x1) and its 'small fibre' in (x2,x3). Looking down x2 maps the big loop to a circle on screen and folds the small fibre into a strip across the third film axis, so the ring topology is visible *and* the Klein twist (u/2) is exposed. Camera is at x2 = 6 (above the loop), looking back at the origin. v_stripes=1 paints one bright/dark band per fibre so the Klein glueing is unmistakeable: traversing u from 0 → 2π brings you back to the same point on x0,x1 but with the bright/dark pattern flipped along x3.",
+  "materials": [
+    {
+      "id": "klein-uv",
+      "emission": {
+        "type": "uv_klein",
+        "saturation": 1.0,
+        "lightness": 0.55,
+        "v_stripes": 1,
+        "intensity": 1.0
+      }
+    }
+  ],
+  "objects": [
+    {
+      "id": "klein",
+      "shape": "klein_bottle",
+      "center": [0, 0, 0, 0],
+      "r_major": 1.5,
+      "r_minor": 0.5,
+      "thickness": 0.06,
+      "material_id": "klein-uv"
+    }
+  ],
+  "cameras": [
+    {
+      "id": "klein-loop-perpendicular",
+      "type": "n_dim",
+      "position": [0.0, 0.0, 6.0, 0.0],
+      "coordinates": [
+        [0.0, 0.0, -1.0, 0.0],
+        [1.0, 0.0,  0.0, 0.0],
+        [0.0, 1.0,  0.0, 0.0],
+        [0.0, 0.0,  0.0, 1.0]
+      ],
+      "widths": [100, 100, 100],
+      "field_of_views": [140, 140, 140],
+      "ortho": true
+    }
+  ],
+  "render": {
+    "dimension": 4,
+    "samples": 16,
+    "thread_num": 8,
+    "spectrum_mode": "rgb",
+    "exposure": 1.0,
+    "tone_mapping": "linear",
+    "gamma": 1.0,
+    "output_image": "../outputs/4d-klein-bottle.png",
+    "output_film": "../outputs/4d-klein-bottle.bin"
+  }
+}

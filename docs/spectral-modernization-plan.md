@@ -416,7 +416,7 @@ Goals:
 Tasks:
 
 - Add this plan.
-- Update `scene-json-current.md` with legacy array semantics.
+- Update `current-scene-json.md` with legacy array semantics.
 - Establish a baseline smoke test for `feature-showcase.json`.
 
 Acceptance:
