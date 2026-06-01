@@ -113,6 +113,10 @@ func mergeScripts(dst, src *Script, source string) error {
 	}
 
 	dst.Render = mergeRenderScript(dst.Render, src.Render)
+	if src.Geometry != nil {
+		geometry := *src.Geometry
+		dst.Geometry = &geometry
+	}
 	dst.Renders = append(dst.Renders, src.Renders...)
 	return nil
 }

@@ -11,12 +11,12 @@ reference for anyone who:
 
 The rules apply whether the file is parsed from JSON or written
 programmatically. The engine code that implements them lives in
-`engine/model/geometry/`, `engine/model/optics/ray.go`,
+`engine/maths/geometry/`, `engine/model/optics/ray.go`,
 `engine/model/camera/camera_hyperbolic.go`, and `engine/ray_tracing/`.
 
 Companion documents: [`mathematical-foundations.md`](mathematical-foundations.md)
 for the underlying math, and the design spec under
-[`superpowers/specs/2026-05-31-non-euclidean-rendering-design.md`](superpowers/specs/2026-05-31-non-euclidean-rendering-design.md).
+[`../.agents/spec.md`](../.agents/spec.md).
 
 ---
 
@@ -118,7 +118,7 @@ routines.
 ## 3. The Layer-2 ↔ Layer-3 Translation Table
 
 These are the closed-form formulas the engine uses. They live in
-`engine/model/geometry/klein.go`. All quantities below are evaluated in
+`engine/maths/geometry/klein.go`. All quantities below are evaluated in
 Klein coordinates `p, q ∈ B³`, with `n` a euclidean unit vector and
 `c ∈ (−1, 1)`.
 
@@ -309,7 +309,7 @@ See Section 8 for a known limitation.
 
 ```go
 ray.G().ProjectTangent(ray.Origin, ray.Direction, ray.Direction)
-maths.Normalize(ray.Direction)
+normalizeDirectionInGeometry(ray.G(), ray.Origin, ray.Direction)
 ```
 
 After the BSDF spits out a sampled direction in the local frame and we
@@ -597,8 +597,8 @@ counterparts are the obvious analogues with `cos`/`sin` replacing
 
 | Layer / role | File |
 |---|---|
-| Geometry interface and Klein impl | `engine/model/geometry/geometry.go`, `engine/model/geometry/klein.go` |
-| Spherical impl (parallel) | `engine/model/geometry/spherical.go` |
+| Geometry interface and Klein impl | `engine/maths/geometry/geometry.go`, `engine/maths/geometry/klein.go` |
+| Spherical impl (parallel) | `engine/maths/geometry/spherical.go` |
 | Ray geometry tagging | `engine/model/optics/ray.go` |
 | Camera with Klein-tagging | `engine/model/camera/camera_hyperbolic.go` |
 | Spherical camera | `engine/model/camera/camera_spherical.go` |
@@ -612,5 +612,6 @@ counterparts are the obvious analogues with `cos`/`sin` replacing
 | Plan D scene (generated) | `examples/scenes/hyperbolic_ball_compare.json` |
 | Plan D generator | `scene-editor/tools/gen_hyperbolic_ball_compare.py` |
 | Original gallery scene | `examples/scenes/hyperbolic_gallery.json` |
-| Original chessboard | `examples/scenes/hyperbolic_chessboard.json` |
-| Design spec | `docs/superpowers/specs/2026-05-31-non-euclidean-rendering-design.md` |
+| Validation chessboard | `examples/scenes/non-euclidean/hyperbolic_chessboard.json` |
+| Validation S³ scene | `examples/scenes/non-euclidean/spherical_hopf.json` |
+| Design spec | `.agents/spec.md` |

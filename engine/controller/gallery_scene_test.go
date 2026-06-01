@@ -11,8 +11,8 @@ import (
 	"github.com/Algo2147483647/ray/engine/model"
 )
 
-func TestRayTracingTestGallerySceneLoadsAndRendersSmokeFrame(t *testing.T) {
-	scenePath := filepath.Join("..", "..", "examples", "scenes", "raytracing-test-gallery.json")
+func TestNonEuclideanGallerySceneLoadsAndRendersSmokeFrame(t *testing.T) {
+	scenePath := filepath.Join("..", "..", "examples", "scenes", "non-euclidean", "hyperbolic.json")
 	script, err := parser.ReadScriptFile(scenePath)
 	if err != nil {
 		t.Fatalf("read gallery scene: %v", err)
@@ -21,11 +21,11 @@ func TestRayTracingTestGallerySceneLoadsAndRendersSmokeFrame(t *testing.T) {
 	if len(script.Objects) < 40 {
 		t.Fatalf("expected a furnished gallery scene, got %d objects", len(script.Objects))
 	}
-	if got := script.Materials[4]["id"]; got != "raytest-left-pink" {
-		t.Fatalf("expected left wall to use RayTracingTest pink material, got %v", got)
+	if script.Geometry == nil || script.Geometry.Type != "klein" {
+		t.Fatalf("expected Klein scene geometry, got %#v", script.Geometry)
 	}
-	if got := script.Materials[5]["id"]; got != "raytest-right-violet" {
-		t.Fatalf("expected right wall to use RayTracingTest violet material, got %v", got)
+	if got := script.Materials[4]["id"]; got != "wall_back" {
+		t.Fatalf("expected hyperbolic gallery back wall material, got %v", got)
 	}
 
 	scene := model.NewScene()

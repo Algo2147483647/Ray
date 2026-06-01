@@ -66,6 +66,25 @@ func TestReadScriptFileMergesIncludesRelativeToParent(t *testing.T) {
 	}
 }
 
+func TestReadScriptFilePreservesGeometryThroughMerge(t *testing.T) {
+	dir := t.TempDir()
+	writeTestScript(t, filepath.Join(dir, "main.json"), `{
+		"geometry": {"type": "klein", "max_arc": 12.5},
+		"render": {"dimension": 3}
+	}`)
+
+	script, err := ReadScriptFile(filepath.Join(dir, "main.json"))
+	if err != nil {
+		t.Fatalf("read script: %v", err)
+	}
+	if script.Geometry == nil {
+		t.Fatal("expected geometry to survive script merge")
+	}
+	if script.Geometry.Type != "klein" || script.Geometry.MaxArc != 12.5 {
+		t.Fatalf("unexpected geometry: %#v", script.Geometry)
+	}
+}
+
 func TestReadScriptFileRejectsDuplicateIncludedIDs(t *testing.T) {
 	dir := t.TempDir()
 	writeTestScript(t, filepath.Join(dir, "a.json"), `{

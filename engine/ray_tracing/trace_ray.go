@@ -8,6 +8,7 @@ import (
 	"github.com/Algo2147483647/ray/engine/model/object"
 	"github.com/Algo2147483647/ray/engine/model/optics"
 	"github.com/Algo2147483647/ray/engine/utils"
+	"gonum.org/v1/gonum/mat"
 	"math"
 	"math/rand/v2"
 )
@@ -109,8 +110,11 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level in
 	// Project the sampled outgoing direction back into T_p of the current
 	// geometry, then renormalize using the geometry's inner product so the
 	// next embedded-ray intersection is parameterized correctly.
-	ray.G().ProjectTangent(ray.Origin, ray.Direction, ray.Direction)
-	maths.Normalize(ray.Direction)
+	g.ProjectTangent(ray.Origin, ray.Direction, ray.Direction)
+	if !normalizeDirectionInGeometry(g, ray.Origin, ray.Direction) {
+		terminateRay(ray)
+		return
+	}
 
 	// Continue tracing the next bounce.
 	h.TraceRay(objTree, ray, level+1)
@@ -264,6 +268,15 @@ func applySurfaceSample(
 	if sample.Flags&bxdf.TransmissionEvent != 0 {
 		applyMediumTransmission(media, ray, ctx, obj.MediumBoundary, sample)
 	}
+}
+
+func normalizeDirectionInGeometry(g geometry.Geometry, p, v *mat.VecDense) bool {
+	n2 := g.InnerProduct(p, v, v)
+	if n2 <= 0 || math.IsNaN(n2) || math.IsInf(n2, 0) {
+		return false
+	}
+	v.ScaleVec(1/math.Sqrt(n2), v)
+	return true
 }
 
 func (h *Handler) killByRussianRoulette(ray *optics.Ray, nextLevel int64) bool {

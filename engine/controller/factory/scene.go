@@ -23,6 +23,8 @@ func LoadSceneFromScript(script *parser.Script, scene *model.Scene) error {
 
 	scene.ObjectTree = &object.ObjectTree{}
 	scene.Cameras = nil
+	scene.Geometry = nil
+	scene.MaxArc = 0
 
 	// Resolve scene geometry. Default is Euclidean (nil sentinel).
 	if script.Geometry != nil {
