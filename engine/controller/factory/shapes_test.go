@@ -46,6 +46,35 @@ func TestParseShapeCircleRejectsZeroNormal(t *testing.T) {
 	}
 }
 
+func TestParseShapeTriangleAppliesOptionalCenter(t *testing.T) {
+	shapes, err := ParseShape(map[string]interface{}{
+		"shape":  "triangle",
+		"center": []interface{}{2, 3, 4},
+		"p1":     []interface{}{0, 0, 0},
+		"p2":     []interface{}{1, 0, 0},
+		"p3":     []interface{}{0, 1, 0},
+	})
+	if err != nil {
+		t.Fatalf("parse centered triangle: %v", err)
+	}
+	if len(shapes) != 1 {
+		t.Fatalf("expected one shape, got %d", len(shapes))
+	}
+	triangle, ok := shapes[0].(*shape.Triangle)
+	if !ok {
+		t.Fatalf("expected *shape.Triangle, got %T", shapes[0])
+	}
+	if triangle.P1.AtVec(0) != 2 || triangle.P1.AtVec(1) != 3 || triangle.P1.AtVec(2) != 4 {
+		t.Fatalf("unexpected p1: %v", triangle.P1.RawVector().Data)
+	}
+	if triangle.P2.AtVec(0) != 3 || triangle.P2.AtVec(1) != 3 || triangle.P2.AtVec(2) != 4 {
+		t.Fatalf("unexpected p2: %v", triangle.P2.RawVector().Data)
+	}
+	if triangle.P3.AtVec(0) != 2 || triangle.P3.AtVec(1) != 4 || triangle.P3.AtVec(2) != 4 {
+		t.Fatalf("unexpected p3: %v", triangle.P3.RawVector().Data)
+	}
+}
+
 func TestParseShapeFiniteCylinder(t *testing.T) {
 	shapes, err := ParseShape(map[string]interface{}{
 		"shape":    "finite cylinder",

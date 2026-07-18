@@ -271,6 +271,15 @@ func parseTriangle(objDef map[string]interface{}) ([]shape.Shape, error) {
 		return nil, err
 	}
 
+	if center, ok, err := utils.OptionalFloat64SliceField(objDef, "center", utils.Dimension); err != nil {
+		return nil, err
+	} else if ok {
+		centerVec := newVec(center)
+		p1.AddVec(p1, centerVec)
+		p2.AddVec(p2, centerVec)
+		p3.AddVec(p3, centerVec)
+	}
+
 	triangle := shape.NewTriangle(p1, p2, p3)
 	return wrapSingleShapeWithBounds(triangle, objDef)
 }
