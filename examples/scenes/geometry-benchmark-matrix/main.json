@@ -6,7 +6,7 @@
       "position": [-2.48, 0, 1.65],
       "look_at": [0, 0, 1.35],
       "up": [0, 0, 1],
-      "field_of_view": 40,
+      "field_of_view": 45,
       "width": 960,
       "height": 960,
       "aspect_ratio": 1.0

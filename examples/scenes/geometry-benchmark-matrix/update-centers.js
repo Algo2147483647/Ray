@@ -4,8 +4,8 @@ const fs = require("fs");
 const path = require("path");
 
 const sceneDir = __dirname;
-const rowX = [1, 0.62, 0.24, -0.14, -0.52, -0.9];
-const rowZ = [2.06, 1.72, 1.38, 1.04, 0.7, 0.38];
+const rowX = [2.5, 2.12, 1.74, 1.36, 0.98, 0.6];
+const rowZ = [2.76, 2.32, 1.88, 1.44, 1, 0.58];
 const colY = [1.68, 1.12, 0.56, 0, -0.56, -1.12, -1.68];
 const idPattern = /^geo-r(\d{2})-c(\d{2})(?:-|$)/;
 
