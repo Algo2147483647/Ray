@@ -367,6 +367,48 @@
       }
     },
     {
+      "id": "yellow-glass",
+      "surface": {
+        "type": "specular_dielectric",
+        "reflectance": [
+          1,
+          0.96,
+          0.72
+        ],
+        "transmittance": [
+          1,
+          0.86,
+          0.24
+        ],
+        "eta_outside": 1,
+        "ior": {
+          "type": "constant",
+          "eta": 1.5
+        }
+      }
+    },
+    {
+      "id": "green-glass",
+      "surface": {
+        "type": "specular_dielectric",
+        "reflectance": [
+          0.78,
+          1,
+          0.84
+        ],
+        "transmittance": [
+          0.34,
+          1,
+          0.52
+        ],
+        "eta_outside": 1,
+        "ior": {
+          "type": "constant",
+          "eta": 1.5
+        }
+      }
+    },
+    {
       "id": "dispersive-crystal",
       "surface": {
         "type": "specular_dielectric",

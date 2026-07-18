@@ -1716,53 +1716,2015 @@
       "material_id": "rough-gold"
     },
     {
-      "id": "geo-r04-c02",
-      "shape": "cylinder",
+      "id": "geo-r04-c02-szilassi-vertex-01",
+      "shape": "sphere",
       "center": [
-        1.16,
-        1.12,
-        1.64
+        1.428296,
+        1.161772,
+        1.639561
       ],
-      "axis": [
-        0,
-        0,
-        1
-      ],
-      "r": 0.14,
-      "height": 0.4,
-      "material_id": "concrete"
+      "r": 0.014,
+      "material_id": "green-glass"
     },
     {
-      "id": "geo-r04-c01",
-      "shape": "quadratic equation",
+      "id": "geo-r04-c02-szilassi-vertex-02",
+      "shape": "sphere",
+      "center": [
+        1.186815,
+        0.949977,
+        1.850003
+      ],
+      "r": 0.014,
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c02-szilassi-vertex-03",
+      "shape": "sphere",
+      "center": [
+        0.988662,
+        1.33822,
+        1.663014
+      ],
+      "r": 0.014,
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c02-szilassi-vertex-04",
+      "shape": "sphere",
+      "center": [
+        1.036227,
+        1.030031,
+        1.407422
+      ],
+      "r": 0.014,
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c02-szilassi-vertex-05",
+      "shape": "sphere",
+      "center": [
+        1.091191,
+        1.119251,
+        1.501896
+      ],
+      "r": 0.014,
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c02-szilassi-vertex-06",
+      "shape": "sphere",
+      "center": [
+        1.032069,
+        1.206249,
+        1.638395
+      ],
+      "r": 0.014,
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c02-szilassi-vertex-07",
+      "shape": "sphere",
+      "center": [
+        1.153764,
+        1.214986,
+        1.618957
+      ],
+      "r": 0.014,
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c02-szilassi-vertex-08",
+      "shape": "sphere",
+      "center": [
+        1.092458,
+        1.057077,
+        1.608652
+      ],
+      "r": 0.014,
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c02-szilassi-vertex-09",
+      "shape": "sphere",
+      "center": [
+        1.234589,
+        1.11845,
+        1.59265
+      ],
+      "r": 0.014,
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c02-szilassi-vertex-10",
+      "shape": "sphere",
+      "center": [
+        1.134596,
+        1.100175,
+        1.722278
+      ],
+      "r": 0.014,
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c02-szilassi-vertex-11",
+      "shape": "sphere",
+      "center": [
+        1.255025,
+        1.171086,
+        1.596085
+      ],
+      "r": 0.014,
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c02-szilassi-vertex-12",
+      "shape": "sphere",
+      "center": [
+        1.114161,
+        1.047539,
+        1.718842
+      ],
+      "r": 0.014,
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c02-szilassi-vertex-13",
+      "shape": "sphere",
+      "center": [
+        1.250306,
+        1.20166,
+        1.621441
+      ],
+      "r": 0.014,
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c02-szilassi-vertex-14",
+      "shape": "sphere",
+      "center": [
+        1.118879,
+        1.016964,
+        1.693486
+      ],
+      "r": 0.014,
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c02-szilassi-edge-01",
+      "shape": "cylinder",
+      "center": [
+        1.307555,
+        1.055875,
+        1.744782
+      ],
+      "r": 0.007,
+      "height": 0.384,
+      "axis": [
+        -0.241481,
+        -0.211795,
+        0.210442
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c02-szilassi-edge-02",
+      "shape": "cylinder",
+      "center": [
+        1.259743,
+        1.140512,
+        1.570728
+      ],
+      "r": 0.007,
+      "height": 0.366605,
+      "axis": [
+        -0.337105,
+        -0.042521,
+        -0.137665
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c02-szilassi-edge-03",
+      "shape": "cylinder",
+      "center": [
+        1.339301,
+        1.181716,
+        1.630501
+      ],
+      "r": 0.007,
+      "height": 0.183303,
+      "axis": [
+        -0.17799,
+        0.039888,
+        -0.01812
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c02-szilassi-edge-04",
+      "shape": "cylinder",
+      "center": [
+        1.109442,
+        1.078113,
+        1.744199
+      ],
+      "r": 0.007,
+      "height": 0.366606,
+      "axis": [
+        -0.154746,
+        0.256272,
+        -0.211608
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c02-szilassi-edge-05",
+      "shape": "cylinder",
+      "center": [
+        1.152847,
+        0.983471,
+        1.771744
+      ],
+      "r": 0.007,
+      "height": 0.183303,
+      "axis": [
+        -0.067936,
+        0.066987,
+        -0.156517
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c02-szilassi-edge-06",
+      "shape": "cylinder",
+      "center": [
+        1.012444,
+        1.184126,
+        1.535218
+      ],
+      "r": 0.007,
+      "height": 0.4032,
+      "axis": [
+        0.047565,
+        -0.308189,
+        -0.255592
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c02-szilassi-edge-07",
+      "shape": "cylinder",
+      "center": [
+        1.010365,
+        1.272235,
+        1.650704
+      ],
+      "r": 0.007,
+      "height": 0.141091,
+      "axis": [
+        0.043407,
+        -0.131971,
+        -0.024619
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c02-szilassi-edge-08",
+      "shape": "cylinder",
+      "center": [
+        1.121843,
+        1.254653,
+        1.629549
+      ],
+      "r": 0.007,
+      "height": 0.3215,
+      "axis": [
+        0.266363,
+        -0.167134,
+        -0.066929
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c02-szilassi-edge-09",
+      "shape": "cylinder",
+      "center": [
+        1.063709,
+        1.074641,
+        1.454659
+      ],
+      "r": 0.007,
+      "height": 0.141091,
+      "axis": [
+        0.054964,
+        0.08922,
+        0.094474
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c02-szilassi-edge-10",
+      "shape": "cylinder",
+      "center": [
+        1.075194,
+        1.038785,
+        1.563132
+      ],
+      "r": 0.007,
+      "height": 0.321501,
+      "axis": [
+        0.077934,
+        0.017508,
+        0.31142
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c02-szilassi-edge-11",
+      "shape": "cylinder",
+      "center": [
+        1.091824,
+        1.088164,
+        1.555274
+      ],
+      "r": 0.007,
+      "height": 0.123548,
+      "axis": [
+        0.001267,
+        -0.062174,
+        0.106756
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c02-szilassi-edge-12",
+      "shape": "cylinder",
+      "center": [
+        1.092916,
+        1.210618,
+        1.628676
+      ],
+      "r": 0.007,
+      "height": 0.123547,
+      "axis": [
+        0.121695,
+        0.008737,
+        -0.019438
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c02-szilassi-edge-13",
+      "shape": "cylinder",
+      "center": [
+        1.123111,
+        1.136032,
+        1.613805
+      ],
+      "r": 0.007,
+      "height": 0.169705,
+      "axis": [
+        -0.061306,
+        -0.157909,
+        -0.010305
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c02-szilassi-edge-14",
+      "shape": "cylinder",
+      "center": [
+        1.14418,
+        1.157581,
+        1.670618
+      ],
+      "r": 0.007,
+      "height": 0.155641,
+      "axis": [
+        -0.019168,
+        -0.114811,
+        0.103321
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c02-szilassi-edge-15",
+      "shape": "cylinder",
+      "center": [
+        1.163523,
+        1.087764,
+        1.600651
+      ],
+      "r": 0.007,
+      "height": 0.15564,
+      "axis": [
+        0.142131,
+        0.061373,
+        -0.016002
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c02-szilassi-edge-16",
+      "shape": "cylinder",
+      "center": [
+        1.244807,
+        1.144768,
+        1.594367
+      ],
+      "r": 0.007,
+      "height": 0.056568,
+      "axis": [
+        0.020436,
+        0.052636,
+        0.003435
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c02-szilassi-edge-17",
+      "shape": "cylinder",
+      "center": [
+        1.176734,
+        1.067707,
+        1.643068
+      ],
+      "r": 0.007,
+      "height": 0.184,
+      "axis": [
+        -0.11571,
+        -0.101486,
+        0.100836
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c02-szilassi-edge-18",
+      "shape": "cylinder",
+      "center": [
+        1.124378,
+        1.073857,
+        1.72056
+      ],
+      "r": 0.007,
+      "height": 0.056568,
+      "axis": [
+        -0.020435,
+        -0.052636,
+        -0.003436
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c02-szilassi-edge-19",
+      "shape": "cylinder",
+      "center": [
+        1.192451,
+        1.150918,
+        1.67186
+      ],
+      "r": 0.007,
+      "height": 0.184,
+      "axis": [
+        0.11571,
+        0.101485,
+        -0.100837
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c02-szilassi-edge-20",
+      "shape": "cylinder",
+      "center": [
+        1.252665,
+        1.186373,
+        1.608763
+      ],
+      "r": 0.007,
+      "height": 0.04,
+      "axis": [
+        -0.004719,
+        0.030574,
+        0.025356
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c02-szilassi-edge-21",
+      "shape": "cylinder",
+      "center": [
+        1.11652,
+        1.032252,
+        1.706164
+      ],
+      "r": 0.007,
+      "height": 0.04,
+      "axis": [
+        0.004718,
+        -0.030575,
+        -0.025356
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-01-1",
+      "shape": "triangle",
       "center": [
         1.16,
         1.68,
         1.64
       ],
-      "scale": [
-        0.12,
-        0.12,
-        0.12
+      "p1": [
+        -0.137533,
+        0,
+        0.052533
       ],
-      "a": [
-        0.25,
+      "p2": [
+        -0.137533,
         0,
-        0,
-        0,
-        0.49,
-        0,
-        0,
-        0,
-        1
+        -0.052533
       ],
-      "b": [
-        1,
-        1,
-        1
+      "p3": [
+        -0.204156,
+        -0.126175,
+        0
       ],
-      "c": 1,
-      "material_id": "blue-glass"
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-01-2",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        -0.137533,
+        0,
+        -0.052533
+      ],
+      "p2": [
+        -0.085,
+        -0.085,
+        -0.085
+      ],
+      "p3": [
+        -0.204156,
+        -0.126175,
+        0
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-01-3",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        -0.085,
+        -0.085,
+        -0.085
+      ],
+      "p2": [
+        -0.052533,
+        -0.137533,
+        0
+      ],
+      "p3": [
+        -0.204156,
+        -0.126175,
+        0
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-01-4",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        -0.052533,
+        -0.137533,
+        0
+      ],
+      "p2": [
+        -0.085,
+        -0.085,
+        0.085
+      ],
+      "p3": [
+        -0.204156,
+        -0.126175,
+        0
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-01-5",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        -0.085,
+        -0.085,
+        0.085
+      ],
+      "p2": [
+        -0.137533,
+        0,
+        0.052533
+      ],
+      "p3": [
+        -0.204156,
+        -0.126175,
+        0
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-02-1",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0,
+        0.052533,
+        -0.137533
+      ],
+      "p2": [
+        0,
+        -0.052533,
+        -0.137533
+      ],
+      "p3": [
+        -0.126175,
+        0,
+        -0.204156
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-02-2",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0,
+        -0.052533,
+        -0.137533
+      ],
+      "p2": [
+        -0.085,
+        -0.085,
+        -0.085
+      ],
+      "p3": [
+        -0.126175,
+        0,
+        -0.204156
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-02-3",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        -0.085,
+        -0.085,
+        -0.085
+      ],
+      "p2": [
+        -0.137533,
+        0,
+        -0.052533
+      ],
+      "p3": [
+        -0.126175,
+        0,
+        -0.204156
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-02-4",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        -0.137533,
+        0,
+        -0.052533
+      ],
+      "p2": [
+        -0.085,
+        0.085,
+        -0.085
+      ],
+      "p3": [
+        -0.126175,
+        0,
+        -0.204156
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-02-5",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        -0.085,
+        0.085,
+        -0.085
+      ],
+      "p2": [
+        0,
+        0.052533,
+        -0.137533
+      ],
+      "p3": [
+        -0.126175,
+        0,
+        -0.204156
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-03-1",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0.052533,
+        -0.137533,
+        0
+      ],
+      "p2": [
+        -0.052533,
+        -0.137533,
+        0
+      ],
+      "p3": [
+        0,
+        -0.204156,
+        -0.126175
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-03-2",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        -0.052533,
+        -0.137533,
+        0
+      ],
+      "p2": [
+        -0.085,
+        -0.085,
+        -0.085
+      ],
+      "p3": [
+        0,
+        -0.204156,
+        -0.126175
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-03-3",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        -0.085,
+        -0.085,
+        -0.085
+      ],
+      "p2": [
+        0,
+        -0.052533,
+        -0.137533
+      ],
+      "p3": [
+        0,
+        -0.204156,
+        -0.126175
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-03-4",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0,
+        -0.052533,
+        -0.137533
+      ],
+      "p2": [
+        0.085,
+        -0.085,
+        -0.085
+      ],
+      "p3": [
+        0,
+        -0.204156,
+        -0.126175
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-03-5",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0.085,
+        -0.085,
+        -0.085
+      ],
+      "p2": [
+        0.052533,
+        -0.137533,
+        0
+      ],
+      "p3": [
+        0,
+        -0.204156,
+        -0.126175
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-04-1",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        -0.085,
+        0.085,
+        0.085
+      ],
+      "p2": [
+        -0.137533,
+        0,
+        0.052533
+      ],
+      "p3": [
+        -0.126175,
+        0,
+        0.204156
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-04-2",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        -0.137533,
+        0,
+        0.052533
+      ],
+      "p2": [
+        -0.085,
+        -0.085,
+        0.085
+      ],
+      "p3": [
+        -0.126175,
+        0,
+        0.204156
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-04-3",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        -0.085,
+        -0.085,
+        0.085
+      ],
+      "p2": [
+        0,
+        -0.052533,
+        0.137533
+      ],
+      "p3": [
+        -0.126175,
+        0,
+        0.204156
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-04-4",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0,
+        -0.052533,
+        0.137533
+      ],
+      "p2": [
+        0,
+        0.052533,
+        0.137533
+      ],
+      "p3": [
+        -0.126175,
+        0,
+        0.204156
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-04-5",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0,
+        0.052533,
+        0.137533
+      ],
+      "p2": [
+        -0.085,
+        0.085,
+        0.085
+      ],
+      "p3": [
+        -0.126175,
+        0,
+        0.204156
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-05-1",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0.085,
+        -0.085,
+        0.085
+      ],
+      "p2": [
+        0,
+        -0.052533,
+        0.137533
+      ],
+      "p3": [
+        0,
+        -0.204156,
+        0.126175
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-05-2",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0,
+        -0.052533,
+        0.137533
+      ],
+      "p2": [
+        -0.085,
+        -0.085,
+        0.085
+      ],
+      "p3": [
+        0,
+        -0.204156,
+        0.126175
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-05-3",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        -0.085,
+        -0.085,
+        0.085
+      ],
+      "p2": [
+        -0.052533,
+        -0.137533,
+        0
+      ],
+      "p3": [
+        0,
+        -0.204156,
+        0.126175
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-05-4",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        -0.052533,
+        -0.137533,
+        0
+      ],
+      "p2": [
+        0.052533,
+        -0.137533,
+        0
+      ],
+      "p3": [
+        0,
+        -0.204156,
+        0.126175
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-05-5",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0.052533,
+        -0.137533,
+        0
+      ],
+      "p2": [
+        0.085,
+        -0.085,
+        0.085
+      ],
+      "p3": [
+        0,
+        -0.204156,
+        0.126175
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-06-1",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        -0.085,
+        0.085,
+        0.085
+      ],
+      "p2": [
+        -0.052533,
+        0.137533,
+        0
+      ],
+      "p3": [
+        -0.204156,
+        0.126175,
+        0
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-06-2",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        -0.052533,
+        0.137533,
+        0
+      ],
+      "p2": [
+        -0.085,
+        0.085,
+        -0.085
+      ],
+      "p3": [
+        -0.204156,
+        0.126175,
+        0
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-06-3",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        -0.085,
+        0.085,
+        -0.085
+      ],
+      "p2": [
+        -0.137533,
+        0,
+        -0.052533
+      ],
+      "p3": [
+        -0.204156,
+        0.126175,
+        0
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-06-4",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        -0.137533,
+        0,
+        -0.052533
+      ],
+      "p2": [
+        -0.137533,
+        0,
+        0.052533
+      ],
+      "p3": [
+        -0.204156,
+        0.126175,
+        0
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-06-5",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        -0.137533,
+        0,
+        0.052533
+      ],
+      "p2": [
+        -0.085,
+        0.085,
+        0.085
+      ],
+      "p3": [
+        -0.204156,
+        0.126175,
+        0
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-07-1",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0.085,
+        0.085,
+        -0.085
+      ],
+      "p2": [
+        0,
+        0.052533,
+        -0.137533
+      ],
+      "p3": [
+        0,
+        0.204156,
+        -0.126175
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-07-2",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0,
+        0.052533,
+        -0.137533
+      ],
+      "p2": [
+        -0.085,
+        0.085,
+        -0.085
+      ],
+      "p3": [
+        0,
+        0.204156,
+        -0.126175
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-07-3",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        -0.085,
+        0.085,
+        -0.085
+      ],
+      "p2": [
+        -0.052533,
+        0.137533,
+        0
+      ],
+      "p3": [
+        0,
+        0.204156,
+        -0.126175
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-07-4",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        -0.052533,
+        0.137533,
+        0
+      ],
+      "p2": [
+        0.052533,
+        0.137533,
+        0
+      ],
+      "p3": [
+        0,
+        0.204156,
+        -0.126175
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-07-5",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0.052533,
+        0.137533,
+        0
+      ],
+      "p2": [
+        0.085,
+        0.085,
+        -0.085
+      ],
+      "p3": [
+        0,
+        0.204156,
+        -0.126175
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-08-1",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0.052533,
+        0.137533,
+        0
+      ],
+      "p2": [
+        -0.052533,
+        0.137533,
+        0
+      ],
+      "p3": [
+        0,
+        0.204156,
+        0.126175
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-08-2",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        -0.052533,
+        0.137533,
+        0
+      ],
+      "p2": [
+        -0.085,
+        0.085,
+        0.085
+      ],
+      "p3": [
+        0,
+        0.204156,
+        0.126175
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-08-3",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        -0.085,
+        0.085,
+        0.085
+      ],
+      "p2": [
+        0,
+        0.052533,
+        0.137533
+      ],
+      "p3": [
+        0,
+        0.204156,
+        0.126175
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-08-4",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0,
+        0.052533,
+        0.137533
+      ],
+      "p2": [
+        0.085,
+        0.085,
+        0.085
+      ],
+      "p3": [
+        0,
+        0.204156,
+        0.126175
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-08-5",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0.085,
+        0.085,
+        0.085
+      ],
+      "p2": [
+        0.052533,
+        0.137533,
+        0
+      ],
+      "p3": [
+        0,
+        0.204156,
+        0.126175
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-09-1",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0.085,
+        -0.085,
+        0.085
+      ],
+      "p2": [
+        0.052533,
+        -0.137533,
+        0
+      ],
+      "p3": [
+        0.204156,
+        -0.126175,
+        0
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-09-2",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0.052533,
+        -0.137533,
+        0
+      ],
+      "p2": [
+        0.085,
+        -0.085,
+        -0.085
+      ],
+      "p3": [
+        0.204156,
+        -0.126175,
+        0
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-09-3",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0.085,
+        -0.085,
+        -0.085
+      ],
+      "p2": [
+        0.137533,
+        0,
+        -0.052533
+      ],
+      "p3": [
+        0.204156,
+        -0.126175,
+        0
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-09-4",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0.137533,
+        0,
+        -0.052533
+      ],
+      "p2": [
+        0.137533,
+        0,
+        0.052533
+      ],
+      "p3": [
+        0.204156,
+        -0.126175,
+        0
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-09-5",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0.137533,
+        0,
+        0.052533
+      ],
+      "p2": [
+        0.085,
+        -0.085,
+        0.085
+      ],
+      "p3": [
+        0.204156,
+        -0.126175,
+        0
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-10-1",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0.085,
+        0.085,
+        -0.085
+      ],
+      "p2": [
+        0.137533,
+        0,
+        -0.052533
+      ],
+      "p3": [
+        0.126175,
+        0,
+        -0.204156
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-10-2",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0.137533,
+        0,
+        -0.052533
+      ],
+      "p2": [
+        0.085,
+        -0.085,
+        -0.085
+      ],
+      "p3": [
+        0.126175,
+        0,
+        -0.204156
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-10-3",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0.085,
+        -0.085,
+        -0.085
+      ],
+      "p2": [
+        0,
+        -0.052533,
+        -0.137533
+      ],
+      "p3": [
+        0.126175,
+        0,
+        -0.204156
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-10-4",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0,
+        -0.052533,
+        -0.137533
+      ],
+      "p2": [
+        0,
+        0.052533,
+        -0.137533
+      ],
+      "p3": [
+        0.126175,
+        0,
+        -0.204156
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-10-5",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0,
+        0.052533,
+        -0.137533
+      ],
+      "p2": [
+        0.085,
+        0.085,
+        -0.085
+      ],
+      "p3": [
+        0.126175,
+        0,
+        -0.204156
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-11-1",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0,
+        0.052533,
+        0.137533
+      ],
+      "p2": [
+        0,
+        -0.052533,
+        0.137533
+      ],
+      "p3": [
+        0.126175,
+        0,
+        0.204156
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-11-2",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0,
+        -0.052533,
+        0.137533
+      ],
+      "p2": [
+        0.085,
+        -0.085,
+        0.085
+      ],
+      "p3": [
+        0.126175,
+        0,
+        0.204156
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-11-3",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0.085,
+        -0.085,
+        0.085
+      ],
+      "p2": [
+        0.137533,
+        0,
+        0.052533
+      ],
+      "p3": [
+        0.126175,
+        0,
+        0.204156
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-11-4",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0.137533,
+        0,
+        0.052533
+      ],
+      "p2": [
+        0.085,
+        0.085,
+        0.085
+      ],
+      "p3": [
+        0.126175,
+        0,
+        0.204156
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-11-5",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0.085,
+        0.085,
+        0.085
+      ],
+      "p2": [
+        0,
+        0.052533,
+        0.137533
+      ],
+      "p3": [
+        0.126175,
+        0,
+        0.204156
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-12-1",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0.137533,
+        0,
+        0.052533
+      ],
+      "p2": [
+        0.137533,
+        0,
+        -0.052533
+      ],
+      "p3": [
+        0.204156,
+        0.126175,
+        0
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-12-2",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0.137533,
+        0,
+        -0.052533
+      ],
+      "p2": [
+        0.085,
+        0.085,
+        -0.085
+      ],
+      "p3": [
+        0.204156,
+        0.126175,
+        0
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-12-3",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0.085,
+        0.085,
+        -0.085
+      ],
+      "p2": [
+        0.052533,
+        0.137533,
+        0
+      ],
+      "p3": [
+        0.204156,
+        0.126175,
+        0
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-12-4",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0.052533,
+        0.137533,
+        0
+      ],
+      "p2": [
+        0.085,
+        0.085,
+        0.085
+      ],
+      "p3": [
+        0.204156,
+        0.126175,
+        0
+      ],
+      "material_id": "yellow-glass"
+    },
+    {
+      "id": "geo-r04-c01-small-stellated-dodecahedron-face-12-5",
+      "shape": "triangle",
+      "center": [
+        1.16,
+        1.68,
+        1.64
+      ],
+      "p1": [
+        0.085,
+        0.085,
+        0.085
+      ],
+      "p2": [
+        0.137533,
+        0,
+        0.052533
+      ],
+      "p3": [
+        0.204156,
+        0.126175,
+        0
+      ],
+      "material_id": "yellow-glass"
     }
   ]
 }

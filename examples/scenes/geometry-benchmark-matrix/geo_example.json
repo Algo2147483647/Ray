@@ -1,45 +1,515 @@
 {
   "objects": [
     {
-      "id": "geo-example-ding-dong-open-base",
-      "shape": "polynomial surface",
-      "mode": "implicit",
-      "input_dim": 3,
-      "degree": 3,
+      "id": "geo-example-szilassi-vertex-01",
+      "shape": "sphere",
       "center": [
-        0,
-        0,
-        1.45
+        0.871963,
+        0.13576,
+        1.618575
       ],
-      "scale": 0.5,
-      "coefficients": {
-        "format": "coo",
-        "shape": [
-          4,
-          4,
-          4
-        ],
-        "degree_policy": "total",
-        "terms": [
-          { "index": [2, 0, 0], "value": 1 },
-          { "index": [0, 2, 0], "value": 1 },
-          { "index": [0, 0, 3], "value": 1 },
-          { "index": [0, 0, 2], "value": -1 }
-        ]
-      },
-      "bounds": {
-        "pmin": [
-          -0.9,
-          -0.9,
-          0.95
-        ],
-        "pmax": [
-          0.9,
-          0.9,
-          1.95
-        ]
-      },
-      "material_id": "blue-glass"
+      "r": 0.03,
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-vertex-02",
+      "shape": "sphere",
+      "center": [
+        0.087149,
+        -0.552575,
+        2.302508
+      ],
+      "r": 0.03,
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-vertex-03",
+      "shape": "sphere",
+      "center": [
+        -0.55685,
+        0.709216,
+        1.694794
+      ],
+      "r": 0.03,
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-vertex-04",
+      "shape": "sphere",
+      "center": [
+        -0.402262,
+        -0.292401,
+        0.864123
+      ],
+      "r": 0.03,
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-vertex-05",
+      "shape": "sphere",
+      "center": [
+        -0.22363,
+        -0.002434,
+        1.171162
+      ],
+      "r": 0.03,
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-vertex-06",
+      "shape": "sphere",
+      "center": [
+        -0.415777,
+        0.28031,
+        1.614783
+      ],
+      "r": 0.03,
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-vertex-07",
+      "shape": "sphere",
+      "center": [
+        -0.020266,
+        0.308704,
+        1.551612
+      ],
+      "r": 0.03,
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-vertex-08",
+      "shape": "sphere",
+      "center": [
+        -0.219512,
+        -0.204501,
+        1.518117
+      ],
+      "r": 0.03,
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-vertex-09",
+      "shape": "sphere",
+      "center": [
+        0.242415,
+        -0.005038,
+        1.466111
+      ],
+      "r": 0.03,
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-vertex-10",
+      "shape": "sphere",
+      "center": [
+        -0.082563,
+        -0.064431,
+        1.887402
+      ],
+      "r": 0.03,
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-vertex-11",
+      "shape": "sphere",
+      "center": [
+        0.30883,
+        0.16603,
+        1.477276
+      ],
+      "r": 0.03,
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-vertex-12",
+      "shape": "sphere",
+      "center": [
+        -0.148978,
+        -0.235499,
+        1.876238
+      ],
+      "r": 0.03,
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-vertex-13",
+      "shape": "sphere",
+      "center": [
+        0.293494,
+        0.265397,
+        1.559684
+      ],
+      "r": 0.03,
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-vertex-14",
+      "shape": "sphere",
+      "center": [
+        -0.133642,
+        -0.334866,
+        1.79383
+      ],
+      "r": 0.03,
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-edge-01",
+      "shape": "cylinder",
+      "center": [
+        0.479556,
+        -0.208408,
+        1.960542
+      ],
+      "r": 0.016,
+      "height": 1.247999,
+      "axis": [
+        -0.784814,
+        -0.688335,
+        0.683933
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-edge-02",
+      "shape": "cylinder",
+      "center": [
+        0.324167,
+        0.066663,
+        1.394869
+      ],
+      "r": 0.016,
+      "height": 1.19147,
+      "axis": [
+        -1.095593,
+        -0.138194,
+        -0.447413
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-edge-03",
+      "shape": "cylinder",
+      "center": [
+        0.582728,
+        0.200578,
+        1.58913
+      ],
+      "r": 0.016,
+      "height": 0.595735,
+      "axis": [
+        -0.578469,
+        0.129637,
+        -0.058891
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-edge-04",
+      "shape": "cylinder",
+      "center": [
+        -0.164314,
+        -0.136133,
+        1.958646
+      ],
+      "r": 0.016,
+      "height": 1.191469,
+      "axis": [
+        -0.502926,
+        0.832885,
+        -0.687725
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-edge-05",
+      "shape": "cylinder",
+      "center": [
+        -0.023247,
+        -0.443721,
+        2.048169
+      ],
+      "r": 0.016,
+      "height": 0.595734,
+      "axis": [
+        -0.220791,
+        0.217709,
+        -0.508678
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-edge-06",
+      "shape": "cylinder",
+      "center": [
+        -0.479556,
+        0.208407,
+        1.279459
+      ],
+      "r": 0.016,
+      "height": 1.3104,
+      "axis": [
+        0.154588,
+        -1.001617,
+        -0.830671
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-edge-07",
+      "shape": "cylinder",
+      "center": [
+        -0.486313,
+        0.494763,
+        1.654788
+      ],
+      "r": 0.016,
+      "height": 0.458545,
+      "axis": [
+        0.141073,
+        -0.428906,
+        -0.080011
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-edge-08",
+      "shape": "cylinder",
+      "center": [
+        -0.12401,
+        0.437623,
+        1.586035
+      ],
+      "r": 0.016,
+      "height": 1.044877,
+      "axis": [
+        0.86568,
+        -0.543186,
+        -0.217518
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-edge-09",
+      "shape": "cylinder",
+      "center": [
+        -0.312946,
+        -0.147418,
+        1.017643
+      ],
+      "r": 0.016,
+      "height": 0.458545,
+      "axis": [
+        0.178632,
+        0.289967,
+        0.307039
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-edge-10",
+      "shape": "cylinder",
+      "center": [
+        -0.27562,
+        -0.26395,
+        1.370181
+      ],
+      "r": 0.016,
+      "height": 1.044877,
+      "axis": [
+        0.253284,
+        0.056902,
+        1.012115
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-edge-11",
+      "shape": "cylinder",
+      "center": [
+        -0.221571,
+        -0.103467,
+        1.344639
+      ],
+      "r": 0.016,
+      "height": 0.401529,
+      "axis": [
+        0.004118,
+        -0.202067,
+        0.346955
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-edge-12",
+      "shape": "cylinder",
+      "center": [
+        -0.218022,
+        0.294507,
+        1.583198
+      ],
+      "r": 0.016,
+      "height": 0.401529,
+      "axis": [
+        0.395511,
+        0.028394,
+        -0.063171
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-edge-13",
+      "shape": "cylinder",
+      "center": [
+        -0.119889,
+        0.052101,
+        1.534865
+      ],
+      "r": 0.016,
+      "height": 0.551544,
+      "axis": [
+        -0.199246,
+        -0.513205,
+        -0.033495
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-edge-14",
+      "shape": "cylinder",
+      "center": [
+        -0.051415,
+        0.122136,
+        1.719507
+      ],
+      "r": 0.016,
+      "height": 0.505832,
+      "axis": [
+        -0.062297,
+        -0.373135,
+        0.33579
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-edge-15",
+      "shape": "cylinder",
+      "center": [
+        0.011451,
+        -0.104769,
+        1.492114
+      ],
+      "r": 0.016,
+      "height": 0.505833,
+      "axis": [
+        0.461927,
+        0.199463,
+        -0.052006
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-edge-16",
+      "shape": "cylinder",
+      "center": [
+        0.275622,
+        0.080496,
+        1.471694
+      ],
+      "r": 0.016,
+      "height": 0.183847,
+      "axis": [
+        0.066415,
+        0.171068,
+        0.011165
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-edge-17",
+      "shape": "cylinder",
+      "center": [
+        0.054386,
+        -0.169952,
+        1.629971
+      ],
+      "r": 0.016,
+      "height": 0.598001,
+      "axis": [
+        -0.376057,
+        -0.329828,
+        0.327719
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-edge-18",
+      "shape": "cylinder",
+      "center": [
+        -0.11577,
+        -0.149965,
+        1.88182
+      ],
+      "r": 0.016,
+      "height": 0.183847,
+      "axis": [
+        -0.066415,
+        -0.171068,
+        -0.011164
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-edge-19",
+      "shape": "cylinder",
+      "center": [
+        0.105465,
+        0.100483,
+        1.723543
+      ],
+      "r": 0.016,
+      "height": 0.598,
+      "axis": [
+        0.376057,
+        0.329828,
+        -0.327718
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-edge-20",
+      "shape": "cylinder",
+      "center": [
+        0.301162,
+        0.215714,
+        1.51848
+      ],
+      "r": 0.016,
+      "height": 0.13,
+      "axis": [
+        -0.015336,
+        0.099367,
+        0.082408
+      ],
+      "material_id": "green-glass"
+    },
+    {
+      "id": "geo-example-szilassi-edge-21",
+      "shape": "cylinder",
+      "center": [
+        -0.14131,
+        -0.285183,
+        1.835034
+      ],
+      "r": 0.016,
+      "height": 0.13,
+      "axis": [
+        0.015336,
+        -0.099367,
+        -0.082408
+      ],
+      "material_id": "green-glass"
     }
   ]
 }
