@@ -30,7 +30,7 @@
           1.39
         ]
       },
-      "material_id": "pale-blue-sheen"
+      "material_id": "white-card"
     },
     {
       "id": "geo-r05-c06-blue-crystal-gyroid",
@@ -60,7 +60,7 @@
           0.46
         ]
       },
-      "material_id": "gyroid-blue-crystal"
+      "material_id": "pale-blue-sheen"
     },
     {
       "id": "geo-r05-c06-red-crystal-gyroid",
@@ -90,7 +90,7 @@
           0.46
         ]
       },
-      "material_id": "gyroid-red-crystal"
+      "material_id": "pale-red-sheen"
     },
     {
       "id": "geo-r05-c06-core-light",

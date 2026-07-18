@@ -604,6 +604,17 @@
       }
     },
     {
+      "id": "pale-red-sheen",
+      "surface": {
+        "type": "specular_reflection",
+        "reflectance": [
+          1,
+          0.56,
+          0.52
+        ]
+      }
+    },
+    {
       "id": "rubber-black",
       "surface": {
         "type": "lambert",
