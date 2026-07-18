@@ -93,17 +93,6 @@
       "material_id": "pale-red-sheen"
     },
     {
-      "id": "geo-r05-c06-core-light",
-      "shape": "sphere",
-      "center": [
-        0.88,
-        -1.12,
-        1
-      ],
-      "r": 0.045,
-      "material_id": "gyroid-core-soft-light"
-    },
-    {
       "id": "geo-r05-c05",
       "shape": "four-order equation",
       "a": {

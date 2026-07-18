@@ -59,17 +59,6 @@
         ]
       },
       "material_id": "pale-red-sheen"
-    },
-    {
-      "id": "geo-example-r05-c06-core-light",
-      "shape": "sphere",
-      "center": [
-        0,
-        0,
-        1.08
-      ],
-      "r": 0.078,
-      "material_id": "gyroid-core-soft-light"
     }
   ]
 }
