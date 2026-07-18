@@ -68,9 +68,8 @@ export const defaultScene: SceneDocument = {
       position: [0, 0, 3000],
       direction: [0, 0, -1],
       up: [0, 1, 0],
-      width: 800,
-      height: 600,
-      field_of_view: 90
+      field_of_view: 90,
+      aspect_ratio: 1.3333333333333333
     }
   ]
 };

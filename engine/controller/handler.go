@@ -152,31 +152,28 @@ func (h *Handler) selectRenderCamera(cameraIndex, width, height int) (camera.Cam
 	selectedCamera := h.Scene.Cameras[cameraIndex]
 	switch c := selectedCamera.(type) {
 	case *camera.Camera3D:
-		resolvedWidth := firstPositiveInt(width, c.Width, defaultRenderWidth)
-		resolvedHeight := firstPositiveInt(height, c.Height, defaultRenderHeight)
+		resolvedWidth := firstPositiveInt(width, defaultRenderWidth)
+		resolvedHeight := firstPositiveInt(height, defaultRenderHeight)
 		c.Width = resolvedWidth
 		c.Height = resolvedHeight
-		c.AspectRatio = float64(resolvedWidth) / float64(resolvedHeight)
 		if err := c.Prepare(); err != nil {
 			return nil, nil, err
 		}
 		return c, []int{resolvedWidth, resolvedHeight}, nil
 	case *camera.HyperbolicCamera:
-		resolvedWidth := firstPositiveInt(width, c.Width, defaultRenderWidth)
-		resolvedHeight := firstPositiveInt(height, c.Height, defaultRenderHeight)
+		resolvedWidth := firstPositiveInt(width, defaultRenderWidth)
+		resolvedHeight := firstPositiveInt(height, defaultRenderHeight)
 		c.Width = resolvedWidth
 		c.Height = resolvedHeight
-		c.AspectRatio = float64(resolvedWidth) / float64(resolvedHeight)
 		if err := c.Prepare(); err != nil {
 			return nil, nil, err
 		}
 		return c, []int{resolvedWidth, resolvedHeight}, nil
 	case *camera.SphericalCamera:
-		resolvedWidth := firstPositiveInt(width, c.Width, defaultRenderWidth)
-		resolvedHeight := firstPositiveInt(height, c.Height, defaultRenderHeight)
+		resolvedWidth := firstPositiveInt(width, defaultRenderWidth)
+		resolvedHeight := firstPositiveInt(height, defaultRenderHeight)
 		c.Width = resolvedWidth
 		c.Height = resolvedHeight
-		c.AspectRatio = float64(resolvedWidth) / float64(resolvedHeight)
 		if err := c.Prepare(); err != nil {
 			return nil, nil, err
 		}

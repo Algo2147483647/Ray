@@ -43,9 +43,8 @@ export interface SceneCamera {
   position: number[];
   direction: number[];
   up: number[];
-  width: number;
-  height: number;
   field_of_view: number;
+  aspect_ratio: number;
 }
 
 export interface SceneDocument {

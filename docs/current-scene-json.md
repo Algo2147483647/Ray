@@ -16,7 +16,7 @@ This document records the current scene JSON fields used by the Go renderer afte
 }
 ```
 
-Use `cameras` for camera definitions. If the list is omitted or empty, the render handler creates a default 3D camera at render time.
+Use `cameras` for camera definitions. If the list is omitted or empty, the render handler creates a default 3D camera at render time. 3D, hyperbolic, and spherical cameras use `aspect_ratio` for their frame shape; `width` and `height` belong only to `render` output settings. N-dimensional cameras keep `widths` because those define the sampled film axes.
 
 ## Composing Multiple JSON Files
 

@@ -233,13 +233,13 @@ An omitted camera type defaults to `3d`.
   "look_at": [0, 0, 0],
   "up": [0, 0, 1],
   "field_of_view": 60,
-  "width": 800,
-  "height": 800,
+  "aspect_ratio": 1,
   "ortho": false
 }
 ```
 
 `direction` may be used instead of `look_at`.
+`width` and `height` are render settings, not camera fields.
 
 N-dimensional camera fields:
 

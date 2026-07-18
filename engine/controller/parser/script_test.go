@@ -85,6 +85,28 @@ func TestReadScriptFilePreservesGeometryThroughMerge(t *testing.T) {
 	}
 }
 
+func TestReadScriptFileRejectsCameraWidthHeight(t *testing.T) {
+	dir := t.TempDir()
+	writeTestScript(t, filepath.Join(dir, "main.json"), `{
+		"cameras": [
+			{
+				"id": "cam-a",
+				"type": "3d",
+				"position": [0, -3, 1],
+				"look_at": [0, 0, 0],
+				"up": [0, 0, 1],
+				"width": 800,
+				"height": 600
+			}
+		]
+	}`)
+
+	_, err := ReadScriptFile(filepath.Join(dir, "main.json"))
+	if err == nil || !strings.Contains(err.Error(), `camera field "width" has been removed`) {
+		t.Fatalf("expected removed camera width error, got %v", err)
+	}
+}
+
 func TestReadScriptFileRejectsDuplicateIncludedIDs(t *testing.T) {
 	dir := t.TempDir()
 	writeTestScript(t, filepath.Join(dir, "a.json"), `{

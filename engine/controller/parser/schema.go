@@ -1,6 +1,9 @@
 package parser
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type CameraScript struct {
 	ID           string      `json:"id"`             // Unique camera identifier.
@@ -9,14 +12,33 @@ type CameraScript struct {
 	LookAt       []float64   `json:"look_at"`        // Target point the camera faces.
 	Direction    []float64   `json:"direction"`      // Forward viewing direction.
 	Up           []float64   `json:"up"`             // Up vector defining camera roll.
-	Width        int         `json:"width"`          // Image width in pixels.
-	Height       int         `json:"height"`         // Image height in pixels.
 	Widths       []int       `json:"widths"`         // Per-frame image widths.
 	FieldOfView  float64     `json:"field_of_view"`  // Vertical field of view in degrees.
 	FieldOfViews []float64   `json:"field_of_views"` // Per-frame field-of-view values.
 	Coordinates  [][]float64 `json:"coordinates"`    // Camera path or sampled positions.
 	AspectRatio  float64     `json:"aspect_ratio"`   // Image width-to-height ratio.
 	Ortho        bool        `json:"ortho"`          // Enables orthographic projection.
+}
+
+func (c *CameraScript) UnmarshalJSON(data []byte) error {
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	if raw["width"] != nil {
+		return fmt.Errorf(`camera field "width" has been removed; set render.width instead`)
+	}
+	if raw["height"] != nil {
+		return fmt.Errorf(`camera field "height" has been removed; set render.height instead`)
+	}
+
+	type cameraScript CameraScript
+	var decoded cameraScript
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	*c = CameraScript(decoded)
+	return nil
 }
 
 type RenderScript struct {

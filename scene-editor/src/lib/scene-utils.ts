@@ -246,9 +246,8 @@ function normalizeCamera(input: unknown): SceneCamera {
     position: toNumberArray(source.position, [0, 0, 3000]),
     direction: toNumberArray(source.direction, [0, 0, -1]),
     up: toNumberArray(source.up, [0, 1, 0]),
-    width: toNumber(source.width, 800),
-    height: toNumber(source.height, 600),
-    field_of_view: toNumber(source.field_of_view, 90)
+    field_of_view: toNumber(source.field_of_view, 90),
+    aspect_ratio: toNumber(source.aspect_ratio, 1)
   };
 }
 

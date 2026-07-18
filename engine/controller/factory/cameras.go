@@ -67,12 +67,7 @@ func BuildCamera3DFromScript(def parser.CameraScript) (*modelcamera.Camera3D, er
 		return nil, err
 	}
 
-	width := def.Width
-	height := def.Height
 	aspectRatio := def.AspectRatio
-	if aspectRatio <= 0 && width > 0 && height > 0 {
-		aspectRatio = float64(width) / float64(height)
-	}
 	if aspectRatio <= 0 {
 		aspectRatio = defaults.AspectRatio
 	}
@@ -80,8 +75,6 @@ func BuildCamera3DFromScript(def parser.CameraScript) (*modelcamera.Camera3D, er
 	camera3D := &modelcamera.Camera3D{
 		Position:    position,
 		Up:          up,
-		Width:       width,
-		Height:      height,
 		AspectRatio: aspectRatio,
 		FieldOfView: positiveOrDefault(def.FieldOfView, defaults.FieldOfView),
 		Ortho:       def.Ortho,
@@ -213,17 +206,12 @@ func BuildSphericalCameraFromScript(def parser.CameraScript) (*modelcamera.Spher
 	if err != nil {
 		return nil, err
 	}
-	aspect := def.AspectRatio
-	if aspect <= 0 && def.Width > 0 && def.Height > 0 {
-		aspect = float64(def.Width) / float64(def.Height)
-	}
+	aspect := positiveOrDefault(def.AspectRatio, DefaultCameraScript().AspectRatio)
 	cam := &modelcamera.SphericalCamera{
 		Position:    position,
 		Forward:     forward,
 		Up:          up,
-		Width:       def.Width,
-		Height:      def.Height,
-		FieldOfView: def.FieldOfView,
+		FieldOfView: positiveOrDefault(def.FieldOfView, defaultFieldOfView),
 		AspectRatio: aspect,
 	}
 	if err := cam.Prepare(); err != nil {

@@ -441,32 +441,19 @@ function CameraTab({
           }
         />
       </label>
-      <div className="vector-grid dual">
-        <label className="field compact">
-          <span>Width</span>
-          <input
-            type="number"
-            step="1"
-            value={camera.width}
-            disabled={disableMutations}
-            onChange={(event) =>
-              onUpdateCamera({ width: Number(event.target.value) })
-            }
-          />
-        </label>
-        <label className="field compact">
-          <span>Height</span>
-          <input
-            type="number"
-            step="1"
-            value={camera.height}
-            disabled={disableMutations}
-            onChange={(event) =>
-              onUpdateCamera({ height: Number(event.target.value) })
-            }
-          />
-        </label>
-      </div>
+      <label className="field">
+        <span>Aspect ratio</span>
+        <small>Camera frame width divided by height</small>
+        <input
+          type="number"
+          step="0.01"
+          value={camera.aspect_ratio}
+          disabled={disableMutations}
+          onChange={(event) =>
+            onUpdateCamera({ aspect_ratio: Number(event.target.value) })
+          }
+        />
+      </label>
     </div>
   );
 }

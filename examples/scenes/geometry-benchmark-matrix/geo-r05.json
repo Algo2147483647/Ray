@@ -9,9 +9,9 @@
         "3, 3, 3, 3": 1
       },
       "center": [
-        1.38,
+        0.88,
         -1.68,
-        1
+        1.1
       ],
       "scale": [
         0.18,
@@ -20,20 +20,20 @@
       ],
       "bounds": {
         "pmin": [
-          1.119,
+          0.619,
           -1.941,
-          0.71
+          0.81
         ],
         "pmax": [
-          1.641,
+          1.141,
           -1.419,
-          1.29
+          1.39
         ]
       },
       "material_id": "ceramic-white"
     },
     {
-      "id": "geo-r05-c06-glass-gyroid",
+      "id": "geo-r05-c06-blue-crystal-gyroid",
       "shape": "implicit equation",
       "field": {
         "type": "gyroid",
@@ -41,18 +41,18 @@
         "offset": 0.24
       },
       "center": [
-        1.38,
+        0.88,
         -1.12,
-        1
+        1.1
       ],
       "scale": 0.16,
       "step": 0.0012,
       "value_tol": 0.000001,
       "bounds": {
         "center": [
-          1.38,
+          0.88,
           -1.12,
-          1
+          1.1
         ],
         "size": [
           0.46,
@@ -60,10 +60,10 @@
           0.46
         ]
       },
-      "material_id": "gyroid-sea-glass"
+      "material_id": "gyroid-blue-crystal"
     },
     {
-      "id": "geo-r05-c06-emissive-gyroid",
+      "id": "geo-r05-c06-red-crystal-gyroid",
       "shape": "implicit equation",
       "field": {
         "type": "gyroid",
@@ -71,18 +71,18 @@
         "offset": -0.24
       },
       "center": [
-        1.38,
+        0.88,
         -1.12,
-        1
+        1.1
       ],
       "scale": 0.16,
       "step": 0.0012,
       "value_tol": 0.000001,
       "bounds": {
         "center": [
-          1.38,
+          0.88,
           -1.12,
-          1
+          1.1
         ],
         "size": [
           0.46,
@@ -90,7 +90,7 @@
           0.46
         ]
       },
-      "material_id": "gyroid-coral-emission"
+      "material_id": "gyroid-red-crystal"
     },
     {
       "id": "geo-r05-c05",
@@ -102,9 +102,9 @@
         "3, 3, 3, 3": 1
       },
       "center": [
-        1.38,
+        0.88,
         -0.56,
-        1
+        1.1
       ],
       "scale": [
         0.18,
@@ -113,14 +113,14 @@
       ],
       "bounds": {
         "pmin": [
-          1.137,
+          0.637,
           -0.803,
-          0.757
+          0.857
         ],
         "pmax": [
-          1.623,
+          1.123,
           -0.317,
-          1.243
+          1.343
         ]
       },
       "material_id": "clear-glass"
@@ -130,9 +130,9 @@
       "shape": "implicit equation",
       "function": "gyroid",
       "center": [
-        1.38,
+        0.88,
         0,
-        1
+        1.1
       ],
       "scale": [
         0.15,
@@ -144,9 +144,9 @@
       "step": 0.0014,
       "bounds": {
         "center": [
-          1.38,
+          0.88,
           0,
-          1
+          1.1
         ],
         "size": [
           0.38,
@@ -165,9 +165,9 @@
         "3, 3, 3, 3": 0.08
       },
       "center": [
-        1.38,
+        0.88,
         0.56,
-        1
+        1.1
       ],
       "scale": [
         0.18,
@@ -176,14 +176,14 @@
       ],
       "bounds": {
         "pmin": [
-          1.137,
+          0.637,
           0.317,
-          0.73
+          0.83
         ],
         "pmax": [
-          1.623,
+          1.123,
           0.803,
-          1.27
+          1.37
         ]
       },
       "material_id": "marble-cool"
@@ -201,9 +201,9 @@
         "3, 3, 3, 3": 1
       },
       "center": [
-        1.38,
+        0.88,
         1.12,
-        1
+        1.1
       ],
       "scale": [
         0.1,
@@ -216,9 +216,9 @@
       "id": "geo-r05-c01",
       "shape": "sphere",
       "center": [
-        1.38,
+        0.88,
         1.68,
-        1
+        1.1
       ],
       "r": 0.09,
       "material_id": "pearl"

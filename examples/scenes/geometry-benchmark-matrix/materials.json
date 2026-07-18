@@ -284,18 +284,12 @@
     {
       "id": "purple-metal",
       "surface": {
-        "type": "rough_conductor",
-        "eta": [
-          0.52,
-          0.28,
-          0.86
-        ],
-        "k": [
-          3.2,
-          1.8,
-          4.4
-        ],
-        "roughness": 0.22
+        "type": "specular_reflection",
+        "reflectance": [
+          0.22,
+          0.035,
+          0.42
+        ]
       }
     },
     {
@@ -402,23 +396,25 @@
       }
     },
     {
-      "id": "gyroid-sea-glass",
+      "id": "gyroid-blue-crystal",
       "surface": {
         "type": "specular_dielectric",
         "reflectance": [
-          0.86,
-          0.98,
+          0.72,
+          0.88,
           1
         ],
         "transmittance": [
-          0.48,
-          1,
-          0.86
+          0.18,
+          0.55,
+          1
         ],
         "eta_outside": 1,
         "ior": {
-          "type": "constant",
-          "eta": 1.47
+          "type": "cauchy",
+          "a": 1.48,
+          "b": 0.012,
+          "c": 0
         }
       }
     },
@@ -678,14 +674,26 @@
       }
     },
     {
-      "id": "gyroid-coral-emission",
-      "emission": {
-        "type": "constant",
-        "color": [
-          4.8,
-          1.15,
-          2.55
-        ]
+      "id": "gyroid-red-crystal",
+      "surface": {
+        "type": "specular_dielectric",
+        "reflectance": [
+          1,
+          0.62,
+          0.58
+        ],
+        "transmittance": [
+          1,
+          0.2,
+          0.12
+        ],
+        "eta_outside": 1,
+        "ior": {
+          "type": "cauchy",
+          "a": 1.5,
+          "b": 0.01,
+          "c": 0
+        }
       }
     }
   ]

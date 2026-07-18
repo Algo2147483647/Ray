@@ -8,7 +8,7 @@
     "camera_index": 0,
     "output_image": "../outputs/hyperbolic_chessboard.png",
     "output_film": "../outputs/hyperbolic_chessboard.bin",
-    "exposure": 1.0,
+    "exposure": 1,
     "tone_mapping": "aces",
     "gamma": 2.2,
     "spectrum_mode": "rgb",
@@ -22,61 +22,662 @@
     {
       "id": "main",
       "type": "hyperbolic",
-      "position": [-0.72, 0.0, 0.18],
-      "look_at": [0.78, 0.0, 0.02],
-      "up": [0.0, 0.0, 1.0],
-      "width": 400,
-      "height": 400,
-      "field_of_view": 90.0,
-      "aspect_ratio": 1.0
+      "position": [
+        -0.72,
+        0,
+        0.18
+      ],
+      "look_at": [
+        0.78,
+        0,
+        0.02
+      ],
+      "up": [
+        0,
+        0,
+        1
+      ],
+      "field_of_view": 90,
+      "aspect_ratio": 1
     }
   ],
   "materials": [
-    { "id": "tile_white", "surface": { "type": "lambert", "albedo": [0.92, 0.90, 0.84] } },
-    { "id": "tile_black", "surface": { "type": "lambert", "albedo": [0.05, 0.06, 0.08] } },
-    { "id": "marker_red", "surface": { "type": "specular_reflection", "reflectance": [0.95, 0.18, 0.12] } },
-    { "id": "marker_blue", "surface": { "type": "lambert", "albedo": [0.12, 0.32, 0.88] } },
-    { "id": "softbox", "emission": { "type": "constant", "radiance": { "type": "rgb", "value": [8.0, 7.4, 6.4] } } }
+    {
+      "id": "tile_white",
+      "surface": {
+        "type": "lambert",
+        "albedo": [
+          0.92,
+          0.9,
+          0.84
+        ]
+      }
+    },
+    {
+      "id": "tile_black",
+      "surface": {
+        "type": "lambert",
+        "albedo": [
+          0.05,
+          0.06,
+          0.08
+        ]
+      }
+    },
+    {
+      "id": "marker_red",
+      "surface": {
+        "type": "specular_reflection",
+        "reflectance": [
+          0.95,
+          0.18,
+          0.12
+        ]
+      }
+    },
+    {
+      "id": "marker_blue",
+      "surface": {
+        "type": "lambert",
+        "albedo": [
+          0.12,
+          0.32,
+          0.88
+        ]
+      }
+    },
+    {
+      "id": "softbox",
+      "emission": {
+        "type": "constant",
+        "radiance": {
+          "type": "rgb",
+          "value": [
+            8,
+            7.4,
+            6.4
+          ]
+        }
+      }
+    }
   ],
   "objects": [
-    { "id": "tile_-3_-3", "material_id": "tile_white", "shape": "cuboid", "center": [-0.75, -0.75, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_-3_-2", "material_id": "tile_black", "shape": "cuboid", "center": [-0.75, -0.50, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_-3_-1", "material_id": "tile_white", "shape": "cuboid", "center": [-0.75, -0.25, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_-3_0", "material_id": "tile_black", "shape": "cuboid", "center": [-0.75, 0.00, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_-3_1", "material_id": "tile_white", "shape": "cuboid", "center": [-0.75, 0.25, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_-3_2", "material_id": "tile_black", "shape": "cuboid", "center": [-0.75, 0.50, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_-2_-3", "material_id": "tile_black", "shape": "cuboid", "center": [-0.50, -0.75, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_-2_-2", "material_id": "tile_white", "shape": "cuboid", "center": [-0.50, -0.50, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_-2_-1", "material_id": "tile_black", "shape": "cuboid", "center": [-0.50, -0.25, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_-2_0", "material_id": "tile_white", "shape": "cuboid", "center": [-0.50, 0.00, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_-2_1", "material_id": "tile_black", "shape": "cuboid", "center": [-0.50, 0.25, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_-2_2", "material_id": "tile_white", "shape": "cuboid", "center": [-0.50, 0.50, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_-1_-3", "material_id": "tile_white", "shape": "cuboid", "center": [-0.25, -0.75, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_-1_-2", "material_id": "tile_black", "shape": "cuboid", "center": [-0.25, -0.50, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_-1_-1", "material_id": "tile_white", "shape": "cuboid", "center": [-0.25, -0.25, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_-1_0", "material_id": "tile_black", "shape": "cuboid", "center": [-0.25, 0.00, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_-1_1", "material_id": "tile_white", "shape": "cuboid", "center": [-0.25, 0.25, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_-1_2", "material_id": "tile_black", "shape": "cuboid", "center": [-0.25, 0.50, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_0_-3", "material_id": "tile_black", "shape": "cuboid", "center": [0.00, -0.75, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_0_-2", "material_id": "tile_white", "shape": "cuboid", "center": [0.00, -0.50, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_0_-1", "material_id": "tile_black", "shape": "cuboid", "center": [0.00, -0.25, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_0_0", "material_id": "tile_white", "shape": "cuboid", "center": [0.00, 0.00, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_0_1", "material_id": "tile_black", "shape": "cuboid", "center": [0.00, 0.25, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_0_2", "material_id": "tile_white", "shape": "cuboid", "center": [0.00, 0.50, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_1_-3", "material_id": "tile_white", "shape": "cuboid", "center": [0.25, -0.75, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_1_-2", "material_id": "tile_black", "shape": "cuboid", "center": [0.25, -0.50, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_1_-1", "material_id": "tile_white", "shape": "cuboid", "center": [0.25, -0.25, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_1_0", "material_id": "tile_black", "shape": "cuboid", "center": [0.25, 0.00, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_1_1", "material_id": "tile_white", "shape": "cuboid", "center": [0.25, 0.25, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_1_2", "material_id": "tile_black", "shape": "cuboid", "center": [0.25, 0.50, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_2_-3", "material_id": "tile_black", "shape": "cuboid", "center": [0.50, -0.75, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_2_-2", "material_id": "tile_white", "shape": "cuboid", "center": [0.50, -0.50, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_2_-1", "material_id": "tile_black", "shape": "cuboid", "center": [0.50, -0.25, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_2_0", "material_id": "tile_white", "shape": "cuboid", "center": [0.50, 0.00, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_2_1", "material_id": "tile_black", "shape": "cuboid", "center": [0.50, 0.25, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "tile_2_2", "material_id": "tile_white", "shape": "cuboid", "center": [0.50, 0.50, -0.01], "size": [0.25, 0.25, 0.02] },
-    { "id": "red_marker", "material_id": "marker_red", "shape": "sphere", "center": [0.20, -0.32, 0.08], "r": 0.07 },
-    { "id": "blue_marker", "material_id": "marker_blue", "shape": "sphere", "center": [0.62, 0.20, 0.06], "r": 0.055 },
-    { "id": "ceiling_softbox", "material_id": "softbox", "shape": "cuboid", "center": [-0.25, 0.0, 0.45], "size": [0.55, 0.75, 0.04] }
+    {
+      "id": "tile_-3_-3",
+      "material_id": "tile_white",
+      "shape": "cuboid",
+      "center": [
+        -0.75,
+        -0.75,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_-3_-2",
+      "material_id": "tile_black",
+      "shape": "cuboid",
+      "center": [
+        -0.75,
+        -0.5,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_-3_-1",
+      "material_id": "tile_white",
+      "shape": "cuboid",
+      "center": [
+        -0.75,
+        -0.25,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_-3_0",
+      "material_id": "tile_black",
+      "shape": "cuboid",
+      "center": [
+        -0.75,
+        0,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_-3_1",
+      "material_id": "tile_white",
+      "shape": "cuboid",
+      "center": [
+        -0.75,
+        0.25,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_-3_2",
+      "material_id": "tile_black",
+      "shape": "cuboid",
+      "center": [
+        -0.75,
+        0.5,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_-2_-3",
+      "material_id": "tile_black",
+      "shape": "cuboid",
+      "center": [
+        -0.5,
+        -0.75,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_-2_-2",
+      "material_id": "tile_white",
+      "shape": "cuboid",
+      "center": [
+        -0.5,
+        -0.5,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_-2_-1",
+      "material_id": "tile_black",
+      "shape": "cuboid",
+      "center": [
+        -0.5,
+        -0.25,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_-2_0",
+      "material_id": "tile_white",
+      "shape": "cuboid",
+      "center": [
+        -0.5,
+        0,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_-2_1",
+      "material_id": "tile_black",
+      "shape": "cuboid",
+      "center": [
+        -0.5,
+        0.25,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_-2_2",
+      "material_id": "tile_white",
+      "shape": "cuboid",
+      "center": [
+        -0.5,
+        0.5,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_-1_-3",
+      "material_id": "tile_white",
+      "shape": "cuboid",
+      "center": [
+        -0.25,
+        -0.75,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_-1_-2",
+      "material_id": "tile_black",
+      "shape": "cuboid",
+      "center": [
+        -0.25,
+        -0.5,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_-1_-1",
+      "material_id": "tile_white",
+      "shape": "cuboid",
+      "center": [
+        -0.25,
+        -0.25,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_-1_0",
+      "material_id": "tile_black",
+      "shape": "cuboid",
+      "center": [
+        -0.25,
+        0,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_-1_1",
+      "material_id": "tile_white",
+      "shape": "cuboid",
+      "center": [
+        -0.25,
+        0.25,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_-1_2",
+      "material_id": "tile_black",
+      "shape": "cuboid",
+      "center": [
+        -0.25,
+        0.5,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_0_-3",
+      "material_id": "tile_black",
+      "shape": "cuboid",
+      "center": [
+        0,
+        -0.75,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_0_-2",
+      "material_id": "tile_white",
+      "shape": "cuboid",
+      "center": [
+        0,
+        -0.5,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_0_-1",
+      "material_id": "tile_black",
+      "shape": "cuboid",
+      "center": [
+        0,
+        -0.25,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_0_0",
+      "material_id": "tile_white",
+      "shape": "cuboid",
+      "center": [
+        0,
+        0,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_0_1",
+      "material_id": "tile_black",
+      "shape": "cuboid",
+      "center": [
+        0,
+        0.25,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_0_2",
+      "material_id": "tile_white",
+      "shape": "cuboid",
+      "center": [
+        0,
+        0.5,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_1_-3",
+      "material_id": "tile_white",
+      "shape": "cuboid",
+      "center": [
+        0.25,
+        -0.75,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_1_-2",
+      "material_id": "tile_black",
+      "shape": "cuboid",
+      "center": [
+        0.25,
+        -0.5,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_1_-1",
+      "material_id": "tile_white",
+      "shape": "cuboid",
+      "center": [
+        0.25,
+        -0.25,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_1_0",
+      "material_id": "tile_black",
+      "shape": "cuboid",
+      "center": [
+        0.25,
+        0,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_1_1",
+      "material_id": "tile_white",
+      "shape": "cuboid",
+      "center": [
+        0.25,
+        0.25,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_1_2",
+      "material_id": "tile_black",
+      "shape": "cuboid",
+      "center": [
+        0.25,
+        0.5,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_2_-3",
+      "material_id": "tile_black",
+      "shape": "cuboid",
+      "center": [
+        0.5,
+        -0.75,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_2_-2",
+      "material_id": "tile_white",
+      "shape": "cuboid",
+      "center": [
+        0.5,
+        -0.5,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_2_-1",
+      "material_id": "tile_black",
+      "shape": "cuboid",
+      "center": [
+        0.5,
+        -0.25,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_2_0",
+      "material_id": "tile_white",
+      "shape": "cuboid",
+      "center": [
+        0.5,
+        0,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_2_1",
+      "material_id": "tile_black",
+      "shape": "cuboid",
+      "center": [
+        0.5,
+        0.25,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "tile_2_2",
+      "material_id": "tile_white",
+      "shape": "cuboid",
+      "center": [
+        0.5,
+        0.5,
+        -0.01
+      ],
+      "size": [
+        0.25,
+        0.25,
+        0.02
+      ]
+    },
+    {
+      "id": "red_marker",
+      "material_id": "marker_red",
+      "shape": "sphere",
+      "center": [
+        0.2,
+        -0.32,
+        0.08
+      ],
+      "r": 0.07
+    },
+    {
+      "id": "blue_marker",
+      "material_id": "marker_blue",
+      "shape": "sphere",
+      "center": [
+        0.62,
+        0.2,
+        0.06
+      ],
+      "r": 0.055
+    },
+    {
+      "id": "ceiling_softbox",
+      "material_id": "softbox",
+      "shape": "cuboid",
+      "center": [
+        -0.25,
+        0,
+        0.45
+      ],
+      "size": [
+        0.55,
+        0.75,
+        0.04
+      ]
+    }
   ]
 }
