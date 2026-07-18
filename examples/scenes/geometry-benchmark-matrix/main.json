@@ -3,10 +3,10 @@
     {
       "id": "geometry-benchmark-stage-wide",
       "type": "3d",
-      "position": [-2.48, 0, 1.65],
-      "look_at": [0, 0, 1.35],
+      "position": [-2.48, 0, 1.8],
+      "look_at": [0, 0, 1.5],
       "up": [0, 0, 1],
-      "field_of_view": 45,
+      "field_of_view": 42,
       "width": 960,
       "height": 960,
       "aspect_ratio": 1.0
@@ -14,7 +14,7 @@
   ],
   "render": {
     "dimension": 3,
-    "samples": 100,
+    "samples": 1000,
     "thread_num": 0,
     "width": 300,
     "height": 200,
