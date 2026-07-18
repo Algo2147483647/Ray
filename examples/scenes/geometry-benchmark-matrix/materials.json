@@ -217,6 +217,17 @@
       }
     },
     {
+      "id": "pure-white-reflection",
+      "surface": {
+        "type": "specular_reflection",
+        "reflectance": [
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    {
       "id": "liquid-mercury",
       "surface": {
         "type": "specular_reflection",
