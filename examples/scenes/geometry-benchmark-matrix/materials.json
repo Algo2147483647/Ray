@@ -143,11 +143,7 @@
       "id": "softbox-key",
       "emission": {
         "type": "constant",
-        "radiance": {
-          "type": "blackbody",
-          "temperature": 5600,
-          "scale": 1
-        }
+        "color": [1, 1, 1]
       }
     },
     {
@@ -810,17 +806,6 @@
           "a": 1.5,
           "b": 0.01,
           "c": 0
-        }
-      }
-    },
-    {
-      "id": "gyroid-core-soft-light",
-      "emission": {
-        "type": "constant",
-        "radiance": {
-          "type": "blackbody",
-          "temperature": 5200,
-          "scale": 2
         }
       }
     }

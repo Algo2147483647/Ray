@@ -61,7 +61,7 @@ Formula convention: unless noted otherwise, `x`, `y`, and `z` are local coordina
 | r05-c03 | Quartic saddle / ruled-sheet surface | `x^2 - y^2 z^2 + 0.08 z^4 = 0`. | `marble-cool`: Lambertian cool marble tone, albedo `[0.78, 0.8, 0.76]`. |
 | r05-c04 | Gyroid minimal-surface approximation | `sin(3.3x) cos(3.3y) + sin(3.3y) cos(3.3z) + sin(3.3z) cos(3.3x) - 0.08 = 0`. | `porcelain-glaze-cyan-blue`: specular reflection, reflectance `[0.62, 0.82, 0.78]`. |
 | r05-c05 | Quartic superellipsoid | `x^4 + y^4 + z^4 - 1 = 0`. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
-| r05-c06 | Interlocked double gyroid plus inner light sphere | Blue gyroid: `G_4.4(x,y,z) - 0.24 = 0`; red gyroid: `G_4.4(x,y,z) + 0.24 = 0`; core sphere: `x^2 + y^2 + z^2 = 0.045^2`, where `G_k = sin(kx) cos(ky) + sin(ky) cos(kz) + sin(kz) cos(kx)`. | `pale-blue-sheen`: pale blue specular reflection, reflectance `[0.62, 0.78, 0.92]`; `pale-red-sheen`: pale red specular reflection, reflectance `[1, 0.56, 0.52]`; `gyroid-core-soft-light`: blackbody emission `5200 K`, scale `2`. |
+| r05-c06 | Interlocked double gyroid | Blue gyroid: `G_4.4(x,y,z) - 0.24 = 0`; red gyroid: `G_4.4(x,y,z) + 0.24 = 0`, where `G_k = sin(kx) cos(ky) + sin(ky) cos(kz) + sin(kz) cos(kx)`. | `pale-blue-sheen`: pale blue specular reflection, reflectance `[0.62, 0.78, 0.92]`; `pale-red-sheen`: pale red specular reflection, reflectance `[1, 0.56, 0.52]`. |
 | r05-c07 | Quartic cone-like surface | `z^4 - x^2 - y^2 = 0`. | `white-card`: diffuse warm white paper/card, albedo `[0.82, 0.82, 0.78]`. |
 
 ## Row 06
@@ -80,4 +80,4 @@ Formula convention: unless noted otherwise, `x`, `y`, and `z` are local coordina
 
 | File | Mathematical Geometry | Formula / Definition | Material |
 | --- | --- | --- | --- |
-| `geo_example.json` | Enlarged r05-c06 pale red/blue reflection double gyroid | Interlocked double gyroid test: `G_4.4(x,y,z) - 0.24 = 0` and `G_4.4(x,y,z) + 0.24 = 0`, with a small inner light sphere retained for mirror highlights. | `pale-blue-sheen`: pale blue specular reflection, reflectance `[0.62, 0.78, 0.92]`; `pale-red-sheen`: pale red specular reflection, reflectance `[1, 0.56, 0.52]`; core sphere keeps `gyroid-core-soft-light`. |
+| `geo_example.json` | Enlarged r05-c06 pale red/blue reflection double gyroid | Interlocked double gyroid test: `G_4.4(x,y,z) - 0.24 = 0` and `G_4.4(x,y,z) + 0.24 = 0`. | `pale-blue-sheen`: pale blue specular reflection, reflectance `[0.62, 0.78, 0.92]`; `pale-red-sheen`: pale red specular reflection, reflectance `[1, 0.56, 0.52]`. |
