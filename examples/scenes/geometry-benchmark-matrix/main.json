@@ -3,19 +3,19 @@
     {
       "id": "geometry-benchmark-stage-wide",
       "type": "3d",
-      "position": [-4.48, 0, 2],
-      "look_at": [0, 0, 1.5],
+      "position": [-4.48, 0, 2.2],
+      "look_at": [0, 0, 1.6],
       "up": [0, 0, 1],
-      "field_of_view": 43,
-      "aspect_ratio": 1.0
+      "field_of_view": 40,
+      "aspect_ratio": 1.2
     }
   ],
   "render": {
     "dimension": 3,
     "samples": 100,
     "thread_num": 0,
-    "width": 300,
-    "height": 300,
+    "width": 240,
+    "height": 200,
     "camera_index": 0,
     "output_image": "../outputs/geometry-benchmark-matrix.png",
     "output_film": "../outputs/geometry-benchmark-matrix.bin",
