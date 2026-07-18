@@ -375,31 +375,63 @@
           0.823
         ]
       },
-      "material_id": "purple-metal"
+      "material_id": "pale-pink-sheen"
     },
     {
       "id": "geo-r06-c02",
-      "shape": "four-order equation",
-      "a": {
-        "1, 1, 0, 0": -0.8,
-        "1, 1, 1, 1": 1,
-        "1, 1, 2, 2": 2,
-        "1, 1, 3, 3": 2,
-        "2, 2, 0, 0": 0.8,
-        "2, 2, 2, 2": 1,
-        "2, 2, 3, 3": 2,
-        "3, 3, 3, 3": 1
-      },
+      "shape": "polynomial surface",
+      "mode": "implicit",
+      "input_dim": 3,
+      "degree": 3,
       "center": [
         0.6,
         1.12,
-        0.58
+        0.553
       ],
-      "scale": [
-        0.18,
-        0.18,
-        0.18
-      ],
+      "scale": 0.27,
+      "coefficients": {
+        "format": "coo",
+        "shape": [
+          4,
+          4,
+          4
+        ],
+        "degree_policy": "total",
+        "terms": [
+          {
+            "index": [
+              2,
+              0,
+              0
+            ],
+            "value": 1
+          },
+          {
+            "index": [
+              0,
+              2,
+              0
+            ],
+            "value": 1
+          },
+          {
+            "index": [
+              0,
+              0,
+              3
+            ],
+            "value": 1
+          },
+          {
+            "index": [
+              0,
+              0,
+              2
+            ],
+            "value": -1
+          }
+        ]
+      },
       "bounds": {
         "pmin": [
           0.357,
@@ -412,7 +444,7 @@
           0.823
         ]
       },
-      "material_id": "pearl"
+      "material_id": "blue-glass"
     },
     {
       "id": "geo-r06-c01",
