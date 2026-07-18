@@ -120,8 +120,16 @@
       "id": "high-dispersion-prism",
       "surface": {
         "type": "specular_dielectric",
-        "reflectance": [1, 1, 1],
-        "transmittance": [1, 1, 1],
+        "reflectance": [
+          1,
+          1,
+          1
+        ],
+        "transmittance": [
+          1,
+          1,
+          1
+        ],
         "eta_outside": 1,
         "ior": {
           "type": "cauchy",
@@ -409,6 +417,27 @@
       }
     },
     {
+      "id": "jade-glass",
+      "surface": {
+        "type": "specular_dielectric",
+        "reflectance": [
+          0.72,
+          1,
+          0.86
+        ],
+        "transmittance": [
+          0.2,
+          0.88,
+          0.55
+        ],
+        "eta_outside": 1,
+        "ior": {
+          "type": "constant",
+          "eta": 1.57
+        }
+      }
+    },
+    {
       "id": "dispersive-crystal",
       "surface": {
         "type": "specular_dielectric",
@@ -546,7 +575,9 @@
       "surface": {
         "type": "specular_reflection",
         "reflectance": [
-          0.62, 0.82, 0.78
+          0.62,
+          0.82,
+          0.78
         ]
       }
     },
