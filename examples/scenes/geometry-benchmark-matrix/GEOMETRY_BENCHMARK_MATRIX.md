@@ -44,13 +44,13 @@ Formula convention: unless noted otherwise, $x,y,z$ are local coordinates after 
 
 | Cell | Mathematical Geometry | Formula / Definition | Material |
 | --- | --- | --- | --- |
-| r4-c1 | Small stellated dodecahedron-inspired triangle mesh | Dodecahedral stellation: $12$ pentagonal pyramids, triangulated into $60$ faces. | `yellow-glass`: specular dielectric, transmittance `[1, 0.86, 0.24]`, eta `1.5`. |
-| r4-c2 | Ultra-high-dispersion triangular prism | Closed triangular prism: $2$ triangular bases plus $3$ rectangular sides, triangulated into $8$ faces. | `ultra-high-dispersion-prism-glass`: transparent specular dielectric, Cauchy IOR `a=1.33`, `b=0.12`, `c=0.004`. |
-| r4-c3 | Regular icosahedron triangle mesh | Regular icosahedron: convex Platonic solid with $V=12$, $E=30$, $F=20$. | `rough-gold`: rough conductor, eta `[0.17, 0.35, 1.5]`, k `[3.1, 2.7, 1.9]`, roughness `0.18`. |
-| r4-c4 | Beveled cube / chamfered polyhedron mesh | Chamfered cube-like closed polyhedron, triangulated into $36$ faces. | `sandstone`: Lambertian sandstone, albedo `[0.64, 0.52, 0.34]`. |
-| r4-c5 | Octahedron triangle mesh | Regular octahedron: $\lvert x\rvert+\lvert y\rvert+\lvert z\rvert=r$, a Platonic solid with $V=6$, $E=12$, $F=8$. | `blue-glass`: specular dielectric, transmittance `[0.55, 0.78, 1]`, eta `1.52`. |
-| r4-c6 | Cube / dispersive prism | Cube $[-0.17,0.17]^3$, side length $0.34$. | `high-dispersion-prism`: specular dielectric, Cauchy IOR `a=1.42`, `b=0.035`, `c=0`. |
-| r4-c7 | Tetrahedron triangle mesh | Tetrahedron $\operatorname{conv}(v_1,v_2,v_3,v_4)$, simplex with $V=4$, $E=6$, $F=4$. | `plastic-red`: Lambertian red, albedo `[0.85, 0.05, 0.035]`. |
+| r4-c1 | Small stellated dodecahedron | Dodecahedral stellation: $12$ pentagonal pyramids, triangulated into $60$ faces. | `yellow-glass`: specular dielectric, transmittance `[1, 0.86, 0.24]`, eta `1.5`. |
+| r4-c2 | Triangular prism | Closed triangular prism: $2$ triangular bases plus $3$ rectangular sides, triangulated into $8$ faces. | `ultra-high-dispersion-prism-glass`: transparent specular dielectric, Cauchy IOR `a=1.33`, `b=0.12`, `c=0.004`. |
+| r4-c3 | Regular icosahedron | Regular icosahedron: convex Platonic solid with $V=12$, $E=30$, $F=20$. | `rough-gold`: rough conductor, eta `[0.17, 0.35, 1.5]`, k `[3.1, 2.7, 1.9]`, roughness `0.18`. |
+| r4-c4 | Regular dodecahedron | Chamfered cube-like closed polyhedron, triangulated into $36$ faces. | `sandstone`: Lambertian sandstone, albedo `[0.64, 0.52, 0.34]`. |
+| r4-c5 | Regular Octahedron | Regular octahedron: $\lvert x\rvert+\lvert y\rvert+\lvert z\rvert=r$, a Platonic solid with $V=6$, $E=12$, $F=8$. | `blue-glass`: specular dielectric, transmittance `[0.55, 0.78, 1]`, eta `1.52`. |
+| r4-c6 | Cube | Cube $[-0.17,0.17]^3$, side length $0.34$. | `high-dispersion-prism`: specular dielectric, Cauchy IOR `a=1.42`, `b=0.035`, `c=0`. |
+| r4-c7 | Regular Tetrahedron | Tetrahedron $\operatorname{conv}(v_1,v_2,v_3,v_4)$, simplex with $V=4$, $E=6$, $F=4$. | `plastic-red`: Lambertian red, albedo `[0.85, 0.05, 0.035]`. |
 
 ## Row 5
 
@@ -73,6 +73,6 @@ Formula convention: unless noted otherwise, $x,y,z$ are local coordinates after 
 | r6-c3 | Clebsch diagonal cubic surface | Clebsch diagonal cubic $81(x^3+y^3+z^3)-189(x^2y+x^2z+xy^2+y^2z+xz^2+yz^2)+54xyz-9(x^2+y^2+z^2)+126(xy+xz+yz)-9(x+y+z)+1=0$. | `pale-pink-sheen`: pale pink specular reflection, reflectance `[0.96, 0.68, 0.76]`. |
 | r6-c4 | Torus | Ring torus quartic $(x^2+y^2+z^2)^2-1.22(x^2+y^2)+0.78z^2+0.1521=0$, genus $1$. | `rough-gold`: rough conductor, eta `[0.17, 0.35, 1.5]`, k `[3.1, 2.7, 1.9]`, roughness `0.18`. |
 | r6-c5 | Togliatti / Dervish quintic nodal surface | $D_5$-symmetric Togliatti/Dervish quintic $F_5(x,y,z)=0$, a nodal degree-$5$ surface. | `pale-blue-sheen`: pale blue specular reflection, reflectance `[0.62, 0.78, 0.92]`. |
-| r6-c6 | Dupin cyclide | Dupin cyclide: an inversion of a torus, topologically genus $1$, sampled as $3584$ triangular faces. | `jade-glass`: specular dielectric, transmittance `[0.2, 0.88, 0.55]`, eta `1.57`. |
+| r6-c6 | Dupin cyclide | Equation-form Dupin cyclide from an inverted torus: $\left(1-2dx+C\rho^2\right)^2-4R^2\left((x-d\rho^2)^2+y^2\right)=0$, where $\rho^2=x^2+y^2+z^2$, $C=d^2+R^2-r^2$, $d=1.55$, $R=0.66$, $r=0.22$. Stored as a shifted sparse quartic polynomial so the cell center remains `[0.6, -1.12, 0.58]`. | `jade-glass`: specular dielectric, transmittance `[0.2, 0.88, 0.55]`, eta `1.57`. |
 | r6-c7 | Cubic-symmetric quartic surface | Cubic-symmetric quartic $x^4+y^4+z^4-1.15(x^2y^2+x^2z^2+y^2z^2)-0.28(x^2+y^2+z^2)+0.08=0$. | `rough-gold`: rough conductor, eta `[0.17, 0.35, 1.5]`, k `[3.1, 2.7, 1.9]`, roughness `0.18`. |
 
