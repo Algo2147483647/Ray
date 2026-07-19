@@ -187,6 +187,8 @@ Important shape fields:
 
 `polynomial surface` is a sparse arbitrary-degree polynomial shape. It accepts
 `mode: "implicit"` for `F(x,y,z)=0` or `mode: "explicit"` for `z=P(x,y)`.
+It also accepts optional placement fields `center`, `scale`, and `basis`.
+`basis` is an orthonormal list of local axis directions in world space.
 Coefficients are stored as sparse tensor terms:
 
 ```json
@@ -195,6 +197,13 @@ Coefficients are stored as sparse tensor terms:
   "mode": "implicit",
   "input_dim": 3,
   "degree": 2,
+  "center": [0, 0, 0],
+  "scale": 1,
+  "basis": [
+    [1, 0, 0],
+    [0, 0, 1],
+    [0, -1, 0]
+  ],
   "coefficients": {
     "format": "coo",
     "shape": [3, 3, 3],

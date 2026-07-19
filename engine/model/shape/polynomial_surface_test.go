@@ -70,6 +70,45 @@ func TestPolynomialSurfaceExplicitParaboloid(t *testing.T) {
 	}
 }
 
+func TestPolynomialSurfaceBasisRotatesImplicitSurface(t *testing.T) {
+	coefficients, err := maths.NewSparseTensorFromEntries([]int{2, 2, 2}, maths.SparseTensorHash, []maths.SparseTensorEntry[float64]{
+		{Index: []int{0, 0, 1}, Value: 1},
+	})
+	if err != nil {
+		t.Fatalf("create coefficients: %v", err)
+	}
+
+	surface := NewPolynomialSurface(PolynomialSurfaceImplicit, 3, 1, 1, coefficients)
+	surface.Basis = [][]float64{
+		{math.Sqrt(3) / 2, 0, 0.5},
+		{0, 1, 0},
+		{-0.5, 0, math.Sqrt(3) / 2},
+	}
+
+	normal := mat.NewVecDense(3, []float64{-0.5, 0, math.Sqrt(3) / 2})
+	start := mat.NewVecDense(3, []float64{
+		2 * normal.AtVec(0),
+		2 * normal.AtVec(1),
+		2 * normal.AtVec(2),
+	})
+	dir := mat.NewVecDense(3, []float64{
+		-normal.AtVec(0),
+		-normal.AtVec(1),
+		-normal.AtVec(2),
+	})
+
+	interaction, ok := surface.IntersectRange(start, dir, 0, 10)
+	if !ok {
+		t.Fatal("expected ray to hit rotated polynomial plane")
+	}
+	if math.Abs(interaction.Distance-2) > 1e-9 {
+		t.Fatalf("expected distance 2, got %.12f", interaction.Distance)
+	}
+	if math.Abs(mat.Dot(interaction.GeometricNormal, normal)-1) > 1e-9 {
+		t.Fatalf("expected rotated normal %v, got %v", normal.RawVector().Data, interaction.GeometricNormal.RawVector().Data)
+	}
+}
+
 func TestPolynomialSurfaceTaubinHeartRayPolynomialMatchesEvaluation(t *testing.T) {
 	surface := newTaubinHeartSurface(t)
 

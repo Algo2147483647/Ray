@@ -54,8 +54,13 @@ func parsePolynomialSurface(objDef map[string]interface{}) ([]shape.Shape, error
 	if err != nil {
 		return nil, err
 	}
+	basis, err := parsePolynomialSurfaceBasis(objDef, len(center))
+	if err != nil {
+		return nil, err
+	}
 	surface.Center = center
 	surface.Scale = scale
+	surface.Basis = basis
 
 	return wrapSingleShapeWithBounds(surface, objDef)
 }
@@ -232,6 +237,72 @@ func parsePolynomialSurfaceCenterScale(objDef map[string]interface{}, dimension 
 		}
 	}
 	return center, scale, nil
+}
+
+func parsePolynomialSurfaceBasis(objDef map[string]interface{}, dimension int) ([][]float64, error) {
+	raw, ok := objDef["basis"]
+	if !ok {
+		return identityBasisValues(dimension), nil
+	}
+
+	rows, ok := raw.([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("field %q: expected array, got %T", "basis", raw)
+	}
+	if len(rows) != dimension {
+		return nil, fmt.Errorf("field %q must contain %d vectors, got %d", "basis", dimension, len(rows))
+	}
+
+	basis := make([][]float64, dimension)
+	for i, rawRow := range rows {
+		row, err := utils.ToFloat64Slice(rawRow)
+		if err != nil {
+			return nil, fmt.Errorf("basis[%d]: %w", i, err)
+		}
+		if len(row) != dimension {
+			return nil, fmt.Errorf("basis[%d] must contain %d values, got %d", i, dimension, len(row))
+		}
+		basis[i] = row
+	}
+	if err := validateOrthonormalBasis(basis); err != nil {
+		return nil, err
+	}
+	return basis, nil
+}
+
+func validateOrthonormalBasis(basis [][]float64) error {
+	const tol = 1e-6
+	for i, row := range basis {
+		lengthSquared := 0.0
+		for j, value := range row {
+			if math.IsNaN(value) || math.IsInf(value, 0) {
+				return fmt.Errorf("basis[%d][%d] must be finite", i, j)
+			}
+			lengthSquared += value * value
+		}
+		if math.Abs(lengthSquared-1) > tol {
+			return fmt.Errorf("basis[%d] must be unit length", i)
+		}
+		for j := i + 1; j < len(basis); j++ {
+			dot := 0.0
+			for axis, value := range row {
+				dot += value * basis[j][axis]
+			}
+			if math.Abs(dot) > tol {
+				return fmt.Errorf("basis[%d] and basis[%d] must be orthogonal", i, j)
+			}
+		}
+	}
+	return nil
+}
+
+func identityBasisValues(dimension int) [][]float64 {
+	basis := make([][]float64, dimension)
+	for i := range basis {
+		basis[i] = make([]float64, dimension)
+		basis[i][i] = 1
+	}
+	return basis
 }
 
 func requiredPositiveIntField(data map[string]interface{}, key string) (int, error) {

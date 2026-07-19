@@ -26,6 +26,7 @@ type PolynomialSurface struct {
 	Coefficients *maths.SparseTensor[float64]
 	Center       []float64
 	Scale        []float64
+	Basis        [][]float64
 	Bounds       *Cuboid
 }
 
@@ -46,6 +47,7 @@ func NewPolynomialSurface(
 		Coefficients: coefficients,
 		Center:       makeFilledFloat64(inputDim, 0),
 		Scale:        makeFilledFloat64(inputDim, 1),
+		Basis:        identityBasis(maxInt(inputDim, 3)),
 	}
 }
 
@@ -188,9 +190,11 @@ func (p *PolynomialSurface) GetNormalVector(intersect, res *mat.VecDense) *mat.V
 
 	local := p.localPoint(intersect)
 	localGradient := p.localSurfaceGradient(local)
-	for i := 0; i < len(localGradient) && i < res.Len(); i++ {
-		scale := p.scaleAt(i)
-		res.SetVec(i, localGradient[i]/scale)
+	for localAxis := 0; localAxis < len(localGradient); localAxis++ {
+		gradient := localGradient[localAxis] / p.scaleAt(localAxis)
+		for worldAxis := 0; worldAxis < res.Len(); worldAxis++ {
+			res.SetVec(worldAxis, res.AtVec(worldAxis)+gradient*p.basisAt(localAxis, worldAxis))
+		}
 	}
 	return maths.Normalize(res)
 }
@@ -314,7 +318,7 @@ func (p *PolynomialSurface) coefficientsHaveOutputAxis() bool {
 func (p *PolynomialSurface) localPoint(point *mat.VecDense) []float64 {
 	local := make([]float64, point.Len())
 	for i := 0; i < point.Len(); i++ {
-		local[i] = (point.AtVec(i) - p.centerAt(i)) / p.scaleAt(i)
+		local[i] = p.localCoordinate(point, i) / p.scaleAt(i)
 	}
 	return local
 }
@@ -322,9 +326,25 @@ func (p *PolynomialSurface) localPoint(point *mat.VecDense) []float64 {
 func (p *PolynomialSurface) localDirection(direction *mat.VecDense) []float64 {
 	local := make([]float64, direction.Len())
 	for i := 0; i < direction.Len(); i++ {
-		local[i] = direction.AtVec(i) / p.scaleAt(i)
+		local[i] = p.localDirectionCoordinate(direction, i) / p.scaleAt(i)
 	}
 	return local
+}
+
+func (p *PolynomialSurface) localCoordinate(point *mat.VecDense, localAxis int) float64 {
+	result := 0.0
+	for worldAxis := 0; worldAxis < point.Len(); worldAxis++ {
+		result += (point.AtVec(worldAxis) - p.centerAt(worldAxis)) * p.basisAt(localAxis, worldAxis)
+	}
+	return result
+}
+
+func (p *PolynomialSurface) localDirectionCoordinate(direction *mat.VecDense, localAxis int) float64 {
+	result := 0.0
+	for worldAxis := 0; worldAxis < direction.Len(); worldAxis++ {
+		result += direction.AtVec(worldAxis) * p.basisAt(localAxis, worldAxis)
+	}
+	return result
 }
 
 func (p *PolynomialSurface) centerAt(axis int) float64 {
@@ -339,6 +359,16 @@ func (p *PolynomialSurface) scaleAt(axis int) float64 {
 		return p.Scale[axis]
 	}
 	return 1
+}
+
+func (p *PolynomialSurface) basisAt(localAxis, worldAxis int) float64 {
+	if p != nil && localAxis >= 0 && localAxis < len(p.Basis) && worldAxis >= 0 && worldAxis < len(p.Basis[localAxis]) {
+		return p.Basis[localAxis][worldAxis]
+	}
+	if localAxis == worldAxis {
+		return 1
+	}
+	return 0
 }
 
 func precomputePowers(input []float64, degree int) [][]float64 {
@@ -392,8 +422,24 @@ func makeFilledFloat64(length int, value float64) []float64 {
 	return result
 }
 
+func identityBasis(dimension int) [][]float64 {
+	basis := make([][]float64, dimension)
+	for i := range basis {
+		basis[i] = make([]float64, dimension)
+		basis[i][i] = 1
+	}
+	return basis
+}
+
 func minInt(a, b int) int {
 	if a < b {
+		return a
+	}
+	return b
+}
+
+func maxInt(a, b int) int {
+	if a > b {
 		return a
 	}
 	return b

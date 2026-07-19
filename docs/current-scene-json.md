@@ -287,13 +287,18 @@ c * x^alpha_x * y^alpha_y * z^alpha_z
 ```
 
 The shape currently supports `mode: "implicit"` for `F(x,y,z)=0` and
-`mode: "explicit"` for `z=P(x,y)` by default. The `center` and `scale` fields
-transform world coordinates into local polynomial coordinates at evaluation
-time:
+`mode: "explicit"` for `z=P(x,y)` by default. The `center`, `scale`, and
+optional `basis` fields transform world coordinates into local polynomial
+coordinates at evaluation time. `basis` is an orthonormal list of local axis
+directions in world space:
 
 ```text
-local = (world - center) / scale
+local_i = dot(world - center, basis_i) / scale_i
 ```
+
+If `basis` is omitted, it defaults to the identity basis. `bounds` remain a
+world-space clipping box and are not transformed by `center`, `scale`, or
+`basis`.
 
 Example Barth sextic surface:
 
@@ -306,6 +311,11 @@ Example Barth sextic surface:
   "degree": 6,
   "center": [-0.9, 1.68, 0.38],
   "scale": 0.2,
+  "basis": [
+    [0.8660254037844386, 0, 0.5],
+    [0, 1, 0],
+    [-0.5, 0, 0.8660254037844386]
+  ],
   "coefficients": {
     "format": "coo",
     "shape": [7, 7, 7],

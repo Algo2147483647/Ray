@@ -391,6 +391,61 @@ func TestParseShapePolynomialSurface(t *testing.T) {
 	}
 }
 
+func TestParseShapePolynomialSurfaceBasis(t *testing.T) {
+	shapes, err := ParseShape(map[string]interface{}{
+		"shape":     "polynomial surface",
+		"mode":      "implicit",
+		"input_dim": 3,
+		"degree":    1,
+		"basis": []interface{}{
+			[]interface{}{math.Sqrt(3) / 2, 0, 0.5},
+			[]interface{}{0, 1, 0},
+			[]interface{}{-0.5, 0, math.Sqrt(3) / 2},
+		},
+		"coefficients": map[string]interface{}{
+			"format": "coo",
+			"terms": []interface{}{
+				map[string]interface{}{"index": []interface{}{0, 0, 1}, "value": 1},
+			},
+		},
+		"material_id": "unused",
+	})
+	if err != nil {
+		t.Fatalf("parse polynomial surface basis: %v", err)
+	}
+	surface, ok := shapes[0].(*shape.PolynomialSurface)
+	if !ok {
+		t.Fatalf("expected polynomial surface, got %T", shapes[0])
+	}
+	if math.Abs(surface.Basis[2][0]+0.5) > 1e-12 {
+		t.Fatalf("expected parsed basis to be preserved, got %v", surface.Basis)
+	}
+}
+
+func TestParseShapeRejectsInvalidPolynomialSurfaceBasis(t *testing.T) {
+	_, err := ParseShape(map[string]interface{}{
+		"shape":     "polynomial surface",
+		"mode":      "implicit",
+		"input_dim": 3,
+		"degree":    1,
+		"basis": []interface{}{
+			[]interface{}{1, 0, 0},
+			[]interface{}{1, 0, 0},
+			[]interface{}{0, 0, 1},
+		},
+		"coefficients": map[string]interface{}{
+			"format": "coo",
+			"terms": []interface{}{
+				map[string]interface{}{"index": []interface{}{0, 0, 1}, "value": 1},
+			},
+		},
+		"material_id": "unused",
+	})
+	if err == nil {
+		t.Fatal("expected non-orthogonal polynomial surface basis to fail")
+	}
+}
+
 func TestParseShapeImplicitEquationFieldRegistry(t *testing.T) {
 	shapes, err := ParseShape(map[string]interface{}{
 		"shape": "implicit equation",
