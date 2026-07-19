@@ -19,7 +19,7 @@
     "camera_index": 0,
     "output_image": "../outputs/geometry-benchmark-matrix.png",
     "output_film": "../outputs/geometry-benchmark-matrix.bin",
-    "exposure": 2,
+    "exposure": 1,
     "tone_mapping": "aces",
     "gamma": 2.2,
     "spectrum_mode": "rgb",

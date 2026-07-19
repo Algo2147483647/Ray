@@ -38,7 +38,7 @@ Formula convention: unless noted otherwise, `x`, `y`, and `z` are local coordina
 | r03-c04 | Roman surface / Steiner quartic | Algebraic surface `x^2y^2 + y^2z^2 + z^2x^2 - xyz = 0`, clipped to the central compact self-intersecting form. | `pale-pink-sheen`: pale pink specular reflection, reflectance `[0.96, 0.68, 0.76]`. |
 | r03-c05 | Tilted finite disk / circle | Plane disk: `n . (p - c) = 0`, `norm(p - c) <= 0.23`, with `n = normalize(-0.75, 0.25, 0.6)`. | `amber-glass`: specular dielectric, transmittance `[1, 0.58, 0.18]`, eta `1.48`. |
 | r03-c06 | Oblique finite cylinder | Cylinder: `norm((p - c) - ((p - c) . a)a) = 0.12`, `abs((p - c) . a) <= 0.225`, with `a = normalize(0.45, 0.65, 1)`. | `matte-titanium`: rough conductor, eta `[2.7, 2.2, 1.8]`, k `[3.1, 2.8, 2.5]`, roughness `0.55`. |
-| r03-c07 | Y-axis finite cylinder | Cylinder: `x^2 + z^2 = 0.13^2`, `abs(y) <= 0.21`. | `brushed-aluminum`: rough conductor, eta `[1.44, 0.93, 0.62]`, k `[7.4, 6.6, 5.3]`, roughness `0.32`. |
+| r03-c07 | Anisotropic quartic torus / spindle surface | `x^4 + 4y^4 + 256z^4 + 4x^2y^2 - 368x^2z^2 - 736y^2z^2 + 8x^2 + 16y^2 + 128z^2 + 16 = 0`. | `pure-white-reflection`: pure white specular reflection, reflectance `[1, 1, 1]`. |
 
 ## Row 04
 
@@ -56,7 +56,7 @@ Formula convention: unless noted otherwise, `x`, `y`, and `z` are local coordina
 
 | Cell | Mathematical Geometry | Formula / Definition | Material |
 | --- | --- | --- | --- |
-| r05-c01 | Togliatti / Dervish quintic nodal surface | D5-symmetric Nordstrand form `a h1 h2 h3 h4 h5 + (1 - cz)(x^2 + y^2 - 1 + rz^2)^2 = 0`, expanded as the sparse polynomial stored in `geo-r05.json`. | `pale-blue-sheen`: pale blue specular reflection, reflectance `[0.62, 0.78, 0.92]`. |
+| r05-c01 | MathWorld Togliatti quintic surface | Barth's w=1 Togliatti surface from MathWorld, expanded as the sparse degree-5 polynomial stored in `geo-r05.json`. | `grass-rough-metal`: grass-colored rough conductor, eta `[1.35, 0.35, 1.55]`, k `[1.45, 3.2, 1.65]`, roughness `0.42`. |
 | r05-c02 | Quartic superquadric shell | `x^4 + y^4 + z^4 - 5x^2 - 5y^2 - 5z^2 + 11.8 = 0`. | `plastic-red`: Lambertian red, albedo `[0.85, 0.05, 0.035]`. |
 | r05-c03 | Quartic saddle / ruled-sheet surface | `x^2 - y^2 z^2 + 0.08 z^4 = 0`. | `marble-cool`: Lambertian cool marble tone, albedo `[0.78, 0.8, 0.76]`. |
 | r05-c04 | Gyroid minimal-surface approximation | `sin(3.3x) cos(3.3y) + sin(3.3y) cos(3.3z) + sin(3.3z) cos(3.3x) - 0.08 = 0`. | `porcelain-glaze-cyan-blue`: specular reflection, reflectance `[0.62, 0.82, 0.78]`. |
@@ -72,7 +72,7 @@ Formula convention: unless noted otherwise, `x`, `y`, and `z` are local coordina
 | r06-c02 | Ding-Dong surface / bell-shaped self-intersecting cubic | `x^2 + y^2 + z^3 - z^2 = 0`, clipped to expose more of the lower `z < 0` flared branch. | `blue-glass`: specular dielectric, transmittance `[0.55, 0.78, 1]`, eta `1.52`. |
 | r06-c03 | Clebsch diagonal cubic surface | `81(x^3 + y^3 + z^3) - 189(x^2y + x^2z + xy^2 + y^2z + xz^2 + yz^2) + 54xyz - 9(x^2 + y^2 + z^2) + 126(xy + xz + yz) - 9(x + y + z) + 1 = 0`. | `pale-pink-sheen`: pale pink specular reflection, reflectance `[0.96, 0.68, 0.76]`. |
 | r06-c04 | Torus quartic | `(x^2 + y^2 + z^2)^2 - 1.22(x^2 + y^2) + 0.78z^2 + 0.1521 = 0`. | `rough-gold`: rough conductor, eta `[0.17, 0.35, 1.5]`, k `[3.1, 2.7, 1.9]`, roughness `0.18`. |
-| r06-c05 | Anisotropic quartic torus / spindle surface | `x^4 + 4y^4 + 256z^4 + 4x^2y^2 - 368x^2z^2 - 736y^2z^2 + 8x^2 + 16y^2 + 128z^2 + 16 = 0`. | `pure-white-reflection`: pure white specular reflection, reflectance `[1, 1, 1]`. |
+| r06-c05 | Togliatti / Dervish quintic nodal surface | D5-symmetric Nordstrand form `a h1 h2 h3 h4 h5 + (1 - cz)(x^2 + y^2 - 1 + rz^2)^2 = 0`, expanded as the sparse polynomial stored in `geo-r06.json`. | `pale-blue-sheen`: pale blue specular reflection, reflectance `[0.62, 0.78, 0.92]`. |
 | r06-c06 | Dupin cyclide / inverted torus mesh | Inversion of an offset torus, sampled as a 3584-triangle Dupin cyclide mesh so one side reads thick and the opposite side pinches thin. Source torus parameters: offset `1.55`, major radius `0.66`, minor radius `0.22`. | `jade-glass`: specular dielectric, transmittance `[0.2, 0.88, 0.55]`, eta `1.57`. |
 | r06-c07 | Cubic-symmetric quartic surface | `x^4 + y^4 + z^4 - 1.15(x^2y^2 + x^2z^2 + y^2z^2) - 0.28(x^2 + y^2 + z^2) + 0.08 = 0`. | `rough-gold`: rough conductor, eta `[0.17, 0.35, 1.5]`, k `[3.1, 2.7, 1.9]`, roughness `0.18`. |
 
@@ -80,4 +80,4 @@ Formula convention: unless noted otherwise, `x`, `y`, and `z` are local coordina
 
 | File | Mathematical Geometry | Formula / Definition | Material |
 | --- | --- | --- | --- |
-| `geo_example.json` | Enlarged r05-c06 pale red/blue reflection double gyroid | Interlocked double gyroid test: `G_4.4(x,y,z) - 0.24 = 0` and `G_4.4(x,y,z) + 0.24 = 0`. | `pale-blue-sheen`: pale blue specular reflection, reflectance `[0.62, 0.78, 0.92]`; `pale-red-sheen`: pale red specular reflection, reflectance `[1, 0.56, 0.52]`. |
+| `geo_example.json` | MathWorld Togliatti quintic standalone view | Barth's w=1 Togliatti surface from MathWorld, shown with a larger local window for standalone testing. | `rough-gold`: rough conductor, eta `[0.17, 0.35, 1.5]`, k `[3.1, 2.7, 1.9]`, roughness `0.18`. |
