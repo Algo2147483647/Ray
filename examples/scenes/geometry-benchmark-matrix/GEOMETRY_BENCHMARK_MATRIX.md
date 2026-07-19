@@ -35,7 +35,7 @@ Formula convention: unless noted otherwise, $x,y,z$ are local coordinates after 
 | r3-c1 | Cubic cusp / Whitney-umbrella-like surface | Cubic singular surface $x^2-y^2z-0.09y^2=0$, locally $x^2=y^2(z+0.09)$. | `rough-gold`: rough conductor, eta `[0.17, 0.35, 1.5]`, k `[3.1, 2.7, 1.9]`, roughness `0.18`. |
 | r3-c2 | Elliptic paraboloid quadric | Elliptic paraboloid $z=11.1111x^2+16.0000y^2-0.18$. | `ceramic-white`: Lambertian ceramic white, albedo `[0.86, 0.84, 0.78]`. |
 | r3-c3 | Vertical finite cone | Right circular cone $x^2+y^2=0.36(z+1)^2$, locally truncated to finite height. | `pure-white-reflection`: pure white specular reflection, reflectance `[1, 1, 1]`. |
-| r3-c4 | Roman surface | Steiner Roman surface $x^2y^2+y^2z^2+z^2x^2-xyz=0$, rotated so its local $[1,1,1]$ threefold face axis points toward the camera; scaled 1.8x and left unbounded. | `pale-pink-sheen`: pale pink specular reflection, reflectance `[0.96, 0.68, 0.76]`. |
+| r3-c4 | Surface of revolution by parabola | Quartic cone $z^4=x^2+y^2$, singular at the apex, moved from r5-c7. | `white-card`: diffuse warm white paper/card, albedo `[0.82, 0.82, 0.78]`. |
 | r3-c5 | Tilted finite disk / circle | Closed Euclidean disk $D_R^2=\{u^2+v^2\le R^2\}$, $R=0.23$; boundary is $S_R^1$. | `amber-glass`: specular dielectric, transmittance `[1, 0.58, 0.18]`, eta `1.48`. |
 | r3-c6 | Togliatti / Dervish quintic nodal surface | $D_5$-symmetric Togliatti/Dervish quintic $F_5(x,y,z)=0$, a nodal degree-$5$ surface moved from r6-c5. | `pale-blue-sheen`: pale blue specular reflection, reflectance `[0.62, 0.78, 0.92]`. |
 | r3-c7 | Anisotropic quartic torus / spindle surface | Anisotropic quartic spindle surface $x^4+4y^4+256z^4+4x^2y^2-368x^2z^2-736y^2z^2+8x^2+16y^2+128z^2+16=0$. | `pure-white-reflection`: pure white specular reflection, reflectance `[1, 1, 1]`. |
@@ -59,10 +59,10 @@ Formula convention: unless noted otherwise, $x,y,z$ are local coordinates after 
 | r5-c1 | Ding-Dong surface / bell-shaped self-intersecting cubic | Ding-Dong cubic $x^2+y^2+z^3-z^2=0$, a rotationally symmetric self-intersecting surface moved from r6-c2. | `blue-glass`: specular dielectric, transmittance `[0.55, 0.78, 1]`, eta `1.52`. |
 | r5-c2 | Tanglecube | Quartic superquadric shell $x^4+y^4+z^4-5(x^2+y^2+z^2)+11.8=0$. | `plastic-red`: Lambertian red, albedo `[0.85, 0.05, 0.035]`. |
 | r5-c3 | Singular Quartic Surface with a Double Line | Quartic saddle surface $x^2-y^2z^2+0.08z^4=0$. | `marble-cool`: Lambertian cool marble tone, albedo `[0.78, 0.8, 0.76]`. |
-| r5-c4 | Tilted torus | Ring torus quartic $(x^2+y^2+z^2)^2-1.22(x^2+y^2)+0.78z^2+0.1521=0$, genus $1$, moved from r6-c4 and pitched $40^\circ$ about the $y$ axis toward the camera. | `rough-gold`: rough conductor, eta `[0.17, 0.35, 1.5]`, k `[3.1, 2.7, 1.9]`, roughness `0.18`. |
+| r5-c4 | Roman surface | Steiner Roman surface $x^2y^2+y^2z^2+z^2x^2-xyz=0$, rotated so its local $[1,1,1]$ threefold face axis points toward the camera and left unbounded, moved from r3-c4. | `pale-pink-sheen`: pale pink specular reflection, reflectance `[0.96, 0.68, 0.76]`. |
 | r5-c5 | $L^4$-unit superellipsoid | $L^4$-unit superellipsoid $x^4+y^4+z^4=1$. | `pale-blue-rough-metal`: pale-blue rough conductor, eta `[0.72, 0.9, 1.35]`, k `[2.4, 2.75, 3.35]`, roughness `0.48`. |
 | r5-c6 | Dupin cyclide | Equation-form Dupin cyclide from an inverted torus moved from r6-c6: $\left(1-2dx+C\rho^2\right)^2-4R^2\left((x-d\rho^2)^2+y^2\right)=0$, where $\rho^2=x^2+y^2+z^2$, $C=d^2+R^2-r^2$, $d=1.55$, $R=0.66$, $r=0.22$. | `jade-glass`: specular dielectric, transmittance `[0.2, 0.88, 0.55]`, eta `1.57`. |
-| r5-c7 | Surface of revolution by parabola | Quartic cone $z^4=x^2+y^2$, singular at the apex. | `white-card`: diffuse warm white paper/card, albedo `[0.82, 0.82, 0.78]`. |
+| r5-c7 | Tilted torus | Ring torus quartic $(x^2+y^2+z^2)^2-1.22(x^2+y^2)+0.78z^2+0.1521=0$, genus $1$, pitched $40^\circ$ about the $y$ axis toward the camera, moved from r5-c4. | `rough-gold`: rough conductor, eta `[0.17, 0.35, 1.5]`, k `[3.1, 2.7, 1.9]`, roughness `0.18`. |
 
 ## Row 6
 
