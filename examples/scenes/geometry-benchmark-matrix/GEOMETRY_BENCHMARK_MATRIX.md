@@ -25,7 +25,7 @@ Formula convention: unless noted otherwise, $x,y,z$ are local coordinates after 
 | r2-c3 | Rectangular cuboid | Orthotope $ [-0.21,0.21]\times[-0.12,0.12]\times[-0.10,0.10]$, side lengths $0.42,0.24,0.20$. | `plastic-blue`: Lambertian blue, albedo `[0.05, 0.16, 0.75]`. |
 | r2-c4 | Triangle | Filled 2-simplex $\Delta^2=\operatorname{conv}(p_1,p_2,p_3)$. | `fabric-teal`: Lambertian teal fabric, albedo `[0.05, 0.42, 0.38]`. |
 | r2-c5 | Elliptic quadric / clipped ellipsoid-like surface | Elliptic quadric $30.8642x^2+30.8642y^2-8.6505z^2-2.9412z-0.25=0$. | `pearl`: Lambertian pearl tone, albedo `[0.92, 0.84, 0.68]`. |
-| r2-c6 | Szilassi polyhedron wireframe | Szilassi graph on a toroidal polyhedron: genus $1$, $V=14$, $E=21$, $F=7$. | `green-glass`: specular dielectric, transmittance `[0.34, 1, 0.52]`, eta `1.5`. |
+| r2-c6 | Szilassi polyhedron | Szilassi graph on a toroidal polyhedron: genus $1$, $V=14$, $E=21$, $F=7$. | `green-glass`: specular dielectric, transmittance `[0.34, 1, 0.52]`, eta `1.5`. |
 | r2-c7 | Hyperboloid quadric | One-sheet hyperboloid $82.6446x^2+44.4444y^2-17.3611z^2=1$. | `rough-gold`: rough conductor, eta `[0.17, 0.35, 1.5]`, k `[3.1, 2.7, 1.9]`, roughness `0.18`. |
 
 ## Row 3
@@ -59,10 +59,10 @@ Formula convention: unless noted otherwise, $x,y,z$ are local coordinates after 
 | r5-c1 | Togliatti quintic surface | Togliatti quintic $F_5(x,y,z)=0$, a degree-$5$ nodal algebraic surface. | `grass-rough-metal`: grass-colored rough conductor, eta `[1.35, 0.35, 1.55]`, k `[1.45, 3.2, 1.65]`, roughness `0.42`. |
 | r5-c2 | Tanglecube | Quartic superquadric shell $x^4+y^4+z^4-5(x^2+y^2+z^2)+11.8=0$. | `plastic-red`: Lambertian red, albedo `[0.85, 0.05, 0.035]`. |
 | r5-c3 | Singular Quartic Surface with a Double Line | Quartic saddle surface $x^2-y^2z^2+0.08z^4=0$. | `marble-cool`: Lambertian cool marble tone, albedo `[0.78, 0.8, 0.76]`. |
-| r5-c4 | Gyroid minimal-surface approximation | Gyroid level set $G_{3.3}(x,y,z)=0.08$, where $G_k=\sin(kx)\cos(ky)+\sin(ky)\cos(kz)+\sin(kz)\cos(kx)$. | `porcelain-glaze-cyan-blue`: specular reflection, reflectance `[0.62, 0.82, 0.78]`. |
+| r5-c4 | Gyroid minimal-surface | Gyroid level set $G_{3.3}(x,y,z)=0.08$, where $G_k=\sin(kx)\cos(ky)+\sin(ky)\cos(kz)+\sin(kz)\cos(kx)$. | `porcelain-glaze-cyan-blue`: specular reflection, reflectance `[0.62, 0.82, 0.78]`. |
 | r5-c5 | $L^4$-unit superellipsoid | $L^4$-unit superellipsoid $x^4+y^4+z^4=1$. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
 | r5-c6 | Interlocked double Gyroid | Parallel gyroid pair $G_{4.4}(x,y,z)=\pm0.24$, two interleaved triply periodic level surfaces. | `pale-blue-sheen`: pale blue specular reflection, reflectance `[0.62, 0.78, 0.92]`; `pale-red-sheen`: pale red specular reflection, reflectance `[1, 0.56, 0.52]`. |
-| r5-c7 | Singular Quartic Surface of Revolution | Quartic cone $z^4=x^2+y^2$, singular at the apex. | `white-card`: diffuse warm white paper/card, albedo `[0.82, 0.82, 0.78]`. |
+| r5-c7 | Surface of revolution by parabola | Quartic cone $z^4=x^2+y^2$, singular at the apex. | `white-card`: diffuse warm white paper/card, albedo `[0.82, 0.82, 0.78]`. |
 
 ## Row 6
 
@@ -73,6 +73,6 @@ Formula convention: unless noted otherwise, $x,y,z$ are local coordinates after 
 | r6-c3 | Clebsch diagonal cubic surface | Clebsch diagonal cubic $81(x^3+y^3+z^3)-189(x^2y+x^2z+xy^2+y^2z+xz^2+yz^2)+54xyz-9(x^2+y^2+z^2)+126(xy+xz+yz)-9(x+y+z)+1=0$. | `pale-pink-sheen`: pale pink specular reflection, reflectance `[0.96, 0.68, 0.76]`. |
 | r6-c4 | Torus | Ring torus quartic $(x^2+y^2+z^2)^2-1.22(x^2+y^2)+0.78z^2+0.1521=0$, genus $1$. | `rough-gold`: rough conductor, eta `[0.17, 0.35, 1.5]`, k `[3.1, 2.7, 1.9]`, roughness `0.18`. |
 | r6-c5 | Togliatti / Dervish quintic nodal surface | $D_5$-symmetric Togliatti/Dervish quintic $F_5(x,y,z)=0$, a nodal degree-$5$ surface. | `pale-blue-sheen`: pale blue specular reflection, reflectance `[0.62, 0.78, 0.92]`. |
-| r6-c6 | Dupin cyclide | Equation-form Dupin cyclide from an inverted torus: $\left(1-2dx+C\rho^2\right)^2-4R^2\left((x-d\rho^2)^2+y^2\right)=0$, where $\rho^2=x^2+y^2+z^2$, $C=d^2+R^2-r^2$, $d=1.55$, $R=0.66$, $r=0.22$. Stored as a shifted sparse quartic polynomial so the cell center remains `[0.6, -1.12, 0.58]`. | `jade-glass`: specular dielectric, transmittance `[0.2, 0.88, 0.55]`, eta `1.57`. |
-| r6-c7 | Cubic-symmetric quartic surface | Cubic-symmetric quartic $x^4+y^4+z^4-1.15(x^2y^2+x^2z^2+y^2z^2)-0.28(x^2+y^2+z^2)+0.08=0$. | `rough-gold`: rough conductor, eta `[0.17, 0.35, 1.5]`, k `[3.1, 2.7, 1.9]`, roughness `0.18`. |
+| r6-c6 | Dupin cyclide | Equation-form Dupin cyclide from an inverted torus: $\left(1-2dx+C\rho^2\right)^2-4R^2\left((x-d\rho^2)^2+y^2\right)=0$, where $\rho^2=x^2+y^2+z^2$, $C=d^2+R^2-r^2$, $d=1.55$, $R=0.66$, $r=0.22$. Stored as a shifted sparse quartic polynomial at cell center `[0.6, -1.12, 0.58]`, doubled in scale and left unbounded because it is closed. | `jade-glass`: specular dielectric, transmittance `[0.2, 0.88, 0.55]`, eta `1.57`. |
+| r6-c7 | Kummer surface | Cubic-symmetric quartic $x^4+y^4+z^4-1.15(x^2y^2+x^2z^2+y^2z^2)-0.28(x^2+y^2+z^2)+0.08=0$. | `rough-gold`: rough conductor, eta `[0.17, 0.35, 1.5]`, k `[3.1, 2.7, 1.9]`, roughness `0.18`. |
 
