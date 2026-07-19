@@ -384,6 +384,27 @@
       }
     },
     {
+      "id": "pale-blue-sheen-crystal",
+      "surface": {
+        "type": "specular_dielectric",
+        "reflectance": [
+          1,
+          1,
+          1
+        ],
+        "transmittance": [
+          0.62,
+          0.78,
+          0.92
+        ],
+        "eta_outside": 1,
+        "ior": {
+          "type": "constant",
+          "eta": 1.5
+        }
+      }
+    },
+    {
       "id": "blue-glass",
       "surface": {
         "type": "specular_dielectric",

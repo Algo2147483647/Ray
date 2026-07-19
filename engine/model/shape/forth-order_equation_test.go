@@ -90,6 +90,36 @@ func TestFourOrderEquationIntersectsQuarticWithShiftedRoots(t *testing.T) {
 	}
 }
 
+func TestFourOrderEquationAppliesPlacementBasis(t *testing.T) {
+	quartic := NewFourOrderEquation(fourOrderCoefficients(map[[4]int]float64{
+		[4]int{1, 1, 1, 1}: 1,
+		[4]int{0, 0, 0, 0}: -1,
+	}))
+	quartic.Center = []float64{2, 0, 0}
+	quartic.Scale = []float64{3, 1, 1}
+	quartic.Basis = [][]float64{
+		{0, 0, 1},
+		{0, 1, 0},
+		{-1, 0, 0},
+	}
+
+	interaction, ok := quartic.IntersectRange(
+		mat.NewVecDense(3, []float64{2, 0, -6}),
+		mat.NewVecDense(3, []float64{0, 0, 1}),
+		0,
+		math.MaxFloat64,
+	)
+	if !ok {
+		t.Fatal("expected transformed quartic to hit")
+	}
+	if math.Abs(interaction.Distance-3) > 1e-8 {
+		t.Fatalf("expected hit at distance 3, got %f", interaction.Distance)
+	}
+	if math.Abs(interaction.GeometricNormal.AtVec(2)+1) > 1e-8 {
+		t.Fatalf("expected world normal to follow transformed local x axis, got %v", interaction.GeometricNormal.RawVector().Data)
+	}
+}
+
 func fourOrderCoefficients(values map[[4]int]float64) []float64 {
 	coeffs := make([]float64, 256)
 	for index, value := range values {

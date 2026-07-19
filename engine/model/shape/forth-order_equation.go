@@ -9,14 +9,20 @@ import (
 
 type FourOrderEquation struct {
 	BaseShape
-	A *maths.Tensor[float64] `json:"a"`
+	A      *maths.Tensor[float64] `json:"a"`
+	Center []float64
+	Scale  []float64
+	Basis  [][]float64
 }
 
 func NewFourOrderEquation(A []float64) *FourOrderEquation { // Index order: 1, x, y, z
 	ATensor := maths.NewTensorFromSlice(A, []int{4, 4, 4, 4})
 
 	return &FourOrderEquation{
-		A: ATensor,
+		A:      ATensor,
+		Center: []float64{0, 0, 0},
+		Scale:  []float64{1, 1, 1},
+		Basis:  identityFourOrderBasis(),
 	}
 }
 
@@ -33,14 +39,16 @@ func (p *FourOrderEquation) Intersect(raySt, rayDir *mat.VecDense) float64 {
 }
 
 func (p *FourOrderEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
+	localSt := p.localPoint(raySt)
+	localDir := p.localDirection(rayDir)
 	var (
 		coeffs = []float64{0, 0, 0, 0, 0} // Coefficients from the fourth-degree term to the constant term.
-		stx    = raySt.At(0, 0)           // Get ray origin and direction components.
-		sty    = raySt.At(1, 0)
-		stz    = raySt.At(2, 0)
-		dirx   = rayDir.At(0, 0)
-		diry   = rayDir.At(1, 0)
-		dirz   = rayDir.At(2, 0)
+		stx    = localSt[0]               // Get local ray origin and direction components.
+		sty    = localSt[1]
+		stz    = localSt[2]
+		dirx   = localDir[0]
+		diry   = localDir[1]
+		dirz   = localDir[2]
 	)
 
 	for i := 0; i < 4; i++ { // Iterate over tensor A indices (0 to 3).
@@ -109,10 +117,11 @@ func (p *FourOrderEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tM
 }
 
 func (p *FourOrderEquation) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {
+	local := p.localPoint(intersect)
 	var (
-		x       = intersect.At(0, 0) // Get intersection coordinates.
-		y       = intersect.At(1, 0)
-		z       = intersect.At(2, 0)
+		x       = local[0] // Get local intersection coordinates.
+		y       = local[1]
+		z       = local[2]
 		factors = [4]float64{1, x, y, z} // factors[0]=1, factors[1]=x, factors[2]=y, factors[3]=z
 		grad    = [3]float64{0, 0, 0}    // dx, dy, dz	// Initialize the gradient vector.
 	)
@@ -179,8 +188,70 @@ func (p *FourOrderEquation) GetNormalVector(intersect, res *mat.VecDense) *mat.V
 		}
 	}
 
-	res.SetVec(0, grad[0])
-	res.SetVec(1, grad[1])
-	res.SetVec(2, grad[2])
+	if res == nil || res.Len() != intersect.Len() {
+		res = mat.NewVecDense(intersect.Len(), nil)
+	} else {
+		res.Zero()
+	}
+	for localAxis, gradient := range grad {
+		scale := p.scaleAt(localAxis)
+		for worldAxis := 0; worldAxis < res.Len(); worldAxis++ {
+			res.SetVec(worldAxis, res.AtVec(worldAxis)+gradient*p.basisAt(localAxis, worldAxis)/scale)
+		}
+	}
 	return maths.Normalize(res)
+}
+
+func (p *FourOrderEquation) localPoint(point *mat.VecDense) []float64 {
+	local := make([]float64, 3)
+	for localAxis := 0; localAxis < 3; localAxis++ {
+		for worldAxis := 0; worldAxis < 3 && worldAxis < point.Len(); worldAxis++ {
+			local[localAxis] += (point.AtVec(worldAxis) - p.centerAt(worldAxis)) * p.basisAt(localAxis, worldAxis)
+		}
+		local[localAxis] /= p.scaleAt(localAxis)
+	}
+	return local
+}
+
+func (p *FourOrderEquation) localDirection(direction *mat.VecDense) []float64 {
+	local := make([]float64, 3)
+	for localAxis := 0; localAxis < 3; localAxis++ {
+		for worldAxis := 0; worldAxis < 3 && worldAxis < direction.Len(); worldAxis++ {
+			local[localAxis] += direction.AtVec(worldAxis) * p.basisAt(localAxis, worldAxis)
+		}
+		local[localAxis] /= p.scaleAt(localAxis)
+	}
+	return local
+}
+
+func (p *FourOrderEquation) centerAt(axis int) float64 {
+	if p != nil && axis >= 0 && axis < len(p.Center) {
+		return p.Center[axis]
+	}
+	return 0
+}
+
+func (p *FourOrderEquation) scaleAt(axis int) float64 {
+	if p != nil && axis >= 0 && axis < len(p.Scale) && p.Scale[axis] != 0 {
+		return p.Scale[axis]
+	}
+	return 1
+}
+
+func (p *FourOrderEquation) basisAt(localAxis, worldAxis int) float64 {
+	if p != nil && localAxis >= 0 && localAxis < len(p.Basis) && worldAxis >= 0 && worldAxis < len(p.Basis[localAxis]) {
+		return p.Basis[localAxis][worldAxis]
+	}
+	if localAxis == worldAxis {
+		return 1
+	}
+	return 0
+}
+
+func identityFourOrderBasis() [][]float64 {
+	return [][]float64{
+		{1, 0, 0},
+		{0, 1, 0},
+		{0, 0, 1},
+	}
 }

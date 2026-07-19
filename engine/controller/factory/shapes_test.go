@@ -280,6 +280,46 @@ func TestParseShapeFourOrderEquationSparseCoordinateCoefficients(t *testing.T) {
 	}
 }
 
+func TestParseShapeFourOrderEquationBasis(t *testing.T) {
+	shapes, err := ParseShape(map[string]interface{}{
+		"shape": "four-order equation",
+		"a": map[string]interface{}{
+			"1, 1, 1, 1": 1,
+			"0, 0, 0, 0": -1,
+		},
+		"center": []interface{}{2, 0, 0},
+		"scale":  []interface{}{3, 1, 1},
+		"basis": []interface{}{
+			[]interface{}{0, 0, 1},
+			[]interface{}{0, 1, 0},
+			[]interface{}{-1, 0, 0},
+		},
+	})
+	if err != nil {
+		t.Fatalf("parse four-order equation basis: %v", err)
+	}
+	quartic, ok := shapes[0].(*shape.FourOrderEquation)
+	if !ok {
+		t.Fatalf("expected *shape.FourOrderEquation, got %T", shapes[0])
+	}
+	if quartic.Basis[2][0] != -1 {
+		t.Fatalf("expected parsed basis to be preserved, got %v", quartic.Basis)
+	}
+
+	interaction, ok := quartic.IntersectRange(
+		mat.NewVecDense(3, []float64{2, 0, -6}),
+		mat.NewVecDense(3, []float64{0, 0, 1}),
+		0,
+		math.MaxFloat64,
+	)
+	if !ok {
+		t.Fatal("expected transformed four-order equation to hit")
+	}
+	if math.Abs(interaction.Distance-3) > 1e-8 {
+		t.Fatalf("expected hit at distance 3, got %f", interaction.Distance)
+	}
+}
+
 func TestParseShapeRejectsInvalidSparsePolynomialCoefficientKey(t *testing.T) {
 	_, err := ParseShape(map[string]interface{}{
 		"shape": "cubic equation",
