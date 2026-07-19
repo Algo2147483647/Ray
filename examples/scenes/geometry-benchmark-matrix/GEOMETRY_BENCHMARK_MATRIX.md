@@ -25,7 +25,7 @@ Formula convention: unless noted otherwise, `x`, `y`, and `z` are local coordina
 | r02-c03 | Rectangular cuboid | Box: `abs(x) <= 0.21`, `abs(y) <= 0.12`, `abs(z) <= 0.10`. | `plastic-blue`: Lambertian blue, albedo `[0.05, 0.16, 0.75]`. |
 | r02-c04 | Triangle | Convex hull of three vertices: `conv(p1, p2, p3)`. | `fabric-teal`: Lambertian teal fabric, albedo `[0.05, 0.42, 0.38]`. |
 | r02-c05 | Elliptic quadric / clipped ellipsoid-like surface | `30.8642 x^2 + 30.8642 y^2 - 8.6505 z^2 - 2.9412 z - 0.25 = 0`. | `pearl`: Lambertian pearl tone, albedo `[0.92, 0.84, 0.68]`. |
-| r02-c06 | Horizontal finite cylinder | Cylinder: `norm((p - c) - ((p - c) . a)a) = 0.13`, `abs((p - c) . a) <= 0.22`, with `a = (1, 0, 0)`. | `amber-glass`: specular dielectric, transmittance `[1, 0.58, 0.18]`, eta `1.48`. |
+| r02-c06 | Szilassi polyhedron wireframe | Toroidal polyhedron graph with 14 vertices and 21 edges, represented as glass vertex spheres plus thick finite-cylinder edges. | `green-glass`: specular dielectric, transmittance `[0.34, 1, 0.52]`, eta `1.5`. |
 | r02-c07 | Hyperboloid quadric | `82.6446 x^2 + 44.4444 y^2 - 17.3611 z^2 - 1 = 0`. | `rough-gold`: rough conductor, eta `[0.17, 0.35, 1.5]`, k `[3.1, 2.7, 1.9]`, roughness `0.18`. |
 
 ## Row 03
@@ -45,7 +45,7 @@ Formula convention: unless noted otherwise, `x`, `y`, and `z` are local coordina
 | Cell | Mathematical Geometry | Formula / Definition | Material |
 | --- | --- | --- | --- |
 | r04-c01 | Small stellated dodecahedron-inspired triangle mesh | Dodecahedral stellation made from 12 pentagonal pyramids, represented by 60 triangular faces. | `yellow-glass`: specular dielectric, transmittance `[1, 0.86, 0.24]`, eta `1.5`. |
-| r04-c02 | Szilassi polyhedron wireframe | Toroidal polyhedron graph with 14 vertices and 21 edges, represented as glass vertex spheres plus thick finite-cylinder edges. | `green-glass`: specular dielectric, transmittance `[0.34, 1, 0.52]`, eta `1.5`. |
+| r04-c02 | Ultra-high-dispersion triangular prism | Closed triangular prism mesh made from 8 triangles for strong chromatic glass refraction. | `ultra-high-dispersion-prism-glass`: transparent specular dielectric, Cauchy IOR `a=1.33`, `b=0.12`, `c=0.004`. |
 | r04-c03 | Regular icosahedron triangle mesh | Convex polyhedron: `conv(V)`, with 12 golden-ratio icosahedral vertices and 20 triangular faces. | `rough-gold`: rough conductor, eta `[0.17, 0.35, 1.5]`, k `[3.1, 2.7, 1.9]`, roughness `0.18`. |
 | r04-c04 | Beveled cube / chamfered polyhedron mesh | Closed triangle mesh: union of 36 triangular faces from the JSON vertex set. | `sandstone`: Lambertian sandstone, albedo `[0.64, 0.52, 0.34]`. |
 | r04-c05 | Octahedron triangle mesh | Octahedron: `abs(x) + abs(y) + abs(z) = r`, represented by 8 triangular faces. | `blue-glass`: specular dielectric, transmittance `[0.55, 0.78, 1]`, eta `1.52`. |

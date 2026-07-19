@@ -140,6 +140,29 @@
       }
     },
     {
+      "id": "ultra-high-dispersion-prism-glass",
+      "surface": {
+        "type": "specular_dielectric",
+        "reflectance": [
+          1,
+          1,
+          1
+        ],
+        "transmittance": [
+          1,
+          1,
+          1
+        ],
+        "eta_outside": 1,
+        "ior": {
+          "type": "cauchy",
+          "a": 1.33,
+          "b": 0.12,
+          "c": 0.004
+        }
+      }
+    },
+    {
       "id": "softbox-key",
       "emission": {
         "type": "constant",
