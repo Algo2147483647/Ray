@@ -3,10 +3,10 @@ package factory
 import (
 	"fmt"
 	"github.com/Algo2147483647/ray/engine/controller/parser"
+	"github.com/Algo2147483647/ray/engine/maths"
 	modelcamera "github.com/Algo2147483647/ray/engine/model/camera"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
-	"math"
 	"strings"
 )
 
@@ -84,20 +84,17 @@ func BuildCamera3DFromScript(def parser.CameraScript) (*modelcamera.Camera3D, er
 		direction, err := vectorFromScript("direction", def.Direction)
 		if err != nil {
 			return nil, err
-		}
-		if mat.Norm(direction, 2) == 0 {
+		} else if mat.Norm(direction, 2) == 0 {
 			return nil, fmt.Errorf("direction must not be zero")
 		}
-		camera3D.Direction = direction
-		camera3D.Direction.ScaleVec(1.0/mat.Norm(direction, 2), camera3D.Direction)
+		camera3D.Direction = maths.Normalize(direction)
 		return camera3D, nil
 	}
 
 	lookAt, err := vectorFromScript("look_at", firstNonEmptyFloat64s(def.LookAt, defaults.LookAt))
 	if err != nil {
 		return nil, err
-	}
-	if distance(position, lookAt) == 0 {
+	} else if maths.Distance(position, lookAt) == 0 {
 		return nil, fmt.Errorf("look_at must differ from position")
 	}
 
@@ -221,13 +218,11 @@ func BuildSphericalCameraFromScript(def parser.CameraScript) (*modelcamera.Spher
 }
 
 func vectorFromScript(name string, values []float64) (*mat.VecDense, error) {
-	if len(values) != utils.Dimension {
-		return nil, fmt.Errorf("%s must contain %d values, got %d", name, utils.Dimension, len(values))
+	if err := utils.RequireSliceLength(name, values, utils.Dimension); err != nil {
+		return nil, err
 	}
 
-	data := make([]float64, len(values))
-	copy(data, values)
-	return mat.NewVecDense(len(data), data), nil
+	return utils.NewVec(values), nil
 }
 
 func firstNonEmptyFloat64s(primary, fallback []float64) []float64 {
@@ -242,13 +237,4 @@ func positiveOrDefault(value, fallback float64) float64 {
 		return value
 	}
 	return fallback
-}
-
-func distance(a, b *mat.VecDense) float64 {
-	var sum float64
-	for i := 0; i < a.Len(); i++ {
-		diff := a.AtVec(i) - b.AtVec(i)
-		sum += diff * diff
-	}
-	return math.Sqrt(sum)
 }

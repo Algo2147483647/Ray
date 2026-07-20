@@ -47,6 +47,10 @@ func SubVec(res, a, b *mat.VecDense) *mat.VecDense {
 	return res
 }
 
+func Distance(a, b *mat.VecDense) float64 {
+	return mat.Norm(SubVec(mat.NewVecDense(a.Len(), nil), a, b), 2)
+}
+
 func MulVec(res *mat.VecDense, a *mat.Dense, b *mat.VecDense) *mat.VecDense {
 	res.MulVec(a, b)
 	return res
