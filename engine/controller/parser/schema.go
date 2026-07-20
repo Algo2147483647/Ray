@@ -83,7 +83,6 @@ type GeometryScript struct {
 }
 
 type Script struct {
-	Includes  []string                          `json:"includes"`
 	Materials []map[string]interface{}          `json:"materials"`
 	Media     map[string]map[string]interface{} `json:"media"`
 	Objects   []map[string]interface{}          `json:"objects"`
