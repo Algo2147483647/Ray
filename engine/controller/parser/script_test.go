@@ -19,7 +19,7 @@ func TestReadScriptFilePreservesGeometry(t *testing.T) {
 		t.Fatalf("read script: %v", err)
 	}
 	if script.Geometry == nil {
-		t.Fatal("expected geometry to survive script merge")
+		t.Fatal("expected geometry to survive script read")
 	}
 	if script.Geometry.Type != "klein" || script.Geometry.MaxArc != 12.5 {
 		t.Fatalf("unexpected geometry: %#v", script.Geometry)

@@ -11,7 +11,6 @@ This document records the current scene JSON fields used by the Go renderer afte
 
 ```json
 {
-  "includes": [],
   "media": {},
   "materials": [],
   "objects": [],
@@ -25,9 +24,9 @@ Use `cameras` for camera definitions. If the list is omitted or empty, the rende
 
 ## Composing Multiple JSON Files
 
-Scene files may include other scene JSON files. Include paths are resolved
-relative to the JSON file that declares them. Included files are loaded first,
-then the including file is merged on top:
+Authoring scene files may include other scene JSON files when they are consumed
+by `studio`. Include paths are resolved relative to the JSON file that declares
+them. Included files are loaded first, then the including file is merged on top:
 
 ```json
 {
@@ -62,7 +61,8 @@ using the same duplicate-id rules, then written to one engine intermediate JSON:
 npm run studio -- --script studio.json --script geometry-heart.json --script renders.json
 ```
 
-Engine accepts a single canonical `--script` path.
+Engine accepts a single canonical `--script` path and does not resolve
+`includes` itself.
 
 ## Multiple Render Jobs
 
@@ -255,9 +255,10 @@ hyperboloids, cones, cubic sheets, and quartic sheets:
 }
 ```
 
-`bounds` accepts either `pmin`/`pmax` or `position`/`size`. It clips only the
-surface intersection and does not add cap faces, so open clipped surfaces should
-not be treated as closed dielectric medium boundaries.
+Engine JSON uses `pmin`/`pmax` bounds. Studio authoring may use
+`center`/`size` or `position`/`size` and emits `pmin`/`pmax`. Bounds clip only
+the surface intersection and do not add cap faces, so open clipped surfaces
+should not be treated as closed dielectric medium boundaries.
 
 Implicit polynomial surfaces support these JSON shapes:
 
@@ -348,8 +349,8 @@ Example Barth sextic surface:
     ]
   },
   "bounds": {
-    "position": [-0.9, 1.68, 0.38],
-    "size": [0.4, 0.4, 0.4]
+    "pmin": [-1.1, 1.48, 0.18],
+    "pmax": [-0.7, 1.88, 0.58]
   },
   "material_id": "matte"
 }
@@ -370,8 +371,8 @@ field, parameters, placement, bounds, and tolerances:
     "offset": 0.0
   },
   "bounds": {
-    "position": [0, 0, 0],
-    "size": [2, 2, 2]
+    "pmin": [-1, -1, -1],
+    "pmax": [1, 1, 1]
   },
   "step": 0.01,
   "value_tol": 1e-7,

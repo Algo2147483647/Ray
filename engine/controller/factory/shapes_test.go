@@ -566,3 +566,18 @@ func TestParseShapeRejectsInvalidBounds(t *testing.T) {
 		t.Fatal("expected invalid bounds to fail")
 	}
 }
+
+func TestParseShapeRejectsAuthoringBoundsCenterSize(t *testing.T) {
+	_, err := ParseShape(map[string]interface{}{
+		"shape":    "sphere",
+		"position": []interface{}{0, 0, 0},
+		"r":        1,
+		"bounds": map[string]interface{}{
+			"center": []interface{}{0, 0, 0},
+			"size":   []interface{}{2, 2, 2},
+		},
+	})
+	if err == nil {
+		t.Fatal("expected engine to reject studio authoring bounds")
+	}
+}

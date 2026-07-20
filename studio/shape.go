@@ -16,6 +16,9 @@ func adaptObject(object map[string]interface{}, ctx groupContext, index, dimensi
 		adapted["id"] = joinID(ctx.idPrefix, objectID(object, index))
 	}
 	applyInheritedFields(adapted, ctx.fields)
+	if err := adaptBounds(adapted, dimension); err != nil {
+		return nil, err
+	}
 
 	shapeName, _ := stringField(adapted, "shape")
 	switch {
@@ -31,6 +34,79 @@ func adaptObject(object map[string]interface{}, ctx groupContext, index, dimensi
 		return adaptCubicEquation(adapted, ctx, dimension)
 	}
 	return adapted, nil
+}
+
+func adaptBounds(object map[string]interface{}, dimension int) error {
+	rawBounds, ok := object["bounds"]
+	if !ok {
+		return nil
+	}
+	bounds, ok := rawBounds.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("field %q: expected object, got %T", "bounds", rawBounds)
+	}
+
+	if _, hasPmin := bounds["pmin"]; hasPmin {
+		if _, hasPmax := bounds["pmax"]; !hasPmax {
+			return fmt.Errorf(`bounds missing required field "pmax"`)
+		}
+		pmin, err := vectorValue("bounds.pmin", bounds["pmin"], dimension)
+		if err != nil {
+			return err
+		}
+		pmax, err := vectorValue("bounds.pmax", bounds["pmax"], dimension)
+		if err != nil {
+			return err
+		}
+		if err := validateBoundsMinMax(pmin, pmax); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	center, err := boundsCenter(bounds, dimension)
+	if err != nil {
+		return fmt.Errorf("bounds requires either center+size or pmin+pmax: %w", err)
+	}
+	size, err := vectorField(bounds, "size", dimension)
+	if err != nil {
+		return err
+	}
+
+	pmin := make([]float64, dimension)
+	pmax := make([]float64, dimension)
+	for i := 0; i < dimension; i++ {
+		if size[i] <= 0 {
+			return fmt.Errorf("bounds size index %d must be > 0", i)
+		}
+		half := size[i] * 0.5
+		pmin[i] = center[i] - half
+		pmax[i] = center[i] + half
+	}
+	object["bounds"] = map[string]interface{}{
+		"pmin": pmin,
+		"pmax": pmax,
+	}
+	return nil
+}
+
+func boundsCenter(bounds map[string]interface{}, dimension int) ([]float64, error) {
+	if center, ok := bounds["center"]; ok {
+		return vectorValue("bounds.center", center, dimension)
+	}
+	if position, ok := bounds["position"]; ok {
+		return vectorValue("bounds.position", position, dimension)
+	}
+	return nil, fmt.Errorf(`missing required field "center"`)
+}
+
+func validateBoundsMinMax(pmin, pmax []float64) error {
+	for i := range pmin {
+		if pmin[i] >= pmax[i] {
+			return fmt.Errorf("bounds pmin index %d must be < pmax", i)
+		}
+	}
+	return nil
 }
 
 func adaptCuboid(object map[string]interface{}, ctx groupContext, dimension int) (map[string]interface{}, error) {

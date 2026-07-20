@@ -6,34 +6,66 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/Algo2147483647/ray/engine/controller/factory"
 	"github.com/Algo2147483647/ray/engine/controller/parser"
-	"github.com/Algo2147483647/ray/engine/model"
 )
 
-func TestNonEuclideanGallerySceneLoadsAndRendersSmokeFrame(t *testing.T) {
-	scenePath := filepath.Join("..", "..", "examples", "scenes", "non-euclidean", "hyperbolic.json")
+func TestNonEuclideanCanonicalSceneLoadsAndRendersSmokeFrame(t *testing.T) {
+	dir := t.TempDir()
+	scenePath := filepath.Join(dir, "hyperbolic-canonical.json")
+	writeControllerTestScript(t, scenePath, `{
+		"render": {
+			"dimension": 3,
+			"samples": 1,
+			"camera_index": 0,
+			"spectrum_mode": "rgb"
+		},
+		"geometry": {
+			"type": "klein"
+		},
+		"materials": [
+			{
+				"id": "matte",
+				"surface": {
+					"type": "lambert",
+					"albedo": [0.8, 0.6, 0.4]
+				}
+			}
+		],
+		"objects": [
+			{
+				"id": "ball",
+				"shape": "sphere",
+				"center": [0.2, 0, 0],
+				"r": 0.2,
+				"material_id": "matte"
+			}
+		],
+		"cameras": [
+			{
+				"id": "main",
+				"type": "hyperbolic",
+				"position": [-0.4, 0, 0],
+				"direction": [1, 0, 0],
+				"up": [0, 0, 1],
+				"field_of_view": 70,
+				"aspect_ratio": 1
+			}
+		]
+	}`)
+
 	script, err := parser.ReadScriptFile(scenePath)
 	if err != nil {
-		t.Fatalf("read gallery scene: %v", err)
+		t.Fatalf("read scene: %v", err)
 	}
 
-	if len(script.Objects) < 40 {
-		t.Fatalf("expected a furnished gallery scene, got %d objects", len(script.Objects))
+	if len(script.Objects) != 1 {
+		t.Fatalf("expected one scene object, got %d", len(script.Objects))
 	}
 	if script.Geometry == nil || script.Geometry.Type != "klein" {
 		t.Fatalf("expected Klein scene geometry, got %#v", script.Geometry)
 	}
-	if got := script.Materials[4]["id"]; got != "wall_back" {
-		t.Fatalf("expected hyperbolic gallery back wall material, got %v", got)
-	}
-
-	scene := model.NewScene()
-	if err := factory.LoadSceneFromScript(script, scene); err != nil {
-		t.Fatalf("load gallery scene: %v", err)
-	}
-	if len(scene.Cameras) != 1 {
-		t.Fatalf("expected one camera, got %d", len(scene.Cameras))
+	if !hasMaterialID(script.Materials, "matte") {
+		t.Fatal("expected matte material")
 	}
 
 	outputImage := filepath.Join(t.TempDir(), "gallery-smoke.png")
@@ -66,5 +98,21 @@ func TestNonEuclideanGallerySceneLoadsAndRendersSmokeFrame(t *testing.T) {
 	}
 	if config.Width != 12 || config.Height != 12 {
 		t.Fatalf("expected 12x12 smoke render, got %dx%d", config.Width, config.Height)
+	}
+}
+
+func hasMaterialID(materials []map[string]interface{}, id string) bool {
+	for _, material := range materials {
+		if material["id"] == id {
+			return true
+		}
+	}
+	return false
+}
+
+func writeControllerTestScript(t *testing.T, path, data string) {
+	t.Helper()
+	if err := os.WriteFile(path, []byte(data), 0o644); err != nil {
+		t.Fatalf("write %s: %v", path, err)
 	}
 }

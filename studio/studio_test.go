@@ -211,6 +211,40 @@ func TestStudioAdaptsHypercubeToCuboid(t *testing.T) {
 	assertFloatSlice(t, cuboid["pmax"], []float64{2, 3, 4, 5})
 }
 
+func TestStudioAdaptsBoundsCenterSizeToMinMax(t *testing.T) {
+	script := &studioScript{
+		Objects: []map[string]interface{}{
+			{
+				"id":       "gyroid",
+				"shape":    "implicit equation",
+				"function": "gyroid",
+				"bounds": map[string]interface{}{
+					"center": []interface{}{1, 2, 3},
+					"size":   []interface{}{2, 4, 6},
+				},
+			},
+		},
+	}
+
+	adapted, err := adaptScript(script, []string{"scene.json"}, 3)
+	if err != nil {
+		t.Fatalf("adapt bounds: %v", err)
+	}
+
+	bounds, ok := adapted.Objects[0]["bounds"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected bounds object, got %T", adapted.Objects[0]["bounds"])
+	}
+	assertFloatSlice(t, bounds["pmin"], []float64{0, 0, 0})
+	assertFloatSlice(t, bounds["pmax"], []float64{2, 4, 6})
+	if _, ok := bounds["center"]; ok {
+		t.Fatal("intermediate bounds should not keep center")
+	}
+	if _, ok := bounds["size"]; ok {
+		t.Fatal("intermediate bounds should not keep size")
+	}
+}
+
 func TestStudioAdaptsCameraLookAtFromRawFields(t *testing.T) {
 	script := &studioScript{}
 	cameras := []studioCameraScript{

@@ -299,34 +299,13 @@ func parseShapeBounds(objDef map[string]interface{}) (*shape.Cuboid, bool, error
 		return nil, ok, err
 	}
 
-	if center, hasPosition, err := utils.OptionalFloat64SliceField(boundsDef, "center", utils.Dimension); err != nil {
-		return nil, true, err
-	} else if hasPosition {
-		size, err := utils.RequiredFloat64SliceField(boundsDef, "size", utils.Dimension)
-		if err != nil {
-			return nil, true, err
-		}
-		if err := validatePositiveBoundsSize(size); err != nil {
-			return nil, true, err
-		}
-
-		positionVec := mat.NewVecDense(len(center), center)
-		halfSize := maths.ScaleVec2(0.5, mat.NewVecDense(len(size), size))
-		pmax := mat.NewVecDense(positionVec.Len(), nil)
-		pmin := mat.NewVecDense(positionVec.Len(), nil)
-		return shape.NewCuboid(
-			maths.SubVec(pmin, positionVec, halfSize),
-			maths.AddVec(pmax, positionVec, halfSize),
-		), true, nil
-	}
-
 	pmin, err := utils.RequiredFloat64SliceField(boundsDef, "pmin", utils.Dimension)
 	if err != nil {
-		return nil, true, fmt.Errorf("bounds requires either position+size or pmin+pmax: %w", err)
+		return nil, true, fmt.Errorf("bounds requires pmin+pmax: %w", err)
 	}
 	pmax, err := utils.RequiredFloat64SliceField(boundsDef, "pmax", utils.Dimension)
 	if err != nil {
-		return nil, true, fmt.Errorf("bounds requires either position+size or pmin+pmax: %w", err)
+		return nil, true, fmt.Errorf("bounds requires pmin+pmax: %w", err)
 	}
 	if err := validateBoundsMinMax(pmin, pmax); err != nil {
 		return nil, true, err
@@ -335,15 +314,6 @@ func parseShapeBounds(objDef map[string]interface{}) (*shape.Cuboid, bool, error
 		mat.NewVecDense(len(pmin), pmin),
 		mat.NewVecDense(len(pmax), pmax),
 	), true, nil
-}
-
-func validatePositiveBoundsSize(size []float64) error {
-	for i, value := range size {
-		if value <= 0 {
-			return fmt.Errorf("bounds size index %d must be > 0", i)
-		}
-	}
-	return nil
 }
 
 func validateBoundsMinMax(pmin, pmax []float64) error {
