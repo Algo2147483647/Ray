@@ -336,11 +336,6 @@ func (k *KleinBottle4D) closestPointFull(p [4]float64) closestResult {
 	}
 }
 
-func (k *KleinBottle4D) closestPoint(p [4]float64) (u, v, distSq float64) {
-	cp := k.closestPointFull(p)
-	return cp.uUV, cp.vUV, cp.distSq
-}
-
 // SDF returns dist(p, S) - Thickness.
 func (k *KleinBottle4D) SDF(p *mat.VecDense) float64 {
 	if p == nil || p.Len() != 4 {
