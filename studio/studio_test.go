@@ -117,6 +117,113 @@ func TestChildFieldOverridesGroupInheritance(t *testing.T) {
 	}
 }
 
+func TestStudioAdaptsTriangleCenterAndGroupPlacement(t *testing.T) {
+	script := &parser.Script{
+		Objects: []map[string]interface{}{
+			{
+				"id":     "g",
+				"shape":  "group",
+				"center": []interface{}{10, 0, 0},
+				"scale":  2,
+				"objects": []interface{}{
+					map[string]interface{}{
+						"id":     "tri",
+						"shape":  "triangle",
+						"center": []interface{}{1, 1, 1},
+						"p1":     []interface{}{0, 0, 0},
+						"p2":     []interface{}{1, 0, 0},
+						"p3":     []interface{}{0, 1, 0},
+					},
+				},
+			},
+		},
+	}
+
+	adapted, err := adaptScript(script, []string{"scene.json"}, 3)
+	if err != nil {
+		t.Fatalf("adapt triangle: %v", err)
+	}
+	triangle := adapted.Objects[0]
+	assertFloatSlice(t, triangle["p1"], []float64{12, 2, 2})
+	assertFloatSlice(t, triangle["p2"], []float64{14, 2, 2})
+	assertFloatSlice(t, triangle["p3"], []float64{12, 4, 2})
+	if _, ok := triangle["center"]; ok {
+		t.Fatal("triangle intermediate object should not keep center")
+	}
+}
+
+func TestStudioAdaptsCuboidPositionSizeToMinMax(t *testing.T) {
+	script := &parser.Script{
+		Objects: []map[string]interface{}{
+			{
+				"id":     "g",
+				"shape":  "group",
+				"center": []interface{}{10, 0, 0},
+				"scale":  2,
+				"objects": []interface{}{
+					map[string]interface{}{
+						"id":       "box",
+						"shape":    "cuboid",
+						"position": []interface{}{1, 1, 1},
+						"size":     []interface{}{2, 4, 6},
+					},
+				},
+			},
+		},
+	}
+
+	adapted, err := adaptScript(script, []string{"scene.json"}, 3)
+	if err != nil {
+		t.Fatalf("adapt cuboid: %v", err)
+	}
+	cuboid := adapted.Objects[0]
+	assertFloatSlice(t, cuboid["pmin"], []float64{10, -2, -4})
+	assertFloatSlice(t, cuboid["pmax"], []float64{14, 6, 8})
+	if _, ok := cuboid["position"]; ok {
+		t.Fatal("cuboid intermediate object should not keep position")
+	}
+	if _, ok := cuboid["size"]; ok {
+		t.Fatal("cuboid intermediate object should not keep size")
+	}
+}
+
+func TestStudioAdaptsQuadraticCenterScaleToWorldCoefficients(t *testing.T) {
+	script := &parser.Script{
+		Objects: []map[string]interface{}{
+			{
+				"id":     "quad",
+				"shape":  "quadratic equation",
+				"a":      []interface{}{1, 0, 0, 0, 0, 0, 0, 0, 0},
+				"b":      []interface{}{0, 0, 0},
+				"c":      -1,
+				"center": []interface{}{2, 0, 0},
+				"scale":  3,
+			},
+		},
+	}
+
+	adapted, err := adaptScript(script, []string{"scene.json"}, 3)
+	if err != nil {
+		t.Fatalf("adapt quadratic: %v", err)
+	}
+	quadratic := adapted.Objects[0]
+	a := mustFloatSlice(t, quadratic["a"])
+	b := mustFloatSlice(t, quadratic["b"])
+	c, ok := quadratic["c"].(float64)
+	if !ok {
+		t.Fatalf("expected quadratic c float64, got %T", quadratic["c"])
+	}
+	if math.Abs(a[0]-1.0/9.0) > 1e-10 || math.Abs(b[0]+4.0/9.0) > 1e-10 || math.Abs(c+5.0/9.0) > 1e-10 {
+		t.Fatalf("unexpected baked quadratic coefficients: a=%v b=%v c=%v", a, b, c)
+	}
+	if _, ok := quadratic["center"]; ok {
+		t.Fatal("quadratic intermediate object should not keep center")
+	}
+	if _, ok := quadratic["scale"]; ok {
+		t.Fatal("quadratic intermediate object should not keep scale")
+	}
+}
+
 func TestStudioAdaptsCopiedGeometryBenchmarkMatrixExample(t *testing.T) {
 	sourceDir := filepath.Join("..", "examples", "scenes", "geometry-benchmark-matrix")
 	sceneDir := filepath.Join(t.TempDir(), "geometry-benchmark-matrix")
@@ -172,6 +279,28 @@ func unitCubicCoefficients() []interface{} {
 	coefficients[(1*4+1)*4+1] = 1
 	coefficients[0] = -1
 	return coefficients
+}
+
+func assertFloatSlice(t *testing.T, raw interface{}, expected []float64) {
+	t.Helper()
+	values := mustFloatSlice(t, raw)
+	if len(values) != len(expected) {
+		t.Fatalf("expected %d values, got %d: %v", len(expected), len(values), values)
+	}
+	for i := range values {
+		if math.Abs(values[i]-expected[i]) > 1e-10 {
+			t.Fatalf("index %d: expected %v, got %v", i, expected, values)
+		}
+	}
+}
+
+func mustFloatSlice(t *testing.T, raw interface{}) []float64 {
+	t.Helper()
+	values, ok := raw.([]float64)
+	if !ok {
+		t.Fatalf("expected []float64, got %T", raw)
+	}
+	return values
 }
 
 func copyDirectory(source, destination string) error {

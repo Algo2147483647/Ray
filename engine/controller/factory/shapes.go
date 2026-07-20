@@ -127,17 +127,17 @@ func parseCuboid(objDef map[string]interface{}) ([]shape.Shape, error) {
 		return nil, err
 	}
 
-	cuboid := shape.NewCuboid(newVec(pmin), newVec(pmax))
+	cuboid := shape.NewCuboid(utils.NewVec(pmin), utils.NewVec(pmax))
 	return finishEngravableShape(cuboid, objDef)
 }
 
 func parseSphere(objDef map[string]interface{}) ([]shape.Shape, error) {
-	center, err := requiredVec(objDef, "center")
+	center, err := utils.RequiredVec(objDef, "center", utils.Dimension)
 	if err != nil {
 		return nil, err
 	}
 
-	radius, err := requiredPositiveFloat(objDef, "r")
+	radius, err := utils.RequiredPositiveFloat(objDef, "r")
 	if err != nil {
 		return nil, err
 	}
@@ -147,17 +147,17 @@ func parseSphere(objDef map[string]interface{}) ([]shape.Shape, error) {
 }
 
 func parseCircle(objDef map[string]interface{}) ([]shape.Shape, error) {
-	center, err := requiredVec(objDef, "center")
+	center, err := utils.RequiredVec(objDef, "center", utils.Dimension)
 	if err != nil {
 		return nil, err
 	}
 
-	normal, err := requiredNonZeroVec(objDef, "normal")
+	normal, err := utils.RequiredNonZeroVec(objDef, "normal", utils.Dimension)
 	if err != nil {
 		return nil, err
 	}
 
-	radius, err := requiredPositiveFloat(objDef, "r")
+	radius, err := utils.RequiredPositiveFloat(objDef, "r")
 	if err != nil {
 		return nil, err
 	}
@@ -167,22 +167,22 @@ func parseCircle(objDef map[string]interface{}) ([]shape.Shape, error) {
 }
 
 func parseFiniteCylinder(objDef map[string]interface{}) ([]shape.Shape, error) {
-	center, err := requiredVec(objDef, "center")
+	center, err := utils.RequiredVec(objDef, "center", utils.Dimension)
 	if err != nil {
 		return nil, err
 	}
 
-	axis, err := requiredNonZeroVec(objDef, "axis")
+	axis, err := utils.RequiredNonZeroVec(objDef, "axis", utils.Dimension)
 	if err != nil {
 		return nil, err
 	}
 
-	radius, err := requiredPositiveFloat(objDef, "r")
+	radius, err := utils.RequiredPositiveFloat(objDef, "r")
 	if err != nil {
 		return nil, err
 	}
 
-	height, err := requiredPositiveFloat(objDef, "height")
+	height, err := utils.RequiredPositiveFloat(objDef, "height")
 	if err != nil {
 		return nil, err
 	}
@@ -196,22 +196,22 @@ func parseKleinBottle4D(objDef map[string]interface{}) ([]shape.Shape, error) {
 		return nil, fmt.Errorf("shape %q requires render dimension 4, got %d", ShapeKleinBottle, utils.Dimension)
 	}
 
-	center, err := requiredVec(objDef, "center")
+	center, err := utils.RequiredVec(objDef, "center", utils.Dimension)
 	if err != nil {
 		return nil, err
 	}
 
-	majorR, err := requiredPositiveFloat(objDef, "r_major")
+	majorR, err := utils.RequiredPositiveFloat(objDef, "r_major")
 	if err != nil {
 		return nil, err
 	}
 
-	minorR, err := requiredPositiveFloat(objDef, "r_minor")
+	minorR, err := utils.RequiredPositiveFloat(objDef, "r_minor")
 	if err != nil {
 		return nil, err
 	}
 
-	thickness, err := requiredPositiveFloat(objDef, "thickness")
+	thickness, err := utils.RequiredPositiveFloat(objDef, "thickness")
 	if err != nil {
 		return nil, err
 	}
@@ -225,17 +225,17 @@ func parseKleinBottle4D(objDef map[string]interface{}) ([]shape.Shape, error) {
 }
 
 func parseTriangle(objDef map[string]interface{}) ([]shape.Shape, error) {
-	p1, err := requiredVec(objDef, "p1")
+	p1, err := utils.RequiredVec(objDef, "p1", utils.Dimension)
 	if err != nil {
 		return nil, err
 	}
 
-	p2, err := requiredVec(objDef, "p2")
+	p2, err := utils.RequiredVec(objDef, "p2", utils.Dimension)
 	if err != nil {
 		return nil, err
 	}
 
-	p3, err := requiredVec(objDef, "p3")
+	p3, err := utils.RequiredVec(objDef, "p3", utils.Dimension)
 	if err != nil {
 		return nil, err
 	}
@@ -260,7 +260,7 @@ func parseQuadraticEquation(objDef map[string]interface{}) ([]shape.Shape, error
 		return nil, err
 	}
 
-	equation := shape.NewQuadraticEquation(mat.NewDense(3, 3, a), newVec(b), c)
+	equation := shape.NewQuadraticEquation(mat.NewDense(3, 3, a), utils.NewVec(b), c)
 	return wrapSingleShapeWithBounds(equation, objDef)
 }
 
@@ -294,58 +294,6 @@ func parseFourOrderEquation(objDef map[string]interface{}) ([]shape.Shape, error
 	equation.Scale = scale[:]
 	equation.Basis = basis
 	return wrapSingleShapeWithBounds(equation, objDef)
-}
-
-func newVec(values []float64) *mat.VecDense {
-	return mat.NewVecDense(len(values), values)
-}
-
-func requiredVec(objDef map[string]interface{}, name string) (*mat.VecDense, error) {
-	values, err := utils.RequiredFloat64SliceField(objDef, name, utils.Dimension)
-	if err != nil {
-		if name == "center" {
-			if fallback, fallbackErr := utils.RequiredFloat64SliceField(objDef, "position", utils.Dimension); fallbackErr == nil {
-				return newVec(fallback), nil
-			}
-		}
-		return nil, err
-	}
-
-	return newVec(values), nil
-}
-
-func cloneObjectDef(objDef map[string]interface{}) map[string]interface{} {
-	clone := make(map[string]interface{}, len(objDef)+1)
-	for key, value := range objDef {
-		clone[key] = value
-	}
-	return clone
-}
-
-func requiredNonZeroVec(objDef map[string]interface{}, name string) (*mat.VecDense, error) {
-	v, err := requiredVec(objDef, name)
-	if err != nil {
-		return nil, err
-	}
-
-	if mat.Norm(v, 2) < utils.EPS {
-		return nil, fmt.Errorf("field %q must not be zero", name)
-	}
-
-	return v, nil
-}
-
-func requiredPositiveFloat(objDef map[string]interface{}, name string) (float64, error) {
-	value, err := utils.RequiredFloat64Field(objDef, name)
-	if err != nil {
-		return 0, err
-	}
-
-	if value <= 0 {
-		return 0, fmt.Errorf("field %q must be > 0", name)
-	}
-
-	return value, nil
 }
 
 func finishEngravableShape(s shape.Shape, objDef map[string]interface{}) ([]shape.Shape, error) {
