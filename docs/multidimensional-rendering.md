@@ -82,7 +82,7 @@ mode, the sampled coordinates perturb the ray direction instead.
 
 The current 4D showcase scenes use two direct higher-dimensional shapes:
 
-- `hypercube`, parsed as an equal-sided N-dimensional cuboid,
+- `hypercube`, adapted by studio into an equal-sided N-dimensional cuboid,
 - `hypersphere`, parsed as an N-dimensional sphere.
 
 For a 4D hypercube, the boundary is made of eight cubic cells. This is the

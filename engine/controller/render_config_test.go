@@ -33,20 +33,20 @@ func TestResolveRenderConfigPrefersColorSpaceOverAlias(t *testing.T) {
 	}
 }
 
-func TestParseRenderOverridesAcceptsRepeatedScripts(t *testing.T) {
-	overrides, err := ParseRenderOverrides([]string{
+func TestParseRenderOverridesRejectsRepeatedScripts(t *testing.T) {
+	_, err := ParseRenderOverrides([]string{
 		"--script", "studio.json",
 		"--script", "geometry.json",
 	})
-	if err != nil {
-		t.Fatalf("parse overrides: %v", err)
+	if err == nil {
+		t.Fatal("expected repeated engine scripts to fail")
 	}
+}
 
-	if len(overrides.ScriptPaths) != 2 {
-		t.Fatalf("expected two script paths, got %v", overrides.ScriptPaths)
-	}
-	if overrides.ScriptPath != "studio.json" {
-		t.Fatalf("expected first script path to remain primary, got %q", overrides.ScriptPath)
+func TestParseRenderOverridesRejectsMultiplePositionalScripts(t *testing.T) {
+	_, err := ParseRenderOverrides([]string{"studio.json", "geometry.json"})
+	if err == nil {
+		t.Fatal("expected multiple positional engine scripts to fail")
 	}
 }
 

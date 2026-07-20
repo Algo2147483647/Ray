@@ -18,9 +18,9 @@
   "objects": [
     {
       "id": "main-hypercube",
-      "shape": "hypercube",
-      "center": [0, 0, 0, 0],
-      "size": [1.65, 1.65, 1.65, 1.65],
+      "shape": "cuboid",
+      "pmin": [-0.825, -0.825, -0.825, -0.825],
+      "pmax": [0.825, 0.825, 0.825, 0.825],
       "material_id": "matte-hypercube"
     },
     {

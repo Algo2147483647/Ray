@@ -171,7 +171,7 @@ Scenes are JSON files containing optional media, materials, objects, cameras, an
 }
 ```
 
-See [`docs/current-scene-json.md`](docs/current-scene-json.md) for the current schema.
+See [`docs/engine-json-protocol.md`](docs/engine-json-protocol.md) for the normalized engine protocol, and [`docs/studio-json-protocol.md`](docs/studio-json-protocol.md) for the studio authoring protocol.
 
 ## Extending The Engine
 

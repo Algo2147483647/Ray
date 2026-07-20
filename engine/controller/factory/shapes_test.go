@@ -74,6 +74,17 @@ func TestParseShapeTriangleUsesPointsDirectly(t *testing.T) {
 	}
 }
 
+func TestParseShapeRejectsHypercube(t *testing.T) {
+	_, err := ParseShape(map[string]interface{}{
+		"shape": "hypercube",
+		"pmin":  []interface{}{-1, -1, -1},
+		"pmax":  []interface{}{1, 1, 1},
+	})
+	if err == nil {
+		t.Fatal("expected engine to reject studio-only hypercube")
+	}
+}
+
 func TestParseShapeFiniteCylinder(t *testing.T) {
 	shapes, err := ParseShape(map[string]interface{}{
 		"shape":    "finite cylinder",

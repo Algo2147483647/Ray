@@ -1,5 +1,10 @@
 # Current Scene JSON
 
+> Protocol split: use [`engine-json-protocol.md`](engine-json-protocol.md) for
+> JSON consumed directly by `engine`, and
+> [`studio-json-protocol.md`](studio-json-protocol.md) for authoring JSON
+> consumed by `studio`. This file remains as a combined historical overview.
+
 This document records the current scene JSON fields used by the Go renderer after the controller/parser/factory and BSDF/BxDF refactor.
 
 ## Top-Level Shape
@@ -50,12 +55,14 @@ render: scalar render fields inherit from includes and are overridden by later f
 renders: appended as separate render jobs
 ```
 
-The CLI also accepts repeated `--script` flags. They are merged in the order
-provided, using the same duplicate-id rules:
+Studio accepts repeated `--script` flags. They are merged in the order provided,
+using the same duplicate-id rules, then written to one engine intermediate JSON:
 
 ```bash
-npm run ray -- --script studio.json --script geometry-heart.json --script renders.json
+npm run studio -- --script studio.json --script geometry-heart.json --script renders.json
 ```
+
+Engine accepts a single canonical `--script` path.
 
 ## Multiple Render Jobs
 
@@ -597,7 +604,7 @@ Example 4D camera with a 3D film:
 The current higher-dimensional shape aliases are:
 
 ```text
-hypercube: equal-sided N-dimensional cuboid
+hypercube: studio-only equal-sided N-dimensional cuboid authoring shortcut
 hypercuboid: N-dimensional cuboid
 hypersphere: N-dimensional sphere
 ```
@@ -607,9 +614,9 @@ Example:
 ```json
 {
   "id": "main-hypercube",
-  "shape": "hypercube",
-  "center": [0, 0, 0, 0],
-  "size": [1.65, 1.65, 1.65, 1.65],
+  "shape": "cuboid",
+  "pmin": [-0.825, -0.825, -0.825, -0.825],
+  "pmax": [0.825, 0.825, 0.825, 0.825],
   "material_id": "cell-palette-debug"
 }
 ```

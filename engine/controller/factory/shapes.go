@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/Algo2147483647/ray/engine/utils/example_lib"
-	"math"
 	"os"
 	"strings"
 
@@ -17,7 +16,6 @@ import (
 
 const (
 	ShapeCuboid            = "cuboid"
-	ShapeHypercube         = "hypercube"
 	ShapeHypercuboid       = "hypercuboid"
 	ShapeSphere            = "sphere"
 	ShapeHypersphere       = "hypersphere"
@@ -44,9 +42,6 @@ func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 	switch shapeName {
 	case ShapeCuboid, ShapeHypercuboid:
 		return parseCuboid(objDef)
-
-	case ShapeHypercube:
-		return parseHypercube(objDef)
 
 	case ShapeSphere, ShapeHypersphere:
 		return parseSphere(objDef)
@@ -91,29 +86,6 @@ func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 	default:
 		return nil, fmt.Errorf("unsupported shape %q", shapeName)
 	}
-}
-
-func parseHypercube(objDef map[string]interface{}) ([]shape.Shape, error) {
-	shapes, err := parseCuboid(objDef)
-	if err != nil {
-		return nil, err
-	}
-	for _, s := range shapes {
-		cuboid, ok := s.(*shape.Cuboid)
-		if !ok {
-			if bounded, boundedOK := s.(*shape.BoundedShape); boundedOK {
-				cuboid, ok = bounded.Shape.(*shape.Cuboid)
-			}
-			continue
-		}
-		side := cuboid.Pmax.AtVec(0) - cuboid.Pmin.AtVec(0)
-		for axis := 1; axis < cuboid.Pmin.Len(); axis++ {
-			if diff := cuboid.Pmax.AtVec(axis) - cuboid.Pmin.AtVec(axis); math.Abs(diff-side) > utils.EPS {
-				return nil, fmt.Errorf("hypercube requires equal side lengths, axis %d has %g instead of %g", axis, diff, side)
-			}
-		}
-	}
-	return shapes, nil
 }
 
 func parseCuboid(objDef map[string]interface{}) ([]shape.Shape, error) {

@@ -11,7 +11,9 @@ This directory documents the mathematical, physical, and code-architecture ideas
 - [`rendering-flow-cameras-and-scenes.md`](rendering-flow-cameras-and-scenes.md): camera projection, N-dimensional imaging, recursive ray tracing, film accumulation, concurrency, and scene scripts.
 - [`material-system-design.md`](material-system-design.md): current material/BxDF architecture, schema, validation rules, IOR/dispersion wiring, microfacet status, and output transform controls.
 - [`material-capability-coverage.md`](material-capability-coverage.md): current engine coverage for real-world material families, implemented BxDFs, and missing/planned material models.
-- [`current-scene-json.md`](current-scene-json.md): current JSON schema for media, materials, objects, cameras, render output controls, and showcase scenes.
+- [`engine-json-protocol.md`](engine-json-protocol.md): normalized JSON protocol consumed directly by `engine`.
+- [`studio-json-protocol.md`](studio-json-protocol.md): authoring JSON protocol consumed by `studio`, including Group flattening and shape adapters.
+- [`current-scene-json.md`](current-scene-json.md): legacy combined scene JSON overview; prefer the engine/studio protocol split for interface work.
 - [`controller-json-rules.md`](controller-json-rules.md): controller/parser/factory rules for consuming scene JSON.
 - [`spectral-modernization-plan.md`](spectral-modernization-plan.md): staged technical plan for moving from RGB/hero-wavelength rendering toward a modern spectral color pipeline.
 - [`current-renderer-architecture.md`](current-renderer-architecture.md): current package boundaries for optics, materials, media, ray tracing, spectrum modes, and color-space types.

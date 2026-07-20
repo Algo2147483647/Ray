@@ -13,13 +13,18 @@ The existing `geometry-intersection-theory.md` explains the math and intersectio
 ideas. This file is the operational checklist: supported `shape` values, fields,
 runtime status, bounds, dimensions, and known caveats.
 
+For interface-level JSON contracts, use
+[`engine-json-protocol.md`](engine-json-protocol.md) and
+[`studio-json-protocol.md`](studio-json-protocol.md). This file focuses on
+shape behavior and support status.
+
 ## Current Coverage Summary
 
 | JSON `shape` value | Runtime implementation | JSON load status | Main use |
 | --- | --- | --- | --- |
 | `cuboid` | `shape.Cuboid` | Supported | Axis-aligned box / rectangular solid |
 | `hypercuboid` | `shape.Cuboid` | Supported | N-dimensional axis-aligned box |
-| `hypercube` | `shape.Cuboid` with equal side validation | Supported | N-dimensional equal-sided box |
+| `hypercube` | `shape.Cuboid` after studio adaptation | Studio-only | N-dimensional equal-sided box authoring shortcut |
 | `sphere` | `shape.Sphere` | Supported | 3D sphere, also used as N-dimensional sphere when dimension changes |
 | `hypersphere` | `shape.Sphere` | Supported | N-dimensional sphere alias |
 | `circle` | `shape.Circle` | Supported | Finite disk in a plane |
@@ -42,7 +47,7 @@ runtime status, bounds, dimensions, and known caveats.
 | `shape` | Yes | All objects | Must match one of the JSON shape values above. |
 | `material_id` | Yes for renderable scene objects | All objects | Resolved by the object factory against `materials`. |
 | `medium_boundary` | Optional | Closed boundary objects | Material/medium feature, not a geometry field. Avoid using it on open clipped surfaces. |
-| `bounds` | Optional for most, required for `implicit equation` | Most shapes | Clips hit search to an axis-aligned box. Current factory code accepts `bounds.center` + `bounds.size`, or `bounds.pmin` + `bounds.pmax`. |
+| `bounds` | Optional for most, required for `implicit equation` | Most shapes | Clips hit search to an axis-aligned box. Engine currently accepts `bounds.center` + `bounds.size`, or `bounds.pmin` + `bounds.pmax`; studio may inherit bounds through groups. |
 | `engraving_func` | Optional | Parser accepts it on engravable paths | Current type switch applies it only to `cuboid` and `sphere`. |
 
 `bounds` clips intersections but does not add cap faces. For example, a bounded
@@ -50,23 +55,23 @@ paraboloid remains an open clipped surface, not a closed solid.
 
 ## Shape Field Table
 
-| Shape | Required fields | Optional / aliases | Dimension notes | Intersection and normal |
+| Shape | Engine canonical fields | Studio authoring conveniences | Dimension notes | Intersection and normal |
 | --- | --- | --- | --- | --- |
-| `cuboid` | Either `center` + `size`, `position` + `size`, or `pmin` + `pmax` | `bounds`, `engraving_func` | Uses current `render.dimension`; works for 3D and N-dimensional scenes. | Slab interval test; normal is the hit face axis. |
-| `hypercuboid` | Same as `cuboid` | Same as `cuboid` | Alias intended for N-dimensional scenes. | Same as `cuboid`. |
-| `hypercube` | Same as `cuboid`, with all side lengths equal | Same as `cuboid` | Alias intended for N-dimensional scenes; parser validates equal side length. | Same as `cuboid`. |
-| `sphere` | `center` or `position`, plus `r` | `bounds`, `engraving_func` | Uses vector length of center/ray; works as N-dimensional sphere when scene dimension changes. | Quadratic ray-sphere solve; normal is normalized `hit - center`. |
+| `cuboid` | `pmin` + `pmax` | `center`/`position` + `size`, group placement | Uses current `render.dimension`; works for 3D and N-dimensional scenes. | Slab interval test; normal is the hit face axis. |
+| `hypercuboid` | `pmin` + `pmax` | Same as `cuboid` | Alias intended for N-dimensional scenes. | Same as `cuboid`. |
+| `hypercube` | Not accepted directly by engine | Studio validates equal local side lengths and emits `cuboid` | Alias intended for N-dimensional authoring. | Same as `cuboid` after adaptation. |
+| `sphere` | `center`, `r` | Group field inheritance only; engine still accepts `position` as legacy center alias | Uses vector length of center/ray; works as N-dimensional sphere when scene dimension changes. | Quadratic ray-sphere solve; normal is normalized `hit - center`. |
 | `hypersphere` | Same as `sphere` | Same as `sphere` | Alias intended for N-dimensional scenes. | Same as `sphere`. |
-| `circle` | `center` or `position`, `normal`, `r` | `bounds` accepted, `engraving_func` parsed but currently not applied | Uses vector operations, but conceptually a finite disk. | Ray-plane solve plus radius check; normal is the normalized disk normal. |
-| `cylinder` | `center` or `position`, `axis`, `r`, `height` | `bounds` accepted, `engraving_func` parsed but currently not applied | Alias of `finite cylinder`. | Side quadratic plus two cap disk tests; normal is side radial direction or cap axis. |
-| `finite cylinder` | `center` or `position`, `axis`, `r`, `height` | Same as `cylinder` | Same implementation as `cylinder`. | Same as `cylinder`. |
-| `triangle` | `p1`, `p2`, `p3` | `bounds` | Current normal/intersection path relies on 3D cross products; treat as 3D-only. | Moller-Trumbore style barycentric test; normal from edge cross product. |
-| `quadratic equation` | `a` length 9, `b`, `c` | `center`, `scale`, `bounds` | Effectively 3D: `a` is parsed as a 3 x 3 matrix. | Solves ray-substituted quadratic; normal is gradient `2Ax + b`. |
-| `cubic equation` | `a` or `A` with 64 coefficients | `center`, `scale`, `bounds` | 3D algebraic surface using basis indices `0=1`, `1=x`, `2=y`, `3=z`. | Substitutes ray into cubic polynomial; normal from tensor gradient. |
-| `four-order equation` | `a` or `A` with 256 coefficients | `center`, `scale`, `bounds` | 3D algebraic surface using basis indices `0=1`, `1=x`, `2=y`, `3=z`. | Substitutes ray into quartic polynomial; normal from tensor gradient. |
-| `implicit equation` | `field.type` or legacy `function`, plus `bounds` | `center`, `scale`, `step`, `value_tol` | Current registered fields are 3D. Bounds are required. | Clips to bounds, scans along ray, detects sign changes, refines by bisection; normal from registered or numerical gradient. |
-| `polynomial surface` | `input_dim`, `degree`, `coefficients.terms` | `mode`, `output_dim`, `explicit_axis`, `center`, `scale`, `bounds`, coefficient `format`, `shape`, `degree_policy` | Ray intersection currently requires at least 3 ray dimensions; common use is 3D. | Builds a one-variable ray polynomial and solves real roots; normal from sparse polynomial gradient. |
-| `stl` | `file`, `center`, `z_dir`, `x_dir`, `scale` | `bounds` | 3D mesh import. | Parses ASCII or binary STL facets, transforms vertices, emits triangles. |
+| `circle` | `center`, `normal`, `r` | Engine still accepts `position` as legacy center alias | Uses vector operations, but conceptually a finite disk. | Ray-plane solve plus radius check; normal is the normalized disk normal. |
+| `cylinder` | `center`, `axis`, `r`, `height` | Engine still accepts `position` as legacy center alias | Alias of `finite cylinder`. | Side quadratic plus two cap disk tests; normal is side radial direction or cap axis. |
+| `finite cylinder` | `center`, `axis`, `r`, `height` | Same as `cylinder` | Same implementation as `cylinder`. | Same as `cylinder`. |
+| `triangle` | `p1`, `p2`, `p3` | Object `center` is baked by studio into points | Current normal/intersection path relies on 3D cross products; treat as 3D-only. | Moller-Trumbore style barycentric test; normal from edge cross product. |
+| `quadratic equation` | `a` length 9, `b`, `c` | `center`/`scale` are baked by studio into coefficients | Effectively 3D: `a` is parsed as a 3 x 3 matrix. | Solves ray-substituted quadratic; normal is gradient `2Ax + b`. |
+| `cubic equation` | `a` or `A` with 64 coefficients | `center`/`scale` are baked by studio into coefficients | 3D algebraic surface using basis indices `0=1`, `1=x`, `2=y`, `3=z`. | Substitutes ray into cubic polynomial; normal from tensor gradient. |
+| `four-order equation` | `a` or `A` with 256 coefficients; engine currently also accepts `center`, `scale`, `basis` | Pass-through today; future candidate for studio baking | 3D algebraic surface using basis indices `0=1`, `1=x`, `2=y`, `3=z`. | Substitutes ray into quartic polynomial; normal from tensor gradient. |
+| `implicit equation` | `field.type` or legacy `function`, plus `bounds` | Pass-through today | Current registered fields are 3D. Bounds are required. | Clips to bounds, scans along ray, detects sign changes, refines by bisection; normal from registered or numerical gradient. |
+| `polynomial surface` | `input_dim`, `degree`, `coefficients.terms` | Pass-through today | Ray intersection currently requires at least 3 ray dimensions; common use is 3D. | Builds a one-variable ray polynomial and solves real roots; normal from sparse polynomial gradient. |
+| `stl` | `file`, `center`, `z_dir`, `x_dir`, `scale` | Pass-through today | 3D mesh import. | Parses ASCII or binary STL facets, transforms vertices, emits triangles. |
 | `plane` | Source type has `A`, `b` | None through JSON | `shape.Plane` exists in code, but `ParseShape` returns an error for JSON `plane`. | Infinite plane ray solve exists in code; not scene-loadable until factory parsing is implemented. |
 
 ## Algebraic Coefficient Formats

@@ -357,7 +357,7 @@ Currently true:
 - runtime spatial dimension is selected from `render.dimension` and defaults to `3`,
 - the `3d` camera is restricted to 3D scenes,
 - `CameraNDim` supports higher-dimensional scene coordinates and tensor-shaped films,
-- hypercube/hypercuboid and hypersphere geometry are available through the cuboid and sphere implementations in the active dimension,
+- studio-authored hypercube, engine hypercuboid, and hypersphere geometry are available through the cuboid and sphere implementations in the active dimension,
 - plane geometry exists in code but is blocked in script parsing,
 - non-polynomial implicit equations are implemented through a bounded numerical intersector and a small field registry.
 

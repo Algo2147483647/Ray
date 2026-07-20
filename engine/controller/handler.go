@@ -41,7 +41,7 @@ func Run(args []string) int {
 	}
 
 	h := NewHandler().
-		LoadScripts(overrides.ScriptPaths).
+		LoadScript(overrides.ScriptPath).
 		RenderJobs(overrides)
 
 	if h.err != nil {

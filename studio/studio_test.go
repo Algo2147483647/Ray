@@ -187,6 +187,47 @@ func TestStudioAdaptsCuboidPositionSizeToMinMax(t *testing.T) {
 	}
 }
 
+func TestStudioAdaptsHypercubeToCuboid(t *testing.T) {
+	script := &parser.Script{
+		Objects: []map[string]interface{}{
+			{
+				"id":     "cube",
+				"shape":  "hypercube",
+				"center": []interface{}{1, 2, 3, 4},
+				"size":   []interface{}{2, 2, 2, 2},
+			},
+		},
+	}
+
+	adapted, err := adaptScript(script, []string{"scene.json"}, 4)
+	if err != nil {
+		t.Fatalf("adapt hypercube: %v", err)
+	}
+	cuboid := adapted.Objects[0]
+	if cuboid["shape"] != "cuboid" {
+		t.Fatalf("expected hypercube to become engine cuboid, got %v", cuboid["shape"])
+	}
+	assertFloatSlice(t, cuboid["pmin"], []float64{0, 1, 2, 3})
+	assertFloatSlice(t, cuboid["pmax"], []float64{2, 3, 4, 5})
+}
+
+func TestStudioRejectsUnequalHypercubeExtents(t *testing.T) {
+	script := &parser.Script{
+		Objects: []map[string]interface{}{
+			{
+				"id":     "bad-cube",
+				"shape":  "hypercube",
+				"center": []interface{}{0, 0, 0},
+				"size":   []interface{}{2, 3, 2},
+			},
+		},
+	}
+
+	if _, err := adaptScript(script, []string{"scene.json"}, 3); err == nil {
+		t.Fatal("expected unequal hypercube extents to fail")
+	}
+}
+
 func TestStudioAdaptsQuadraticCenterScaleToWorldCoefficients(t *testing.T) {
 	script := &parser.Script{
 		Objects: []map[string]interface{}{

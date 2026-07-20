@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"strings"
 )
 
@@ -33,8 +34,11 @@ func adaptObject(object map[string]interface{}, ctx groupContext, index, dimensi
 }
 
 func adaptCuboid(object map[string]interface{}, ctx groupContext, dimension int) (map[string]interface{}, error) {
+	shapeName, _ := stringField(object, "shape")
+	isHypercube := strings.EqualFold(shapeName, "hypercube")
+
 	if _, hasPmin := object["pmin"]; hasPmin {
-		if _, hasPmax := object["pmax"]; hasPmax && groupPlacementIsIdentity(ctx) {
+		if _, hasPmax := object["pmax"]; hasPmax && !isHypercube && groupPlacementIsIdentity(ctx) {
 			return object, nil
 		}
 	}
@@ -75,6 +79,11 @@ func adaptCuboid(object map[string]interface{}, ctx groupContext, dimension int)
 			pmax[i] = center[i] + half
 		}
 	}
+	if isHypercube {
+		if err := validateHypercubeExtents(pmin, pmax); err != nil {
+			return nil, err
+		}
+	}
 
 	worldPmin := applyPlacement(ctx, pmin)
 	worldPmax := applyPlacement(ctx, pmax)
@@ -85,12 +94,36 @@ func adaptCuboid(object map[string]interface{}, ctx groupContext, dimension int)
 	}
 
 	adapted := cloneMap(object)
+	if isHypercube {
+		adapted["shape"] = "cuboid"
+	}
 	adapted["pmin"] = worldPmin
 	adapted["pmax"] = worldPmax
 	delete(adapted, "center")
 	delete(adapted, "position")
 	delete(adapted, "size")
 	return adapted, nil
+}
+
+func validateHypercubeExtents(pmin, pmax []float64) error {
+	side := pmax[0] - pmin[0]
+	if side <= 0 {
+		return fmt.Errorf("hypercube side length must be > 0")
+	}
+	for axis := 1; axis < len(pmin); axis++ {
+		diff := pmax[axis] - pmin[axis]
+		if diff <= 0 {
+			return fmt.Errorf("hypercube side length axis %d must be > 0", axis)
+		}
+		if !nearlyEqual(diff, side) {
+			return fmt.Errorf("hypercube requires equal side lengths, axis %d has %g instead of %g", axis, diff, side)
+		}
+	}
+	return nil
+}
+
+func nearlyEqual(a, b float64) bool {
+	return math.Abs(a-b) <= 1e-9
 }
 
 func adaptTriangle(object map[string]interface{}, ctx groupContext, dimension int) (map[string]interface{}, error) {

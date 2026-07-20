@@ -66,7 +66,7 @@ func ParseRenderOverrides(args []string) (RenderOverrides, error) {
 
 	flagSet := flag.NewFlagSet("ray", flag.ContinueOnError)
 	flagSet.SetOutput(io.Discard)
-	flagSet.Var(&scriptPaths, "script", "path to a scene script; repeat to merge multiple scripts")
+	flagSet.Var(&scriptPaths, "script", "path to a canonical scene script")
 	flagSet.IntVar(&overrides.Dimension, "dimension", 0, "scene dimension")
 	flagSet.IntVar(&overrides.CameraIndex, "camera-index", -1, "camera index to render")
 	flagSet.IntVar(&overrides.ThreadNum, "threads", 0, "worker thread count")
@@ -94,10 +94,10 @@ func ParseRenderOverrides(args []string) (RenderOverrides, error) {
 	if len(overrides.ScriptPaths) == 0 {
 		overrides.ScriptPaths = []string{defaultScriptPath}
 	}
-	overrides.ScriptPath = overrides.ScriptPaths[0]
-	if len(overrides.ScriptPaths) == 1 {
-		overrides.ScriptPath = overrides.ScriptPaths[0]
+	if len(overrides.ScriptPaths) != 1 {
+		return RenderOverrides{}, fmt.Errorf("engine accepts exactly one --script; use studio to merge multiple scripts")
 	}
+	overrides.ScriptPath = overrides.ScriptPaths[0]
 	if overrides.CameraIndex < -1 {
 		return RenderOverrides{}, fmt.Errorf("camera-index must be >= -1")
 	}

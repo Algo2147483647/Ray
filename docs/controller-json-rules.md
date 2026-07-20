@@ -1,5 +1,9 @@
 # Controller JSON Rules
 
+> This document describes the controller/factory loading rules. For the current
+> interface boundary, see [`engine-json-protocol.md`](engine-json-protocol.md)
+> and [`studio-json-protocol.md`](studio-json-protocol.md).
+
 This document describes the JSON consumed by `engine/controller/parser` and `engine/controller/factory`.
 
 ## Entry Points
