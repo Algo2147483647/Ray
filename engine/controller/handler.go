@@ -36,10 +36,6 @@ func Run(args []string) int {
 		return 1
 	}
 
-	if len(overrides.ScriptPaths) == 1 && overrides.ScriptPath == defaultScriptPath {
-		fmt.Printf("Using default script: %s\n", overrides.ScriptPath)
-	}
-
 	h := NewHandler().
 		LoadScript(overrides.ScriptPath).
 		RenderJobs(overrides)
@@ -54,24 +50,13 @@ func Run(args []string) int {
 }
 
 func (h *Handler) LoadScript(scriptPath string) *Handler {
-	return h.LoadScripts([]string{scriptPath})
-}
-
-func (h *Handler) LoadScripts(scriptPaths []string) *Handler {
 	if h.err != nil {
 		return h
 	}
 
-	if len(scriptPaths) == 1 {
-		fmt.Printf("Loading scene from: %s\n", scriptPaths[0])
-	} else {
-		fmt.Printf("Loading scene from %d scripts:\n", len(scriptPaths))
-		for _, scriptPath := range scriptPaths {
-			fmt.Printf("  %s\n", scriptPath)
-		}
-	}
+	fmt.Printf("Loading scene from: %s\n", scriptPath)
 
-	script, err := parser.ReadScriptFiles(scriptPaths)
+	script, err := parser.ReadScriptFile(scriptPath)
 	if err != nil {
 		h.err = err
 		return h
