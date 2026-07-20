@@ -160,8 +160,10 @@ Scenes are JSON files containing optional media, materials, objects, cameras, an
     {
       "type": "3d",
       "position": [-4, 0, 1],
-      "look_at": [0, 0, 0],
-      "field_of_view": 60
+      "direction": [4, 0, -1],
+      "up": [0, 0, 1],
+      "field_of_view": 60,
+      "aspect_ratio": 1
     }
   ],
   "render": {

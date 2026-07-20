@@ -116,6 +116,14 @@ func TestSelectRenderCameraAppliesOverridesToHyperbolicCamera(t *testing.T) {
 	}
 }
 
+func TestSelectRenderCameraRequiresCamera(t *testing.T) {
+	h := NewHandler()
+	_, _, err := h.selectRenderCamera(0, 120, 80)
+	if err == nil {
+		t.Fatal("expected selecting without cameras to fail")
+	}
+}
+
 func TestSelectRenderCameraAppliesOverridesToSphericalCamera(t *testing.T) {
 	cam := &camera.SphericalCamera{
 		Position:    mat.NewVecDense(4, []float64{1, 0, 0, 0}),

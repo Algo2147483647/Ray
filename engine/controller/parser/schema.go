@@ -9,7 +9,6 @@ type CameraScript struct {
 	ID           string      `json:"id"`             // Unique camera identifier.
 	Type         string      `json:"type"`           // Camera model or script type.
 	Position     []float64   `json:"position"`       // Camera origin in scene space.
-	LookAt       []float64   `json:"look_at"`        // Target point the camera faces.
 	Direction    []float64   `json:"direction"`      // Forward viewing direction.
 	Up           []float64   `json:"up"`             // Up vector defining camera roll.
 	Widths       []int       `json:"widths"`         // Per-frame image widths.

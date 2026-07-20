@@ -34,6 +34,10 @@ func adaptScript(script *parser.Script, source []string, dimension int) (*interm
 	if err != nil {
 		return nil, err
 	}
+	cameras, err := adaptCameras(script.Cameras, dimension)
+	if err != nil {
+		return nil, err
+	}
 
 	return &intermediateScript{
 		Studio: studioMetadata{
@@ -45,7 +49,7 @@ func adaptScript(script *parser.Script, source []string, dimension int) (*interm
 		Materials: cloneMapSlice(script.Materials),
 		Media:     cloneNestedStringMap(script.Media),
 		Objects:   objects,
-		Cameras:   append([]parser.CameraScript(nil), script.Cameras...),
+		Cameras:   cameras,
 		Render:    renderToMap(script.Render),
 		Geometry:  cloneGeometry(script.Geometry),
 		Renders:   rendersToMaps(script.Renders),

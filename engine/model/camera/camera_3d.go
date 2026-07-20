@@ -100,12 +100,3 @@ func (c *Camera3D) GenerateRay(res *renderray.Ray, index ...int) *renderray.Ray 
 
 	return res
 }
-
-// SetLookAt sets the camera target.
-func (c *Camera3D) SetLookAt(lookAt *mat.VecDense) *Camera3D {
-	c.Direction = mat.NewVecDense(lookAt.Len(), nil)
-	c.Direction.SubVec(lookAt, c.Position)
-	maths.Normalize(c.Direction)
-	c.prepared = false
-	return c
-}

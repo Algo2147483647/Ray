@@ -123,11 +123,7 @@ func (h *Handler) RenderJobs(overrides RenderOverrides) *Handler {
 
 func (h *Handler) selectRenderCamera(cameraIndex, width, height int) (camera.Camera, []int, error) {
 	if len(h.Scene.Cameras) == 0 {
-		defaultCamera, err := factory.BuildCamera3DFromScript(factory.DefaultCameraScript())
-		if err != nil {
-			return nil, nil, err
-		}
-		h.Scene.Cameras = append(h.Scene.Cameras, defaultCamera)
+		return nil, nil, fmt.Errorf("scene has no cameras; use studio to generate a default camera")
 	}
 
 	if cameraIndex < 0 || cameraIndex >= len(h.Scene.Cameras) {

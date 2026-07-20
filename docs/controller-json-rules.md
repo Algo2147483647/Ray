@@ -39,7 +39,7 @@ Top-level fields:
 | `media` | object | Optional named homogeneous media. A default `air` medium is always created. |
 | `materials` | array | Material definitions. Each material needs an `id` and at least one of `surface` or `emission`. |
 | `objects` | array | Geometry instances with `shape`, `material_id`, and optional `medium_boundary`. |
-| `cameras` | array | Optional camera definitions. If omitted, the render handler creates a default 3D camera. |
+| `cameras` | array | Camera definitions. Engine render execution requires at least one camera; studio can generate the default authoring camera. |
 | `render` | object | Dimension, samples, output paths, tone mapping, spectrum mode, and camera selection. |
 
 ## Load Flow
@@ -243,7 +243,7 @@ An omitted camera type defaults to `3d`.
 {
   "type": "3d",
   "position": [-4, 0, 1],
-  "look_at": [0, 0, 0],
+  "direction": [4, 0, -1],
   "up": [0, 0, 1],
   "field_of_view": 60,
   "aspect_ratio": 1,
@@ -251,7 +251,8 @@ An omitted camera type defaults to `3d`.
 }
 ```
 
-`direction` may be used instead of `look_at`.
+Engine expects `direction`. Studio may accept `look_at` and convert it before
+calling engine.
 `width` and `height` are render settings, not camera fields.
 
 N-dimensional camera fields:

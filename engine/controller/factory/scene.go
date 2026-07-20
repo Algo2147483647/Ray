@@ -89,8 +89,7 @@ func LoadSceneFromScript(script *parser.Script, scene *model.Scene) error {
 		if err != nil {
 			parseErrors = append(parseErrors, fmt.Errorf("%s: %w", objectLabel, err))
 			continue
-		}
-		if len(shapes) == 0 {
+		} else if len(shapes) == 0 {
 			parseErrors = append(parseErrors, fmt.Errorf("%s: shape parser produced no geometry", objectLabel))
 			continue
 		}
