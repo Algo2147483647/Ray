@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 
 	"github.com/Algo2147483647/ray/engine/controller"
-	"github.com/Algo2147483647/ray/engine/controller/parser"
 )
 
 func run(args []string) int {
@@ -16,7 +15,7 @@ func run(args []string) int {
 		return 1
 	}
 
-	script, err := parser.ReadScriptFiles(config.scriptPaths)
+	script, err := readStudioScriptFiles(config.scriptPaths)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return 1

@@ -39,51 +39,21 @@ func BuildCamera3DFromScript(def parser.CameraScript) (*modelcamera.Camera3D, er
 		return nil, fmt.Errorf("camera type %q requires render dimension 3, got %d", "3d", utils.Dimension)
 	}
 
-	position, err := vectorFromScript("position", def.Position)
-	if err != nil {
-		return nil, err
-	}
-
-	up, err := vectorFromScript("up", def.Up)
-	if err != nil {
-		return nil, err
-	}
-
-	direction, err := vectorFromScript("direction", def.Direction)
-	if err != nil {
-		return nil, err
-	} else if mat.Norm(direction, 2) == 0 {
-		return nil, fmt.Errorf("direction must not be zero")
-	}
-
-	aspectRatio, err := requiredPositiveCameraFloat("aspect_ratio", def.AspectRatio)
-	if err != nil {
-		return nil, err
-	}
-	fieldOfView, err := requiredPositiveCameraFloat("field_of_view", def.FieldOfView)
-	if err != nil {
-		return nil, err
-	}
-
-	camera3D := &modelcamera.Camera3D{
-		Position:    position,
-		Direction:   maths.Normalize(direction),
-		Up:          up,
-		AspectRatio: aspectRatio,
-		FieldOfView: fieldOfView,
+	return &modelcamera.Camera3D{
+		Position:    utils.NewVec(def.Position),
+		Direction:   maths.Normalize(utils.NewVec(def.Direction)),
+		Up:          utils.NewVec(def.Up),
+		AspectRatio: def.AspectRatio,
+		FieldOfView: def.FieldOfView,
 		Ortho:       def.Ortho,
-	}
-	return camera3D, nil
+	}, nil
 }
 
 func BuildCameraNDimFromScript(def parser.CameraScript) (*modelcamera.CameraNDim, error) {
 	if len(def.Position) == 0 {
 		return nil, fmt.Errorf("position is required for n_dim camera")
 	}
-	position, err := vectorFromScript("position", def.Position)
-	if err != nil {
-		return nil, err
-	}
+	position := utils.NewVec(def.Position)
 
 	if len(def.Widths) == 0 {
 		return nil, fmt.Errorf("widths is required for n_dim camera")
@@ -116,10 +86,7 @@ func BuildCameraNDimFromScript(def parser.CameraScript) (*modelcamera.CameraNDim
 
 	coordinates := make([]*mat.VecDense, len(def.Coordinates))
 	for i, values := range def.Coordinates {
-		vec, err := vectorFromScript(fmt.Sprintf("coordinates[%d]", i), values)
-		if err != nil {
-			return nil, err
-		}
+		vec := utils.NewVec(values)
 		if mat.Norm(vec, 2) == 0 {
 			return nil, fmt.Errorf("coordinates[%d] must not be zero", i)
 		}
@@ -167,54 +134,19 @@ func BuildSphericalCameraFromScript(def parser.CameraScript) (*modelcamera.Spher
 		return nil, fmt.Errorf("spherical camera requires render dimension 4, got %d", utils.Dimension)
 	}
 
-	position, err := vectorFromScript("position", def.Position)
-	if err != nil {
-		return nil, err
-	}
-
-	forward, err := vectorFromScript("direction", def.Direction)
-	if err != nil {
-		return nil, err
-	}
-
-	up, err := vectorFromScript("up", def.Up)
-	if err != nil {
-		return nil, err
-	}
-
-	fieldOfView, err := requiredPositiveCameraFloat("field_of_view", def.FieldOfView)
-	if err != nil {
-		return nil, err
-	}
-	aspectRatio, err := requiredPositiveCameraFloat("aspect_ratio", def.AspectRatio)
-	if err != nil {
-		return nil, err
-	}
+	position := utils.NewVec(def.Position)
+	forward := utils.NewVec(def.Direction)
+	up := utils.NewVec(def.Up)
 
 	cam := &modelcamera.SphericalCamera{
 		Position:    position,
 		Forward:     forward,
 		Up:          up,
-		FieldOfView: fieldOfView,
-		AspectRatio: aspectRatio,
+		FieldOfView: def.FieldOfView,
+		AspectRatio: def.AspectRatio,
 	}
 	if err := cam.Prepare(); err != nil {
 		return nil, err
 	}
 	return cam, nil
-}
-
-func vectorFromScript(name string, values []float64) (*mat.VecDense, error) {
-	if err := utils.RequireSliceLength(name, values, utils.Dimension); err != nil {
-		return nil, err
-	}
-
-	return utils.NewVec(values), nil
-}
-
-func requiredPositiveCameraFloat(name string, value float64) (float64, error) {
-	if value <= 0 {
-		return 0, fmt.Errorf("%s must be > 0", name)
-	}
-	return value, nil
 }

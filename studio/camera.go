@@ -4,14 +4,12 @@ import (
 	"fmt"
 	"math"
 	"strings"
-
-	"github.com/Algo2147483647/ray/engine/controller/parser"
 )
 
 var (
-	defaultStudioCameraPosition = []float64{-1.7, 0.1, 0.5}
-	defaultStudioCameraLookAt   = []float64{2, 0, 0}
-	defaultStudioCameraUp       = []float64{0, 0, 1}
+	defaultStudioCameraPosition  = []float64{0, 0, 0}
+	defaultStudioCameraDirection = []float64{1, 0, 0}
+	defaultStudioCameraUp        = []float64{0, 0, 1}
 )
 
 const (
@@ -19,19 +17,48 @@ const (
 	defaultStudioAspectRatio = 1.0
 )
 
-func adaptCameras(cameraDefs []parser.CameraScript, dimension int) ([]parser.CameraScript, error) {
+type studioCameraScript struct {
+	ID           string      `json:"id"`
+	Type         string      `json:"type"`
+	Position     []float64   `json:"position"`
+	LookAt       []float64   `json:"look_at"`
+	Direction    []float64   `json:"direction"`
+	Up           []float64   `json:"up"`
+	Widths       []int       `json:"widths"`
+	FieldOfView  float64     `json:"field_of_view"`
+	FieldOfViews []float64   `json:"field_of_views"`
+	Coordinates  [][]float64 `json:"coordinates"`
+	AspectRatio  float64     `json:"aspect_ratio"`
+	Ortho        bool        `json:"ortho"`
+}
+
+type engineCameraScript struct {
+	ID           string      `json:"id,omitempty"`
+	Type         string      `json:"type,omitempty"`
+	Position     []float64   `json:"position,omitempty"`
+	Direction    []float64   `json:"direction,omitempty"`
+	Up           []float64   `json:"up,omitempty"`
+	Widths       []int       `json:"widths,omitempty"`
+	FieldOfView  float64     `json:"field_of_view,omitempty"`
+	FieldOfViews []float64   `json:"field_of_views,omitempty"`
+	Coordinates  [][]float64 `json:"coordinates,omitempty"`
+	AspectRatio  float64     `json:"aspect_ratio,omitempty"`
+	Ortho        bool        `json:"ortho,omitempty"`
+}
+
+func adaptCameras(cameraDefs []studioCameraScript, dimension int) ([]engineCameraScript, error) {
 	if len(cameraDefs) == 0 {
 		if dimension != 3 {
 			return nil, nil
 		}
-		camera, err := adaptCamera3D(parser.CameraScript{}, dimension)
+		camera, err := adaptCamera3D(studioCameraScript{}, dimension)
 		if err != nil {
 			return nil, err
 		}
-		return []parser.CameraScript{camera}, nil
+		return []engineCameraScript{camera}, nil
 	}
 
-	cameras := make([]parser.CameraScript, len(cameraDefs))
+	cameras := make([]engineCameraScript, len(cameraDefs))
 	for idx, cameraDef := range cameraDefs {
 		camera, err := adaptCamera(cameraDef, dimension)
 		if err != nil {
@@ -42,7 +69,7 @@ func adaptCameras(cameraDefs []parser.CameraScript, dimension int) ([]parser.Cam
 	return cameras, nil
 }
 
-func adaptCamera(def parser.CameraScript, dimension int) (parser.CameraScript, error) {
+func adaptCamera(def studioCameraScript, dimension int) (engineCameraScript, error) {
 	switch strings.ToLower(def.Type) {
 	case "", "3d", "camera3d", "hyperbolic", "klein":
 		return adaptCamera3D(def, dimension)
@@ -53,32 +80,35 @@ func adaptCamera(def parser.CameraScript, dimension int) (parser.CameraScript, e
 	}
 }
 
-func adaptCamera3D(def parser.CameraScript, dimension int) (parser.CameraScript, error) {
+func adaptCamera3D(def studioCameraScript, dimension int) (engineCameraScript, error) {
 	if dimension != 3 {
-		return parser.CameraScript{}, fmt.Errorf("camera type %q requires render dimension 3, got %d", displayCameraType(def.Type), dimension)
+		return engineCameraScript{}, fmt.Errorf("camera type %q requires render dimension 3, got %d", displayCameraType(def.Type), dimension)
 	}
 
 	position, err := cameraVector("position", def.Position, defaultStudioCameraPosition, dimension)
 	if err != nil {
-		return parser.CameraScript{}, err
+		return engineCameraScript{}, err
 	}
 	up, err := cameraVector("up", def.Up, defaultStudioCameraUp, dimension)
 	if err != nil {
-		return parser.CameraScript{}, err
+		return engineCameraScript{}, err
 	}
 
 	direction := append([]float64(nil), def.Direction...)
 	if len(direction) == 0 {
-		lookAt, err := cameraVector("look_at", def.LookAt, defaultStudioCameraLookAt, dimension)
-		if err != nil {
-			return parser.CameraScript{}, err
+		if len(def.LookAt) > 0 {
+			if len(def.LookAt) != dimension {
+				return engineCameraScript{}, fmt.Errorf("field %q must contain %d values, got %d", "look_at", dimension, len(def.LookAt))
+			}
+			direction = subFloat64Slices(def.LookAt, position)
+		} else {
+			direction = append([]float64(nil), defaultStudioCameraDirection...)
 		}
-		direction = subFloat64Slices(lookAt, position)
 	} else if len(direction) != dimension {
-		return parser.CameraScript{}, fmt.Errorf("field %q must contain %d values, got %d", "direction", dimension, len(direction))
+		return engineCameraScript{}, fmt.Errorf("field %q must contain %d values, got %d", "direction", dimension, len(direction))
 	}
 	if vectorNorm(direction) == 0 {
-		return parser.CameraScript{}, fmt.Errorf("direction must not be zero")
+		return engineCameraScript{}, fmt.Errorf("direction must not be zero")
 	}
 
 	camera := cloneCamera(def)
@@ -86,7 +116,6 @@ func adaptCamera3D(def parser.CameraScript, dimension int) (parser.CameraScript,
 		camera.Type = "3d"
 	}
 	camera.Position = position
-	camera.LookAt = nil
 	camera.Direction = direction
 	camera.Up = up
 	camera.FieldOfView = positiveCameraValue(def.FieldOfView, defaultStudioFieldOfView)
@@ -94,9 +123,9 @@ func adaptCamera3D(def parser.CameraScript, dimension int) (parser.CameraScript,
 	return camera, nil
 }
 
-func adaptSphericalCamera(def parser.CameraScript, dimension int) (parser.CameraScript, error) {
+func adaptSphericalCamera(def studioCameraScript, dimension int) (engineCameraScript, error) {
 	if dimension != 4 {
-		return parser.CameraScript{}, fmt.Errorf("spherical camera requires render dimension 4, got %d", dimension)
+		return engineCameraScript{}, fmt.Errorf("spherical camera requires render dimension 4, got %d", dimension)
 	}
 	camera := cloneCamera(def)
 	camera.FieldOfView = positiveCameraValue(def.FieldOfView, defaultStudioFieldOfView)
@@ -137,7 +166,29 @@ func vectorNorm(values []float64) float64 {
 	return math.Sqrt(sum)
 }
 
-func cloneCamera(def parser.CameraScript) parser.CameraScript {
+func cloneCamera(def studioCameraScript) engineCameraScript {
+	camera := engineCameraScript{
+		ID:          def.ID,
+		Type:        def.Type,
+		FieldOfView: def.FieldOfView,
+		AspectRatio: def.AspectRatio,
+		Ortho:       def.Ortho,
+	}
+	camera.Position = append([]float64(nil), def.Position...)
+	camera.Direction = append([]float64(nil), def.Direction...)
+	camera.Up = append([]float64(nil), def.Up...)
+	camera.Widths = append([]int(nil), def.Widths...)
+	camera.FieldOfViews = append([]float64(nil), def.FieldOfViews...)
+	if len(def.Coordinates) > 0 {
+		camera.Coordinates = make([][]float64, len(def.Coordinates))
+		for i, coordinate := range def.Coordinates {
+			camera.Coordinates[i] = append([]float64(nil), coordinate...)
+		}
+	}
+	return camera
+}
+
+func cloneStudioCamera(def studioCameraScript) studioCameraScript {
 	camera := def
 	camera.Position = append([]float64(nil), def.Position...)
 	camera.LookAt = append([]float64(nil), def.LookAt...)

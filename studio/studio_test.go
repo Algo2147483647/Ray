@@ -14,7 +14,7 @@ import (
 )
 
 func TestFlattenNestedGroupAndInheritFields(t *testing.T) {
-	script := &parser.Script{
+	script := &studioScript{
 		Objects: []map[string]interface{}{
 			{
 				"id":          "outer",
@@ -90,7 +90,7 @@ func TestFlattenNestedGroupAndInheritFields(t *testing.T) {
 }
 
 func TestChildFieldOverridesGroupInheritance(t *testing.T) {
-	script := &parser.Script{
+	script := &studioScript{
 		Objects: []map[string]interface{}{
 			{
 				"id":          "g",
@@ -118,7 +118,7 @@ func TestChildFieldOverridesGroupInheritance(t *testing.T) {
 }
 
 func TestStudioAdaptsTriangleCenterAndGroupPlacement(t *testing.T) {
-	script := &parser.Script{
+	script := &studioScript{
 		Objects: []map[string]interface{}{
 			{
 				"id":     "g",
@@ -153,7 +153,7 @@ func TestStudioAdaptsTriangleCenterAndGroupPlacement(t *testing.T) {
 }
 
 func TestStudioAdaptsCuboidPositionSizeToMinMax(t *testing.T) {
-	script := &parser.Script{
+	script := &studioScript{
 		Objects: []map[string]interface{}{
 			{
 				"id":     "g",
@@ -188,7 +188,7 @@ func TestStudioAdaptsCuboidPositionSizeToMinMax(t *testing.T) {
 }
 
 func TestStudioAdaptsHypercubeToCuboid(t *testing.T) {
-	script := &parser.Script{
+	script := &studioScript{
 		Objects: []map[string]interface{}{
 			{
 				"id":     "cube",
@@ -211,8 +211,32 @@ func TestStudioAdaptsHypercubeToCuboid(t *testing.T) {
 	assertFloatSlice(t, cuboid["pmax"], []float64{2, 3, 4, 5})
 }
 
+func TestStudioAdaptsCameraLookAtFromRawFields(t *testing.T) {
+	script := &studioScript{}
+	cameras := []studioCameraScript{
+		{
+			Type:        "3d",
+			Position:    []float64{-4, 0, 1},
+			LookAt:      []float64{0, 0, 0},
+			Up:          []float64{0, 0, 1},
+			FieldOfView: 60,
+		},
+	}
+
+	script.Cameras = cameras
+	adapted, err := adaptScript(script, []string{"scene.json"}, 3)
+	if err != nil {
+		t.Fatalf("adapt camera: %v", err)
+	}
+	camera := adapted.Cameras[0]
+	assertDirectFloatSlice(t, camera.Direction, []float64{4, 0, -1})
+	if camera.AspectRatio != 1 {
+		t.Fatalf("expected studio to fill default aspect ratio, got %v", camera.AspectRatio)
+	}
+}
+
 func TestStudioRejectsUnequalHypercubeExtents(t *testing.T) {
-	script := &parser.Script{
+	script := &studioScript{
 		Objects: []map[string]interface{}{
 			{
 				"id":     "bad-cube",
@@ -229,7 +253,7 @@ func TestStudioRejectsUnequalHypercubeExtents(t *testing.T) {
 }
 
 func TestStudioAdaptsQuadraticCenterScaleToWorldCoefficients(t *testing.T) {
-	script := &parser.Script{
+	script := &studioScript{
 		Objects: []map[string]interface{}{
 			{
 				"id":     "quad",
@@ -278,7 +302,7 @@ func TestStudioAdaptsCopiedGeometryBenchmarkMatrixExample(t *testing.T) {
 		filepath.Join(sceneDir, "materials.json"),
 		filepath.Join(sceneDir, "geo_example.json"),
 	}
-	script, err := parser.ReadScriptFiles(scriptPaths)
+	script, err := readStudioScriptFiles(scriptPaths)
 	if err != nil {
 		t.Fatalf("read copied geometry benchmark scripts: %v", err)
 	}
@@ -325,6 +349,18 @@ func unitCubicCoefficients() []interface{} {
 func assertFloatSlice(t *testing.T, raw interface{}, expected []float64) {
 	t.Helper()
 	values := mustFloatSlice(t, raw)
+	if len(values) != len(expected) {
+		t.Fatalf("expected %d values, got %d: %v", len(expected), len(values), values)
+	}
+	for i := range values {
+		if math.Abs(values[i]-expected[i]) > 1e-10 {
+			t.Fatalf("index %d: expected %v, got %v", i, expected, values)
+		}
+	}
+}
+
+func assertDirectFloatSlice(t *testing.T, values, expected []float64) {
+	t.Helper()
 	if len(values) != len(expected) {
 		t.Fatalf("expected %d values, got %d: %v", len(expected), len(values), values)
 	}

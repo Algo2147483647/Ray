@@ -2,6 +2,7 @@ package factory
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 
@@ -109,4 +110,28 @@ func sparsePolynomialCoordinateIndex(key string, order int) (int, error) {
 		index = index*4 + coordinate
 	}
 	return index, nil
+}
+
+func normalizePolynomialCenterScale(center, scale []float64) ([3]float64, [3]float64, error) {
+	normalizedCenter := [3]float64{}
+	normalizedScale := [3]float64{1, 1, 1}
+
+	if center != nil {
+		if err := utils.RequireSliceLength("center", center, utils.Dimension); err != nil {
+			return normalizedCenter, normalizedScale, err
+		}
+		copy(normalizedCenter[:], center)
+	}
+	if scale != nil {
+		if err := utils.RequireSliceLength("scale", scale, utils.Dimension); err != nil {
+			return normalizedCenter, normalizedScale, err
+		}
+		for i, value := range scale {
+			if value <= 0 || math.IsNaN(value) || math.IsInf(value, 0) {
+				return normalizedCenter, normalizedScale, fmt.Errorf("scale index %d must be a finite positive number", i)
+			}
+			normalizedScale[i] = value
+		}
+	}
+	return normalizedCenter, normalizedScale, nil
 }

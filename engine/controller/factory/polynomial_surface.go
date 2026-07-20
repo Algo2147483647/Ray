@@ -233,7 +233,7 @@ func parsePolynomialSurfaceCenterScale(objDef map[string]interface{}, dimension 
 	}
 	for i, value := range scale {
 		if value <= 0 || math.IsNaN(value) || math.IsInf(value, 0) {
-			return nil, nil, errInvalidScale(i)
+			return nil, nil, fmt.Errorf("scale index %d must be a finite positive number", i)
 		}
 	}
 	return center, scale, nil

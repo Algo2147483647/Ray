@@ -3,8 +3,6 @@ package main
 import (
 	"errors"
 	"time"
-
-	"github.com/Algo2147483647/ray/engine/controller/parser"
 )
 
 type intermediateScript struct {
@@ -12,9 +10,9 @@ type intermediateScript struct {
 	Materials []map[string]interface{}          `json:"materials,omitempty"`
 	Media     map[string]map[string]interface{} `json:"media,omitempty"`
 	Objects   []map[string]interface{}          `json:"objects,omitempty"`
-	Cameras   []parser.CameraScript             `json:"cameras,omitempty"`
+	Cameras   []engineCameraScript              `json:"cameras,omitempty"`
 	Render    map[string]interface{}            `json:"render,omitempty"`
-	Geometry  *parser.GeometryScript            `json:"geometry,omitempty"`
+	Geometry  map[string]interface{}            `json:"geometry,omitempty"`
 	Renders   []map[string]interface{}          `json:"renders,omitempty"`
 }
 
@@ -25,7 +23,7 @@ type studioMetadata struct {
 	Dimension   int      `json:"dimension"`
 }
 
-func adaptScript(script *parser.Script, source []string, dimension int) (*intermediateScript, error) {
+func adaptScript(script *studioScript, source []string, dimension int) (*intermediateScript, error) {
 	if script == nil {
 		return nil, errors.New("script is nil")
 	}
@@ -51,12 +49,12 @@ func adaptScript(script *parser.Script, source []string, dimension int) (*interm
 		Objects:   objects,
 		Cameras:   cameras,
 		Render:    renderToMap(script.Render),
-		Geometry:  cloneGeometry(script.Geometry),
+		Geometry:  cloneMap(script.Geometry),
 		Renders:   rendersToMaps(script.Renders),
 	}, nil
 }
 
-func renderToMap(render parser.RenderScript) map[string]interface{} {
+func renderToMap(render studioRenderScript) map[string]interface{} {
 	result := map[string]interface{}{}
 	if render.Dimension > 0 {
 		result["dimension"] = render.Dimension
@@ -109,7 +107,7 @@ func renderToMap(render parser.RenderScript) map[string]interface{} {
 	return result
 }
 
-func rendersToMaps(renders []parser.RenderScript) []map[string]interface{} {
+func rendersToMaps(renders []studioRenderScript) []map[string]interface{} {
 	if len(renders) == 0 {
 		return nil
 	}
@@ -118,12 +116,4 @@ func rendersToMaps(renders []parser.RenderScript) []map[string]interface{} {
 		result[i] = renderToMap(render)
 	}
 	return result
-}
-
-func cloneGeometry(geometry *parser.GeometryScript) *parser.GeometryScript {
-	if geometry == nil {
-		return nil
-	}
-	clone := *geometry
-	return &clone
 }

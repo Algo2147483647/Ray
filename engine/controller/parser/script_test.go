@@ -17,7 +17,7 @@ func TestReadScriptFileMergesIncludesRelativeToParent(t *testing.T) {
 			{"id": "floor-a", "shape": "sphere", "position": [0, 0, 0], "r": 1, "material_id": "floor"}
 		],
 		"cameras": [
-			{"id": "cam-a", "type": "3d", "position": [0, -3, 1], "look_at": [0, 0, 0], "up": [0, 0, 1]}
+			{"id": "cam-a", "type": "3d", "position": [0, -3, 1], "direction": [0, 3, -1], "up": [0, 0, 1]}
 		],
 		"render": {
 			"samples": 8,
@@ -93,7 +93,7 @@ func TestReadScriptFileRejectsCameraWidthHeight(t *testing.T) {
 				"id": "cam-a",
 				"type": "3d",
 				"position": [0, -3, 1],
-				"look_at": [0, 0, 0],
+				"direction": [0, 3, -1],
 				"up": [0, 0, 1],
 				"width": 800,
 				"height": 600
