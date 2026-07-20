@@ -4,6 +4,56 @@ This document describes the visible geometry cells in the `geometry-benchmark-ma
 
 Formula convention: unless noted otherwise, $x,y,z$ are local coordinates after the object's `center` and `scale` transform. Algebraic and implicit surfaces are written locally as $F(x,y,z)=0$. The Formula / Definition column records the intrinsic geometric identity of the cell: shape class, degree, radii/side lengths, topology, or combinatorics, without material or renderer-specific details.
 
+
+
+r6-c1: Barth sextic surface
+r6-c2: Togliatti quintic surface
+r6-c3: Clebsch diagonal cubic surface
+r6-c4: Gyroid minimal-surface
+r6-c5: Chmutov surface / Banchoff form
+r6-c6: Interlocked double Gyroid
+r6-c7: Kummer surface  
+
+r5-c1: Ding-Dong surface / bell-shaped self-intersecting cubic
+r5-c2: Tanglecube
+r5-c3: Singular Quartic Surface with a Double Line
+r5-c4: Roman surface
+r5-c5: L^4-unit superellipsoid
+r5-c6: Dupin cyclide
+r5-c7: Torus  
+
+r4-c1: Small stellated dodecahedron
+r4-c2: Triangular prism
+r4-c3: Regular icosahedron
+r4-c4: Regular dodecahedron
+r4-c5: Regular Octahedron
+r4-c6: Cube
+r4-c7: Regular Tetrahedron  
+
+r3-c1: Whitney-umbrella surface
+r3-c2: Elliptic paraboloid quadric
+r3-c3: Vertical cone
+r3-c4: Surface of revolution by parabola
+r3-c5: Circle
+r3-c6: Togliatti / Dervish quintic nodal surface
+r3-c7: Anisotropic quartic torus / spindle surface  
+
+r2-c1: Ellipsoid
+r2-c2: Hyperbolic paraboloid quadric
+r2-c3: Rectangular cuboid
+r2-c4: Triangle
+r2-c5: Elliptic quadric / clipped ellipsoid-like surface
+r2-c6: Szilassi polyhedron
+r2-c7: Hyperboloid quadric  
+
+r1-c1: Circle
+r1-c2: Oblique cylinder
+r1-c3: Quartic elliptic cylinder / quartic cone section
+r1-c4: Rectangular cuboid
+r1-c5: Superellipse quartic column
+r1-c6: Quartic saddle sheet
+r1-c7: Quartic elliptic paraboloid
+
 ## Row 1
 
 | Cell | Mathematical Geometry | Formula / Definition | Material |
