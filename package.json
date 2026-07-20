@@ -3,11 +3,12 @@
   "private": true,
   "scripts": {
     "ray": "go -C engine run .",
+    "studio": "go -C studio run .",
     "ray:test": "go -C engine test ./...",
     "ray:build": "go -C engine build -o ../bin/ray .",
-    "ui": "npm --prefix scene-editor run dev",
-    "ui:install": "npm --prefix scene-editor install",
-    "ui:build": "npm --prefix scene-editor run build",
-    "ui:preview": "npm --prefix scene-editor run preview"
+    "ui": "npm --prefix scene-editor-front run dev",
+    "ui:install": "npm --prefix scene-editor-front install",
+    "ui:build": "npm --prefix scene-editor-front run build",
+    "ui:preview": "npm --prefix scene-editor-front run preview"
   }
 }

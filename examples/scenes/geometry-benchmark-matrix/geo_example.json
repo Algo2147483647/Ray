@@ -1,48 +1,38 @@
 {
   "objects": [
     {
-      "id": "geo-example-togliatti-mathworld-w1",
+      "id": "geo-example-chmutov-order-8",
       "shape": "polynomial surface",
       "mode": "implicit",
       "input_dim": 3,
-      "degree": 5,
-      "center": [0, 0, 1.5],
-      "scale": 0.2,
+      "degree": 8,
+      "center": [-0.761624, 0, 1.5],
+      "scale": 0.75,
       "coefficients": {
         "format": "coo",
-        "shape": [6, 6, 6],
+        "shape": [9, 9, 9],
         "degree_policy": "total",
         "terms": [
-          { "index": [0, 0, 0], "value": -0.20288543819998311 },
-          { "index": [0, 0, 1], "value": -0.98780238618662519 },
-          { "index": [0, 0, 2], "value": -0.85219806739988224 },
-          { "index": [0, 0, 3], "value": 1.025195902793228 },
-          { "index": [0, 0, 4], "value": 0.22111456180001682 },
-          { "index": [0, 0, 5], "value": -0.26600124017757021 },
-          { "index": [0, 2, 0], "value": 2.1321980673998824 },
-          { "index": [0, 2, 1], "value": -1.025195902793228 },
-          { "index": [0, 2, 2], "value": -0.44222912360003364 },
-          { "index": [0, 2, 3], "value": 0.53200248035514042 },
-          { "index": [0, 4, 0], "value": -0.098885438199983189 },
-          { "index": [0, 4, 1], "value": -0.26600124017757021 },
-          { "index": [1, 4, 0], "value": 0.32 },
-          { "index": [2, 0, 0], "value": 2.1321980673998824 },
-          { "index": [2, 0, 1], "value": -1.025195902793228 },
-          { "index": [2, 0, 2], "value": -0.44222912360003364 },
-          { "index": [2, 0, 3], "value": 0.53200248035514042 },
-          { "index": [2, 2, 0], "value": -0.19777087639996638 },
-          { "index": [2, 2, 1], "value": -0.53200248035514042 },
-          { "index": [3, 2, 0], "value": -0.64 },
-          { "index": [4, 0, 0], "value": -0.098885438199983189 },
-          { "index": [4, 0, 1], "value": -0.26600124017757021 },
-          { "index": [5, 0, 0], "value": 0.064 }
+          { "index": [0, 0, 0], "value": 3 },
+          { "index": [2, 0, 0], "value": -32 },
+          { "index": [4, 0, 0], "value": 160 },
+          { "index": [6, 0, 0], "value": -256 },
+          { "index": [8, 0, 0], "value": 128 },
+          { "index": [0, 2, 0], "value": -32 },
+          { "index": [0, 4, 0], "value": 160 },
+          { "index": [0, 6, 0], "value": -256 },
+          { "index": [0, 8, 0], "value": 128 },
+          { "index": [0, 0, 2], "value": -32 },
+          { "index": [0, 0, 4], "value": 160 },
+          { "index": [0, 0, 6], "value": -256 },
+          { "index": [0, 0, 8], "value": 128 }
         ]
       },
       "bounds": {
-        "pmin": [-1.2, -1.2, 0.3],
-        "pmax": [1.2, 1.2, 2.7]
+        "center": [-0.761624, 0, 1.5],
+        "size": [1.54, 1.54, 1.54]
       },
-      "material_id": "rough-gold"
+      "material_id": "pale-blue-sheen"
     }
   ]
 }

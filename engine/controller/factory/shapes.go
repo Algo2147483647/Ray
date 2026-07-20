@@ -104,8 +104,6 @@ func parseHypercube(objDef map[string]interface{}) ([]shape.Shape, error) {
 			if bounded, boundedOK := s.(*shape.BoundedShape); boundedOK {
 				cuboid, ok = bounded.Shape.(*shape.Cuboid)
 			}
-		}
-		if !ok {
 			continue
 		}
 		side := cuboid.Pmax.AtVec(0) - cuboid.Pmin.AtVec(0)
@@ -119,43 +117,14 @@ func parseHypercube(objDef map[string]interface{}) ([]shape.Shape, error) {
 }
 
 func parseCuboid(objDef map[string]interface{}) ([]shape.Shape, error) {
-	if center, ok, err := utils.OptionalFloat64SliceField(objDef, "center", utils.Dimension); err != nil {
-		return nil, err
-	} else if ok {
-		size, err := utils.RequiredFloat64SliceField(objDef, "size", utils.Dimension)
-		if err != nil {
-			return nil, err
-		}
-
-		centerVec := newVec(center)
-		halfSize := maths.ScaleVec2(0.5, newVec(size))
-
-		pmin := mat.NewVecDense(centerVec.Len(), nil)
-		pmax := mat.NewVecDense(centerVec.Len(), nil)
-
-		cuboid := shape.NewCuboid(
-			maths.SubVec(pmin, centerVec, halfSize),
-			maths.AddVec(pmax, centerVec, halfSize),
-		)
-
-		return finishEngravableShape(cuboid, objDef)
-	}
-	if position, ok, err := utils.OptionalFloat64SliceField(objDef, "position", utils.Dimension); err != nil {
-		return nil, err
-	} else if ok {
-		objDef = cloneObjectDef(objDef)
-		objDef["center"] = position
-		return parseCuboid(objDef)
-	}
-
 	pmin, err := utils.RequiredFloat64SliceField(objDef, "pmin", utils.Dimension)
 	if err != nil {
-		return nil, fmt.Errorf("cuboid requires either position+size or pmin+pmax: %w", err)
+		return nil, err
 	}
 
 	pmax, err := utils.RequiredFloat64SliceField(objDef, "pmax", utils.Dimension)
 	if err != nil {
-		return nil, fmt.Errorf("cuboid requires either position+size or pmin+pmax: %w", err)
+		return nil, err
 	}
 
 	cuboid := shape.NewCuboid(newVec(pmin), newVec(pmax))
@@ -271,25 +240,11 @@ func parseTriangle(objDef map[string]interface{}) ([]shape.Shape, error) {
 		return nil, err
 	}
 
-	if center, ok, err := utils.OptionalFloat64SliceField(objDef, "center", utils.Dimension); err != nil {
-		return nil, err
-	} else if ok {
-		centerVec := newVec(center)
-		p1.AddVec(p1, centerVec)
-		p2.AddVec(p2, centerVec)
-		p3.AddVec(p3, centerVec)
-	}
-
 	triangle := shape.NewTriangle(p1, p2, p3)
 	return wrapSingleShapeWithBounds(triangle, objDef)
 }
 
 func parseQuadraticEquation(objDef map[string]interface{}) ([]shape.Shape, error) {
-	center, scale, err := parsePolynomialCenterScale(objDef)
-	if err != nil {
-		return nil, err
-	}
-
 	a, err := utils.RequiredFloat64SliceField(objDef, "a", 9)
 	if err != nil {
 		return nil, err
@@ -305,24 +260,17 @@ func parseQuadraticEquation(objDef map[string]interface{}) ([]shape.Shape, error
 		return nil, err
 	}
 
-	worldA, worldB, worldC := bakeQuadraticCoefficients(mat.NewDense(3, 3, a), newVec(b), c, center, scale)
-	equation := shape.NewQuadraticEquation(worldA, worldB, worldC)
-
+	equation := shape.NewQuadraticEquation(mat.NewDense(3, 3, a), newVec(b), c)
 	return wrapSingleShapeWithBounds(equation, objDef)
 }
 
 func parseCubicEquation(objDef map[string]interface{}) ([]shape.Shape, error) {
-	center, scale, err := parsePolynomialCenterScale(objDef)
-	if err != nil {
-		return nil, err
-	}
-
 	a, err := requiredPolynomialCoefficients(objDef, 3)
 	if err != nil {
 		return nil, err
 	}
 
-	equation := shape.NewCubicEquation(bakeCubicCoefficients(a, center, scale))
+	equation := shape.NewCubicEquation(a)
 	return wrapSingleShapeWithBounds(equation, objDef)
 }
 
