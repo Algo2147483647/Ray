@@ -47,7 +47,7 @@ shape behavior and support status.
 | `shape` | Yes | All objects | Must match one of the JSON shape values above. |
 | `material_id` | Yes for renderable scene objects | All objects | Resolved by the object factory against `materials`. |
 | `medium_boundary` | Optional | Closed boundary objects | Material/medium feature, not a geometry field. Avoid using it on open clipped surfaces. |
-| `bounds` | Optional for most, required for `implicit equation` | Most shapes | Clips hit search to an axis-aligned box. Engine currently accepts `bounds.center` + `bounds.size`, or `bounds.pmin` + `bounds.pmax`; studio may inherit bounds through groups. |
+| `bounds` | Optional for most, required for `implicit equation` | Most shapes | Clips hit search to an axis-aligned box. Engine accepts canonical `bounds.pmin` + `bounds.pmax`; studio accepts authoring `bounds.center` + `bounds.size` and may inherit bounds through groups. |
 | `engraving_func` | Optional | Parser accepts it on engravable paths | Current type switch applies it only to `cuboid` and `sphere`. |
 
 `bounds` clips intersections but does not add cap faces. For example, a bounded
@@ -127,9 +127,9 @@ Legacy form is still accepted:
 
 | Form | Example | Current parser status |
 | --- | --- | --- |
-| `pmin` + `pmax` | `"bounds": { "pmin": [-1, -1, -1], "pmax": [1, 1, 1] }` | Supported. Each `pmin[i]` must be smaller than `pmax[i]`. |
-| `center` + `size` | `"bounds": { "center": [0, 0, 0], "size": [2, 2, 2] }` | Supported. Each size component must be positive. |
-| `position` + `size` inside `bounds` | `"bounds": { "position": [0, 0, 0], "size": [2, 2, 2] }` | Not accepted by the current factory code, even though some older prose uses this wording. Use `center` instead. |
+| `pmin` + `pmax` | `"bounds": { "pmin": [-1, -1, -1], "pmax": [1, 1, 1] }` | Engine canonical form. Each `pmin[i]` must be smaller than `pmax[i]`. |
+| `center` + `size` | `"bounds": { "center": [0, 0, 0], "size": [2, 2, 2] }` | Studio authoring form. Studio emits `pmin` + `pmax`; each size component must be positive. |
+| `position` + `size` inside `bounds` | `"bounds": { "position": [0, 0, 0], "size": [2, 2, 2] }` | Studio authoring alias for `center` + `size`. |
 
 For object placement outside `bounds`, several primitive parsers do accept
 `position` as a center alias: `cuboid`, `sphere`, `circle`, `cylinder`, and
