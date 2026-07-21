@@ -191,8 +191,9 @@ Important shape fields:
 
 `polynomial surface` is a sparse arbitrary-degree polynomial shape. It accepts
 `mode: "implicit"` for `F(x,y,z)=0` or `mode: "explicit"` for `z=P(x,y)`.
-It also accepts optional placement fields `center`, `scale`, and `basis`.
-`basis` is an orthonormal list of local axis directions in world space.
+Engine canonical JSON may include `transform`, a 4 x 4 world-to-local
+homogeneous matrix. Studio authoring JSON may use `center`, `scale`, and
+`basis`; studio combines them into `transform`.
 Coefficients are stored as sparse tensor terms:
 
 ```json
@@ -201,12 +202,11 @@ Coefficients are stored as sparse tensor terms:
   "mode": "implicit",
   "input_dim": 3,
   "degree": 2,
-  "center": [0, 0, 0],
-  "scale": 1,
-  "basis": [
-    [1, 0, 0],
-    [0, 0, 1],
-    [0, -1, 0]
+  "transform": [
+    [1, 0, 0, 0],
+    [0, 1, 0, 0],
+    [0, 0, 1, 0],
+    [0, 0, 0, 1]
   ],
   "coefficients": {
     "format": "coo",

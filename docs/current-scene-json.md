@@ -296,18 +296,16 @@ c * x^alpha_x * y^alpha_y * z^alpha_z
 ```
 
 The shape currently supports `mode: "implicit"` for `F(x,y,z)=0` and
-`mode: "explicit"` for `z=P(x,y)` by default. The `center`, `scale`, and
-optional `basis` fields transform world coordinates into local polynomial
-coordinates at evaluation time. `basis` is an orthonormal list of local axis
-directions in world space:
+`mode: "explicit"` for `z=P(x,y)` by default. Engine canonical JSON uses a
+4 x 4 world-to-local homogeneous `transform` matrix:
 
 ```text
-local_i = dot(world - center, basis_i) / scale_i
+local = transform * [1, world_x, world_y, world_z]^T
 ```
 
-If `basis` is omitted, it defaults to the identity basis. `bounds` remain a
-world-space clipping box and are not transformed by `center`, `scale`, or
-`basis`.
+Studio authoring JSON may still use `center`, `scale`, and optional `basis`;
+studio combines them into `transform` before engine execution. `bounds` remain a
+world-space clipping box and are not transformed by local placement fields.
 
 Example Barth sextic surface:
 
@@ -318,12 +316,11 @@ Example Barth sextic surface:
   "mode": "implicit",
   "input_dim": 3,
   "degree": 6,
-  "center": [-0.9, 1.68, 0.38],
-  "scale": 0.2,
-  "basis": [
-    [0.8660254037844386, 0, 0.5],
-    [0, 1, 0],
-    [-0.5, 0, 0.8660254037844386]
+  "transform": [
+    [1, 0, 0, 0],
+    [0, 1, 0, 0],
+    [0, 0, 1, 0],
+    [0, 0, 0, 1]
   ],
   "coefficients": {
     "format": "coo",
