@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 
 	"github.com/Algo2147483647/ray/engine/controller"
+	"github.com/Algo2147483647/ray/studio/adapt"
+	"github.com/Algo2147483647/ray/studio/storage"
 )
 
 func run(args []string) int {
@@ -15,27 +17,27 @@ func run(args []string) int {
 		return 1
 	}
 
-	script, err := readStudioScriptFiles(config.scriptPaths)
+	script, err := storage.ReadStudioScriptFiles(config.scriptPaths)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return 1
 	}
 
 	dimension := resolveDimension(script, config)
-	adapted, err := adaptScript(script, config.scriptPaths, dimension)
+	adapted, err := adapt.AdaptScript(script, config.scriptPaths, dimension)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return 1
 	}
 
-	outputPath, err := writeIntermediateScript(adapted, config.scriptPaths)
+	outputPath, err := storage.WriteIntermediateScript(adapted, config.scriptPaths)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return 1
 	}
 	fmt.Printf("Studio wrote intermediate script: %s\n", outputPath)
 
-	root, err := repoRoot()
+	root, err := storage.RepoRoot()
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return 1

@@ -1,29 +1,11 @@
-package main
+package adapt
 
 import (
 	"errors"
 	"time"
 )
 
-type intermediateScript struct {
-	Studio    studioMetadata                    `json:"_studio"`
-	Materials []map[string]interface{}          `json:"materials,omitempty"`
-	Media     map[string]map[string]interface{} `json:"media,omitempty"`
-	Objects   []map[string]interface{}          `json:"objects,omitempty"`
-	Cameras   []engineCameraScript              `json:"cameras,omitempty"`
-	Render    map[string]interface{}            `json:"render,omitempty"`
-	Geometry  map[string]interface{}            `json:"geometry,omitempty"`
-	Renders   []map[string]interface{}          `json:"renders,omitempty"`
-}
-
-type studioMetadata struct {
-	Version     string   `json:"version"`
-	Source      []string `json:"source"`
-	GeneratedAt string   `json:"generated_at"`
-	Dimension   int      `json:"dimension"`
-}
-
-func adaptScript(script *studioScript, source []string, dimension int) (*intermediateScript, error) {
+func AdaptScript(script *studioScript, source []string, dimension int) (*intermediateScript, error) {
 	if script == nil {
 		return nil, errors.New("script is nil")
 	}

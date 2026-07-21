@@ -1,4 +1,4 @@
-package main
+package storage
 
 import (
 	"encoding/json"
@@ -7,60 +7,17 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/Algo2147483647/ray/studio/adapt"
+	"github.com/Algo2147483647/ray/studio/schema"
 )
 
-type studioScript struct {
-	Includes  []string                          `json:"includes"`
-	Materials []map[string]interface{}          `json:"materials"`
-	Media     map[string]map[string]interface{} `json:"media"`
-	Objects   []map[string]interface{}          `json:"objects"`
-	Cameras   []studioCameraScript              `json:"cameras"`
-	Render    studioRenderScript                `json:"render"`
-	Geometry  map[string]interface{}            `json:"geometry"`
-	Renders   []studioRenderScript              `json:"renders"`
-}
-
-type studioRenderScript struct {
-	Dimension         int     `json:"dimension"`
-	Samples           int64   `json:"samples"`
-	ThreadNum         int     `json:"thread_num"`
-	CameraIndex       int     `json:"camera_index"`
-	CameraIndexSet    bool    `json:"-"`
-	Width             int     `json:"width"`
-	Height            int     `json:"height"`
-	OutputImage       string  `json:"output_image"`
-	OutputFilm        string  `json:"output_film"`
-	ResumeFilm        string  `json:"resume_film"`
-	Exposure          float64 `json:"exposure"`
-	ToneMapping       string  `json:"tone_mapping"`
-	Gamma             float64 `json:"gamma"`
-	SpectrumMode      string  `json:"spectrum_mode"`
-	WavelengthSamples int     `json:"wavelength_samples"`
-	ColorSpace        string  `json:"color_space"`
-	FilmColorSpace    string  `json:"working_space"`
-}
-
-func (r *studioRenderScript) UnmarshalJSON(data []byte) error {
-	type renderScript studioRenderScript
-	var decoded renderScript
-	if err := json.Unmarshal(data, &decoded); err != nil {
-		return err
-	}
-	var raw map[string]json.RawMessage
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return err
-	}
-	decoded.CameraIndexSet = raw["camera_index"] != nil
-	*r = studioRenderScript(decoded)
-	return nil
-}
-
-func readStudioScriptFiles(paths []string) (*studioScript, error) {
+func ReadStudioScriptFiles(paths []string) (*schema.StudioScript, error) {
 	if len(paths) == 0 {
 		return nil, errors.New("no script files provided")
 	}
 
-	merged := &studioScript{}
+	merged := &schema.StudioScript{}
 	for _, path := range paths {
 		script, err := readStudioScriptFile(path)
 		if err != nil {
@@ -73,7 +30,7 @@ func readStudioScriptFiles(paths []string) (*studioScript, error) {
 	return merged, nil
 }
 
-func readStudioScriptFile(path string) (*studioScript, error) {
+func readStudioScriptFile(path string) (*schema.StudioScript, error) {
 	absolute, err := filepath.Abs(path)
 	if err != nil {
 		return nil, fmt.Errorf("resolve script path %q: %w", path, err)
@@ -81,7 +38,7 @@ func readStudioScriptFile(path string) (*studioScript, error) {
 	return readStudioScriptFileRecursive(filepath.Clean(absolute), map[string]bool{})
 }
 
-func readStudioScriptFileRecursive(path string, stack map[string]bool) (*studioScript, error) {
+func readStudioScriptFileRecursive(path string, stack map[string]bool) (*schema.StudioScript, error) {
 	if stack[path] {
 		return nil, fmt.Errorf("include cycle detected at %q", path)
 	}
@@ -93,7 +50,7 @@ func readStudioScriptFileRecursive(path string, stack map[string]bool) (*studioS
 		return nil, err
 	}
 
-	merged := &studioScript{}
+	merged := &schema.StudioScript{}
 	for _, include := range script.Includes {
 		includePath := include
 		if !filepath.IsAbs(includePath) {
@@ -119,7 +76,7 @@ func readStudioScriptFileRecursive(path string, stack map[string]bool) (*studioS
 	return merged, nil
 }
 
-func readStudioScriptFileRaw(path string) (*studioScript, error) {
+func readStudioScriptFileRaw(path string) (*schema.StudioScript, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("open script %q: %w", path, err)
@@ -131,14 +88,14 @@ func readStudioScriptFileRaw(path string) (*studioScript, error) {
 		return nil, fmt.Errorf("read script %q: %w", path, err)
 	}
 
-	var script studioScript
+	var script schema.StudioScript
 	if err := json.Unmarshal(data, &script); err != nil {
 		return nil, fmt.Errorf("parse script %q: %w", path, err)
 	}
 	return &script, nil
 }
 
-func mergeStudioScripts(dst, src *studioScript, source string) error {
+func mergeStudioScripts(dst, src *schema.StudioScript, source string) error {
 	if dst == nil || src == nil {
 		return errors.New("cannot merge nil script")
 	}
@@ -156,13 +113,13 @@ func mergeStudioScripts(dst, src *studioScript, source string) error {
 	}
 	dst.Render = mergeStudioRenderScript(dst.Render, src.Render)
 	if len(src.Geometry) > 0 {
-		dst.Geometry = cloneMap(src.Geometry)
+		dst.Geometry = adapt.CloneMap(src.Geometry)
 	}
 	dst.Renders = append(dst.Renders, src.Renders...)
 	return nil
 }
 
-func mergeStudioMedia(dst, src *studioScript, source string) error {
+func mergeStudioMedia(dst, src *schema.StudioScript, source string) error {
 	if len(src.Media) == 0 {
 		return nil
 	}
@@ -173,7 +130,7 @@ func mergeStudioMedia(dst, src *studioScript, source string) error {
 		if _, exists := dst.Media[id]; exists {
 			return fmt.Errorf("duplicate medium id %q while merging %s", id, source)
 		}
-		dst.Media[id] = cloneMap(medium)
+		dst.Media[id] = adapt.CloneMap(medium)
 	}
 	return nil
 }
@@ -181,26 +138,26 @@ func mergeStudioMedia(dst, src *studioScript, source string) error {
 func appendUniqueStudioIDMaps(dst *[]map[string]interface{}, src []map[string]interface{}, label, source string) error {
 	ids := map[string]bool{}
 	for _, item := range *dst {
-		if id, ok := stringField(item, "id"); ok {
+		if id, ok := adapt.StringField(item, "id"); ok {
 			ids[id] = true
 		}
 	}
 	for _, item := range src {
-		id, ok := stringField(item, "id")
+		id, ok := adapt.StringField(item, "id")
 		if !ok {
-			*dst = append(*dst, cloneMap(item))
+			*dst = append(*dst, adapt.CloneMap(item))
 			continue
 		}
 		if ids[id] {
 			return fmt.Errorf("duplicate %s id %q while merging %s", label, id, source)
 		}
 		ids[id] = true
-		*dst = append(*dst, cloneMap(item))
+		*dst = append(*dst, adapt.CloneMap(item))
 	}
 	return nil
 }
 
-func appendUniqueStudioCameras(dst *[]studioCameraScript, src []studioCameraScript, source string) error {
+func appendUniqueStudioCameras(dst *[]schema.StudioCameraScript, src []schema.StudioCameraScript, source string) error {
 	ids := map[string]bool{}
 	for _, camera := range *dst {
 		if camera.ID != "" {
@@ -214,12 +171,12 @@ func appendUniqueStudioCameras(dst *[]studioCameraScript, src []studioCameraScri
 			}
 			ids[camera.ID] = true
 		}
-		*dst = append(*dst, cloneStudioCamera(camera))
+		*dst = append(*dst, adapt.CloneStudioCamera(camera))
 	}
 	return nil
 }
 
-func mergeStudioRenderScript(base, override studioRenderScript) studioRenderScript {
+func mergeStudioRenderScript(base, override schema.StudioRenderScript) schema.StudioRenderScript {
 	result := base
 	if override.Dimension > 0 {
 		result.Dimension = override.Dimension

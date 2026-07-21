@@ -1,4 +1,4 @@
-package main
+package storage
 
 import (
 	"encoding/json"
@@ -9,10 +9,12 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/Algo2147483647/ray/studio/schema"
 )
 
-func writeIntermediateScript(script *intermediateScript, source []string) (string, error) {
-	root, err := repoRoot()
+func WriteIntermediateScript(script *schema.IntermediateScript, source []string) (string, error) {
+	root, err := RepoRoot()
 	if err != nil {
 		return "", err
 	}
@@ -49,12 +51,12 @@ func intermediateName(source []string) string {
 	return fmt.Sprintf("%s.studio.%08x.json", sanitizeFilename(base), hash.Sum32())
 }
 
-func repoRoot() (string, error) {
+func RepoRoot() (string, error) {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
 		return "", errors.New("resolve studio source path")
 	}
-	return filepath.Abs(filepath.Join(filepath.Dir(filename), ".."))
+	return filepath.Abs(filepath.Join(filepath.Dir(filename), "..", ".."))
 }
 
 func sanitizeFilename(value string) string {

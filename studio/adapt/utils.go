@@ -1,4 +1,4 @@
-package main
+package adapt
 
 import (
 	"encoding/json"
@@ -36,6 +36,10 @@ func cloneMap(value map[string]interface{}) map[string]interface{} {
 	return result
 }
 
+func CloneMap(value map[string]interface{}) map[string]interface{} {
+	return cloneMap(value)
+}
+
 func deepClone(value interface{}) interface{} {
 	switch v := value.(type) {
 	case map[string]interface{}:
@@ -62,6 +66,10 @@ func stringField(object map[string]interface{}, key string) (string, bool) {
 	}
 	value, ok := raw.(string)
 	return value, ok && value != ""
+}
+
+func StringField(object map[string]interface{}, key string) (string, bool) {
+	return stringField(object, key)
 }
 
 func objectID(object map[string]interface{}, index int) string {

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+
+	"github.com/Algo2147483647/ray/studio/schema"
 )
 
 const defaultScriptPath = "../examples/scenes/default.json"
@@ -158,7 +160,7 @@ func (c studioConfig) engineArgs(scriptPath string) []string {
 	return args
 }
 
-func resolveDimension(script *studioScript, config studioConfig) int {
+func resolveDimension(script *schema.StudioScript, config studioConfig) int {
 	if config.dimension > 0 {
 		return config.dimension
 	}

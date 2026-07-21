@@ -1,4 +1,4 @@
-package main
+package adapt
 
 import (
 	"fmt"
@@ -16,33 +16,6 @@ const (
 	defaultStudioFieldOfView = 100.0
 	defaultStudioAspectRatio = 1.0
 )
-
-type studioCameraScript struct {
-	ID           string      `json:"id"`
-	Type         string      `json:"type"`
-	Position     []float64   `json:"position"`
-	LookAt       []float64   `json:"look_at"`
-	Direction    []float64   `json:"direction"`
-	Up           []float64   `json:"up"`
-	Widths       []int       `json:"widths"`
-	FieldOfView  float64     `json:"field_of_view"`
-	FieldOfViews []float64   `json:"field_of_views"`
-	Coordinates  [][]float64 `json:"coordinates"`
-	AspectRatio  float64     `json:"aspect_ratio"`
-	Ortho        bool        `json:"ortho"`
-}
-
-type engineCameraScript struct {
-	ID           string      `json:"id,omitempty"`
-	Type         string      `json:"type,omitempty"`
-	Position     []float64   `json:"position,omitempty"`
-	Direction    []float64   `json:"direction,omitempty"`
-	Up           []float64   `json:"up,omitempty"`
-	Widths       []int       `json:"widths,omitempty"`
-	FieldOfViews []float64   `json:"field_of_views,omitempty"`
-	Coordinates  [][]float64 `json:"coordinates,omitempty"`
-	Ortho        bool        `json:"ortho,omitempty"`
-}
 
 func adaptCameras(cameraDefs []studioCameraScript, dimension int) ([]engineCameraScript, error) {
 	if len(cameraDefs) == 0 {
@@ -245,6 +218,10 @@ func cloneStudioCamera(def studioCameraScript) studioCameraScript {
 		}
 	}
 	return camera
+}
+
+func CloneStudioCamera(def studioCameraScript) studioCameraScript {
+	return cloneStudioCamera(def)
 }
 
 func displayCameraType(value string) string {
