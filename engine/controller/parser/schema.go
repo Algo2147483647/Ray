@@ -1,9 +1,6 @@
 package parser
 
 import (
-	"encoding/json"
-	"fmt"
-
 	modelcamera "github.com/Algo2147483647/ray/engine/model/camera"
 )
 
@@ -27,27 +24,6 @@ type CameraScript struct {
 	FieldOfViews []float64              `json:"field_of_views"` // Per-frame field-of-view values.
 	Coordinates  [][]float64            `json:"coordinates"`    // Camera path or sampled positions.
 	Ortho        bool                   `json:"ortho"`          // Enables orthographic projection.
-}
-
-func (c *CameraScript) UnmarshalJSON(data []byte) error {
-	var raw map[string]json.RawMessage
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return err
-	}
-	if raw["width"] != nil {
-		return fmt.Errorf(`camera field "width" has been removed; set render.width instead`)
-	}
-	if raw["height"] != nil {
-		return fmt.Errorf(`camera field "height" has been removed; set render.height instead`)
-	}
-
-	type cameraScript CameraScript
-	var decoded cameraScript
-	if err := json.Unmarshal(data, &decoded); err != nil {
-		return err
-	}
-	*c = CameraScript(decoded)
-	return nil
 }
 
 type RenderScript struct {

@@ -1,7 +1,6 @@
 package factory
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/Algo2147483647/ray/engine/controller/parser"
@@ -12,10 +11,6 @@ import (
 )
 
 func ParseCameras(script *parser.Script) ([]modelcamera.Camera, error) {
-	if len(script.Cameras) == 0 {
-		return nil, errors.New("no cameras")
-	}
-
 	cameras := make([]modelcamera.Camera, 0, len(script.Cameras))
 	for idx, cameraDef := range script.Cameras {
 		parsedCamera, err := BuildCameraFromScript(cameraDef)
