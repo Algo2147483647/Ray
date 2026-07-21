@@ -56,14 +56,8 @@ func renderToMap(render studioRenderScript) map[string]interface{} {
 	if render.Height > 0 {
 		result["height"] = render.Height
 	}
-	if render.OutputImage != "" {
-		result["output_image"] = render.OutputImage
-	}
 	if render.OutputFilm != "" {
 		result["output_film"] = render.OutputFilm
-	}
-	if render.ResumeFilm != "" {
-		result["resume_film"] = render.ResumeFilm
 	}
 	if render.Exposure > 0 {
 		result["exposure"] = render.Exposure

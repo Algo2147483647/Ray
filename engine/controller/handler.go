@@ -8,7 +8,6 @@ import (
 	"github.com/Algo2147483647/ray/engine/model/camera"
 	"github.com/Algo2147483647/ray/engine/model/optics"
 	"github.com/Algo2147483647/ray/engine/ray_tracing"
-	"image/png"
 	"os"
 	"path/filepath"
 	"time"
@@ -112,8 +111,7 @@ func (h *Handler) RenderJobs(overrides RenderOverrides) *Handler {
 		}
 		h.ConfigureRenderConfig(config).
 			Render().
-			ResumeFilm().
-			SaveOutputs()
+			SaveFilm(h.Config.OutputFilm)
 		if h.err != nil {
 			return h
 		}
@@ -231,65 +229,6 @@ func renderColorSpace(value string) camera.FilmColorSpace {
 	}
 }
 
-func (h *Handler) SaveOutputs() *Handler {
-	if h.err != nil {
-		return h
-	}
-
-	if h.Config.OutputFilm != "" {
-		h.SaveFilm(h.Config.OutputFilm)
-	}
-
-	if h.Config.OutputImage != "" {
-		h.SaveImg(h.Config.OutputImage)
-	}
-
-	return h
-}
-
-func (h *Handler) ResumeFilm() *Handler {
-	if h.err != nil {
-		return h
-	}
-	if h.Config.ResumeFilm == "" {
-		return h
-	}
-
-	fmt.Printf("Merging existing film: %s\n", h.Config.ResumeFilm)
-	return h.MergeFilm(h.Config.ResumeFilm)
-}
-
-func (h *Handler) SaveImg(filename string) *Handler {
-	if h.err != nil {
-		return h
-	}
-
-	fmt.Printf("Saving result to: %s\n", filename)
-
-	if err := ensureParentDir(filename); err != nil {
-		h.err = err
-		return h
-	}
-
-	file, err := os.Create(filename)
-	if err != nil {
-		h.err = err
-		return h
-	}
-	defer file.Close()
-
-	img := h.Film.ToImageWithOptions(camera.ImageOptions{
-		Exposure:    h.Config.Exposure,
-		ToneMapping: camera.ToneMapping(h.Config.ToneMapping),
-		Gamma:       h.Config.Gamma,
-	})
-	if err := png.Encode(file, img); err != nil {
-		h.err = err
-	}
-
-	return h
-}
-
 func (h *Handler) SaveFilm(filename string) *Handler {
 	if h.err != nil {
 		return h
@@ -305,21 +244,6 @@ func (h *Handler) SaveFilm(filename string) *Handler {
 		return h
 	}
 
-	return h
-}
-
-func (h *Handler) MergeFilm(filename string) *Handler {
-	if h.err != nil {
-		return h
-	}
-
-	t := camera.NewFilm(h.Film.Data[0].Shape...)
-	if err := t.LoadFromFile(filename); err != nil {
-		h.err = err
-		return h
-	}
-
-	h.Film.Merge(t)
 	return h
 }
 

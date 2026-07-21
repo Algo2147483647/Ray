@@ -50,26 +50,33 @@ func TestParseRenderOverridesRejectsMultiplePositionalScripts(t *testing.T) {
 	}
 }
 
+func TestParseRenderOverridesRejectsResumeFilm(t *testing.T) {
+	_, err := ParseRenderOverrides([]string{"--resume-film", "existing.bin"})
+	if err == nil {
+		t.Fatal("expected engine resume-film flag to fail; studio owns film resume")
+	}
+}
+
 func TestResolveRenderConfigsExpandsRenderJobs(t *testing.T) {
 	configs := ResolveRenderConfigs(&parser.Script{
 		Render: parser.RenderScript{
-			Samples:     8,
-			Width:       320,
-			OutputImage: "base.png",
+			Samples:    8,
+			Width:      320,
+			OutputFilm: "base.bin",
 		},
 		Renders: []parser.RenderScript{
-			{OutputImage: "front.png"},
-			{Samples: 32, OutputImage: "detail.png"},
+			{OutputFilm: "front.bin"},
+			{Samples: 32, OutputFilm: "detail.bin"},
 		},
 	}, RenderOverrides{CameraIndex: -1})
 
 	if len(configs) != 2 {
 		t.Fatalf("expected two render configs, got %d", len(configs))
 	}
-	if configs[0].Samples != 8 || configs[0].Width != 320 || configs[0].OutputImage != "front.png" {
+	if configs[0].Samples != 8 || configs[0].Width != 320 || configs[0].OutputFilm != "front.bin" {
 		t.Fatalf("unexpected first render config: %+v", configs[0])
 	}
-	if configs[1].Samples != 32 || configs[1].Width != 320 || configs[1].OutputImage != "detail.png" {
+	if configs[1].Samples != 32 || configs[1].Width != 320 || configs[1].OutputFilm != "detail.bin" {
 		t.Fatalf("unexpected second render config: %+v", configs[1])
 	}
 }
@@ -81,8 +88,8 @@ func TestResolveRenderConfigsRenderJobInheritsCameraIndexWhenOmitted(t *testing.
 			CameraIndexSet: true,
 		},
 		Renders: []parser.RenderScript{
-			{OutputImage: "inherited.png"},
-			{CameraIndex: 0, CameraIndexSet: true, OutputImage: "override.png"},
+			{OutputFilm: "inherited.bin"},
+			{CameraIndex: 0, CameraIndexSet: true, OutputFilm: "override.bin"},
 		},
 	}, RenderOverrides{CameraIndex: -1})
 

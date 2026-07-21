@@ -58,9 +58,7 @@ type RenderScript struct {
 	CameraIndexSet    bool    `json:"-"`
 	Width             int     `json:"width"`
 	Height            int     `json:"height"`
-	OutputImage       string  `json:"output_image"`
 	OutputFilm        string  `json:"output_film"`
-	ResumeFilm        string  `json:"resume_film"`
 	Exposure          float64 `json:"exposure"`
 	ToneMapping       string  `json:"tone_mapping"`
 	Gamma             float64 `json:"gamma"`

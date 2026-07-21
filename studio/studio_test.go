@@ -266,6 +266,52 @@ func TestStudioAdaptsCameraLookAtFromRawFields(t *testing.T) {
 	assertDirectFloatSlice(t, camera.Direction, []float64{4, 0, -1})
 }
 
+func TestStudioDoesNotEmitResumeFilmToIntermediateScript(t *testing.T) {
+	script := &studioScript{
+		Render: studioRenderScript{
+			OutputFilm:  "final.bin",
+			OutputImage: "final.png",
+			ResumeFilm:  "existing.bin",
+		},
+	}
+
+	adapted, err := adaptScript(script, []string{"scene.json"}, 3)
+	if err != nil {
+		t.Fatalf("adapt script: %v", err)
+	}
+	if _, ok := adapted.Render["resume_film"]; ok {
+		t.Fatal("resume_film must stay in studio and not be emitted to engine intermediate scripts")
+	}
+	if _, ok := adapted.Render["output_image"]; ok {
+		t.Fatal("output_image must stay in studio and not be emitted to engine intermediate scripts")
+	}
+	if adapted.Render["output_film"] != "final.bin" {
+		t.Fatalf("expected output_film to remain in intermediate render config, got %v", adapted.Render["output_film"])
+	}
+}
+
+func TestStudioEngineArgsDoNotForwardResumeFilm(t *testing.T) {
+	config := studioConfig{
+		provided: map[string]bool{
+			"resume-film": true,
+			"output-film": true,
+		},
+		resumeFilm: "existing.bin",
+		outputFilm: "final.bin",
+	}
+
+	args := config.engineArgs("intermediate.json", "rendered.bin")
+	if containsString(args, "--resume-film") || containsString(args, "existing.bin") {
+		t.Fatalf("engine args must not contain resume-film: %v", args)
+	}
+	if !containsString(args, "--output-film") || !containsString(args, "rendered.bin") {
+		t.Fatalf("expected output-film override to point at rendered temp film: %v", args)
+	}
+	if containsString(args, "final.bin") {
+		t.Fatalf("final output film should be written by studio, not engine: %v", args)
+	}
+}
+
 func TestStudioRejectsUnequalHypercubeExtents(t *testing.T) {
 	script := &studioScript{
 		Objects: []map[string]interface{}{
@@ -365,6 +411,15 @@ func TestStudioAdaptsCopiedGeometryBenchmarkMatrixExample(t *testing.T) {
 	if err := factory.LoadSceneFromScript(&engineScript, model.NewScene()); err != nil {
 		t.Fatalf("engine failed to load studio intermediate geometry benchmark scene: %v", err)
 	}
+}
+
+func containsString(values []string, target string) bool {
+	for _, value := range values {
+		if value == target {
+			return true
+		}
+	}
+	return false
 }
 
 func unitCubicCoefficients() []interface{} {

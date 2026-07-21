@@ -15,7 +15,6 @@ const (
 	defaultRenderWidth  = 400
 	defaultRenderHeight = 400
 	defaultSamples      = int64(20)
-	defaultOutputImage  = "../../outputs/output.png"
 	defaultOutputFilm   = "../../outputs/img.bin"
 )
 
@@ -28,9 +27,7 @@ type RenderOverrides struct {
 	Width             int
 	Height            int
 	Samples           int64
-	OutputImage       string
 	OutputFilm        string
-	ResumeFilm        string
 	Exposure          float64
 	ToneMapping       string
 	Gamma             float64
@@ -47,9 +44,7 @@ type RenderConfig struct {
 	Width             int
 	Height            int
 	Samples           int64
-	OutputImage       string
 	OutputFilm        string
-	ResumeFilm        string
 	Exposure          float64
 	ToneMapping       string
 	Gamma             float64
@@ -73,9 +68,7 @@ func ParseRenderOverrides(args []string) (RenderOverrides, error) {
 	flagSet.IntVar(&overrides.Width, "width", 0, "output width")
 	flagSet.IntVar(&overrides.Height, "height", 0, "output height")
 	flagSet.Int64Var(&overrides.Samples, "samples", 0, "samples per pixel")
-	flagSet.StringVar(&overrides.OutputImage, "output-image", "", "output image path")
 	flagSet.StringVar(&overrides.OutputFilm, "output-film", "", "output film path")
-	flagSet.StringVar(&overrides.ResumeFilm, "resume-film", "", "existing film path to merge before saving outputs")
 	flagSet.Float64Var(&overrides.Exposure, "exposure", 0, "output exposure multiplier")
 	flagSet.StringVar(&overrides.ToneMapping, "tone-mapping", "", "output tone mapping: linear, reinhard, aces")
 	flagSet.Float64Var(&overrides.Gamma, "gamma", 0, "output gamma, for example 2.2")
@@ -142,7 +135,6 @@ func ResolveRenderConfig(script *parser.Script, overrides RenderOverrides) Rende
 		CameraIndex:       0,
 		ThreadNum:         runtime.NumCPU(),
 		Samples:           defaultSamples,
-		OutputImage:       defaultOutputImage,
 		OutputFilm:        defaultOutputFilm,
 		Exposure:          1,
 		ToneMapping:       string(camera.ToneMappingLinear),
@@ -171,14 +163,8 @@ func ResolveRenderConfig(script *parser.Script, overrides RenderOverrides) Rende
 		if script.Render.Samples > 0 {
 			config.Samples = script.Render.Samples
 		}
-		if script.Render.OutputImage != "" {
-			config.OutputImage = script.Render.OutputImage
-		}
 		if script.Render.OutputFilm != "" {
 			config.OutputFilm = script.Render.OutputFilm
-		}
-		if script.Render.ResumeFilm != "" {
-			config.ResumeFilm = script.Render.ResumeFilm
 		}
 		if script.Render.Exposure > 0 {
 			config.Exposure = script.Render.Exposure
@@ -220,14 +206,8 @@ func ResolveRenderConfig(script *parser.Script, overrides RenderOverrides) Rende
 	if overrides.Samples > 0 {
 		config.Samples = overrides.Samples
 	}
-	if overrides.OutputImage != "" {
-		config.OutputImage = overrides.OutputImage
-	}
 	if overrides.OutputFilm != "" {
 		config.OutputFilm = overrides.OutputFilm
-	}
-	if overrides.ResumeFilm != "" {
-		config.ResumeFilm = overrides.ResumeFilm
 	}
 	if overrides.Exposure > 0 {
 		config.Exposure = overrides.Exposure
@@ -294,14 +274,8 @@ func applyRenderScriptToConfig(config RenderConfig, render parser.RenderScript) 
 	if render.Samples > 0 {
 		config.Samples = render.Samples
 	}
-	if render.OutputImage != "" {
-		config.OutputImage = render.OutputImage
-	}
 	if render.OutputFilm != "" {
 		config.OutputFilm = render.OutputFilm
-	}
-	if render.ResumeFilm != "" {
-		config.ResumeFilm = render.ResumeFilm
 	}
 	if render.Exposure > 0 {
 		config.Exposure = render.Exposure
@@ -348,14 +322,8 @@ func applyRenderOverridesToConfig(config RenderConfig, overrides RenderOverrides
 	if overrides.Samples > 0 {
 		config.Samples = overrides.Samples
 	}
-	if overrides.OutputImage != "" {
-		config.OutputImage = overrides.OutputImage
-	}
 	if overrides.OutputFilm != "" {
 		config.OutputFilm = overrides.OutputFilm
-	}
-	if overrides.ResumeFilm != "" {
-		config.ResumeFilm = overrides.ResumeFilm
 	}
 	if overrides.Exposure > 0 {
 		config.Exposure = overrides.Exposure

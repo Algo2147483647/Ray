@@ -9,7 +9,11 @@ import (
 	"github.com/Algo2147483647/ray/studio/schema"
 )
 
-const defaultScriptPath = "../examples/scenes/default.json"
+const (
+	defaultScriptPath        = "../examples/scenes/default.json"
+	defaultEngineOutputImage = "../../outputs/output.png"
+	defaultEngineOutputFilm  = "../../outputs/img.bin"
+)
 
 type studioConfig struct {
 	scriptPaths       []string
@@ -110,7 +114,7 @@ func parseStudioConfig(args []string) (studioConfig, error) {
 	return config, nil
 }
 
-func (c studioConfig) engineArgs(scriptPath string) []string {
+func (c studioConfig) engineArgs(scriptPath, outputFilmOverride string) []string {
 	args := []string{"--script", scriptPath}
 	if c.provided["dimension"] {
 		args = append(args, "--dimension", strconv.Itoa(c.dimension))
@@ -130,14 +134,10 @@ func (c studioConfig) engineArgs(scriptPath string) []string {
 	if c.provided["samples"] {
 		args = append(args, "--samples", strconv.FormatInt(c.samples, 10))
 	}
-	if c.provided["output-image"] {
-		args = append(args, "--output-image", c.outputImage)
-	}
-	if c.provided["output-film"] {
+	if outputFilmOverride != "" {
+		args = append(args, "--output-film", outputFilmOverride)
+	} else if c.provided["output-film"] {
 		args = append(args, "--output-film", c.outputFilm)
-	}
-	if c.provided["resume-film"] {
-		args = append(args, "--resume-film", c.resumeFilm)
 	}
 	if c.provided["exposure"] {
 		args = append(args, "--exposure", strconv.FormatFloat(c.exposure, 'g', -1, 64))

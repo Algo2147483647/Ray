@@ -1,12 +1,12 @@
 package controller
 
 import (
-	"image/png"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/Algo2147483647/ray/engine/controller/parser"
+	"github.com/Algo2147483647/ray/engine/model/camera"
 )
 
 func TestNonEuclideanCanonicalSceneLoadsAndRendersSmokeFrame(t *testing.T) {
@@ -67,7 +67,7 @@ func TestNonEuclideanCanonicalSceneLoadsAndRendersSmokeFrame(t *testing.T) {
 		t.Fatal("expected matte material")
 	}
 
-	outputImage := filepath.Join(t.TempDir(), "gallery-smoke.png")
+	outputFilm := filepath.Join(t.TempDir(), "gallery-smoke.bin")
 	handler := NewHandler().
 		LoadScript(scenePath).
 		ConfigureRender(RenderOverrides{
@@ -76,8 +76,7 @@ func TestNonEuclideanCanonicalSceneLoadsAndRendersSmokeFrame(t *testing.T) {
 			Width:       12,
 			Height:      12,
 			Samples:     1,
-			OutputImage: outputImage,
-			OutputFilm:  "",
+			OutputFilm:  outputFilm,
 		}).
 		Render().
 		SaveOutputs()
@@ -85,18 +84,12 @@ func TestNonEuclideanCanonicalSceneLoadsAndRendersSmokeFrame(t *testing.T) {
 		t.Fatalf("smoke render failed: %v", handler.err)
 	}
 
-	file, err := os.Open(outputImage)
-	if err != nil {
-		t.Fatalf("open smoke render: %v", err)
+	film := camera.NewFilm()
+	if err := film.LoadFromFile(outputFilm); err != nil {
+		t.Fatalf("load smoke render film: %v", err)
 	}
-	defer file.Close()
-
-	config, err := png.DecodeConfig(file)
-	if err != nil {
-		t.Fatalf("decode smoke render: %v", err)
-	}
-	if config.Width != 12 || config.Height != 12 {
-		t.Fatalf("expected 12x12 smoke render, got %dx%d", config.Width, config.Height)
+	if len(film.Data[0].Shape) != 2 || film.Data[0].Shape[0] != 12 || film.Data[0].Shape[1] != 12 {
+		t.Fatalf("expected 12x12 smoke render film, got shape %v", film.Data[0].Shape)
 	}
 }
 
