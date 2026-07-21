@@ -300,7 +300,7 @@ func TestStudioEngineArgsDoNotForwardResumeFilm(t *testing.T) {
 		outputFilm: "final.bin",
 	}
 
-	args := config.engineArgs("intermediate.json", "rendered.bin")
+	args := config.engineArgs("intermediate.json", "rendered.bin", 0)
 	if containsString(args, "--resume-film") || containsString(args, "existing.bin") {
 		t.Fatalf("engine args must not contain resume-film: %v", args)
 	}
@@ -309,6 +309,59 @@ func TestStudioEngineArgsDoNotForwardResumeFilm(t *testing.T) {
 	}
 	if containsString(args, "final.bin") {
 		t.Fatalf("final output film should be written by studio, not engine: %v", args)
+	}
+}
+
+func TestParseStudioConfigRequiresEndlessCheckpointSettings(t *testing.T) {
+	_, err := parseStudioConfig([]string{"--endless", "--checkpoint-dir", "checkpoints"})
+	if err == nil {
+		t.Fatal("expected endless mode without checkpoint interval to fail")
+	}
+
+	_, err = parseStudioConfig([]string{"--endless", "--checkpoint-interval", "100"})
+	if err == nil {
+		t.Fatal("expected endless mode without checkpoint dir to fail")
+	}
+}
+
+func TestParseStudioConfigSupportsEndlessResumeCheckpoint(t *testing.T) {
+	config, err := parseStudioConfig([]string{
+		"--endless",
+		"--checkpoint-interval", "100",
+		"--checkpoint-dir", "checkpoints",
+		"--start-iteration", "300",
+		"--resume-film", "checkpoints/iteration-000000300.bin",
+	})
+	if err != nil {
+		t.Fatalf("parse endless config: %v", err)
+	}
+	if !config.endless || config.checkpointInterval != 100 || config.startIteration != 300 {
+		t.Fatalf("unexpected endless config: %+v", config)
+	}
+}
+
+func TestStudioEngineArgsUsesEndlessSampleOverride(t *testing.T) {
+	config := studioConfig{
+		provided: map[string]bool{"samples": true},
+		samples:  10,
+	}
+
+	args := config.engineArgs("intermediate.json", "checkpoint.bin", 100)
+	if !containsString(args, "--samples") || !containsString(args, "100") {
+		t.Fatalf("expected endless sample override in engine args: %v", args)
+	}
+	if containsString(args, "10") {
+		t.Fatalf("configured samples should not override endless interval: %v", args)
+	}
+}
+
+func TestCheckpointPathsUseIterationNames(t *testing.T) {
+	filmPath, imagePath := checkpointPaths("checkpoints", 100)
+	if filepath.Base(filmPath) != "iteration-000000000100.bin" {
+		t.Fatalf("unexpected checkpoint film path: %s", filmPath)
+	}
+	if filepath.Base(imagePath) != "iteration-000000000100.png" {
+		t.Fatalf("unexpected checkpoint image path: %s", imagePath)
 	}
 }
 

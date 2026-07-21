@@ -49,9 +49,16 @@ func run(args []string) int {
 		fmt.Printf("Error: enter engine directory: %v\n", err)
 		return 1
 	}
+	if config.endless {
+		if err := runEndless(outputPath, script, config); err != nil {
+			fmt.Printf("Error: %v\n", err)
+			return 1
+		}
+		return 0
+	}
 	resumeFilm := resolveResumeFilm(script, config)
 	if resumeFilm == "" {
-		code := controller.Run(config.engineArgs(outputPath, ""))
+		code := controller.Run(config.engineArgs(outputPath, "", 0))
 		if code != 0 {
 			return code
 		}
@@ -62,19 +69,14 @@ func run(args []string) int {
 		return 0
 	}
 
-	tempFilm, err := os.CreateTemp("", "ray-studio-render-*.bin")
+	tempFilmPath, err := createTempFilmPath()
 	if err != nil {
-		fmt.Printf("Error: create temporary film: %v\n", err)
-		return 1
-	}
-	tempFilmPath := tempFilm.Name()
-	if err := tempFilm.Close(); err != nil {
-		fmt.Printf("Error: close temporary film: %v\n", err)
+		fmt.Printf("Error: %v\n", err)
 		return 1
 	}
 	defer os.Remove(tempFilmPath)
 
-	code := controller.Run(config.engineArgs(outputPath, tempFilmPath))
+	code := controller.Run(config.engineArgs(outputPath, tempFilmPath, 0))
 	if code != 0 {
 		return code
 	}
@@ -91,6 +93,75 @@ func run(args []string) int {
 		return 1
 	}
 	return 0
+}
+
+func runEndless(scriptPath string, script *schema.StudioScript, config studioConfig) error {
+	if script != nil && len(script.Renders) > 0 {
+		return fmt.Errorf("endless mode supports a single render; remove renders or run them separately")
+	}
+	if err := os.MkdirAll(config.checkpointDir, 0o755); err != nil {
+		return fmt.Errorf("create checkpoint directory %q: %w", config.checkpointDir, err)
+	}
+
+	currentIteration := config.startIteration
+	currentFilm := resolveResumeFilm(script, config)
+	fmt.Printf("Studio endless mode: +%d samples per checkpoint -> %s\n", config.checkpointInterval, config.checkpointDir)
+	if currentFilm != "" {
+		fmt.Printf("Studio resuming endless mode from iteration %d: %s\n", currentIteration, currentFilm)
+	}
+
+	for {
+		nextIteration := currentIteration + config.checkpointInterval
+		checkpointFilm, checkpointImage := checkpointPaths(config.checkpointDir, nextIteration)
+		tempFilmPath, err := createTempFilmPath()
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Studio endless checkpoint %d: rendering %d samples\n", nextIteration, config.checkpointInterval)
+		code := controller.Run(config.engineArgs(scriptPath, tempFilmPath, config.checkpointInterval))
+		if code != 0 {
+			os.Remove(tempFilmPath)
+			return fmt.Errorf("engine render failed with exit code %d", code)
+		}
+
+		if currentFilm == "" {
+			err = studiofilm.CopyFilmFile(tempFilmPath, checkpointFilm)
+		} else {
+			err = studiofilm.MergeFilmFiles(currentFilm, tempFilmPath, checkpointFilm)
+		}
+		os.Remove(tempFilmPath)
+		if err != nil {
+			return err
+		}
+
+		output := studioRenderOutputFromScript(baseStudioRender(script), config, checkpointFilm)
+		output.ImagePath = checkpointImage
+		if err := writeStudioImages([]studioRenderOutput{output}); err != nil {
+			return err
+		}
+		fmt.Printf("Studio saved checkpoint: %s and %s\n", checkpointFilm, checkpointImage)
+
+		currentIteration = nextIteration
+		currentFilm = checkpointFilm
+	}
+}
+
+func createTempFilmPath() (string, error) {
+	tempFilm, err := os.CreateTemp("", "ray-studio-render-*.bin")
+	if err != nil {
+		return "", fmt.Errorf("create temporary film: %w", err)
+	}
+	tempFilmPath := tempFilm.Name()
+	if err := tempFilm.Close(); err != nil {
+		return "", fmt.Errorf("close temporary film: %w", err)
+	}
+	return tempFilmPath, nil
+}
+
+func checkpointPaths(dir string, iteration int64) (string, string) {
+	stem := fmt.Sprintf("iteration-%012d", iteration)
+	return filepath.Join(dir, stem+".bin"), filepath.Join(dir, stem+".png")
 }
 
 type studioRenderOutput struct {
@@ -130,10 +201,7 @@ func resolveOutputFilm(script *schema.StudioScript, config studioConfig) string 
 }
 
 func resolveRenderOutputs(script *schema.StudioScript, config studioConfig, outputFilmOverride string) []studioRenderOutput {
-	base := schema.StudioRenderScript{}
-	if script != nil {
-		base = script.Render
-	}
+	base := baseStudioRender(script)
 
 	if script != nil && len(script.Renders) > 0 {
 		outputs := make([]studioRenderOutput, 0, len(script.Renders))
@@ -143,6 +211,13 @@ func resolveRenderOutputs(script *schema.StudioScript, config studioConfig, outp
 		return outputs
 	}
 	return []studioRenderOutput{studioRenderOutputFromScript(base, config, outputFilmOverride)}
+}
+
+func baseStudioRender(script *schema.StudioScript) schema.StudioRenderScript {
+	if script != nil {
+		return script.Render
+	}
+	return schema.StudioRenderScript{}
 }
 
 func applyStudioRenderOverride(base, override schema.StudioRenderScript) schema.StudioRenderScript {

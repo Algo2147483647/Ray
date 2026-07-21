@@ -16,23 +16,27 @@ const (
 )
 
 type studioConfig struct {
-	scriptPaths       []string
-	provided          map[string]bool
-	dimension         int
-	cameraIndex       int
-	threadNum         int
-	width             int
-	height            int
-	samples           int64
-	outputImage       string
-	outputFilm        string
-	resumeFilm        string
-	exposure          float64
-	toneMapping       string
-	gamma             float64
-	spectrumMode      string
-	wavelengthSamples int
-	colorSpace        string
+	scriptPaths        []string
+	provided           map[string]bool
+	dimension          int
+	cameraIndex        int
+	threadNum          int
+	width              int
+	height             int
+	samples            int64
+	outputImage        string
+	outputFilm         string
+	resumeFilm         string
+	endless            bool
+	checkpointInterval int64
+	checkpointDir      string
+	startIteration     int64
+	exposure           float64
+	toneMapping        string
+	gamma              float64
+	spectrumMode       string
+	wavelengthSamples  int
+	colorSpace         string
 }
 
 type stringListFlag []string
@@ -65,6 +69,10 @@ func parseStudioConfig(args []string) (studioConfig, error) {
 	flagSet.StringVar(&config.outputImage, "output-image", "", "output image path")
 	flagSet.StringVar(&config.outputFilm, "output-film", "", "output film path")
 	flagSet.StringVar(&config.resumeFilm, "resume-film", "", "existing film path to merge before saving outputs")
+	flagSet.BoolVar(&config.endless, "endless", false, "render forever and save periodic film and image checkpoints")
+	flagSet.Int64Var(&config.checkpointInterval, "checkpoint-interval", 0, "samples to render between endless checkpoints")
+	flagSet.StringVar(&config.checkpointDir, "checkpoint-dir", "", "directory for endless film and image checkpoints")
+	flagSet.Int64Var(&config.startIteration, "start-iteration", 0, "sample iteration count represented by resume-film")
 	flagSet.Float64Var(&config.exposure, "exposure", 0, "output exposure multiplier")
 	flagSet.StringVar(&config.toneMapping, "tone-mapping", "", "output tone mapping: linear, reinhard, aces")
 	flagSet.Float64Var(&config.gamma, "gamma", 0, "output gamma, for example 2.2")
@@ -102,6 +110,23 @@ func parseStudioConfig(args []string) (studioConfig, error) {
 	if config.samples < 0 {
 		return studioConfig{}, fmt.Errorf("samples must be >= 0")
 	}
+	if config.checkpointInterval < 0 {
+		return studioConfig{}, fmt.Errorf("checkpoint-interval must be >= 0")
+	}
+	if config.startIteration < 0 {
+		return studioConfig{}, fmt.Errorf("start-iteration must be >= 0")
+	}
+	if config.endless {
+		if config.checkpointInterval <= 0 {
+			return studioConfig{}, fmt.Errorf("checkpoint-interval must be > 0 when endless mode is enabled")
+		}
+		if config.checkpointDir == "" {
+			return studioConfig{}, fmt.Errorf("checkpoint-dir is required when endless mode is enabled")
+		}
+		if config.startIteration > 0 && config.resumeFilm == "" {
+			return studioConfig{}, fmt.Errorf("resume-film is required when start-iteration is > 0")
+		}
+	}
 	if config.exposure < 0 {
 		return studioConfig{}, fmt.Errorf("exposure must be >= 0")
 	}
@@ -114,7 +139,7 @@ func parseStudioConfig(args []string) (studioConfig, error) {
 	return config, nil
 }
 
-func (c studioConfig) engineArgs(scriptPath, outputFilmOverride string) []string {
+func (c studioConfig) engineArgs(scriptPath, outputFilmOverride string, samplesOverride int64) []string {
 	args := []string{"--script", scriptPath}
 	if c.provided["dimension"] {
 		args = append(args, "--dimension", strconv.Itoa(c.dimension))
@@ -131,7 +156,9 @@ func (c studioConfig) engineArgs(scriptPath, outputFilmOverride string) []string
 	if c.provided["height"] {
 		args = append(args, "--height", strconv.Itoa(c.height))
 	}
-	if c.provided["samples"] {
+	if samplesOverride > 0 {
+		args = append(args, "--samples", strconv.FormatInt(samplesOverride, 10))
+	} else if c.provided["samples"] {
 		args = append(args, "--samples", strconv.FormatInt(c.samples, 10))
 	}
 	if outputFilmOverride != "" {
