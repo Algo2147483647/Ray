@@ -49,6 +49,16 @@ func objectCenter(object map[string]interface{}, dimension int) ([]float64, erro
 	return nil, fmt.Errorf(`missing required field "center"`)
 }
 
+func optionalObjectCenter(object map[string]interface{}, dimension int, fallback []float64) ([]float64, error) {
+	if center, ok := object["center"]; ok {
+		return vectorValue("center", center, dimension)
+	}
+	if position, ok := object["position"]; ok {
+		return vectorValue("position", position, dimension)
+	}
+	return append([]float64(nil), fallback...), nil
+}
+
 func floatField(object map[string]interface{}, key string) (float64, error) {
 	raw, ok := object[key]
 	if !ok {

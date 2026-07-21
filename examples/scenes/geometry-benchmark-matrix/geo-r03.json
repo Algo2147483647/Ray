@@ -292,19 +292,14 @@
     },
     {
       "id": "geo-r03-c05",
-      "shape": "circle",
+      "shape": "sphere",
       "center": [
         1.44,
         -0.56,
         2.18
       ],
-      "normal": [
-        -0.75,
-        0.25,
-        0.6
-      ],
-      "r": 0.23,
-      "material_id": "amber-glass"
+      "r": 0.16,
+      "material_id": "clear-glass"
     },
     {
       "id": "geo-r03-c04",

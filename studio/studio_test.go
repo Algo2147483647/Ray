@@ -119,6 +119,42 @@ func TestChildFieldOverridesGroupInheritance(t *testing.T) {
 	}
 }
 
+func TestGroupDoesNotRequireMaterialID(t *testing.T) {
+	script := &studioScript{
+		Objects: []map[string]interface{}{
+			{
+				"id":     "g",
+				"shape":  "group",
+				"center": []interface{}{1, 2, 3},
+				"objects": []interface{}{
+					map[string]interface{}{
+						"id":          "child",
+						"shape":       "sphere",
+						"center":      []interface{}{0, 0, 0},
+						"r":           1,
+						"material_id": "child-material",
+					},
+				},
+			},
+		},
+	}
+
+	adapted, err := adaptScript(script, []string{"scene.json"}, 3)
+	if err != nil {
+		t.Fatalf("adapt group without material_id: %v", err)
+	}
+	if len(adapted.Objects) != 1 {
+		t.Fatalf("expected one flattened object, got %d", len(adapted.Objects))
+	}
+	object := adapted.Objects[0]
+	if object["id"] != "g/child" {
+		t.Fatalf("unexpected child id: %v", object["id"])
+	}
+	if object["material_id"] != "child-material" {
+		t.Fatalf("expected child material_id to be preserved, got %v", object["material_id"])
+	}
+}
+
 func TestStudioAdaptsTriangleCenterAndGroupPlacement(t *testing.T) {
 	script := &studioScript{
 		Objects: []map[string]interface{}{
@@ -152,6 +188,63 @@ func TestStudioAdaptsTriangleCenterAndGroupPlacement(t *testing.T) {
 	if _, ok := triangle["center"]; ok {
 		t.Fatal("triangle intermediate object should not keep center")
 	}
+}
+
+func TestStudioAdaptsBasicShapesWithGroupPlacement(t *testing.T) {
+	script := &studioScript{
+		Objects: []map[string]interface{}{
+			{
+				"id":     "g",
+				"shape":  "group",
+				"center": []interface{}{10, 0, 1},
+				"scale":  2,
+				"objects": []interface{}{
+					map[string]interface{}{
+						"id":     "ball",
+						"shape":  "sphere",
+						"center": []interface{}{1, 2, 3},
+						"r":      0.5,
+					},
+					map[string]interface{}{
+						"id":     "disk",
+						"shape":  "circle",
+						"center": []interface{}{0, 1, 0},
+						"normal": []interface{}{0, 0, 1},
+						"r":      0.25,
+					},
+					map[string]interface{}{
+						"id":     "tube",
+						"shape":  "cylinder",
+						"center": []interface{}{0, 0, 1},
+						"axis":   []interface{}{0, 0, 1},
+						"r":      0.1,
+						"height": 0.75,
+					},
+				},
+			},
+		},
+	}
+
+	adapted, err := adaptScript(script, []string{"scene.json"}, 3)
+	if err != nil {
+		t.Fatalf("adapt basic shapes: %v", err)
+	}
+	if len(adapted.Objects) != 3 {
+		t.Fatalf("expected three flattened objects, got %d", len(adapted.Objects))
+	}
+
+	sphere := adapted.Objects[0]
+	assertFloatSlice(t, sphere["center"], []float64{12, 4, 7})
+	assertFloatValue(t, sphere["r"], 1)
+
+	circle := adapted.Objects[1]
+	assertFloatSlice(t, circle["center"], []float64{10, 2, 1})
+	assertFloatValue(t, circle["r"], 0.5)
+
+	cylinder := adapted.Objects[2]
+	assertFloatSlice(t, cylinder["center"], []float64{10, 0, 3})
+	assertFloatValue(t, cylinder["r"], 0.2)
+	assertFloatValue(t, cylinder["height"], 1.5)
 }
 
 func TestStudioAdaptsCuboidPositionSizeToMinMax(t *testing.T) {
@@ -624,6 +717,17 @@ func assertDirectFloatSlice(t *testing.T, values, expected []float64) {
 		if math.Abs(values[i]-expected[i]) > 1e-10 {
 			t.Fatalf("index %d: expected %v, got %v", i, expected, values)
 		}
+	}
+}
+
+func assertFloatValue(t *testing.T, raw interface{}, expected float64) {
+	t.Helper()
+	value, ok := raw.(float64)
+	if !ok {
+		t.Fatalf("expected float64, got %T", raw)
+	}
+	if math.Abs(value-expected) > 1e-10 {
+		t.Fatalf("expected %v, got %v", expected, value)
 	}
 }
 

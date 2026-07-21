@@ -552,82 +552,36 @@
     },
     {
       "id": "geo-r02-c05",
-      "shape": "quadratic equation",
+      "shape": "sphere",
       "center": [
         1.72,
         -0.56,
         2.72
       ],
-      "a": [
-        30.8641975308642,
-        0,
-        0,
-        0,
-        30.8641975308642,
-        0,
-        0,
-        0,
-        -8.65051903114187
-      ],
-      "b": [
-        0,
-        0,
-        -2.94117647058902
-      ],
-      "c": -0.250000000001539,
-      "bounds": {
-        "pmin": [
-          1.54,
-          -0.74,
-          2.55
-        ],
-        "pmax": [
-          1.9,
-          -0.38,
-          2.89
-        ]
-      },
-      "material_id": "pearl"
+      "r": 0.16,
+      "material_id": "clear-glass"
     },
     {
       "id": "geo-r02-c04",
-      "shape": "triangle",
+      "shape": "sphere",
       "center": [
         1.72,
         0,
         2.72
       ],
-      "p1": [
-        0,
-        -0.24,
-        -0.18
-      ],
-      "p2": [
-        0,
-        0.24,
-        -0.18
-      ],
-      "p3": [
-        0,
-        0,
-        0.24
-      ],
-      "material_id": "fabric-teal"
+      "r": 0.16,
+      "material_id": "clear-glass"
     },
     {
       "id": "geo-r02-c03",
-      "shape": "cuboid",
+      "shape": "sphere",
       "center": [
         1.72,
         0.56,
         2.72
       ],
-      "size": [
-        0.42,
-        0.24,
-        0.2
-      ],
-      "material_id": "plastic-blue"
+      "r": 0.16,
+      "material_id": "clear-glass"
     },
     {
       "id": "geo-r02-c02",

@@ -16,7 +16,7 @@ func adaptObject(object map[string]interface{}, ctx groupContext, index, dimensi
 		adapted["id"] = joinID(ctx.idPrefix, objectID(object, index))
 	}
 	applyInheritedFields(adapted, ctx.fields)
-	if err := adaptBounds(adapted, dimension); err != nil {
+	if err := adaptBounds(adapted, ctx, dimension); err != nil {
 		return nil, err
 	}
 
@@ -28,19 +28,31 @@ func adaptObject(object map[string]interface{}, ctx groupContext, index, dimensi
 		return adaptCuboid(adapted, ctx, dimension)
 	case strings.EqualFold(shapeName, "triangle"):
 		return adaptTriangle(adapted, ctx, dimension)
+	case strings.EqualFold(shapeName, "sphere"),
+		strings.EqualFold(shapeName, "hypersphere"):
+		return adaptSphere(adapted, ctx, dimension)
+	case strings.EqualFold(shapeName, "circle"):
+		return adaptCircle(adapted, ctx, dimension)
+	case strings.EqualFold(shapeName, "cylinder"),
+		strings.EqualFold(shapeName, "finite cylinder"):
+		return adaptFiniteCylinder(adapted, ctx, dimension)
 	case strings.EqualFold(shapeName, "quadratic equation"):
 		return adaptQuadraticEquation(adapted, ctx, dimension)
 	case strings.EqualFold(shapeName, "cubic equation"):
 		return adaptCubicEquation(adapted, ctx, dimension)
 	case strings.EqualFold(shapeName, "four-order equation"):
 		return adaptFourOrderEquation(adapted, ctx, dimension)
+	case strings.EqualFold(shapeName, "implicit equation"):
+		return adaptImplicitEquation(adapted, ctx, dimension)
 	case strings.EqualFold(shapeName, "polynomial surface"):
 		return adaptPolynomialSurface(adapted, ctx, dimension)
+	case strings.EqualFold(shapeName, "stl"):
+		return adaptSTL(adapted, ctx, dimension)
 	}
 	return adapted, nil
 }
 
-func adaptBounds(object map[string]interface{}, dimension int) error {
+func adaptBounds(object map[string]interface{}, ctx groupContext, dimension int) error {
 	rawBounds, ok := object["bounds"]
 	if !ok {
 		return nil
@@ -65,6 +77,9 @@ func adaptBounds(object map[string]interface{}, dimension int) error {
 		if err := validateBoundsMinMax(pmin, pmax); err != nil {
 			return err
 		}
+		pmin, pmax = placedMinMax(ctx, pmin, pmax)
+		bounds["pmin"] = pmin
+		bounds["pmax"] = pmax
 		return nil
 	}
 
@@ -87,11 +102,23 @@ func adaptBounds(object map[string]interface{}, dimension int) error {
 		pmin[i] = center[i] - half
 		pmax[i] = center[i] + half
 	}
+	pmin, pmax = placedMinMax(ctx, pmin, pmax)
 	object["bounds"] = map[string]interface{}{
 		"pmin": pmin,
 		"pmax": pmax,
 	}
 	return nil
+}
+
+func placedMinMax(ctx groupContext, pmin, pmax []float64) ([]float64, []float64) {
+	worldPmin := applyPlacement(ctx, pmin)
+	worldPmax := applyPlacement(ctx, pmax)
+	for i := range worldPmin {
+		if worldPmin[i] > worldPmax[i] {
+			worldPmin[i], worldPmax[i] = worldPmax[i], worldPmin[i]
+		}
+	}
+	return worldPmin, worldPmax
 }
 
 func boundsCenter(bounds map[string]interface{}, dimension int) ([]float64, error) {
@@ -232,6 +259,94 @@ func adaptTriangle(object map[string]interface{}, ctx groupContext, dimension in
 	return adapted, nil
 }
 
+func adaptSphere(object map[string]interface{}, ctx groupContext, dimension int) (map[string]interface{}, error) {
+	center, err := optionalObjectCenter(object, dimension, zeroVector(dimension))
+	if err != nil {
+		return nil, err
+	}
+	radius, err := floatField(object, "r")
+	if err != nil {
+		return nil, err
+	}
+
+	adapted := cloneMap(object)
+	worldCenter := applyPlacement(ctx, center)
+	if scale, ok := uniformPlacementScale(ctx); ok || dimension != 3 {
+		if !ok {
+			return nil, fmt.Errorf("hypersphere does not support non-uniform group scale")
+		}
+		adapted["center"] = worldCenter
+		adapted["r"] = radius * scale
+		delete(adapted, "position")
+		return adapted, nil
+	}
+
+	a, b, c := ellipsoidQuadratic(worldCenter, ctx.scale, radius)
+	adapted["shape"] = "quadratic equation"
+	adapted["a"] = a
+	adapted["b"] = b
+	adapted["c"] = c
+	delete(adapted, "center")
+	delete(adapted, "position")
+	delete(adapted, "r")
+	delete(adapted, "scale")
+	delete(adapted, "basis")
+	return adapted, nil
+}
+
+func adaptCircle(object map[string]interface{}, ctx groupContext, dimension int) (map[string]interface{}, error) {
+	center, err := optionalObjectCenter(object, dimension, zeroVector(dimension))
+	if err != nil {
+		return nil, err
+	}
+	radius, err := floatField(object, "r")
+	if err != nil {
+		return nil, err
+	}
+	if _, err := vectorField(object, "normal", dimension); err != nil {
+		return nil, err
+	}
+	scale, ok := uniformPlacementScale(ctx)
+	if !ok {
+		return nil, fmt.Errorf("circle does not support non-uniform group scale")
+	}
+
+	adapted := cloneMap(object)
+	adapted["center"] = applyPlacement(ctx, center)
+	adapted["r"] = radius * scale
+	delete(adapted, "position")
+	return adapted, nil
+}
+
+func adaptFiniteCylinder(object map[string]interface{}, ctx groupContext, dimension int) (map[string]interface{}, error) {
+	center, err := optionalObjectCenter(object, dimension, zeroVector(dimension))
+	if err != nil {
+		return nil, err
+	}
+	radius, err := floatField(object, "r")
+	if err != nil {
+		return nil, err
+	}
+	height, err := floatField(object, "height")
+	if err != nil {
+		return nil, err
+	}
+	if _, err := vectorField(object, "axis", dimension); err != nil {
+		return nil, err
+	}
+	scale, ok := uniformPlacementScale(ctx)
+	if !ok {
+		return nil, fmt.Errorf("finite cylinder does not support non-uniform group scale")
+	}
+
+	adapted := cloneMap(object)
+	adapted["center"] = applyPlacement(ctx, center)
+	adapted["r"] = radius * scale
+	adapted["height"] = height * scale
+	delete(adapted, "position")
+	return adapted, nil
+}
+
 func adaptQuadraticEquation(object map[string]interface{}, ctx groupContext, dimension int) (map[string]interface{}, error) {
 	if dimension != 3 {
 		return nil, fmt.Errorf("quadratic equation adapter requires dimension 3, got %d", dimension)
@@ -342,6 +457,33 @@ func adaptFourOrderEquation(object map[string]interface{}, ctx groupContext, dim
 	return adapted, nil
 }
 
+func adaptImplicitEquation(object map[string]interface{}, ctx groupContext, dimension int) (map[string]interface{}, error) {
+	if dimension != 3 {
+		return nil, fmt.Errorf("implicit equation adapter requires dimension 3, got %d", dimension)
+	}
+
+	localCenter, err := optionalVector(object, "center", dimension, zeroVector(dimension))
+	if err != nil {
+		return nil, err
+	}
+	localScale, err := optionalScale(object, "scale", dimension, unitVector(dimension))
+	if err != nil {
+		return nil, err
+	}
+
+	worldCenter := make([]float64, dimension)
+	worldScale := make([]float64, dimension)
+	for i := 0; i < dimension; i++ {
+		worldCenter[i] = ctx.center[i] + ctx.scale[i]*localCenter[i]
+		worldScale[i] = ctx.scale[i] * localScale[i]
+	}
+
+	adapted := cloneMap(object)
+	adapted["center"] = worldCenter
+	adapted["scale"] = worldScale
+	return adapted, nil
+}
+
 func adaptPolynomialSurface(object map[string]interface{}, ctx groupContext, dimension int) (map[string]interface{}, error) {
 	if dimension != 3 {
 		return nil, fmt.Errorf("polynomial surface adapter requires dimension 3, got %d", dimension)
@@ -375,4 +517,57 @@ func adaptPolynomialSurface(object map[string]interface{}, ctx groupContext, dim
 	delete(adapted, "scale")
 	delete(adapted, "basis")
 	return adapted, nil
+}
+
+func adaptSTL(object map[string]interface{}, ctx groupContext, dimension int) (map[string]interface{}, error) {
+	if dimension != 3 {
+		return nil, fmt.Errorf("stl adapter requires dimension 3, got %d", dimension)
+	}
+	center, err := objectCenter(object, dimension)
+	if err != nil {
+		return nil, err
+	}
+	localScale, err := vectorField(object, "scale", dimension)
+	if err != nil {
+		return nil, err
+	}
+	groupScale, ok := uniformPlacementScale(ctx)
+	if !ok {
+		return nil, fmt.Errorf("stl does not support non-uniform group scale")
+	}
+
+	worldScale := make([]float64, dimension)
+	for i := range worldScale {
+		worldScale[i] = groupScale * localScale[i]
+	}
+
+	adapted := cloneMap(object)
+	adapted["center"] = applyPlacement(ctx, center)
+	adapted["scale"] = worldScale
+	delete(adapted, "position")
+	return adapted, nil
+}
+
+func uniformPlacementScale(ctx groupContext) (float64, bool) {
+	scale := ctx.scale[0]
+	for i := 1; i < ctx.dimension; i++ {
+		if !nearlyEqual(ctx.scale[i], scale) {
+			return 0, false
+		}
+	}
+	return scale, true
+}
+
+func ellipsoidQuadratic(center, scale []float64, radius float64) ([]float64, []float64, float64) {
+	a := make([]float64, 9)
+	b := make([]float64, 3)
+	c := -1.0
+	for axis := 0; axis < 3; axis++ {
+		axisScale := scale[axis] * radius
+		coefficient := 1 / (axisScale * axisScale)
+		a[axis*3+axis] = coefficient
+		b[axis] = -2 * center[axis] * coefficient
+		c += center[axis] * center[axis] * coefficient
+	}
+	return a, b, c
 }

@@ -205,13 +205,13 @@ group objects.
   "shape": "group",
   "center": [2, 0, 0],
   "scale": 2,
-  "material_id": "glass",
   "objects": [
     {
       "id": "ball",
       "shape": "sphere",
       "center": [1, 0, 0],
-      "r": 0.5
+      "r": 0.5,
+      "material_id": "glass"
     }
   ]
 }
@@ -227,7 +227,12 @@ id: prefixes child ids as group/child
 material_id, medium_id, emission_id, bounds: inherited by children unless overridden
 ```
 
-Groups may nest. Studio flattens every group before engine execution.
+Groups may omit `material_id`; only the final flattened renderable objects need
+materials. Groups may nest. Studio applies group placement to child geometry and
+flattens every group before engine execution. Primitives that cannot represent
+non-uniform scaling without changing type, such as circles, cylinders, and STL
+meshes, require uniform group scale. In 3D, a non-uniformly scaled sphere is
+converted to an equivalent `quadratic equation` ellipsoid.
 
 Placement composition:
 
