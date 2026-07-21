@@ -18,16 +18,15 @@ const (
 
 type PolynomialSurface struct {
 	BaseShape
-	Mode         PolynomialSurfaceMode
-	InputDim     int
-	OutputDim    int
-	Degree       int
-	ExplicitAxis int
-	Coefficients *maths.SparseTensor[float64]
-	Center       []float64
-	Scale        []float64
-	Basis        [][]float64
-	Bounds       *Cuboid
+	Mode         PolynomialSurfaceMode        // Surface equation mode: implicit F(x)=0 or explicit z=P(x).
+	InputDim     int                          // Number of local input coordinates used by the polynomial.
+	OutputDim    int                          // Number of polynomial output channels encoded in coefficients.
+	Degree       int                          // Maximum polynomial degree used for ray substitution.
+	ExplicitAxis int                          // Local axis solved by explicit mode, usually z.
+	Coefficients *maths.SparseTensor[float64] // Sparse polynomial coefficients indexed by exponents.
+	Center       []float64                    // World-space origin of the local polynomial frame.
+	Scale        []float64                    // Per-axis local scale applied before polynomial evaluation.
+	Basis        [][]float64                  // Orthonormal local axes expressed in world coordinates.
 }
 
 func NewPolynomialSurface(
@@ -66,14 +65,6 @@ func (p *PolynomialSurface) Intersect(raySt, rayDir *mat.VecDense) float64 {
 func (p *PolynomialSurface) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
 	if p == nil || raySt == nil || rayDir == nil || raySt.Len() < 3 || rayDir.Len() < 3 {
 		return SurfaceInteraction{}, false
-	}
-
-	if p.Bounds != nil {
-		var ok bool
-		tMin, tMax, ok = p.Bounds.OverlapRange(raySt, rayDir, tMin, tMax)
-		if !ok {
-			return SurfaceInteraction{}, false
-		}
 	}
 
 	coeffs, err := p.rayPolynomial(raySt, rayDir)
@@ -200,9 +191,6 @@ func (p *PolynomialSurface) GetNormalVector(intersect, res *mat.VecDense) *mat.V
 }
 
 func (p *PolynomialSurface) BuildBoundingBox() (pmin, pmax *mat.VecDense) {
-	if p != nil && p.Bounds != nil {
-		return p.Bounds.BuildBoundingBox()
-	}
 	return p.BaseShape.BuildBoundingBox()
 }
 

@@ -136,13 +136,7 @@ func (p *PolynomialSurface) IntersectSphericalCandidate(rayStart, rayDir *mat.Ve
 	}, func(point *mat.VecDense) *mat.VecDense {
 		return p.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
 	})
-	if !ok || p.Bounds == nil || candidate.Point == nil {
-		return candidate, ok
-	}
-	if !p.Bounds.containsPoint(candidate.Point, -1) {
-		return SurfaceCandidate{}, false
-	}
-	return candidate, true
+	return candidate, ok
 }
 
 func (f *ImplicitEquation) IntersectSphericalCandidate(rayStart, rayDir *mat.VecDense, sMin, sMax float64) (SurfaceCandidate, bool) {

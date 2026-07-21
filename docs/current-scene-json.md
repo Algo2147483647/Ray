@@ -272,19 +272,20 @@ polynomial surface: sparse arbitrary-degree coefficients
 For cubic and four-order equations, tensor index `0` is the constant factor `1`,
 while `1`, `2`, and `3` are `x`, `y`, and `z`.
 
-Quadratic, cubic, and four-order equation objects may declare optional `center`
-and `scale` fields. These fields transform the local polynomial coordinates
-before rendering:
+Studio-authored quadratic, cubic, and four-order equation objects may declare
+optional `center` and `scale` fields. These fields transform the local
+polynomial coordinates before rendering:
 
 ```text
 local = (world - center) / scale
 ```
 
-The parser bakes this transform into the polynomial coefficients at scene load
-time, so ray intersection still evaluates only the final stored coefficients.
-`scale` may be either a single positive number or a 3-value vector. `bounds`
-remain a world-space clipping box and are not transformed by `center` or
-`scale`.
+Studio bakes this transform into the polynomial coefficients before engine
+execution, so engine ray intersection evaluates only the final stored
+coefficients. `scale` may be either a single positive number or a 3-value
+vector. For four-order equations, studio also accepts an optional orthonormal
+`basis` and bakes it into `a`. `bounds` remain a world-space clipping box and
+are not transformed by `center`, `scale`, or `basis`.
 
 `polynomial surface` is the generic sparse polynomial shape. It stores
 coefficients in a sparse tensor under `coefficients.terms`, where each `index`

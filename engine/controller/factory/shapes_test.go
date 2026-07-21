@@ -290,7 +290,7 @@ func TestParseShapeFourOrderEquationSparseCoordinateCoefficients(t *testing.T) {
 	}
 }
 
-func TestParseShapeFourOrderEquationBasis(t *testing.T) {
+func TestParseShapeFourOrderEquationIgnoresAuthoringTransform(t *testing.T) {
 	shapes, err := ParseShape(map[string]interface{}{
 		"shape": "four-order equation",
 		"a": map[string]interface{}{
@@ -312,21 +312,18 @@ func TestParseShapeFourOrderEquationBasis(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected *shape.FourOrderEquation, got %T", shapes[0])
 	}
-	if quartic.Basis[2][0] != -1 {
-		t.Fatalf("expected parsed basis to be preserved, got %v", quartic.Basis)
-	}
 
 	interaction, ok := quartic.IntersectRange(
-		mat.NewVecDense(3, []float64{2, 0, -6}),
-		mat.NewVecDense(3, []float64{0, 0, 1}),
+		mat.NewVecDense(3, []float64{0, 0, 0}),
+		mat.NewVecDense(3, []float64{1, 0, 0}),
 		0,
 		math.MaxFloat64,
 	)
 	if !ok {
-		t.Fatal("expected transformed four-order equation to hit")
+		t.Fatal("expected canonical four-order equation to hit")
 	}
-	if math.Abs(interaction.Distance-3) > 1e-8 {
-		t.Fatalf("expected hit at distance 3, got %f", interaction.Distance)
+	if math.Abs(interaction.Distance-1) > 1e-8 {
+		t.Fatalf("expected hit at distance 1, got %f", interaction.Distance)
 	}
 }
 

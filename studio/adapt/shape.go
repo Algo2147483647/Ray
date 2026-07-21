@@ -32,6 +32,8 @@ func adaptObject(object map[string]interface{}, ctx groupContext, index, dimensi
 		return adaptQuadraticEquation(adapted, ctx, dimension)
 	case strings.EqualFold(shapeName, "cubic equation"):
 		return adaptCubicEquation(adapted, ctx, dimension)
+	case strings.EqualFold(shapeName, "four-order equation"):
+		return adaptFourOrderEquation(adapted, ctx, dimension)
 	}
 	return adapted, nil
 }
@@ -303,5 +305,37 @@ func adaptCubicEquation(object map[string]interface{}, ctx groupContext, dimensi
 	delete(adapted, "A")
 	delete(adapted, "center")
 	delete(adapted, "scale")
+	return adapted, nil
+}
+
+func adaptFourOrderEquation(object map[string]interface{}, ctx groupContext, dimension int) (map[string]interface{}, error) {
+	if dimension != 3 {
+		return nil, fmt.Errorf("four-order equation adapter requires dimension 3, got %d", dimension)
+	}
+
+	localCenter, err := optionalVector(object, "center", dimension, zeroVector(dimension))
+	if err != nil {
+		return nil, err
+	}
+	localScale, err := optionalScale(object, "scale", dimension, unitVector(dimension))
+	if err != nil {
+		return nil, err
+	}
+	basis, err := optionalBasis(object, dimension)
+	if err != nil {
+		return nil, err
+	}
+
+	coefficients, err := requiredPolynomialCoefficients(object, 4)
+	if err != nil {
+		return nil, err
+	}
+
+	adapted := cloneMap(object)
+	adapted["a"] = bakeFourOrderCoefficients(coefficients, ctx, localCenter, localScale, basis)
+	delete(adapted, "A")
+	delete(adapted, "center")
+	delete(adapted, "scale")
+	delete(adapted, "basis")
 	return adapted, nil
 }

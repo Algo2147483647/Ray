@@ -11,6 +11,8 @@ import (
 	"github.com/Algo2147483647/ray/engine/controller/factory"
 	"github.com/Algo2147483647/ray/engine/controller/parser"
 	"github.com/Algo2147483647/ray/engine/model"
+	modelshape "github.com/Algo2147483647/ray/engine/model/shape"
+	"gonum.org/v1/gonum/mat"
 )
 
 func TestFlattenNestedGroupAndInheritFields(t *testing.T) {
@@ -419,6 +421,60 @@ func TestStudioAdaptsQuadraticCenterScaleToWorldCoefficients(t *testing.T) {
 	}
 }
 
+func TestStudioAdaptsFourOrderCenterScaleBasisToWorldCoefficients(t *testing.T) {
+	script := &studioScript{
+		Objects: []map[string]interface{}{
+			{
+				"id":    "quartic",
+				"shape": "four-order equation",
+				"a": fourOrderCoefficients(map[[4]int]float64{
+					[4]int{1, 1, 1, 1}: 1,
+					[4]int{0, 0, 0, 0}: -1,
+				}),
+				"center": []interface{}{2, 0, 0},
+				"scale":  []interface{}{3, 1, 1},
+				"basis": []interface{}{
+					[]interface{}{0, 0, 1},
+					[]interface{}{0, 1, 0},
+					[]interface{}{-1, 0, 0},
+				},
+			},
+		},
+	}
+
+	adapted, err := adaptScript(script, []string{"scene.json"}, 3)
+	if err != nil {
+		t.Fatalf("adapt four-order equation: %v", err)
+	}
+	object := adapted.Objects[0]
+	if _, ok := object["center"]; ok {
+		t.Fatal("four-order intermediate object should not keep center")
+	}
+	if _, ok := object["scale"]; ok {
+		t.Fatal("four-order intermediate object should not keep scale")
+	}
+	if _, ok := object["basis"]; ok {
+		t.Fatal("four-order intermediate object should not keep basis")
+	}
+
+	quartic := modelshape.NewFourOrderEquation(mustFloatSlice(t, object["a"]))
+	interaction, ok := quartic.IntersectRange(
+		mat.NewVecDense(3, []float64{2, 0, -6}),
+		mat.NewVecDense(3, []float64{0, 0, 1}),
+		0,
+		math.MaxFloat64,
+	)
+	if !ok {
+		t.Fatal("expected baked four-order equation to hit")
+	}
+	if math.Abs(interaction.Distance-3) > 1e-8 {
+		t.Fatalf("expected hit at distance 3, got %f", interaction.Distance)
+	}
+	if math.Abs(interaction.GeometricNormal.AtVec(2)+1) > 1e-8 {
+		t.Fatalf("expected baked normal to face negative z, got %v", interaction.GeometricNormal.RawVector().Data)
+	}
+}
+
 func TestStudioAdaptsCopiedGeometryBenchmarkMatrixExample(t *testing.T) {
 	sourceDir := filepath.Join("..", "examples", "scenes", "geometry-benchmark-matrix")
 	sceneDir := filepath.Join(t.TempDir(), "geometry-benchmark-matrix")
@@ -482,6 +538,17 @@ func unitCubicCoefficients() []interface{} {
 	}
 	coefficients[(1*4+1)*4+1] = 1
 	coefficients[0] = -1
+	return coefficients
+}
+
+func fourOrderCoefficients(values map[[4]int]float64) []interface{} {
+	coefficients := make([]interface{}, 256)
+	for i := range coefficients {
+		coefficients[i] = 0.0
+	}
+	for index, value := range values {
+		coefficients[((index[0]*4+index[1])*4+index[2])*4+index[3]] = value
+	}
 	return coefficients
 }
 

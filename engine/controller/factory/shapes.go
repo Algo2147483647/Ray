@@ -246,24 +246,12 @@ func parseCubicEquation(objDef map[string]interface{}) ([]shape.Shape, error) {
 }
 
 func parseFourOrderEquation(objDef map[string]interface{}) ([]shape.Shape, error) {
-	center, scale, err := parsePolynomialCenterScale(objDef)
-	if err != nil {
-		return nil, err
-	}
-	basis, err := parsePolynomialSurfaceBasis(objDef, utils.Dimension)
-	if err != nil {
-		return nil, err
-	}
-
 	a, err := requiredPolynomialCoefficients(objDef, 4)
 	if err != nil {
 		return nil, err
 	}
 
 	equation := shape.NewFourOrderEquation(a)
-	equation.Center = center[:]
-	equation.Scale = scale[:]
-	equation.Basis = basis
 	return wrapSingleShapeWithBounds(equation, objDef)
 }
 
