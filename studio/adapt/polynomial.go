@@ -144,7 +144,7 @@ func cubicOffset(i, j, k int) int {
 }
 
 func bakeFourOrderCoefficients(a []float64, ctx groupContext, localCenter, localScale []float64, basis [][]float64) []float64 {
-	matrix := fourOrderTransformMatrix(ctx, localCenter, localScale, basis)
+	matrix := worldToLocalTransformMatrix(ctx, localCenter, localScale, basis)
 	result := make([]float64, 256)
 	for i := 0; i < 4; i++ {
 		for j := 0; j < 4; j++ {
@@ -170,7 +170,7 @@ func bakeFourOrderCoefficients(a []float64, ctx groupContext, localCenter, local
 	return result
 }
 
-func fourOrderTransformMatrix(ctx groupContext, localCenter, localScale []float64, basis [][]float64) [4][4]float64 {
+func worldToLocalTransformMatrix(ctx groupContext, localCenter, localScale []float64, basis [][]float64) [4][4]float64 {
 	matrix := [4][4]float64{{1, 0, 0, 0}}
 	for localAxis := 0; localAxis < 3; localAxis++ {
 		scale := localScale[localAxis]
@@ -181,6 +181,71 @@ func fourOrderTransformMatrix(ctx groupContext, localCenter, localScale []float6
 		}
 	}
 	return matrix
+}
+
+func optionalTransform(object map[string]interface{}) ([4][4]float64, bool, error) {
+	raw, ok := object["transform"]
+	if !ok {
+		return [4][4]float64{}, false, nil
+	}
+	rows, ok := raw.([]interface{})
+	if !ok {
+		return [4][4]float64{}, true, fmt.Errorf("field %q: expected array, got %T", "transform", raw)
+	}
+	if len(rows) != 4 {
+		return [4][4]float64{}, true, fmt.Errorf("field %q must contain 4 rows, got %d", "transform", len(rows))
+	}
+
+	transform := [4][4]float64{}
+	for row, rawRow := range rows {
+		values, err := toFloat64Slice(rawRow)
+		if err != nil {
+			return [4][4]float64{}, true, fmt.Errorf("transform[%d]: %w", row, err)
+		}
+		if len(values) != 4 {
+			return [4][4]float64{}, true, fmt.Errorf("transform[%d] must contain 4 values, got %d", row, len(values))
+		}
+		for col, value := range values {
+			if math.IsNaN(value) || math.IsInf(value, 0) {
+				return [4][4]float64{}, true, fmt.Errorf("transform[%d][%d] must be finite", row, col)
+			}
+			transform[row][col] = value
+		}
+	}
+	return transform, true, nil
+}
+
+func composeWithGroupInverse(transform [4][4]float64, ctx groupContext) [4][4]float64 {
+	if groupPlacementIsIdentity(ctx) {
+		return transform
+	}
+	groupInverse := [4][4]float64{{1, 0, 0, 0}}
+	for axis := 0; axis < 3; axis++ {
+		groupInverse[axis+1][0] = -ctx.center[axis] / ctx.scale[axis]
+		groupInverse[axis+1][axis+1] = 1 / ctx.scale[axis]
+	}
+	return multiplyTransform4(transform, groupInverse)
+}
+
+func multiplyTransform4(a, b [4][4]float64) [4][4]float64 {
+	var result [4][4]float64
+	for row := 0; row < 4; row++ {
+		for col := 0; col < 4; col++ {
+			for k := 0; k < 4; k++ {
+				result[row][col] += a[row][k] * b[k][col]
+			}
+		}
+	}
+	return result
+}
+
+func transformToSlices(transform [4][4]float64) [][]float64 {
+	result := make([][]float64, 4)
+	for row := range result {
+		result[row] = make([]float64, 4)
+		copy(result[row], transform[row][:])
+	}
+	return result
 }
 
 func fourOrderOffset(i, j, k, l int) int {

@@ -475,6 +475,56 @@ func TestStudioAdaptsFourOrderCenterScaleBasisToWorldCoefficients(t *testing.T) 
 	}
 }
 
+func TestStudioAdaptsPolynomialSurfaceCenterScaleBasisToTransform(t *testing.T) {
+	script := &studioScript{
+		Objects: []map[string]interface{}{
+			{
+				"id":        "surface",
+				"shape":     "polynomial surface",
+				"mode":      "implicit",
+				"input_dim": 3,
+				"degree":    1,
+				"center":    []interface{}{2, 0, 0},
+				"scale":     []interface{}{3, 1, 1},
+				"basis": []interface{}{
+					[]interface{}{0, 0, 1},
+					[]interface{}{0, 1, 0},
+					[]interface{}{-1, 0, 0},
+				},
+				"coefficients": map[string]interface{}{
+					"format": "coo",
+					"terms": []interface{}{
+						map[string]interface{}{"index": []interface{}{0, 0, 1}, "value": 1},
+					},
+				},
+			},
+		},
+	}
+
+	adapted, err := adaptScript(script, []string{"scene.json"}, 3)
+	if err != nil {
+		t.Fatalf("adapt polynomial surface: %v", err)
+	}
+	object := adapted.Objects[0]
+	if _, ok := object["center"]; ok {
+		t.Fatal("polynomial surface intermediate object should not keep center")
+	}
+	if _, ok := object["scale"]; ok {
+		t.Fatal("polynomial surface intermediate object should not keep scale")
+	}
+	if _, ok := object["basis"]; ok {
+		t.Fatal("polynomial surface intermediate object should not keep basis")
+	}
+
+	transform, ok := object["transform"].([][]float64)
+	if !ok {
+		t.Fatalf("expected transform matrix, got %T", object["transform"])
+	}
+	assertFloatSlice(t, transform[1], []float64{0, 0, 0, 1.0 / 3.0})
+	assertFloatSlice(t, transform[2], []float64{0, 0, 1, 0})
+	assertFloatSlice(t, transform[3], []float64{2, -1, 0, 0})
+}
+
 func TestStudioAdaptsCopiedGeometryBenchmarkMatrixExample(t *testing.T) {
 	sourceDir := filepath.Join("..", "examples", "scenes", "geometry-benchmark-matrix")
 	sceneDir := filepath.Join(t.TempDir(), "geometry-benchmark-matrix")

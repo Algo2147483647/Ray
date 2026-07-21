@@ -70,7 +70,7 @@ func TestPolynomialSurfaceExplicitParaboloid(t *testing.T) {
 	}
 }
 
-func TestPolynomialSurfaceBasisRotatesImplicitSurface(t *testing.T) {
+func TestPolynomialSurfaceTransformRotatesImplicitSurface(t *testing.T) {
 	coefficients, err := maths.NewSparseTensorFromEntries([]int{2, 2, 2}, maths.SparseTensorHash, []maths.SparseTensorEntry[float64]{
 		{Index: []int{0, 0, 1}, Value: 1},
 	})
@@ -79,10 +79,11 @@ func TestPolynomialSurfaceBasisRotatesImplicitSurface(t *testing.T) {
 	}
 
 	surface := NewPolynomialSurface(PolynomialSurfaceImplicit, 3, 1, 1, coefficients)
-	surface.Basis = [][]float64{
-		{math.Sqrt(3) / 2, 0, 0.5},
-		{0, 1, 0},
-		{-0.5, 0, math.Sqrt(3) / 2},
+	surface.Transform = [4][4]float64{
+		{1, 0, 0, 0},
+		{0, math.Sqrt(3) / 2, 0, 0.5},
+		{0, 0, 1, 0},
+		{0, -0.5, 0, math.Sqrt(3) / 2},
 	}
 
 	normal := mat.NewVecDense(3, []float64{-0.5, 0, math.Sqrt(3) / 2})

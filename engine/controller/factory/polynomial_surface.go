@@ -50,17 +50,11 @@ func parsePolynomialSurface(objDef map[string]interface{}) ([]shape.Shape, error
 	surface := shape.NewPolynomialSurface(mode, inputDim, outputDim, degree, coefficients)
 	surface.ExplicitAxis = explicitAxis
 
-	center, scale, err := parsePolynomialSurfaceCenterScale(objDef, maxInt(inputDim, 3))
+	transform, err := parsePolynomialSurfaceTransform(objDef)
 	if err != nil {
 		return nil, err
 	}
-	basis, err := parsePolynomialSurfaceBasis(objDef, len(center))
-	if err != nil {
-		return nil, err
-	}
-	surface.Center = center
-	surface.Scale = scale
-	surface.Basis = basis
+	surface.Transform = transform
 
 	return wrapSingleShapeWithBounds(surface, objDef)
 }
@@ -200,109 +194,66 @@ func polynomialSurfaceTensorShape(coeffDef map[string]interface{}, inputDim, out
 	return tensorShape, nil
 }
 
-func parsePolynomialSurfaceCenterScale(objDef map[string]interface{}, dimension int) ([]float64, []float64, error) {
-	center := make([]float64, dimension)
-	if values, ok, err := utils.OptionalFloat64SliceField(objDef, "center"); err != nil {
-		return nil, nil, err
-	} else if ok {
-		if len(values) != dimension {
-			return nil, nil, fmt.Errorf("field %q must contain %d values, got %d", "center", dimension, len(values))
-		}
-		copy(center, values)
-	}
-
-	scale := make([]float64, dimension)
-	for i := range scale {
-		scale[i] = 1
-	}
-	if value, ok := objDef["scale"]; ok {
-		if values, err := utils.ToFloat64Slice(value); err == nil {
-			if len(values) != dimension {
-				return nil, nil, fmt.Errorf("field %q must contain %d values, got %d", "scale", dimension, len(values))
-			}
-			copy(scale, values)
-		} else {
-			scalar, err := utils.RequiredFloat64Field(map[string]interface{}{"scale": value}, "scale")
-			if err != nil {
-				return nil, nil, err
-			}
-			for i := range scale {
-				scale[i] = scalar
-			}
-		}
-	}
-	for i, value := range scale {
-		if value <= 0 || math.IsNaN(value) || math.IsInf(value, 0) {
-			return nil, nil, fmt.Errorf("scale index %d must be a finite positive number", i)
-		}
-	}
-	return center, scale, nil
-}
-
-func parsePolynomialSurfaceBasis(objDef map[string]interface{}, dimension int) ([][]float64, error) {
-	raw, ok := objDef["basis"]
+func parsePolynomialSurfaceTransform(objDef map[string]interface{}) ([4][4]float64, error) {
+	raw, ok := objDef["transform"]
 	if !ok {
-		return identityBasisValues(dimension), nil
+		return identityTransform4(), nil
+	}
+	values, err := transformRows(raw)
+	if err != nil {
+		return [4][4]float64{}, err
+	}
+	if len(values) != 4 {
+		return [4][4]float64{}, fmt.Errorf("field %q must contain 4 rows, got %d", "transform", len(values))
 	}
 
-	rows, ok := raw.([]interface{})
-	if !ok {
-		return nil, fmt.Errorf("field %q: expected array, got %T", "basis", raw)
-	}
-	if len(rows) != dimension {
-		return nil, fmt.Errorf("field %q must contain %d vectors, got %d", "basis", dimension, len(rows))
-	}
-
-	basis := make([][]float64, dimension)
-	for i, rawRow := range rows {
-		row, err := utils.ToFloat64Slice(rawRow)
-		if err != nil {
-			return nil, fmt.Errorf("basis[%d]: %w", i, err)
+	transform := [4][4]float64{}
+	for row, values := range values {
+		if len(values) != 4 {
+			return [4][4]float64{}, fmt.Errorf("transform[%d] must contain 4 values, got %d", row, len(values))
 		}
-		if len(row) != dimension {
-			return nil, fmt.Errorf("basis[%d] must contain %d values, got %d", i, dimension, len(row))
-		}
-		basis[i] = row
-	}
-	if err := validateOrthonormalBasis(basis); err != nil {
-		return nil, err
-	}
-	return basis, nil
-}
-
-func validateOrthonormalBasis(basis [][]float64) error {
-	const tol = 1e-6
-	for i, row := range basis {
-		lengthSquared := 0.0
-		for j, value := range row {
+		for col, value := range values {
 			if math.IsNaN(value) || math.IsInf(value, 0) {
-				return fmt.Errorf("basis[%d][%d] must be finite", i, j)
+				return [4][4]float64{}, fmt.Errorf("transform[%d][%d] must be finite", row, col)
 			}
-			lengthSquared += value * value
-		}
-		if math.Abs(lengthSquared-1) > tol {
-			return fmt.Errorf("basis[%d] must be unit length", i)
-		}
-		for j := i + 1; j < len(basis); j++ {
-			dot := 0.0
-			for axis, value := range row {
-				dot += value * basis[j][axis]
-			}
-			if math.Abs(dot) > tol {
-				return fmt.Errorf("basis[%d] and basis[%d] must be orthogonal", i, j)
-			}
+			transform[row][col] = value
 		}
 	}
-	return nil
+	return transform, nil
 }
 
-func identityBasisValues(dimension int) [][]float64 {
-	basis := make([][]float64, dimension)
-	for i := range basis {
-		basis[i] = make([]float64, dimension)
-		basis[i][i] = 1
+func transformRows(raw interface{}) ([][]float64, error) {
+	if rows, ok := raw.([]interface{}); ok {
+		result := make([][]float64, len(rows))
+		for i, row := range rows {
+			values, err := utils.ToFloat64Slice(row)
+			if err != nil {
+				return nil, fmt.Errorf("transform[%d]: %w", i, err)
+			}
+			result[i] = values
+		}
+		return result, nil
 	}
-	return basis
+	values, err := utils.ToFloat64Slice(raw)
+	if err != nil {
+		return nil, fmt.Errorf("field %q: expected 4x4 array, got %T", "transform", raw)
+	}
+	if len(values) != 16 {
+		return nil, fmt.Errorf("field %q must contain 16 flat values, got %d", "transform", len(values))
+	}
+	result := make([][]float64, 4)
+	for row := range result {
+		result[row] = append([]float64(nil), values[row*4:(row+1)*4]...)
+	}
+	return result, nil
+}
+
+func identityTransform4() [4][4]float64 {
+	transform := [4][4]float64{}
+	for i := 0; i < 4; i++ {
+		transform[i][i] = 1
+	}
+	return transform
 }
 
 func requiredPositiveIntField(data map[string]interface{}, key string) (int, error) {
@@ -373,11 +324,4 @@ func nonNegativeWholeNumber(key string, value float64) (int, error) {
 		return 0, fmt.Errorf("field %q must be a non-negative integer", key)
 	}
 	return int(value), nil
-}
-
-func maxInt(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }

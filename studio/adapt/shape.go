@@ -34,6 +34,8 @@ func adaptObject(object map[string]interface{}, ctx groupContext, index, dimensi
 		return adaptCubicEquation(adapted, ctx, dimension)
 	case strings.EqualFold(shapeName, "four-order equation"):
 		return adaptFourOrderEquation(adapted, ctx, dimension)
+	case strings.EqualFold(shapeName, "polynomial surface"):
+		return adaptPolynomialSurface(adapted, ctx, dimension)
 	}
 	return adapted, nil
 }
@@ -334,6 +336,41 @@ func adaptFourOrderEquation(object map[string]interface{}, ctx groupContext, dim
 	adapted := cloneMap(object)
 	adapted["a"] = bakeFourOrderCoefficients(coefficients, ctx, localCenter, localScale, basis)
 	delete(adapted, "A")
+	delete(adapted, "center")
+	delete(adapted, "scale")
+	delete(adapted, "basis")
+	return adapted, nil
+}
+
+func adaptPolynomialSurface(object map[string]interface{}, ctx groupContext, dimension int) (map[string]interface{}, error) {
+	if dimension != 3 {
+		return nil, fmt.Errorf("polynomial surface adapter requires dimension 3, got %d", dimension)
+	}
+
+	adapted := cloneMap(object)
+	transform, hasTransform, err := optionalTransform(adapted)
+	if err != nil {
+		return nil, err
+	}
+
+	if hasTransform {
+		adapted["transform"] = transformToSlices(composeWithGroupInverse(transform, ctx))
+	} else {
+		localCenter, err := optionalVector(object, "center", dimension, zeroVector(dimension))
+		if err != nil {
+			return nil, err
+		}
+		localScale, err := optionalScale(object, "scale", dimension, unitVector(dimension))
+		if err != nil {
+			return nil, err
+		}
+		basis, err := optionalBasis(object, dimension)
+		if err != nil {
+			return nil, err
+		}
+		adapted["transform"] = transformToSlices(worldToLocalTransformMatrix(ctx, localCenter, localScale, basis))
+	}
+
 	delete(adapted, "center")
 	delete(adapted, "scale")
 	delete(adapted, "basis")

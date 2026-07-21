@@ -24,9 +24,7 @@ type PolynomialSurface struct {
 	Degree       int                          // Maximum polynomial degree used for ray substitution.
 	ExplicitAxis int                          // Local axis solved by explicit mode, usually z.
 	Coefficients *maths.SparseTensor[float64] // Sparse polynomial coefficients indexed by exponents.
-	Center       []float64                    // World-space origin of the local polynomial frame.
-	Scale        []float64                    // Per-axis local scale applied before polynomial evaluation.
-	Basis        [][]float64                  // Orthonormal local axes expressed in world coordinates.
+	Transform    [4][4]float64                // World-to-local homogeneous transform matrix.
 }
 
 func NewPolynomialSurface(
@@ -44,9 +42,7 @@ func NewPolynomialSurface(
 		Degree:       degree,
 		ExplicitAxis: 2,
 		Coefficients: coefficients,
-		Center:       makeFilledFloat64(inputDim, 0),
-		Scale:        makeFilledFloat64(inputDim, 1),
-		Basis:        identityBasis(maxInt(inputDim, 3)),
+		Transform:    identityTransform4(),
 	}
 }
 
@@ -182,9 +178,11 @@ func (p *PolynomialSurface) GetNormalVector(intersect, res *mat.VecDense) *mat.V
 	local := p.localPoint(intersect)
 	localGradient := p.localSurfaceGradient(local)
 	for localAxis := 0; localAxis < len(localGradient); localAxis++ {
-		gradient := localGradient[localAxis] / p.scaleAt(localAxis)
-		for worldAxis := 0; worldAxis < res.Len(); worldAxis++ {
-			res.SetVec(worldAxis, res.AtVec(worldAxis)+gradient*p.basisAt(localAxis, worldAxis))
+		if localAxis >= 3 {
+			continue
+		}
+		for worldAxis := 0; worldAxis < res.Len() && worldAxis < 3; worldAxis++ {
+			res.SetVec(worldAxis, res.AtVec(worldAxis)+localGradient[localAxis]*p.Transform[localAxis+1][worldAxis+1])
 		}
 	}
 	return maths.Normalize(res)
@@ -304,59 +302,24 @@ func (p *PolynomialSurface) coefficientsHaveOutputAxis() bool {
 }
 
 func (p *PolynomialSurface) localPoint(point *mat.VecDense) []float64 {
-	local := make([]float64, point.Len())
-	for i := 0; i < point.Len(); i++ {
-		local[i] = p.localCoordinate(point, i) / p.scaleAt(i)
+	local := make([]float64, minInt(point.Len(), 3))
+	for localAxis := range local {
+		local[localAxis] = p.Transform[localAxis+1][0]
+		for worldAxis := 0; worldAxis < point.Len() && worldAxis < 3; worldAxis++ {
+			local[localAxis] += p.Transform[localAxis+1][worldAxis+1] * point.AtVec(worldAxis)
+		}
 	}
 	return local
 }
 
 func (p *PolynomialSurface) localDirection(direction *mat.VecDense) []float64 {
-	local := make([]float64, direction.Len())
-	for i := 0; i < direction.Len(); i++ {
-		local[i] = p.localDirectionCoordinate(direction, i) / p.scaleAt(i)
+	local := make([]float64, minInt(direction.Len(), 3))
+	for localAxis := range local {
+		for worldAxis := 0; worldAxis < direction.Len() && worldAxis < 3; worldAxis++ {
+			local[localAxis] += p.Transform[localAxis+1][worldAxis+1] * direction.AtVec(worldAxis)
+		}
 	}
 	return local
-}
-
-func (p *PolynomialSurface) localCoordinate(point *mat.VecDense, localAxis int) float64 {
-	result := 0.0
-	for worldAxis := 0; worldAxis < point.Len(); worldAxis++ {
-		result += (point.AtVec(worldAxis) - p.centerAt(worldAxis)) * p.basisAt(localAxis, worldAxis)
-	}
-	return result
-}
-
-func (p *PolynomialSurface) localDirectionCoordinate(direction *mat.VecDense, localAxis int) float64 {
-	result := 0.0
-	for worldAxis := 0; worldAxis < direction.Len(); worldAxis++ {
-		result += direction.AtVec(worldAxis) * p.basisAt(localAxis, worldAxis)
-	}
-	return result
-}
-
-func (p *PolynomialSurface) centerAt(axis int) float64 {
-	if p != nil && axis >= 0 && axis < len(p.Center) {
-		return p.Center[axis]
-	}
-	return 0
-}
-
-func (p *PolynomialSurface) scaleAt(axis int) float64 {
-	if p != nil && axis >= 0 && axis < len(p.Scale) && p.Scale[axis] != 0 {
-		return p.Scale[axis]
-	}
-	return 1
-}
-
-func (p *PolynomialSurface) basisAt(localAxis, worldAxis int) float64 {
-	if p != nil && localAxis >= 0 && localAxis < len(p.Basis) && worldAxis >= 0 && worldAxis < len(p.Basis[localAxis]) {
-		return p.Basis[localAxis][worldAxis]
-	}
-	if localAxis == worldAxis {
-		return 1
-	}
-	return 0
 }
 
 func precomputePowers(input []float64, degree int) [][]float64 {
@@ -402,21 +365,12 @@ func descendingPolynomial(ascending []float64) []float64 {
 	return descending
 }
 
-func makeFilledFloat64(length int, value float64) []float64 {
-	result := make([]float64, length)
-	for i := range result {
-		result[i] = value
+func identityTransform4() [4][4]float64 {
+	transform := [4][4]float64{}
+	for i := 0; i < 4; i++ {
+		transform[i][i] = 1
 	}
-	return result
-}
-
-func identityBasis(dimension int) [][]float64 {
-	basis := make([][]float64, dimension)
-	for i := range basis {
-		basis[i] = make([]float64, dimension)
-		basis[i][i] = 1
-	}
-	return basis
+	return transform
 }
 
 func minInt(a, b int) int {

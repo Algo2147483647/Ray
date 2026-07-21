@@ -422,16 +422,17 @@ func TestParseShapePolynomialSurface(t *testing.T) {
 	}
 }
 
-func TestParseShapePolynomialSurfaceBasis(t *testing.T) {
+func TestParseShapePolynomialSurfaceTransform(t *testing.T) {
 	shapes, err := ParseShape(map[string]interface{}{
 		"shape":     "polynomial surface",
 		"mode":      "implicit",
 		"input_dim": 3,
 		"degree":    1,
-		"basis": []interface{}{
-			[]interface{}{math.Sqrt(3) / 2, 0, 0.5},
-			[]interface{}{0, 1, 0},
-			[]interface{}{-0.5, 0, math.Sqrt(3) / 2},
+		"transform": []interface{}{
+			[]interface{}{1, 0, 0, 0},
+			[]interface{}{0, math.Sqrt(3) / 2, 0, 0.5},
+			[]interface{}{0, 0, 1, 0},
+			[]interface{}{0, -0.5, 0, math.Sqrt(3) / 2},
 		},
 		"coefficients": map[string]interface{}{
 			"format": "coo",
@@ -448,21 +449,22 @@ func TestParseShapePolynomialSurfaceBasis(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected polynomial surface, got %T", shapes[0])
 	}
-	if math.Abs(surface.Basis[2][0]+0.5) > 1e-12 {
-		t.Fatalf("expected parsed basis to be preserved, got %v", surface.Basis)
+	if math.Abs(surface.Transform[3][1]+0.5) > 1e-12 {
+		t.Fatalf("expected parsed transform to be preserved, got %v", surface.Transform)
 	}
 }
 
-func TestParseShapeRejectsInvalidPolynomialSurfaceBasis(t *testing.T) {
+func TestParseShapeRejectsInvalidPolynomialSurfaceTransform(t *testing.T) {
 	_, err := ParseShape(map[string]interface{}{
 		"shape":     "polynomial surface",
 		"mode":      "implicit",
 		"input_dim": 3,
 		"degree":    1,
-		"basis": []interface{}{
-			[]interface{}{1, 0, 0},
-			[]interface{}{1, 0, 0},
+		"transform": []interface{}{
+			[]interface{}{1, 0, 0, 0},
+			[]interface{}{0, 1, 0, 0},
 			[]interface{}{0, 0, 1},
+			[]interface{}{0, 0, 0, 1},
 		},
 		"coefficients": map[string]interface{}{
 			"format": "coo",
