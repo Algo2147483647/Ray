@@ -8,6 +8,15 @@ type Camera interface {
 	GenerateRay(res *renderray.Ray, index ...int) *renderray.Ray // Generates a ray for a given pixel index.
 }
 
+type CameraType string
+
+const (
+	CameraType3D         CameraType = "3d"
+	CameraTypeNDim       CameraType = "n_dim"
+	CameraTypeHyperbolic CameraType = "hyperbolic"
+	CameraTypeSpherical  CameraType = "spherical"
+)
+
 type CameraBase struct {
 }
 

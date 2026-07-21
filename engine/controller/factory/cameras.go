@@ -1,29 +1,22 @@
 package factory
 
 import (
+	"errors"
 	"fmt"
 	"github.com/Algo2147483647/ray/engine/controller/parser"
 	"github.com/Algo2147483647/ray/engine/maths"
 	modelcamera "github.com/Algo2147483647/ray/engine/model/camera"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
-	"strings"
 )
 
 func ParseCameras(script *parser.Script) ([]modelcamera.Camera, error) {
-	dimension := script.Render.Dimension
-	if dimension <= 0 {
-		dimension = 3
-	}
-	utils.SetDimension(dimension)
-
-	cameraDefs := script.Cameras
-	if len(cameraDefs) == 0 {
-		return nil, nil
+	if len(script.Cameras) == 0 {
+		return nil, errors.New("no cameras")
 	}
 
-	cameras := make([]modelcamera.Camera, 0, len(cameraDefs))
-	for idx, cameraDef := range cameraDefs {
+	cameras := make([]modelcamera.Camera, 0, len(script.Cameras))
+	for idx, cameraDef := range script.Cameras {
 		parsedCamera, err := BuildCameraFromScript(cameraDef)
 		if err != nil {
 			return nil, fmt.Errorf("parse camera[%d]: %w", idx, err)
@@ -34,11 +27,22 @@ func ParseCameras(script *parser.Script) ([]modelcamera.Camera, error) {
 	return cameras, nil
 }
 
-func BuildCamera3DFromScript(def parser.CameraScript) (*modelcamera.Camera3D, error) {
-	if utils.Dimension != 3 {
-		return nil, fmt.Errorf("camera type %q requires render dimension 3, got %d", "3d", utils.Dimension)
+func BuildCameraFromScript(def parser.CameraScript) (modelcamera.Camera, error) {
+	switch def.Type {
+	case "", modelcamera.CameraType3D:
+		return BuildCamera3DFromScript(def)
+	case modelcamera.CameraTypeNDim:
+		return BuildCameraNDimFromScript(def)
+	case modelcamera.CameraTypeHyperbolic:
+		return BuildHyperbolicCameraFromScript(def)
+	case modelcamera.CameraTypeSpherical:
+		return BuildSphericalCameraFromScript(def)
+	default:
+		return nil, fmt.Errorf("unsupported camera type %q", def.Type)
 	}
+}
 
+func BuildCamera3DFromScript(def parser.CameraScript) (*modelcamera.Camera3D, error) {
 	return &modelcamera.Camera3D{
 		Position:    utils.NewVec(def.Position),
 		Direction:   maths.Normalize(utils.NewVec(def.Direction)),
@@ -50,11 +54,6 @@ func BuildCamera3DFromScript(def parser.CameraScript) (*modelcamera.Camera3D, er
 }
 
 func BuildCameraNDimFromScript(def parser.CameraScript) (*modelcamera.CameraNDim, error) {
-	if len(def.Position) == 0 {
-		return nil, fmt.Errorf("position is required for n_dim camera")
-	}
-	position := utils.NewVec(def.Position)
-
 	if len(def.Widths) == 0 {
 		return nil, fmt.Errorf("widths is required for n_dim camera")
 	}
@@ -94,7 +93,7 @@ func BuildCameraNDimFromScript(def parser.CameraScript) (*modelcamera.CameraNDim
 	}
 
 	cameraNDim := &modelcamera.CameraNDim{
-		Position:    position,
+		Position:    utils.NewVec(def.Position),
 		Coordinates: coordinates,
 		Width:       widths,
 		FieldOfView: fieldOfViews,
@@ -106,21 +105,6 @@ func BuildCameraNDimFromScript(def parser.CameraScript) (*modelcamera.CameraNDim
 	return cameraNDim, nil
 }
 
-func BuildCameraFromScript(def parser.CameraScript) (modelcamera.Camera, error) {
-	switch strings.ToLower(def.Type) {
-	case "", "3d", "camera3d":
-		return BuildCamera3DFromScript(def)
-	case "n_dim", "ndim", "n-dimensional":
-		return BuildCameraNDimFromScript(def)
-	case "hyperbolic", "klein":
-		return BuildHyperbolicCameraFromScript(def)
-	case "spherical", "s3":
-		return BuildSphericalCameraFromScript(def)
-	default:
-		return nil, fmt.Errorf("unsupported camera type %q", def.Type)
-	}
-}
-
 func BuildHyperbolicCameraFromScript(def parser.CameraScript) (*modelcamera.HyperbolicCamera, error) {
 	base, err := BuildCamera3DFromScript(def)
 	if err != nil {
@@ -130,18 +114,10 @@ func BuildHyperbolicCameraFromScript(def parser.CameraScript) (*modelcamera.Hype
 }
 
 func BuildSphericalCameraFromScript(def parser.CameraScript) (*modelcamera.SphericalCamera, error) {
-	if utils.Dimension != 4 {
-		return nil, fmt.Errorf("spherical camera requires render dimension 4, got %d", utils.Dimension)
-	}
-
-	position := utils.NewVec(def.Position)
-	forward := utils.NewVec(def.Direction)
-	up := utils.NewVec(def.Up)
-
 	cam := &modelcamera.SphericalCamera{
-		Position:    position,
-		Forward:     forward,
-		Up:          up,
+		Position:    utils.NewVec(def.Position),
+		Forward:     utils.NewVec(def.Direction),
+		Up:          utils.NewVec(def.Up),
 		FieldOfView: def.FieldOfView,
 		AspectRatio: def.AspectRatio,
 	}

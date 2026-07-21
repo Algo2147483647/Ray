@@ -3,20 +3,22 @@ package parser
 import (
 	"encoding/json"
 	"fmt"
+
+	modelcamera "github.com/Algo2147483647/ray/engine/model/camera"
 )
 
 type CameraScript struct {
-	ID           string      `json:"id"`             // Unique camera identifier.
-	Type         string      `json:"type"`           // Camera model or script type.
-	Position     []float64   `json:"position"`       // Camera origin in scene space.
-	Direction    []float64   `json:"direction"`      // Forward viewing direction.
-	Up           []float64   `json:"up"`             // Up vector defining camera roll.
-	Widths       []int       `json:"widths"`         // Per-frame image widths.
-	FieldOfView  float64     `json:"field_of_view"`  // Vertical field of view in degrees.
-	FieldOfViews []float64   `json:"field_of_views"` // Per-frame field-of-view values.
-	Coordinates  [][]float64 `json:"coordinates"`    // Camera path or sampled positions.
-	AspectRatio  float64     `json:"aspect_ratio"`   // Image width-to-height ratio.
-	Ortho        bool        `json:"ortho"`          // Enables orthographic projection.
+	ID           string                 `json:"id"`             // Unique camera identifier.
+	Type         modelcamera.CameraType `json:"type"`           // Camera model type.
+	Position     []float64              `json:"position"`       // Camera origin in scene space.
+	Direction    []float64              `json:"direction"`      // Forward viewing direction.
+	Up           []float64              `json:"up"`             // Up vector defining camera roll.
+	Widths       []int                  `json:"widths"`         // Per-frame image widths.
+	FieldOfView  float64                `json:"field_of_view"`  // Vertical field of view in degrees.
+	FieldOfViews []float64              `json:"field_of_views"` // Per-frame field-of-view values.
+	Coordinates  [][]float64            `json:"coordinates"`    // Camera path or sampled positions.
+	AspectRatio  float64                `json:"aspect_ratio"`   // Image width-to-height ratio.
+	Ortho        bool                   `json:"ortho"`          // Enables orthographic projection.
 }
 
 func (c *CameraScript) UnmarshalJSON(data []byte) error {
