@@ -188,20 +188,17 @@ func optionalTransform(object map[string]interface{}) ([4][4]float64, bool, erro
 	if !ok {
 		return [4][4]float64{}, false, nil
 	}
-	rows, ok := raw.([]interface{})
-	if !ok {
-		return [4][4]float64{}, true, fmt.Errorf("field %q: expected array, got %T", "transform", raw)
+
+	rows, err := transformRows(raw)
+	if err != nil {
+		return [4][4]float64{}, true, err
 	}
 	if len(rows) != 4 {
 		return [4][4]float64{}, true, fmt.Errorf("field %q must contain 4 rows, got %d", "transform", len(rows))
 	}
 
 	transform := [4][4]float64{}
-	for row, rawRow := range rows {
-		values, err := toFloat64Slice(rawRow)
-		if err != nil {
-			return [4][4]float64{}, true, fmt.Errorf("transform[%d]: %w", row, err)
-		}
+	for row, values := range rows {
 		if len(values) != 4 {
 			return [4][4]float64{}, true, fmt.Errorf("transform[%d] must contain 4 values, got %d", row, len(values))
 		}
@@ -213,6 +210,42 @@ func optionalTransform(object map[string]interface{}) ([4][4]float64, bool, erro
 		}
 	}
 	return transform, true, nil
+}
+
+func transformRows(raw interface{}) ([][]float64, error) {
+	switch rows := raw.(type) {
+	case []interface{}:
+		result := make([][]float64, len(rows))
+		for row, rawRow := range rows {
+			values, err := toFloat64Slice(rawRow)
+			if err != nil {
+				return nil, fmt.Errorf("transform[%d]: %w", row, err)
+			}
+			result[row] = values
+		}
+		return result, nil
+	case [][]float64:
+		result := make([][]float64, len(rows))
+		for row := range rows {
+			result[row] = append([]float64(nil), rows[row]...)
+		}
+		return result, nil
+	case [4][4]float64:
+		return transformToSlices(rows), nil
+	}
+
+	values, err := toFloat64Slice(raw)
+	if err != nil {
+		return nil, fmt.Errorf("field %q: expected 4x4 array, got %T", "transform", raw)
+	}
+	if len(values) != 16 {
+		return nil, fmt.Errorf("field %q must contain 16 flat values, got %d", "transform", len(values))
+	}
+	result := make([][]float64, 4)
+	for row := range result {
+		result[row] = append([]float64(nil), values[row*4:(row+1)*4]...)
+	}
+	return result, nil
 }
 
 func composeWithGroupInverse(transform [4][4]float64, ctx groupContext) [4][4]float64 {

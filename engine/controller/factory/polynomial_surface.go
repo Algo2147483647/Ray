@@ -26,6 +26,9 @@ func parsePolynomialSurface(objDef map[string]interface{}) ([]shape.Shape, error
 	if err != nil {
 		return nil, err
 	}
+	if inputDim > 3 {
+		return nil, fmt.Errorf("field %q must be <= 3 when using a 4x4 transform", "input_dim")
+	}
 	degree, err := requiredNonNegativeIntField(objDef, "degree")
 	if err != nil {
 		return nil, err

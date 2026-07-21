@@ -380,11 +380,4 @@ func minInt(a, b int) int {
 	return b
 }
 
-func maxInt(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
 var ErrPolynomialSurfaceDimension = fmt.Errorf("%w: polynomial surface dimension mismatch", maths.ErrInvalidInput)
