@@ -47,17 +47,6 @@ func (c *FiniteCylinder) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax 
 		return SurfaceInteraction{}, false
 	}
 
-	if c.EngravingFunc != nil {
-		if c.EngravingFunc(map[string]interface{}{
-			"ray_start": raySt,
-			"ray_dir":   rayDir,
-			"distance":  best,
-			"self":      c,
-		}) {
-			return SurfaceInteraction{}, false
-		}
-	}
-
 	point := pointAt(raySt, rayDir, best)
 	normal := c.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
 	return newSurfaceInteractionAt(point, best, normal), true

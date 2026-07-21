@@ -48,7 +48,6 @@ shape behavior and support status.
 | `material_id` | Yes for renderable scene objects | All objects | Resolved by the object factory against `materials`. |
 | `medium_boundary` | Optional | Closed boundary objects | Material/medium feature, not a geometry field. Avoid using it on open clipped surfaces. |
 | `bounds` | Optional for most, required for `implicit equation` | Most shapes | Clips hit search to an axis-aligned box. Engine accepts canonical `bounds.pmin` + `bounds.pmax`; studio accepts authoring `bounds.center` + `bounds.size` and may inherit bounds through groups. |
-| `engraving_func` | Optional | Parser accepts it on engravable paths | Current type switch applies it only to `cuboid` and `sphere`. |
 
 `bounds` clips intersections but does not add cap faces. For example, a bounded
 paraboloid remains an open clipped surface, not a closed solid.

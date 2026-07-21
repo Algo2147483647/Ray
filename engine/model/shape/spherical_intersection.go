@@ -44,7 +44,7 @@ func (s *Sphere) IntersectSphericalCandidate(rayStart, rayDir *mat.VecDense, sMi
 		return mat.Dot(offset, offset) - s.R*s.R
 	}, func(point *mat.VecDense) *mat.VecDense {
 		return s.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
-	}, s.EngravingFunc, s)
+	})
 }
 
 func (p *Plane) IntersectSphericalCandidate(rayStart, rayDir *mat.VecDense, sMin, sMax float64) (SurfaceCandidate, bool) {
@@ -55,7 +55,7 @@ func (p *Plane) IntersectSphericalCandidate(rayStart, rayDir *mat.VecDense, sMin
 		return mat.Dot(p.A, point) + p.B
 	}, func(point *mat.VecDense) *mat.VecDense {
 		return p.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
-	}, p.EngravingFunc, p)
+	})
 }
 
 func (c *Circle) IntersectSphericalCandidate(rayStart, rayDir *mat.VecDense, sMin, sMax float64) (SurfaceCandidate, bool) {
@@ -84,14 +84,6 @@ func (c *Circle) IntersectSphericalCandidate(rayStart, rayDir *mat.VecDense, sMi
 	}
 
 	point := sphericalPointAtUnit(rayStart, v, best)
-	if c.EngravingFunc != nil && c.EngravingFunc(map[string]interface{}{
-		"ray_start": rayStart,
-		"ray_dir":   rayDir,
-		"distance":  best,
-		"self":      c,
-	}) {
-		return SurfaceCandidate{}, false
-	}
 	normal := c.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
 	return SurfaceCandidate{
 		Distance:        best,
@@ -118,7 +110,7 @@ func (q *QuadraticEquation) IntersectSphericalCandidate(rayStart, rayDir *mat.Ve
 		return mat.Dot(point, ap) + mat.Dot(q.B, point) + q.C
 	}, func(point *mat.VecDense) *mat.VecDense {
 		return q.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
-	}, q.EngravingFunc, q)
+	})
 }
 
 func (p *PolynomialSurface) IntersectSphericalCandidate(rayStart, rayDir *mat.VecDense, sMin, sMax float64) (SurfaceCandidate, bool) {
@@ -143,7 +135,7 @@ func (p *PolynomialSurface) IntersectSphericalCandidate(rayStart, rayDir *mat.Ve
 		}
 	}, func(point *mat.VecDense) *mat.VecDense {
 		return p.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
-	}, p.EngravingFunc, p)
+	})
 	if !ok || p.Bounds == nil || candidate.Point == nil {
 		return candidate, ok
 	}
@@ -159,7 +151,7 @@ func (f *ImplicitEquation) IntersectSphericalCandidate(rayStart, rayDir *mat.Vec
 	}
 	candidate, ok := sphericalScalarCandidate(rayStart, rayDir, sMin, sMax, f.Function, func(point *mat.VecDense) *mat.VecDense {
 		return f.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
-	}, f.EngravingFunc, f)
+	})
 	if !ok || !f.hasValidRange() || candidate.Point == nil {
 		return candidate, ok
 	}
@@ -199,14 +191,6 @@ func (c *Cuboid) IntersectSphericalCandidate(rayStart, rayDir *mat.VecDense, sMi
 		return SurfaceCandidate{}, false
 	}
 	point := sphericalPointAtUnit(rayStart, v, best)
-	if c.EngravingFunc != nil && c.EngravingFunc(map[string]interface{}{
-		"ray_start": rayStart,
-		"ray_dir":   rayDir,
-		"distance":  best,
-		"self":      c,
-	}) {
-		return SurfaceCandidate{}, false
-	}
 	normal := c.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
 	return SurfaceCandidate{
 		Distance:        best,
@@ -223,8 +207,6 @@ func sphericalScalarCandidate(
 	sMin, sMax float64,
 	evaluate func(*mat.VecDense) float64,
 	normalAt func(*mat.VecDense) *mat.VecDense,
-	engraving func(map[string]interface{}) bool,
-	self any,
 ) (SurfaceCandidate, bool) {
 	v, ok := sphericalUnitTangent(rayStart, rayDir)
 	if !ok || sMax < sMin {
@@ -237,14 +219,6 @@ func sphericalScalarCandidate(
 	}
 
 	point := sphericalPointAtUnit(rayStart, v, best)
-	if engraving != nil && engraving(map[string]interface{}{
-		"ray_start": rayStart,
-		"ray_dir":   rayDir,
-		"distance":  best,
-		"self":      self,
-	}) {
-		return SurfaceCandidate{}, false
-	}
 	normal := normalAt(point)
 	return SurfaceCandidate{
 		Distance:        best,

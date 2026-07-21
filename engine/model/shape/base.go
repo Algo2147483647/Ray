@@ -16,9 +16,7 @@ type Shape interface {
 }
 
 // BaseShape provides the basic shape implementation.
-type BaseShape struct {
-	EngravingFunc func(data map[string]interface{}) bool
-}
+type BaseShape struct{}
 
 func (bs *BaseShape) Name() string {
 	return "Base Shape"

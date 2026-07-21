@@ -102,17 +102,6 @@ func (f *Triangle) IntersectCandidate(raySt, rayDir *mat.VecDense, tMin, tMax fl
 		return SurfaceCandidate{}, false
 	}
 
-	if f.EngravingFunc != nil {
-		if f.EngravingFunc(map[string]interface{}{
-			"ray_start": raySt,
-			"ray_dir":   rayDir,
-			"distance":  distance,
-			"self":      f,
-		}) {
-			return SurfaceCandidate{}, false
-		}
-	}
-
 	return SurfaceCandidate{
 		Distance:        distance,
 		GeometricNormal: f.Mem.Normal,
@@ -160,17 +149,6 @@ func (f *Triangle) intersectCandidate3D(raySt, rayDir *mat.VecDense, tMin, tMax 
 	distance := (e2x*qx + e2y*qy + e2z*qz) * invDet
 	if !distanceInRange(distance, tMin, tMax) {
 		return SurfaceCandidate{}, false
-	}
-
-	if f.EngravingFunc != nil {
-		if f.EngravingFunc(map[string]interface{}{
-			"ray_start": raySt,
-			"ray_dir":   rayDir,
-			"distance":  distance,
-			"self":      f,
-		}) {
-			return SurfaceCandidate{}, false
-		}
 	}
 
 	return SurfaceCandidate{

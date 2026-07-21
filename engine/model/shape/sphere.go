@@ -66,18 +66,6 @@ func (s *Sphere) IntersectCandidate(raySt, rayDir *mat.VecDense, tMin, tMax floa
 		return SurfaceCandidate{}, false
 	}
 
-	if s.EngravingFunc != nil {
-		if s.EngravingFunc(map[string]interface{}{
-			"ray_start": raySt,
-			"ray_dir":   rayDir,
-			"distance":  distance,
-			"center":    s.center,
-			"r":         s.R,
-		}) {
-			return SurfaceCandidate{}, false
-		}
-	}
-
 	return SurfaceCandidate{Distance: distance, PrimitiveID: -1}, true
 }
 
@@ -101,18 +89,6 @@ func (s *Sphere) intersectCandidate3D(raySt, rayDir *mat.VecDense, tMin, tMax fl
 	distance := closestDistance(root1, root2, tMin, tMax)
 	if distance == math.MaxFloat64 {
 		return SurfaceCandidate{}, false
-	}
-
-	if s.EngravingFunc != nil {
-		if s.EngravingFunc(map[string]interface{}{
-			"ray_start": raySt,
-			"ray_dir":   rayDir,
-			"distance":  distance,
-			"center":    s.center,
-			"r":         s.R,
-		}) {
-			return SurfaceCandidate{}, false
-		}
 	}
 
 	return SurfaceCandidate{Distance: distance, PrimitiveID: -1}, true

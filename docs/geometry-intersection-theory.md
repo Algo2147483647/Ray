@@ -337,25 +337,7 @@ Relevant code:
 
 - `engine/model/object/intersection.go`
 
-## 13. Engraving Functions as Geometric Masks
-
-Some shapes can attach an `EngravingFunc`, which conditionally suppresses otherwise valid intersections.
-
-Geometrically, this behaves like a procedural mask on the surface. For example, the sample sphere engraving computes spherical angles and applies a sinusoidal stripe test.
-
-This is an interesting hybrid idea:
-
-- base geometry comes from analytic intersection,
-- fine detail comes from procedural acceptance or rejection of the hit.
-
-Relevant code:
-
-- `engine/utils/example_lib/engraving_func.go`
-- `engine/controller/factory/shapes.go`
-- `engine/model/shape/sphere.go`
-- `engine/model/shape/cuboid.go`
-
-## 14. Summary of Embedded Geometry Knowledge
+## 13. Summary of Embedded Geometry Knowledge
 
 The geometry subsystem contains:
 
@@ -363,7 +345,6 @@ The geometry subsystem contains:
 - barycentric geometry,
 - implicit surface differentiation,
 - affine mesh transformation,
-- bounding-volume acceleration,
-- procedural geometric masking.
+- bounding-volume acceleration.
 
 That is why this project is mathematically richer than a minimal sphere-only teaching renderer.

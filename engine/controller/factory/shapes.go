@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/binary"
 	"fmt"
-	"github.com/Algo2147483647/ray/engine/utils/example_lib"
 	"os"
 	"strings"
 
@@ -100,7 +99,7 @@ func parseCuboid(objDef map[string]interface{}) ([]shape.Shape, error) {
 	}
 
 	cuboid := shape.NewCuboid(utils.NewVec(pmin), utils.NewVec(pmax))
-	return finishEngravableShape(cuboid, objDef)
+	return wrapSingleShapeWithBounds(cuboid, objDef)
 }
 
 func parseSphere(objDef map[string]interface{}) ([]shape.Shape, error) {
@@ -115,7 +114,7 @@ func parseSphere(objDef map[string]interface{}) ([]shape.Shape, error) {
 	}
 
 	sphere := shape.NewSphere(center, radius)
-	return finishEngravableShape(sphere, objDef)
+	return wrapSingleShapeWithBounds(sphere, objDef)
 }
 
 func parseCircle(objDef map[string]interface{}) ([]shape.Shape, error) {
@@ -135,7 +134,7 @@ func parseCircle(objDef map[string]interface{}) ([]shape.Shape, error) {
 	}
 
 	circle := shape.NewCircle(center, normal, radius)
-	return finishEngravableShape(circle, objDef)
+	return wrapSingleShapeWithBounds(circle, objDef)
 }
 
 func parseFiniteCylinder(objDef map[string]interface{}) ([]shape.Shape, error) {
@@ -160,7 +159,7 @@ func parseFiniteCylinder(objDef map[string]interface{}) ([]shape.Shape, error) {
 	}
 
 	cylinder := shape.NewFiniteCylinder(center, axis, radius, height)
-	return finishEngravableShape(cylinder, objDef)
+	return wrapSingleShapeWithBounds(cylinder, objDef)
 }
 
 func parseKleinBottle4D(objDef map[string]interface{}) ([]shape.Shape, error) {
@@ -266,14 +265,6 @@ func parseFourOrderEquation(objDef map[string]interface{}) ([]shape.Shape, error
 	equation.Scale = scale[:]
 	equation.Basis = basis
 	return wrapSingleShapeWithBounds(equation, objDef)
-}
-
-func finishEngravableShape(s shape.Shape, objDef map[string]interface{}) ([]shape.Shape, error) {
-	if err := applyEngravingFunc(s, objDef); err != nil {
-		return nil, err
-	}
-
-	return wrapSingleShapeWithBounds(s, objDef)
 }
 
 func wrapSingleShapeWithBounds(s shape.Shape, objDef map[string]interface{}) ([]shape.Shape, error) {
@@ -518,28 +509,6 @@ func ParseShapeForSTL(objDef map[string]interface{}) ([]shape.Shape, error) {
 	}
 
 	return triangles, nil
-}
-
-func applyEngravingFunc(target interface{ shape.Shape }, objDef map[string]interface{}) error {
-	value, ok, err := utils.OptionalStringField(objDef, "engraving_func")
-	if err != nil {
-		return err
-	}
-	if !ok {
-		return nil
-	}
-
-	engravingFunc, exists := example_lib.EngravingFuncMap[value]
-	if !exists {
-		return fmt.Errorf("unknown engraving_func %q", value)
-	}
-	switch shaped := target.(type) {
-	case *shape.Cuboid:
-		shaped.EngravingFunc = engravingFunc
-	case *shape.Sphere:
-		shaped.EngravingFunc = engravingFunc
-	}
-	return nil
 }
 
 func transformVertexWithMatrix(vertex *mat.VecDense, transformMatrix *mat.Dense) *mat.VecDense {

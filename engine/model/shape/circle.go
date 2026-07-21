@@ -58,17 +58,6 @@ func (c *Circle) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64)
 		return SurfaceInteraction{}, false
 	}
 
-	if c.EngravingFunc != nil {
-		if c.EngravingFunc(map[string]interface{}{
-			"ray_start": raySt,
-			"ray_dir":   rayDir,
-			"distance":  distance,
-			"self":      c,
-		}) {
-			return SurfaceInteraction{}, false
-		}
-	}
-
 	return newSurfaceInteraction(raySt, rayDir, distance, c.Normal), true
 }
 
