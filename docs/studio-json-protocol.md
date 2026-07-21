@@ -4,8 +4,8 @@ This file describes the authoring JSON protocol consumed by `studio`.
 
 `studio` is the adaptation layer in front of `engine`. Its input command and
 base scene fields intentionally match `engine`, but it may accept authoring
-conveniences, analyze them, write normalized intermediate JSON, and then invoke
-`engine`.
+conveniences, analyze them, write normalized intermediate JSON, and then launch
+`engine` as a separate executable.
 
 ## Command
 
@@ -32,7 +32,12 @@ Studio accepts the same render override flags as engine:
 --spectrum-mode
 --wavelength-samples
 --working-space
+--engine-bin
 ```
+
+By default, studio runs engine as a separate `go -C engine run .` process so
+development runs always use current source. Use `--engine-bin path/to/ray` or
+`RAY_ENGINE_BIN=path/to/ray` to select an explicit built engine executable.
 
 `studio` owns authoring and output orchestration. `output_image` and
 `resume_film` are accepted by studio but are not emitted to the generated engine
@@ -52,7 +57,7 @@ After adaptation, studio writes the generated engine script to:
 outputs/intermediate/<source-or-merged>.studio.<hash>.json
 ```
 
-Then it runs engine with:
+Then it runs a separate engine process with:
 
 ```text
 --script outputs/intermediate/<...>.json

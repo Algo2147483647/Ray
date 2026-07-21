@@ -435,6 +435,30 @@ func TestParseStudioConfigSupportsEndlessResumeCheckpoint(t *testing.T) {
 	}
 }
 
+func TestParseStudioConfigSupportsEngineBin(t *testing.T) {
+	config, err := parseStudioConfig([]string{"--engine-bin", "bin/ray"})
+	if err != nil {
+		t.Fatalf("parse engine bin: %v", err)
+	}
+	if config.engineBin != "bin/ray" {
+		t.Fatalf("unexpected engine bin: %q", config.engineBin)
+	}
+}
+
+func TestEngineCommandDefaultsToGoRun(t *testing.T) {
+	name, args, err := engineCommand(studioConfig{}, "repo")
+	if err != nil {
+		t.Fatalf("engine command: %v", err)
+	}
+	if name != "go" {
+		t.Fatalf("expected go command, got %q", name)
+	}
+	expected := []string{"-C", filepath.Join("repo", "engine"), "run", "."}
+	if strings.Join(args, "\x00") != strings.Join(expected, "\x00") {
+		t.Fatalf("unexpected engine args: %v", args)
+	}
+}
+
 func TestStudioEngineArgsUsesEndlessSampleOverride(t *testing.T) {
 	config := studioConfig{
 		provided: map[string]bool{"samples": true},

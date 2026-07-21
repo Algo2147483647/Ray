@@ -6,6 +6,7 @@
     "studio": "go -C studio run .",
     "ray:test": "go -C engine test ./...",
     "ray:build": "go -C engine build -o ../bin/ray .",
+    "studio:build": "go -C studio build -o ../bin/studio .",
     "ui": "npm --prefix scene-editor-front run dev",
     "ui:install": "npm --prefix scene-editor-front install",
     "ui:build": "npm --prefix scene-editor-front run build",

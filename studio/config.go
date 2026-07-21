@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"os"
 	"strconv"
 
 	"github.com/Algo2147483647/ray/studio/schema"
@@ -13,6 +14,7 @@ const (
 	defaultScriptPath        = "../examples/scenes/default.json"
 	defaultEngineOutputImage = "../../outputs/output.png"
 	defaultEngineOutputFilm  = "../../outputs/img.bin"
+	engineBinEnvVar          = "RAY_ENGINE_BIN"
 )
 
 type studioConfig struct {
@@ -26,6 +28,7 @@ type studioConfig struct {
 	samples            int64
 	outputImage        string
 	outputFilm         string
+	engineBin          string
 	resumeFilm         string
 	endless            bool
 	checkpointInterval int64
@@ -68,6 +71,7 @@ func parseStudioConfig(args []string) (studioConfig, error) {
 	flagSet.Int64Var(&config.samples, "samples", 0, "samples per pixel")
 	flagSet.StringVar(&config.outputImage, "output-image", "", "output image path")
 	flagSet.StringVar(&config.outputFilm, "output-film", "", "output film path")
+	flagSet.StringVar(&config.engineBin, "engine-bin", os.Getenv(engineBinEnvVar), "engine executable path")
 	flagSet.StringVar(&config.resumeFilm, "resume-film", "", "existing film path to merge before saving outputs")
 	flagSet.BoolVar(&config.endless, "endless", false, "render forever and save periodic film and image checkpoints")
 	flagSet.Int64Var(&config.checkpointInterval, "checkpoint-interval", 0, "samples to render between endless checkpoints")

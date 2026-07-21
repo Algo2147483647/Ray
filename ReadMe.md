@@ -73,6 +73,7 @@ Ray/
       shape/             Analytic primitives and intersection logic
     ray_tracing/         Integrator, pixel sampling, recursive path tracing, render tiling
     utils/               Shared numeric and parsing helpers
+  studio/                Authoring adapter and output orchestration CLI
   examples/scenes/       Scene JSON files
   outputs/               Render outputs, ignored by git
   scene-editor/          React/TypeScript scene editor
@@ -108,14 +109,17 @@ npm run studio -- --output-film ../outputs/render.bin --output-image ../outputs/
 ```
 
 Engine writes Film data. Studio converts Film data to images and handles
-resuming or endless checkpointed runs. Default outputs are written under
-`outputs/`.
+resuming or endless checkpointed runs. Studio launches engine as a separate
+process, using `go -C engine run .` by default or `--engine-bin` /
+`RAY_ENGINE_BIN` for an explicit built executable. Default outputs are written
+under `outputs/`.
 
 ## Go Development
 
 ```bash
 npm run ray:test
 npm run ray:build
+npm run studio:build
 ```
 
 The build command writes the CLI binary to `bin/ray`.
