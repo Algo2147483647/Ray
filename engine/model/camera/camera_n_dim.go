@@ -14,7 +14,7 @@ type CameraNDim struct {
 	Position               *mat.VecDense   // Camera origin in N-dimensional space.
 	Coordinates            []*mat.VecDense // Camera basis vectors.
 	Width                  []int           // Film resolution per dimension.
-	FieldOfView            []float64       // Field-of-view angle per dimension.
+	FieldOfViews           []float64       // Field-of-view angle per dimension.
 	Ortho                  bool            // Uses orthographic projection when true.
 	orthonormalCoordinates []*mat.VecDense // Orthonormalized camera basis vectors.
 	fovTangents            []float64       // Tangents of half field-of-view angles.
@@ -26,7 +26,7 @@ func NewCameraNDim() *CameraNDim {
 
 func (c *CameraNDim) Prepare() error {
 	// Avoid double counting
-	if len(c.orthonormalCoordinates) == len(c.Coordinates) && len(c.fovTangents) == len(c.FieldOfView) {
+	if len(c.orthonormalCoordinates) == len(c.Coordinates) && len(c.fovTangents) == len(c.FieldOfViews) {
 		return nil
 	}
 
@@ -35,16 +35,16 @@ func (c *CameraNDim) Prepare() error {
 		return fmt.Errorf("camera coordinates are not configured")
 	} else if len(c.Width) == 0 {
 		return fmt.Errorf("camera width is not configured")
-	} else if len(c.Width) != len(c.FieldOfView) {
-		return fmt.Errorf("width count %d does not match field of view count %d", len(c.Width), len(c.FieldOfView))
+	} else if len(c.Width) != len(c.FieldOfViews) {
+		return fmt.Errorf("width count %d does not match field of views count %d", len(c.Width), len(c.FieldOfViews))
 	} else if len(c.Coordinates) != len(c.Width)+1 {
 		return fmt.Errorf("coordinate count %d must equal width count + 1 (%d)", len(c.Coordinates), len(c.Width)+1)
 	}
 
 	// Compute
 	c.orthonormalCoordinates = maths.GramSchmidt(c.Coordinates...)
-	c.fovTangents = make([]float64, len(c.FieldOfView))
-	for i, fov := range c.FieldOfView {
+	c.fovTangents = make([]float64, len(c.FieldOfViews))
+	for i, fov := range c.FieldOfViews {
 		c.fovTangents[i] = math.Tan(fov * math.Pi / 180 / 2.0)
 	}
 

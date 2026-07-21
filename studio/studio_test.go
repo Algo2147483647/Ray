@@ -264,9 +264,6 @@ func TestStudioAdaptsCameraLookAtFromRawFields(t *testing.T) {
 	}
 	camera := adapted.Cameras[0]
 	assertDirectFloatSlice(t, camera.Direction, []float64{4, 0, -1})
-	if camera.AspectRatio != 1 {
-		t.Fatalf("expected studio to fill default aspect ratio, got %v", camera.AspectRatio)
-	}
 }
 
 func TestStudioRejectsUnequalHypercubeExtents(t *testing.T) {

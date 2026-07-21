@@ -15,8 +15,7 @@ func TestHyperbolicCameraPrepareBuildsKleinOrthonormalFrame(t *testing.T) {
 	camera.Up = mat.NewVecDense(3, []float64{0, 0, 1})
 	camera.Width = 100
 	camera.Height = 100
-	camera.AspectRatio = 1
-	camera.FieldOfView = 80
+	camera.FieldOfViews = []float64{80, 80}
 
 	if err := camera.Prepare(); err != nil {
 		t.Fatalf("Prepare returned error: %v", err)
@@ -38,8 +37,7 @@ func TestHyperbolicCameraGenerateRayUsesKleinUnitDirection(t *testing.T) {
 	camera.Up = mat.NewVecDense(3, []float64{0, 0, 1})
 	camera.Width = 64
 	camera.Height = 64
-	camera.AspectRatio = 1
-	camera.FieldOfView = 70
+	camera.FieldOfViews = []float64{70, 70}
 
 	ray := camera.GenerateRay(nil, 32, 32)
 
@@ -56,8 +54,7 @@ func TestHyperbolicCameraRejectsPositionOutsideKleinBall(t *testing.T) {
 	camera.Up = mat.NewVecDense(3, []float64{0, 0, 1})
 	camera.Width = 64
 	camera.Height = 64
-	camera.AspectRatio = 1
-	camera.FieldOfView = 70
+	camera.FieldOfViews = []float64{70, 70}
 
 	if err := camera.Prepare(); err == nil {
 		t.Fatal("expected camera outside Klein unit ball to be rejected")

@@ -16,7 +16,7 @@ func TestCameraNDimPrepareCachesDerivedData(t *testing.T) {
 		mat.NewVecDense(4, []float64{0, 0, 0, 1}),
 	}
 	camera.Width = []int{10, 10, 10}
-	camera.FieldOfView = []float64{45, 60, 90}
+	camera.FieldOfViews = []float64{45, 60, 90}
 
 	if err := camera.Prepare(); err != nil {
 		t.Fatalf("Prepare returned error: %v", err)

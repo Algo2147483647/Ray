@@ -5,28 +5,26 @@ import (
 	"github.com/Algo2147483647/ray/engine/maths"
 	renderray "github.com/Algo2147483647/ray/engine/model/optics"
 	"gonum.org/v1/gonum/mat"
-	"math"
 	"math/rand/v2"
 )
 
 type Camera3D struct {
 	CameraBase
-	Position    *mat.VecDense // Camera origin in scene space.
-	Direction   *mat.VecDense // Forward viewing direction.
-	Up          *mat.VecDense // Up vector defining camera roll.
-	Width       int           // Film width in pixels.
-	Height      int           // Film height in pixels.
-	FieldOfView float64       // Field-of-view angle in degrees.
-	AspectRatio float64       // Film width-to-height ratio.
-	Ortho       bool          // Uses orthographic projection when true.
-	dir         *mat.VecDense // Normalized viewing direction.
-	up          *mat.VecDense // Normalized camera up vector.
-	right       *mat.VecDense // Normalized camera right vector.
-	halfWidth   float64       // Half-width of the view plane.
-	halfHeight  float64       // Half-height of the view plane.
-	invWidth2   float64       // Reciprocal of twice the film width.
-	invHeight2  float64       // Reciprocal of twice the film height.
-	prepared    bool          // Indicates cached camera basis is ready.
+	Position     *mat.VecDense // Camera origin in scene space.
+	Direction    *mat.VecDense // Forward viewing direction.
+	Up           *mat.VecDense // Up vector defining camera roll.
+	Width        int           // Film width in pixels.
+	Height       int           // Film height in pixels.
+	FieldOfViews []float64     // Vertical and horizontal field-of-view angles in degrees.
+	Ortho        bool          // Uses orthographic projection when true.
+	dir          *mat.VecDense // Normalized viewing direction.
+	up           *mat.VecDense // Normalized camera up vector.
+	right        *mat.VecDense // Normalized camera right vector.
+	halfWidth    float64       // Half-width of the view plane.
+	halfHeight   float64       // Half-height of the view plane.
+	invWidth2    float64       // Reciprocal of twice the film width.
+	invHeight2   float64       // Reciprocal of twice the film height.
+	prepared     bool          // Indicates cached camera basis is ready.
 }
 
 func NewCamera3D() *Camera3D {
@@ -44,14 +42,14 @@ func (c *Camera3D) Prepare() error {
 		return fmt.Errorf("camera width must be > 0")
 	} else if c.Height <= 0 {
 		return fmt.Errorf("camera height must be > 0")
-	} else if c.FieldOfView <= 0 {
-		return fmt.Errorf("camera field of view must be > 0")
-	} else if c.AspectRatio <= 0 {
-		return fmt.Errorf("camera aspect ratio must be > 0")
 	} else if mat.Norm(c.Direction, 2) == 0 {
 		return fmt.Errorf("camera direction must not be zero")
 	} else if mat.Norm(c.Up, 2) == 0 {
 		return fmt.Errorf("camera up vector must not be zero")
+	}
+	halfHeight, halfWidth, err := frameHalfExtents(c.FieldOfViews)
+	if err != nil {
+		return err
 	}
 
 	c.dir = mat.VecDenseCopyOf(c.Direction)
@@ -64,9 +62,8 @@ func (c *Camera3D) Prepare() error {
 	}
 	c.right = maths.Normalize(right)
 
-	fovRad := c.FieldOfView * math.Pi / 180
-	c.halfHeight = math.Tan(fovRad / 2)
-	c.halfWidth = c.AspectRatio * c.halfHeight
+	c.halfHeight = halfHeight
+	c.halfWidth = halfWidth
 	c.invWidth2 = 2 / float64(c.Width)
 	c.invHeight2 = 2 / float64(c.Height)
 	c.prepared = true

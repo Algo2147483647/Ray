@@ -96,13 +96,12 @@ func TestResolveRenderConfigsRenderJobInheritsCameraIndexWhenOmitted(t *testing.
 
 func TestSelectRenderCameraAppliesOverridesToHyperbolicCamera(t *testing.T) {
 	cam := &camera.HyperbolicCamera{Camera3D: camera.Camera3D{
-		Position:    mat.NewVecDense(3, []float64{0, 0, 0}),
-		Direction:   mat.NewVecDense(3, []float64{1, 0, 0}),
-		Up:          mat.NewVecDense(3, []float64{0, 0, 1}),
-		Width:       400,
-		Height:      400,
-		FieldOfView: 70,
-		AspectRatio: 1,
+		Position:     mat.NewVecDense(3, []float64{0, 0, 0}),
+		Direction:    mat.NewVecDense(3, []float64{1, 0, 0}),
+		Up:           mat.NewVecDense(3, []float64{0, 0, 1}),
+		Width:        400,
+		Height:       400,
+		FieldOfViews: []float64{70, 70},
 	}}
 	h := NewHandler()
 	h.Scene.Cameras = []camera.Camera{cam}
@@ -126,13 +125,12 @@ func TestSelectRenderCameraRequiresCamera(t *testing.T) {
 
 func TestSelectRenderCameraAppliesOverridesToSphericalCamera(t *testing.T) {
 	cam := &camera.SphericalCamera{
-		Position:    mat.NewVecDense(4, []float64{1, 0, 0, 0}),
-		Forward:     mat.NewVecDense(4, []float64{0, 1, 0, 0}),
-		Up:          mat.NewVecDense(4, []float64{0, 0, 1, 0}),
-		Width:       400,
-		Height:      400,
-		FieldOfView: 70,
-		AspectRatio: 1,
+		Position:     mat.NewVecDense(4, []float64{1, 0, 0, 0}),
+		Forward:      mat.NewVecDense(4, []float64{0, 1, 0, 0}),
+		Up:           mat.NewVecDense(4, []float64{0, 0, 1, 0}),
+		Width:        400,
+		Height:       400,
+		FieldOfViews: []float64{70, 70},
 	}
 	h := NewHandler()
 	h.Scene.Cameras = []camera.Camera{cam}

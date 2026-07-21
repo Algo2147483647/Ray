@@ -245,8 +245,7 @@ An omitted camera type defaults to `3d`.
   "position": [-4, 0, 1],
   "direction": [4, 0, -1],
   "up": [0, 0, 1],
-  "field_of_view": 60,
-  "aspect_ratio": 1,
+  "field_of_views": [60, 60],
   "ortho": false
 }
 ```

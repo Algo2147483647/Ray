@@ -7,6 +7,16 @@ import (
 	modelcamera "github.com/Algo2147483647/ray/engine/model/camera"
 )
 
+type Script struct {
+	Materials []map[string]interface{}          `json:"materials"`
+	Media     map[string]map[string]interface{} `json:"media"`
+	Objects   []map[string]interface{}          `json:"objects"`
+	Cameras   []CameraScript                    `json:"cameras"`
+	Render    RenderScript                      `json:"render"`
+	Geometry  *GeometryScript                   `json:"geometry"`
+	Renders   []RenderScript                    `json:"renders"`
+}
+
 type CameraScript struct {
 	ID           string                 `json:"id"`             // Unique camera identifier.
 	Type         modelcamera.CameraType `json:"type"`           // Camera model type.
@@ -14,10 +24,8 @@ type CameraScript struct {
 	Direction    []float64              `json:"direction"`      // Forward viewing direction.
 	Up           []float64              `json:"up"`             // Up vector defining camera roll.
 	Widths       []int                  `json:"widths"`         // Per-frame image widths.
-	FieldOfView  float64                `json:"field_of_view"`  // Vertical field of view in degrees.
 	FieldOfViews []float64              `json:"field_of_views"` // Per-frame field-of-view values.
 	Coordinates  [][]float64            `json:"coordinates"`    // Camera path or sampled positions.
-	AspectRatio  float64                `json:"aspect_ratio"`   // Image width-to-height ratio.
 	Ortho        bool                   `json:"ortho"`          // Enables orthographic projection.
 }
 
@@ -62,34 +70,7 @@ type RenderScript struct {
 	FilmColorSpace    string  `json:"working_space"`
 }
 
-func (r *RenderScript) UnmarshalJSON(data []byte) error {
-	type renderScript RenderScript
-	var decoded renderScript
-	if err := json.Unmarshal(data, &decoded); err != nil {
-		return err
-	}
-
-	var raw map[string]json.RawMessage
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return err
-	}
-	decoded.CameraIndexSet = raw["camera_index"] != nil
-
-	*r = RenderScript(decoded)
-	return nil
-}
-
 type GeometryScript struct {
 	Type   string  `json:"type"`    // "euclidean" | "klein" | "spherical"
 	MaxArc float64 `json:"max_arc"` // total geodesic budget per ray; 0 ⇒ defaults (∞ for klein/euclidean, 2π for spherical)
-}
-
-type Script struct {
-	Materials []map[string]interface{}          `json:"materials"`
-	Media     map[string]map[string]interface{} `json:"media"`
-	Objects   []map[string]interface{}          `json:"objects"`
-	Cameras   []CameraScript                    `json:"cameras"`
-	Render    RenderScript                      `json:"render"`
-	Geometry  *GeometryScript                   `json:"geometry"`
-	Renders   []RenderScript                    `json:"renders"`
 }

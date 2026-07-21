@@ -13,8 +13,7 @@ func TestCamera3DPrepareCachesDerivedData(t *testing.T) {
 	camera.Up = mat.NewVecDense(3, []float64{0, 0, 1})
 	camera.Width = 100
 	camera.Height = 50
-	camera.AspectRatio = 2
-	camera.FieldOfView = 60
+	camera.FieldOfViews = []float64{60, 67.38013505195957}
 
 	if err := camera.Prepare(); err != nil {
 		t.Fatalf("Prepare returned error: %v", err)
@@ -25,7 +24,7 @@ func TestCamera3DPrepareCachesDerivedData(t *testing.T) {
 	if math.Abs(camera.halfHeight-math.Tan(60*math.Pi/180/2.0)) > 1e-12 {
 		t.Fatalf("unexpected cached half height: %v", camera.halfHeight)
 	}
-	if math.Abs(camera.halfWidth-2*math.Tan(60*math.Pi/180/2.0)) > 1e-12 {
+	if math.Abs(camera.halfWidth-math.Tan(67.38013505195957*math.Pi/180/2.0)) > 1e-12 {
 		t.Fatalf("unexpected cached half width: %v", camera.halfWidth)
 	}
 
@@ -46,8 +45,7 @@ func TestCamera3DPrepareRefreshesWhenDimensionsChange(t *testing.T) {
 	camera.Up = mat.NewVecDense(3, []float64{0, 0, 1})
 	camera.Width = 100
 	camera.Height = 50
-	camera.AspectRatio = 2
-	camera.FieldOfView = 60
+	camera.FieldOfViews = []float64{60, 67.38013505195957}
 
 	if err := camera.Prepare(); err != nil {
 		t.Fatalf("Prepare returned error: %v", err)

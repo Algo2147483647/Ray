@@ -3,6 +3,7 @@ package factory
 import (
 	"errors"
 	"fmt"
+
 	"github.com/Algo2147483647/ray/engine/controller/parser"
 	"github.com/Algo2147483647/ray/engine/maths"
 	modelcamera "github.com/Algo2147483647/ray/engine/model/camera"
@@ -44,12 +45,11 @@ func BuildCameraFromScript(def parser.CameraScript) (modelcamera.Camera, error) 
 
 func BuildCamera3DFromScript(def parser.CameraScript) (*modelcamera.Camera3D, error) {
 	return &modelcamera.Camera3D{
-		Position:    utils.NewVec(def.Position),
-		Direction:   maths.Normalize(utils.NewVec(def.Direction)),
-		Up:          utils.NewVec(def.Up),
-		AspectRatio: def.AspectRatio,
-		FieldOfView: def.FieldOfView,
-		Ortho:       def.Ortho,
+		Position:     utils.NewVec(def.Position),
+		Direction:    maths.Normalize(utils.NewVec(def.Direction)),
+		Up:           utils.NewVec(def.Up),
+		FieldOfViews: append([]float64(nil), def.FieldOfViews...),
+		Ortho:        def.Ortho,
 	}, nil
 }
 
@@ -65,12 +65,6 @@ func BuildCameraNDimFromScript(def parser.CameraScript) (*modelcamera.CameraNDim
 	}
 
 	fieldOfViews := append([]float64(nil), def.FieldOfViews...)
-	if len(fieldOfViews) == 0 && def.FieldOfView > 0 {
-		fieldOfViews = make([]float64, len(widths))
-		for i := range fieldOfViews {
-			fieldOfViews[i] = def.FieldOfView
-		}
-	}
 	if len(fieldOfViews) != len(widths) {
 		return nil, fmt.Errorf("field_of_views count %d must match widths count %d", len(fieldOfViews), len(widths))
 	}
@@ -93,11 +87,11 @@ func BuildCameraNDimFromScript(def parser.CameraScript) (*modelcamera.CameraNDim
 	}
 
 	cameraNDim := &modelcamera.CameraNDim{
-		Position:    utils.NewVec(def.Position),
-		Coordinates: coordinates,
-		Width:       widths,
-		FieldOfView: fieldOfViews,
-		Ortho:       def.Ortho,
+		Position:     utils.NewVec(def.Position),
+		Coordinates:  coordinates,
+		Width:        widths,
+		FieldOfViews: fieldOfViews,
+		Ortho:        def.Ortho,
 	}
 	if err := cameraNDim.Prepare(); err != nil {
 		return nil, err
@@ -115,11 +109,10 @@ func BuildHyperbolicCameraFromScript(def parser.CameraScript) (*modelcamera.Hype
 
 func BuildSphericalCameraFromScript(def parser.CameraScript) (*modelcamera.SphericalCamera, error) {
 	cam := &modelcamera.SphericalCamera{
-		Position:    utils.NewVec(def.Position),
-		Forward:     utils.NewVec(def.Direction),
-		Up:          utils.NewVec(def.Up),
-		FieldOfView: def.FieldOfView,
-		AspectRatio: def.AspectRatio,
+		Position:     utils.NewVec(def.Position),
+		Forward:      utils.NewVec(def.Direction),
+		Up:           utils.NewVec(def.Up),
+		FieldOfViews: append([]float64(nil), def.FieldOfViews...),
 	}
 	if err := cam.Prepare(); err != nil {
 		return nil, err

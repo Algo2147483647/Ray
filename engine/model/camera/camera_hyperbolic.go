@@ -33,16 +33,16 @@ func (c *HyperbolicCamera) Prepare() error {
 		return fmt.Errorf("camera width must be > 0")
 	} else if c.Height <= 0 {
 		return fmt.Errorf("camera height must be > 0")
-	} else if c.FieldOfView <= 0 {
-		return fmt.Errorf("camera field of view must be > 0")
-	} else if c.AspectRatio <= 0 {
-		return fmt.Errorf("camera aspect ratio must be > 0")
 	} else if mat.Norm(c.Direction, 2) == 0 {
 		return fmt.Errorf("camera direction must not be zero")
 	} else if mat.Norm(c.Up, 2) == 0 {
 		return fmt.Errorf("camera up vector must not be zero")
 	} else if mat.Dot(c.Position, c.Position) >= 1 {
 		return fmt.Errorf("hyperbolic camera position must be inside the Klein unit ball")
+	}
+	halfHeight, halfWidth, err := frameHalfExtents(c.FieldOfViews)
+	if err != nil {
+		return err
 	}
 
 	g := geometry.Klein()
@@ -68,9 +68,8 @@ func (c *HyperbolicCamera) Prepare() error {
 	c.up = up
 	c.right = right
 
-	fovRad := c.FieldOfView * math.Pi / 180
-	c.halfHeight = math.Tan(fovRad / 2)
-	c.halfWidth = c.AspectRatio * c.halfHeight
+	c.halfHeight = halfHeight
+	c.halfWidth = halfWidth
 	c.invWidth2 = 2 / float64(c.Width)
 	c.invHeight2 = 2 / float64(c.Height)
 	c.prepared = true

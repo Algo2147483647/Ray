@@ -47,8 +47,7 @@ func TestNonEuclideanCanonicalSceneLoadsAndRendersSmokeFrame(t *testing.T) {
 				"position": [-0.4, 0, 0],
 				"direction": [1, 0, 0],
 				"up": [0, 0, 1],
-				"field_of_view": 70,
-				"aspect_ratio": 1
+				"field_of_views": [70, 70]
 			}
 		]
 	}`)

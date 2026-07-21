@@ -2,7 +2,6 @@ package camera
 
 import (
 	"fmt"
-	"math"
 	"math/rand/v2"
 
 	"github.com/Algo2147483647/ray/engine/maths"
@@ -16,13 +15,12 @@ import (
 // (they are projected into T_p and orthonormalized at Prepare time).
 type SphericalCamera struct {
 	CameraBase
-	Position    *mat.VecDense
-	Forward     *mat.VecDense
-	Up          *mat.VecDense
-	Width       int
-	Height      int
-	FieldOfView float64 // degrees
-	AspectRatio float64
+	Position     *mat.VecDense
+	Forward      *mat.VecDense
+	Up           *mat.VecDense
+	Width        int
+	Height       int
+	FieldOfViews []float64 // Vertical and horizontal field-of-view angles in degrees.
 
 	forward    *mat.VecDense
 	up         *mat.VecDense
@@ -40,8 +38,12 @@ func (c *SphericalCamera) Prepare() error {
 	if c.Position == nil || c.Forward == nil || c.Up == nil {
 		return fmt.Errorf("spherical camera requires position, forward, up")
 	}
-	if c.Width <= 0 || c.Height <= 0 || c.FieldOfView <= 0 || c.AspectRatio <= 0 {
-		return fmt.Errorf("spherical camera requires positive width, height, fov, aspect ratio")
+	if c.Width <= 0 || c.Height <= 0 {
+		return fmt.Errorf("spherical camera requires positive width and height")
+	}
+	halfHeight, halfWidth, err := frameHalfExtents(c.FieldOfViews)
+	if err != nil {
+		return err
 	}
 
 	g := geometry.Spherical()
@@ -76,9 +78,8 @@ func (c *SphericalCamera) Prepare() error {
 	}
 	c.forward, c.up, c.right = fwd, up, right
 
-	fovRad := c.FieldOfView * math.Pi / 180
-	c.halfHeight = math.Tan(fovRad / 2)
-	c.halfWidth = c.AspectRatio * c.halfHeight
+	c.halfHeight = halfHeight
+	c.halfWidth = halfWidth
 	c.invWidth2 = 2 / float64(c.Width)
 	c.invHeight2 = 2 / float64(c.Height)
 	c.prepared = true

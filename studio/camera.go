@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
+	modelcamera "github.com/Algo2147483647/ray/engine/model/camera"
 	"math"
-	"strings"
 )
 
 var (
@@ -39,10 +39,8 @@ type engineCameraScript struct {
 	Direction    []float64   `json:"direction,omitempty"`
 	Up           []float64   `json:"up,omitempty"`
 	Widths       []int       `json:"widths,omitempty"`
-	FieldOfView  float64     `json:"field_of_view,omitempty"`
 	FieldOfViews []float64   `json:"field_of_views,omitempty"`
 	Coordinates  [][]float64 `json:"coordinates,omitempty"`
-	AspectRatio  float64     `json:"aspect_ratio,omitempty"`
 	Ortho        bool        `json:"ortho,omitempty"`
 }
 
@@ -70,13 +68,15 @@ func adaptCameras(cameraDefs []studioCameraScript, dimension int) ([]engineCamer
 }
 
 func adaptCamera(def studioCameraScript, dimension int) (engineCameraScript, error) {
-	switch strings.ToLower(def.Type) {
-	case "", "3d", "camera3d", "hyperbolic", "klein":
+	switch modelcamera.CameraType(def.Type) {
+	case "", modelcamera.CameraType3D, modelcamera.CameraTypeHyperbolic:
 		return adaptCamera3D(def, dimension)
-	case "spherical", "s3":
+	case modelcamera.CameraTypeSpherical:
 		return adaptSphericalCamera(def, dimension)
-	default:
+	case modelcamera.CameraTypeNDim:
 		return cloneCamera(def), nil
+	default:
+		return engineCameraScript{}, fmt.Errorf("unsupported camera type %q", def.Type)
 	}
 }
 
@@ -113,13 +113,16 @@ func adaptCamera3D(def studioCameraScript, dimension int) (engineCameraScript, e
 
 	camera := cloneCamera(def)
 	if camera.Type == "" {
-		camera.Type = "3d"
+		camera.Type = string(modelcamera.CameraType3D)
 	}
 	camera.Position = position
 	camera.Direction = direction
 	camera.Up = up
-	camera.FieldOfView = positiveCameraValue(def.FieldOfView, defaultStudioFieldOfView)
-	camera.AspectRatio = positiveCameraValue(def.AspectRatio, defaultStudioAspectRatio)
+	fieldOfViews, err := frameFieldOfViews(def)
+	if err != nil {
+		return engineCameraScript{}, err
+	}
+	camera.FieldOfViews = fieldOfViews
 	return camera, nil
 }
 
@@ -128,8 +131,11 @@ func adaptSphericalCamera(def studioCameraScript, dimension int) (engineCameraSc
 		return engineCameraScript{}, fmt.Errorf("spherical camera requires render dimension 4, got %d", dimension)
 	}
 	camera := cloneCamera(def)
-	camera.FieldOfView = positiveCameraValue(def.FieldOfView, defaultStudioFieldOfView)
-	camera.AspectRatio = positiveCameraValue(def.AspectRatio, defaultStudioAspectRatio)
+	fieldOfViews, err := frameFieldOfViews(def)
+	if err != nil {
+		return engineCameraScript{}, err
+	}
+	camera.FieldOfViews = fieldOfViews
 	return camera, nil
 }
 
@@ -150,6 +156,40 @@ func positiveCameraValue(value, fallback float64) float64 {
 	return fallback
 }
 
+func frameFieldOfViews(def studioCameraScript) ([]float64, error) {
+	if len(def.FieldOfViews) > 0 {
+		if len(def.FieldOfViews) != 2 {
+			return nil, fmt.Errorf("field_of_views must contain vertical and horizontal FOV values, got %d", len(def.FieldOfViews))
+		}
+		fieldOfViews := append([]float64(nil), def.FieldOfViews...)
+		for i, fov := range fieldOfViews {
+			if fov <= 0 {
+				return nil, fmt.Errorf("field_of_views[%d] must be > 0", i)
+			}
+		}
+		return fieldOfViews, nil
+	}
+
+	verticalFOV := positiveCameraValue(def.FieldOfView, defaultStudioFieldOfView)
+	aspectRatio := positiveCameraValue(def.AspectRatio, defaultStudioAspectRatio)
+	horizontalFOV := 2 * math.Atan(math.Tan(verticalFOV*math.Pi/180/2)*aspectRatio) * 180 / math.Pi
+	if horizontalFOV <= 0 || math.IsNaN(horizontalFOV) || math.IsInf(horizontalFOV, 0) {
+		return nil, fmt.Errorf("field_of_view and aspect_ratio must produce a positive horizontal FOV")
+	}
+	return []float64{verticalFOV, horizontalFOV}, nil
+}
+
+func nDimFieldOfViews(def studioCameraScript) []float64 {
+	if len(def.FieldOfViews) > 0 || def.FieldOfView <= 0 {
+		return append([]float64(nil), def.FieldOfViews...)
+	}
+	fieldOfViews := make([]float64, len(def.Widths))
+	for i := range fieldOfViews {
+		fieldOfViews[i] = def.FieldOfView
+	}
+	return fieldOfViews
+}
+
 func subFloat64Slices(a, b []float64) []float64 {
 	result := make([]float64, len(a))
 	for i := range a {
@@ -168,17 +208,19 @@ func vectorNorm(values []float64) float64 {
 
 func cloneCamera(def studioCameraScript) engineCameraScript {
 	camera := engineCameraScript{
-		ID:          def.ID,
-		Type:        def.Type,
-		FieldOfView: def.FieldOfView,
-		AspectRatio: def.AspectRatio,
-		Ortho:       def.Ortho,
+		ID:    def.ID,
+		Type:  def.Type,
+		Ortho: def.Ortho,
 	}
 	camera.Position = append([]float64(nil), def.Position...)
 	camera.Direction = append([]float64(nil), def.Direction...)
 	camera.Up = append([]float64(nil), def.Up...)
 	camera.Widths = append([]int(nil), def.Widths...)
-	camera.FieldOfViews = append([]float64(nil), def.FieldOfViews...)
+	if modelcamera.CameraType(def.Type) == modelcamera.CameraTypeNDim {
+		camera.FieldOfViews = nDimFieldOfViews(def)
+	} else {
+		camera.FieldOfViews = append([]float64(nil), def.FieldOfViews...)
+	}
 	if len(def.Coordinates) > 0 {
 		camera.Coordinates = make([][]float64, len(def.Coordinates))
 		for i, coordinate := range def.Coordinates {

@@ -18,7 +18,7 @@ func TestCameraNDimGenerateRay3D(t *testing.T) {
 		mat.NewVecDense(3, []float64{0, 0, 1}),
 	}
 	camera.Width = []int{100, 100}
-	camera.FieldOfView = []float64{90, 90}
+	camera.FieldOfViews = []float64{90, 90}
 
 	ray := camera.GenerateRay(nil, 50, 50)
 	if ray == nil {
@@ -53,7 +53,7 @@ func TestCameraNDimGenerateRay4D(t *testing.T) {
 		mat.NewVecDense(4, []float64{0, 0, 0, 1}),
 	}
 	camera.Width = []int{10, 10, 10}
-	camera.FieldOfView = []float64{90, 90, 90}
+	camera.FieldOfViews = []float64{90, 90, 90}
 
 	ray := camera.GenerateRay(nil, 5, 5, 5)
 	if ray == nil {
@@ -80,7 +80,7 @@ func TestCameraNDimOrthoKeepsDirectionAndMovesOrigin(t *testing.T) {
 		mat.NewVecDense(4, []float64{0, 0, 0, 1}),
 	}
 	camera.Width = []int{10, 10, 10}
-	camera.FieldOfView = []float64{90, 90, 90}
+	camera.FieldOfViews = []float64{90, 90, 90}
 	camera.Ortho = true
 
 	rayA := camera.GenerateRay(nil, 0, 0, 0)
@@ -105,7 +105,7 @@ func TestCameraNDimGenerateRayResetsReusedRayMediumState(t *testing.T) {
 		mat.NewVecDense(3, []float64{0, 0, 1}),
 	}
 	camera.Width = []int{100, 100}
-	camera.FieldOfView = []float64{90, 90}
+	camera.FieldOfViews = []float64{90, 90}
 
 	ray := &optics.Ray{}
 	ray.Init()
