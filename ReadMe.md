@@ -104,10 +104,12 @@ Useful render flags:
 
 ```bash
 npm run ray -- --width 800 --height 600 --samples 64 --threads 8
-npm run ray -- --output-image ../outputs/render.png
+npm run studio -- --output-film ../outputs/render.bin --output-image ../outputs/render.png
 ```
 
-Default outputs are written under `outputs/`.
+Engine writes Film data. Studio converts Film data to images and handles
+resuming or endless checkpointed runs. Default outputs are written under
+`outputs/`.
 
 ## Go Development
 

@@ -667,7 +667,7 @@ Rough conductor:
 Example render command:
 
 ```bash
-go -C engine run . --script ../examples/scenes/feature-showcase.json --samples 64 --width 256 --height 256 --output-image ../outputs/rough-conductor.png
+go -C studio run . --script ../examples/scenes/feature-showcase.json --samples 64 --width 256 --height 256 --output-image ../outputs/rough-conductor.png
 ```
 
 Old fields such as `color`, `reflectivity`, `refractivity`, `radiate`, and `diffuse_loss` are not part of the new material schema. They are intentionally not translated in the new parser.
@@ -765,7 +765,7 @@ tone mapping / exposure / gamma output
 Example high-quality render:
 
 ```bash
-go -C engine run . --script ../examples/scenes/feature-showcase.json --width 800 --height 800 --samples 2000 --output-image ../outputs/feature-showcase-800x800-2000spp.png
+go -C studio run . --script ../examples/scenes/feature-showcase.json --width 800 --height 800 --samples 2000 --output-image ../outputs/feature-showcase-800x800-2000spp.png
 ```
 
 ## Open Design Questions
