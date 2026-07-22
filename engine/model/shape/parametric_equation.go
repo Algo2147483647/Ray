@@ -3,6 +3,8 @@ package shape
 import (
 	"fmt"
 	"math"
+	"sort"
+	"sync"
 
 	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/utils"
@@ -38,6 +40,9 @@ type ParametricEquation struct {
 	ResidualTol   float64
 
 	cachedBounds *Cuboid
+	patches      []parametricPatch
+	patchBVH     *parametricPatchBVHNode
+	accelMu      sync.Mutex
 }
 
 type parametricHit struct {
@@ -46,6 +51,24 @@ type parametricHit struct {
 	V        float64
 	Residual float64
 	PatchID  int
+}
+
+type parametricPatch struct {
+	UMin    float64
+	UMax    float64
+	VMin    float64
+	VMax    float64
+	CenterU float64
+	CenterV float64
+	Bounds  *Cuboid
+	PatchID int
+}
+
+type parametricPatchBVHNode struct {
+	Bounds *Cuboid
+	Left   *parametricPatchBVHNode
+	Right  *parametricPatchBVHNode
+	Patch  *parametricPatch
 }
 
 type parametricSeed struct {
@@ -100,6 +123,67 @@ func (p *ParametricEquation) Validate() error {
 	return nil
 }
 
+func (p *ParametricEquation) BuildAcceleration() error {
+	if p == nil {
+		return fmt.Errorf("parametric equation is nil")
+	}
+	p.accelMu.Lock()
+	defer p.accelMu.Unlock()
+	return p.buildAccelerationLocked()
+}
+
+func (p *ParametricEquation) buildAccelerationLocked() error {
+	if err := p.Validate(); err != nil {
+		return err
+	}
+
+	patches := make([]parametricPatch, 0, p.samplesU()*p.samplesV())
+	var bounds *Cuboid
+	for patchV := 0; patchV < p.samplesV(); patchV++ {
+		for patchU := 0; patchU < p.samplesU(); patchU++ {
+			u0, u1 := p.patchRange(p.URange, patchU, p.samplesU())
+			v0, v1 := p.patchRange(p.VRange, patchV, p.samplesV())
+			patchBounds, ok := p.patchBounds(u0, u1, v0, v1)
+			if !ok {
+				continue
+			}
+			patchID := patchV*p.samplesU() + patchU
+			patch := parametricPatch{
+				UMin:    u0,
+				UMax:    u1,
+				VMin:    v0,
+				VMax:    v1,
+				CenterU: 0.5 * (u0 + u1),
+				CenterV: 0.5 * (v0 + v1),
+				Bounds:  patchBounds,
+				PatchID: patchID,
+			}
+			patches = append(patches, patch)
+			bounds = unionParametricBoxes(bounds, patchBounds)
+		}
+	}
+	if len(patches) == 0 || bounds == nil {
+		return fmt.Errorf("parametric equation produced no finite patches")
+	}
+
+	p.patches = patches
+	p.patchBVH = buildParametricPatchBVH(p.patches)
+	p.cachedBounds = bounds
+	return nil
+}
+
+func (p *ParametricEquation) ensureAcceleration() error {
+	if p == nil {
+		return fmt.Errorf("parametric equation is nil")
+	}
+	p.accelMu.Lock()
+	defer p.accelMu.Unlock()
+	if p.cachedBounds != nil && p.patchBVH != nil {
+		return nil
+	}
+	return p.buildAccelerationLocked()
+}
+
 func (p *ParametricEquation) Name() string {
 	return "Parametric Equation"
 }
@@ -113,52 +197,40 @@ func (p *ParametricEquation) Intersect(raySt, rayDir *mat.VecDense) float64 {
 }
 
 func (p *ParametricEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
+	candidate, ok := p.IntersectCandidate(raySt, rayDir, tMin, tMax)
+	if !ok {
+		return SurfaceInteraction{}, false
+	}
+	return SurfaceInteractionFromCandidate(raySt, rayDir, candidate), true
+}
+
+func (p *ParametricEquation) IntersectCandidate(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceCandidate, bool) {
 	if p == nil || raySt == nil || rayDir == nil || raySt.Len() != rayDir.Len() || raySt.Len() < 3 || tMax < tMin {
-		return SurfaceInteraction{}, false
+		return SurfaceCandidate{}, false
 	}
-	if err := p.Validate(); err != nil {
-		return SurfaceInteraction{}, false
+	if err := p.ensureAcceleration(); err != nil {
+		return SurfaceCandidate{}, false
 	}
-
-	boundsMin, boundsMax := p.BuildBoundingBox()
-	bounds := NewCuboid(boundsMin, boundsMax)
-	if _, _, ok := bounds.OverlapRange(raySt, rayDir, tMin, tMax); !ok {
-		return SurfaceInteraction{}, false
+	if p.patchBVH == nil {
+		return SurfaceCandidate{}, false
 	}
 
-	best := parametricHit{T: math.MaxFloat64}
-	found := false
-	for patchV := 0; patchV < p.samplesV(); patchV++ {
-		for patchU := 0; patchU < p.samplesU(); patchU++ {
-			patchID := patchV*p.samplesU() + patchU
-			u0, u1 := p.patchRange(p.URange, patchU, p.samplesU())
-			v0, v1 := p.patchRange(p.VRange, patchV, p.samplesV())
-			patchBounds, ok := p.patchBounds(u0, u1, v0, v1)
-			if !ok {
-				continue
-			}
-			tNear, _, ok := patchBounds.OverlapRange(raySt, rayDir, tMin, minFloat(tMax, best.T))
-			if !ok {
-				continue
-			}
-
-			seed := parametricSeed{
-				T:       maxFloat(tNear, tMin),
-				U:       0.5 * (u0 + u1),
-				V:       0.5 * (v0 + v1),
-				PatchID: patchID,
-			}
-			hit, ok := p.refineIntersection(raySt, rayDir, seed, tMin, minFloat(tMax, best.T))
-			if ok && hit.T < best.T {
-				best = hit
-				found = true
-			}
-		}
-	}
+	best, found := p.intersectPatchBVH(raySt, rayDir, p.patchBVH, tMin, tMax, parametricHit{T: math.MaxFloat64}, false)
 	if !found {
-		return SurfaceInteraction{}, false
+		return SurfaceCandidate{}, false
 	}
-	return p.interactionAt(best), true
+	interaction := p.interactionAt(best)
+	return SurfaceCandidate{
+		Distance:        interaction.Distance,
+		ArcLength:       interaction.ArcLength,
+		Point:           interaction.Point,
+		GeometricNormal: interaction.GeometricNormal,
+		ShadingNormal:   interaction.ShadingNormal,
+		UV:              interaction.UV,
+		DPDU:            interaction.DPDU,
+		DPDV:            interaction.DPDV,
+		PrimitiveID:     interaction.PrimitiveID,
+	}, true
 }
 
 func (p *ParametricEquation) IntersectPure(raySt, rayDir *mat.VecDense, u0, v0, tol float64, maxIter int) float64 {
@@ -207,13 +279,54 @@ func (p *ParametricEquation) GetNormalVector(intersect, res *mat.VecDense) *mat.
 }
 
 func (p *ParametricEquation) BuildBoundingBox() (pmin, pmax *mat.VecDense) {
-	if p == nil || p.cachedBounds == nil {
-		if p == nil || p.Function == nil || !validRange(p.URange) || !validRange(p.VRange) {
-			return (&BaseShape{}).BuildBoundingBox()
-		}
-		p.cachedBounds = p.sampledBounds()
+	if p == nil || p.ensureAcceleration() != nil || p.cachedBounds == nil {
+		return (&BaseShape{}).BuildBoundingBox()
 	}
 	return p.cachedBounds.BuildBoundingBox()
+}
+
+func (p *ParametricEquation) intersectPatchBVH(
+	raySt, rayDir *mat.VecDense,
+	node *parametricPatchBVHNode,
+	tMin, tMax float64,
+	best parametricHit,
+	found bool,
+) (parametricHit, bool) {
+	if node == nil || node.Bounds == nil {
+		return best, found
+	}
+	near, _, ok := node.Bounds.OverlapRange(raySt, rayDir, tMin, minFloat(tMax, best.T))
+	if !ok {
+		return best, found
+	}
+	if node.Patch != nil {
+		seed := parametricSeed{
+			T:       maxFloat(near, tMin),
+			U:       node.Patch.CenterU,
+			V:       node.Patch.CenterV,
+			PatchID: node.Patch.PatchID,
+		}
+		hit, ok := p.refineIntersection(raySt, rayDir, seed, tMin, minFloat(tMax, best.T))
+		if ok && hit.T < best.T {
+			return hit, true
+		}
+		return best, found
+	}
+
+	leftNear, leftOK := nodeChildNear(raySt, rayDir, node.Left, tMin, minFloat(tMax, best.T))
+	rightNear, rightOK := nodeChildNear(raySt, rayDir, node.Right, tMin, minFloat(tMax, best.T))
+	if rightOK && (!leftOK || rightNear < leftNear) {
+		best, found = p.intersectPatchBVH(raySt, rayDir, node.Right, tMin, tMax, best, found)
+		best, found = p.intersectPatchBVH(raySt, rayDir, node.Left, tMin, tMax, best, found)
+		return best, found
+	}
+	if leftOK {
+		best, found = p.intersectPatchBVH(raySt, rayDir, node.Left, tMin, tMax, best, found)
+	}
+	if rightOK {
+		best, found = p.intersectPatchBVH(raySt, rayDir, node.Right, tMin, tMax, best, found)
+	}
+	return best, found
 }
 
 func (p *ParametricEquation) refineIntersection(raySt, rayDir *mat.VecDense, seed parametricSeed, tMin, tMax float64) (parametricHit, bool) {
@@ -531,6 +644,102 @@ func boundsFromParamPoints(p *ParametricEquation, params [][2]float64, padding f
 		}
 	}
 	return NewCuboid(mat.NewVecDense(3, pmin), mat.NewVecDense(3, pmax)), true
+}
+
+func buildParametricPatchBVH(patches []parametricPatch) *parametricPatchBVHNode {
+	if len(patches) == 0 {
+		return nil
+	}
+	if len(patches) == 1 {
+		patch := patches[0]
+		return &parametricPatchBVHNode{
+			Bounds: cloneParametricBox(patch.Bounds),
+			Patch:  &patch,
+		}
+	}
+
+	bounds := unionParametricPatchBounds(patches)
+	axis := largestParametricCentroidExtent(patches)
+	sort.Slice(patches, func(i, j int) bool {
+		return parametricPatchCentroid(patches[i], axis) < parametricPatchCentroid(patches[j], axis)
+	})
+	mid := len(patches) / 2
+	leftPatches := append([]parametricPatch(nil), patches[:mid]...)
+	rightPatches := append([]parametricPatch(nil), patches[mid:]...)
+	return &parametricPatchBVHNode{
+		Bounds: bounds,
+		Left:   buildParametricPatchBVH(leftPatches),
+		Right:  buildParametricPatchBVH(rightPatches),
+	}
+}
+
+func unionParametricPatchBounds(patches []parametricPatch) *Cuboid {
+	var bounds *Cuboid
+	for _, patch := range patches {
+		bounds = unionParametricBoxes(bounds, patch.Bounds)
+	}
+	return bounds
+}
+
+func unionParametricBoxes(a, b *Cuboid) *Cuboid {
+	if a == nil {
+		return cloneParametricBox(b)
+	}
+	if b == nil {
+		return cloneParametricBox(a)
+	}
+	dim := a.Pmin.Len()
+	pmin := mat.NewVecDense(dim, nil)
+	pmax := mat.NewVecDense(dim, nil)
+	for i := 0; i < dim; i++ {
+		pmin.SetVec(i, math.Min(a.Pmin.AtVec(i), b.Pmin.AtVec(i)))
+		pmax.SetVec(i, math.Max(a.Pmax.AtVec(i), b.Pmax.AtVec(i)))
+	}
+	return NewCuboid(pmin, pmax)
+}
+
+func cloneParametricBox(box *Cuboid) *Cuboid {
+	if box == nil {
+		return nil
+	}
+	return NewCuboid(mat.VecDenseCopyOf(box.Pmin), mat.VecDenseCopyOf(box.Pmax))
+}
+
+func largestParametricCentroidExtent(patches []parametricPatch) int {
+	bestAxis := 0
+	bestExtent := math.Inf(-1)
+	for axis := 0; axis < 3; axis++ {
+		minValue := math.Inf(1)
+		maxValue := math.Inf(-1)
+		for _, patch := range patches {
+			center := parametricPatchCentroid(patch, axis)
+			if center < minValue {
+				minValue = center
+			}
+			if center > maxValue {
+				maxValue = center
+			}
+		}
+		if extent := maxValue - minValue; extent > bestExtent {
+			bestExtent = extent
+			bestAxis = axis
+		}
+	}
+	return bestAxis
+}
+
+func parametricPatchCentroid(patch parametricPatch, axis int) float64 {
+	if patch.Bounds == nil {
+		return 0
+	}
+	return 0.5 * (patch.Bounds.Pmin.AtVec(axis) + patch.Bounds.Pmax.AtVec(axis))
+}
+
+func nodeChildNear(raySt, rayDir *mat.VecDense, node *parametricPatchBVHNode, tMin, tMax float64) (float64, bool) {
+	if node == nil || node.Bounds == nil {
+		return 0, false
+	}
+	return node.Bounds.OverlapRangeNear(raySt, rayDir, tMin, tMax)
 }
 
 func finiteVec(v *mat.VecDense, dim int) bool {
