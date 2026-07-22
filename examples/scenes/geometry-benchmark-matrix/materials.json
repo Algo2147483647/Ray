@@ -363,6 +363,23 @@
       }
     },
     {
+      "id": "matte-pink-metal",
+      "surface": {
+        "type": "rough_conductor",
+        "eta": [
+          0.72,
+          0.34,
+          0.48
+        ],
+        "k": [
+          2.85,
+          1.38,
+          1.62
+        ],
+        "roughness": 0.58
+      }
+    },
+    {
       "id": "clear-glass",
       "surface": {
         "type": "specular_dielectric",

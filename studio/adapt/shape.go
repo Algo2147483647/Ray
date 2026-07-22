@@ -44,6 +44,8 @@ func adaptObject(object map[string]interface{}, ctx groupContext, index, dimensi
 		return adaptFourOrderEquation(adapted, ctx, dimension)
 	case strings.EqualFold(shapeName, "implicit equation"):
 		return adaptImplicitEquation(adapted, ctx, dimension)
+	case strings.EqualFold(shapeName, "parametric equation"):
+		return adaptParametricEquation(adapted, ctx, dimension)
 	case strings.EqualFold(shapeName, "polynomial surface"):
 		return adaptPolynomialSurface(adapted, ctx, dimension)
 	case strings.EqualFold(shapeName, "stl"):
@@ -460,6 +462,33 @@ func adaptFourOrderEquation(object map[string]interface{}, ctx groupContext, dim
 func adaptImplicitEquation(object map[string]interface{}, ctx groupContext, dimension int) (map[string]interface{}, error) {
 	if dimension != 3 {
 		return nil, fmt.Errorf("implicit equation adapter requires dimension 3, got %d", dimension)
+	}
+
+	localCenter, err := optionalVector(object, "center", dimension, zeroVector(dimension))
+	if err != nil {
+		return nil, err
+	}
+	localScale, err := optionalScale(object, "scale", dimension, unitVector(dimension))
+	if err != nil {
+		return nil, err
+	}
+
+	worldCenter := make([]float64, dimension)
+	worldScale := make([]float64, dimension)
+	for i := 0; i < dimension; i++ {
+		worldCenter[i] = ctx.center[i] + ctx.scale[i]*localCenter[i]
+		worldScale[i] = ctx.scale[i] * localScale[i]
+	}
+
+	adapted := cloneMap(object)
+	adapted["center"] = worldCenter
+	adapted["scale"] = worldScale
+	return adapted, nil
+}
+
+func adaptParametricEquation(object map[string]interface{}, ctx groupContext, dimension int) (map[string]interface{}, error) {
+	if dimension != 3 {
+		return nil, fmt.Errorf("parametric equation adapter requires dimension 3, got %d", dimension)
 	}
 
 	localCenter, err := optionalVector(object, "center", dimension, zeroVector(dimension))

@@ -14,22 +14,23 @@ import (
 )
 
 const (
-	ShapeCuboid            = "cuboid"
-	ShapeHypercuboid       = "hypercuboid"
-	ShapeSphere            = "sphere"
-	ShapeHypersphere       = "hypersphere"
-	ShapeCircle            = "circle"
-	ShapeCylinder          = "cylinder"
-	ShapeFiniteCylinder    = "finite cylinder"
-	ShapeTriangle          = "triangle"
-	ShapePlane             = "plane"
-	ShapeQuadraticEquation = "quadratic equation"
-	ShapeCubicEquation     = "cubic equation"
-	ShapeFourOrderEquation = "four-order equation"
-	ShapeImplicitEquation  = "implicit equation"
-	ShapePolynomialSurface = "polynomial surface"
-	ShapeKleinBottle       = "klein_bottle"
-	ShapeSTL               = "stl"
+	ShapeCuboid             = "cuboid"
+	ShapeHypercuboid        = "hypercuboid"
+	ShapeSphere             = "sphere"
+	ShapeHypersphere        = "hypersphere"
+	ShapeCircle             = "circle"
+	ShapeCylinder           = "cylinder"
+	ShapeFiniteCylinder     = "finite cylinder"
+	ShapeTriangle           = "triangle"
+	ShapePlane              = "plane"
+	ShapeQuadraticEquation  = "quadratic equation"
+	ShapeCubicEquation      = "cubic equation"
+	ShapeFourOrderEquation  = "four-order equation"
+	ShapeImplicitEquation   = "implicit equation"
+	ShapeParametricEquation = "parametric equation"
+	ShapePolynomialSurface  = "polynomial surface"
+	ShapeKleinBottle        = "klein_bottle"
+	ShapeSTL                = "stl"
 )
 
 func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
@@ -68,6 +69,9 @@ func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 
 	case ShapeImplicitEquation:
 		return parseImplicitEquation(objDef)
+
+	case ShapeParametricEquation:
+		return parseParametricEquation(objDef)
 
 	case ShapePolynomialSurface:
 		return parsePolynomialSurface(objDef)

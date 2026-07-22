@@ -1,38 +1,25 @@
 {
   "objects": [
     {
-      "id": "geo-example-chmutov-order-8",
-      "shape": "polynomial surface",
-      "mode": "implicit",
-      "input_dim": 3,
-      "degree": 8,
-      "center": [-0.761624, 0, 1.5],
-      "scale": 0.75,
-      "coefficients": {
-        "format": "coo",
-        "shape": [9, 9, 9],
-        "degree_policy": "total",
-        "terms": [
-          { "index": [0, 0, 0], "value": 3 },
-          { "index": [2, 0, 0], "value": -32 },
-          { "index": [4, 0, 0], "value": 160 },
-          { "index": [6, 0, 0], "value": -256 },
-          { "index": [8, 0, 0], "value": 128 },
-          { "index": [0, 2, 0], "value": -32 },
-          { "index": [0, 4, 0], "value": 160 },
-          { "index": [0, 6, 0], "value": -256 },
-          { "index": [0, 8, 0], "value": 128 },
-          { "index": [0, 0, 2], "value": -32 },
-          { "index": [0, 0, 4], "value": 160 },
-          { "index": [0, 0, 6], "value": -256 },
-          { "index": [0, 0, 8], "value": 128 }
-        ]
-      },
+      "id": "geo-example-parametric-spiral-flower",
+      "shape": "parametric equation",
+      "function": "spiral_flower",
+      "center": [-0.761624, 0, 1.14],
+      "scale": [0.72, 0.72, 0.82],
+      "u_range": [0, 1],
+      "v_range": [12.566370614359172, 75.39822368615503],
+      "samples_u": 48,
+      "samples_v": 320,
+      "newton_tol": 0.000001,
+      "newton_max_iter": 48,
+      "derivative_eps": 0.00001,
+      "residual_tol": 0.00001,
+      "bounds_padding": 0.003,
       "bounds": {
-        "center": [-0.761624, 0, 1.5],
-        "size": [1.54, 1.54, 1.54]
+        "center": [-0.761624, 0, 1.55],
+        "size": [1.55, 1.55, 1.75]
       },
-      "material_id": "pale-blue-sheen"
+      "material_id": "matte-pink-metal"
     }
   ]
 }
