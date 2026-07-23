@@ -874,6 +874,17 @@
       }
     },
     {
+      "id": "emissive-red",
+      "emission": {
+        "type": "constant",
+        "color": [
+          1.2,
+          0.1,
+          0.1
+        ]
+      }
+    },
+    {
       "id": "gyroid-red-crystal",
       "surface": {
         "type": "specular_dielectric",
@@ -892,6 +903,51 @@
           "type": "cauchy",
           "a": 1.5,
           "b": 0.01,
+          "c": 0
+        }
+      }
+    },
+    {
+      "id": "pure-cyan-reflection",
+      "surface": {
+        "type": "specular_reflection",
+        "reflectance": [
+          0.16,
+          0.92,
+          1
+        ]
+      }
+    },
+    {
+      "id": "pure-red-reflection",
+      "surface": {
+        "type": "specular_reflection",
+        "reflectance": [
+          1,
+          0.08,
+          0.06
+        ]
+      }
+    },
+    {
+      "id": "pale-pink-gemstone",
+      "surface": {
+        "type": "specular_dielectric",
+        "reflectance": [
+          1,
+          0.86,
+          0.92
+        ],
+        "transmittance": [
+          1,
+          0.68,
+          0.78
+        ],
+        "eta_outside": 1,
+        "ior": {
+          "type": "cauchy",
+          "a": 1.54,
+          "b": 0.012,
           "c": 0
         }
       }

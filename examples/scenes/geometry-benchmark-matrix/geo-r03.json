@@ -365,89 +365,28 @@
         ],
         "3,5": [
           {
-            "id": "geo-r03-c03",
-            "shape": "quadratic equation",
+            "id": "geo-r01-c03",
+            "shape": "sphere",
             "center": [
               0,
               0,
               0
             ],
-            "scale": [
-              0.16,
-              0.16,
-              0.18
-            ],
-            "a": [
-              1,
-              0,
-              0,
-              0,
-              1,
-              0,
-              0,
-              0,
-              -0.36
-            ],
-            "b": [
-              0,
-              0,
-              -0.72
-            ],
-            "c": -0.36,
-            "bounds": {
-              "pmin": [
-                -0.21,
-                -0.21,
-                -0.18
-              ],
-              "pmax": [
-                0.21,
-                0.21,
-                0.18
-              ]
-            },
-            "material_id": "pure-white-reflection"
+            "r": 0.16,
+            "material_id": "clear-glass"
           }
         ],
         "3,6": [
           {
-            "id": "geo-r03-c02",
-            "shape": "quadratic equation",
+            "id": "geo-r01-c05",
+            "shape": "sphere",
             "center": [
               0,
               0,
               0
             ],
-            "a": [
-              30.8641975308642,
-              0,
-              0,
-              0,
-              44.4444444444444,
-              0,
-              0,
-              0,
-              0
-            ],
-            "b": [
-              0,
-              0,
-              -2.777777777778
-            ],
-            "c": -0.500000000001073,
-            "bounds": {
-              "pmin": [
-                -0.18,
-                -0.15,
-                -0.18
-              ],
-              "pmax": [
-                0.18,
-                0.15,
-                0.18
-              ]
-            },
-            "material_id": "ceramic-white"
+            "r": 0.16,
+            "material_id": "clear-glass"
           }
         ],
         "3,7": [

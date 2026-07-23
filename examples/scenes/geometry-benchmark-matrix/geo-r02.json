@@ -27,43 +27,15 @@
       "objects": {
         "2,1": [
           {
-            "id": "geo-r02-c07",
-            "shape": "quadratic equation",
+            "id": "geo-r01-c07",
+            "shape": "sphere",
             "center": [
               0,
               0,
               0
             ],
-            "a": [
-              82.6446280991736,
-              0,
-              0,
-              0,
-              44.4444444444444,
-              0,
-              0,
-              0,
-              -17.3611111111111
-            ],
-            "b": [
-              0,
-              0,
-              0
-            ],
-            "c": -0.999999999998167,
-            "bounds": {
-              "pmin": [
-                -0.21,
-                -0.21,
-                -0.19
-              ],
-              "pmax": [
-                0.21,
-                0.21,
-                0.19
-              ]
-            },
-            "material_id": "rough-gold"
+            "r": 0.16,
+            "material_id": "clear-glass"
           }
         ],
         "2,2": [
@@ -607,7 +579,54 @@
         ],
         "2,5": [
           {
-            "id": "geo-r02-c03",
+            "id": "geo-r02-c03-metaballs",
+            "shape": "implicit equation",
+            "field": {
+              "type": "expr",
+              "expr": "w1*exp(-k*((x-x1)*(x-x1)+(y-y1)*(y-y1)+(z-z1)*(z-z1))) + w2*exp(-k*((x-x2)*(x-x2)+(y-y2)*(y-y2)+(z-z2)*(z-z2))) + w3*exp(-k*((x-x3)*(x-x3)+(y-y3)*(y-y3)+(z-z3)*(z-z3))) - iso",
+              "constants": {
+                "k": 5.2,
+                "iso": 0.34,
+                "x1": -0.08,
+                "y1": -0.18,
+                "z1": 0.02,
+                "w1": 1.08,
+                "x2": -0.08,
+                "y2": 0.11,
+                "z2": 0.04,
+                "w2": 1,
+                "x3": -0.08,
+                "y3": 0.78,
+                "z3": -0.14,
+                "w3": 0.92
+              }
+            },
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "scale": 0.16,
+            "step": 0.001,
+            "value_tol": 0.000001,
+            "bounds": {
+              "center": [
+                -0.08,
+                0.24,
+                0
+              ],
+              "size": [
+                0.5,
+                0.82,
+                0.5
+              ]
+            },
+            "material_id": "rough-gold"
+          }
+        ],
+        "2,6": [
+          {
+            "id": "geo-r01-c06",
             "shape": "sphere",
             "center": [
               0,
@@ -618,79 +637,45 @@
             "material_id": "clear-glass"
           }
         ],
-        "2,6": [
-          {
-            "id": "geo-r02-c02",
-            "shape": "quadratic equation",
-            "center": [
-              0,
-              0,
-              0
-            ],
-            "a": [
-              39.0625,
-              0,
-              0,
-              0,
-              -39.0625,
-              0,
-              0,
-              0,
-              0
-            ],
-            "b": [
-              0,
-              0,
-              -3.571428571429
-            ],
-            "c": 0,
-            "bounds": {
-              "pmin": [
-                -0.17,
-                -0.17,
-                -0.16
-              ],
-              "pmax": [
-                0.17,
-                0.17,
-                0.16
-              ]
-            },
-            "material_id": "brushed-aluminum"
-          }
-        ],
         "2,7": [
           {
-            "id": "geo-r02-c01",
-            "shape": "quadratic equation",
+            "id": "geo-r02-c01-high-frequency-shell-ridges",
+            "shape": "implicit equation",
+            "field": {
+              "type": "expr",
+              "expr": "x*x + y*y + z*z - pow(r + ridge*(0.5 + 0.5*sin(freq*atan2(z, y) + twist*x + micro*sin(microf*(y-z)))) + fine*sin(finef*(y+z))*sin(finef*(y-z)), 2)",
+              "constants": {
+                "r": 0.76,
+                "ridge": 0.24,
+                "freq": 36,
+                "twist": 13,
+                "micro": 0.65,
+                "microf": 17,
+                "fine": 0.035,
+                "finef": 28
+              }
+            },
             "center": [
               0,
               0,
               0
             ],
-            "scale": [
-              0.12,
-              0.12,
-              0.12
-            ],
-            "a": [
-              0.25,
-              0,
-              0,
-              0,
-              0.49,
-              0,
-              0,
-              0,
-              1
-            ],
-            "b": [
-              1,
-              1,
-              1
-            ],
-            "c": 1,
-            "material_id": "blue-glass"
+            "scale": 0.21,
+            "step": 0.0008,
+            "value_tol": 0.000001,
+            "bounds": {
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "size": [
+                0.56,
+                0.56,
+                0.56
+              ]
+            },
+            "material_id": "foam"
           }
         ]
       }

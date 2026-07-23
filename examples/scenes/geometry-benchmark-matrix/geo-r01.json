@@ -27,67 +27,205 @@
       "objects": {
         "1,1": [
           {
-            "id": "geo-r01-c07",
-            "shape": "sphere",
+            "id": "geo-r02-c07",
+            "shape": "quadratic equation",
             "center": [
               0,
               0,
               0
             ],
-            "r": 0.16,
-            "material_id": "clear-glass"
+            "a": [
+              82.6446280991736,
+              0,
+              0,
+              0,
+              44.4444444444444,
+              0,
+              0,
+              0,
+              -17.3611111111111
+            ],
+            "b": [
+              0,
+              0,
+              0
+            ],
+            "c": -0.999999999998167,
+            "bounds": {
+              "pmin": [
+                -0.21,
+                -0.21,
+                -0.19
+              ],
+              "pmax": [
+                0.21,
+                0.21,
+                0.19
+              ]
+            },
+            "material_id": "rough-gold"
           }
         ],
         "1,2": [
           {
-            "id": "geo-r01-c06",
-            "shape": "sphere",
+            "id": "geo-r02-c02",
+            "shape": "quadratic equation",
             "center": [
               0,
               0,
               0
             ],
-            "r": 0.16,
-            "material_id": "clear-glass"
+            "a": [
+              39.0625,
+              0,
+              0,
+              0,
+              -39.0625,
+              0,
+              0,
+              0,
+              0
+            ],
+            "b": [
+              0,
+              0,
+              -3.571428571429
+            ],
+            "c": 0,
+            "bounds": {
+              "pmin": [
+                -0.17,
+                -0.17,
+                -0.16
+              ],
+              "pmax": [
+                0.17,
+                0.17,
+                0.16
+              ]
+            },
+            "material_id": "brushed-aluminum"
           }
         ],
         "1,3": [
           {
-            "id": "geo-r01-c05",
-            "shape": "sphere",
+            "id": "geo-r03-c02",
+            "shape": "quadratic equation",
             "center": [
               0,
               0,
               0
             ],
-            "r": 0.16,
-            "material_id": "clear-glass"
+            "a": [
+              30.8641975308642,
+              0,
+              0,
+              0,
+              44.4444444444444,
+              0,
+              0,
+              0,
+              0
+            ],
+            "b": [
+              0,
+              0,
+              -2.777777777778
+            ],
+            "c": -0.500000000001073,
+            "bounds": {
+              "pmin": [
+                -0.18,
+                -0.15,
+                -0.18
+              ],
+              "pmax": [
+                0.18,
+                0.15,
+                0.18
+              ]
+            },
+            "material_id": "ceramic-white"
           }
         ],
         "1,4": [
           {
-            "id": "geo-r01-c04",
-            "shape": "sphere",
+            "id": "geo-r02-c01",
+            "shape": "quadratic equation",
             "center": [
               0,
               0,
               0
             ],
-            "r": 0.16,
-            "material_id": "clear-glass"
+            "scale": [
+              0.12,
+              0.12,
+              0.12
+            ],
+            "a": [
+              0.25,
+              0,
+              0,
+              0,
+              0.49,
+              0,
+              0,
+              0,
+              1
+            ],
+            "b": [
+              1,
+              1,
+              1
+            ],
+            "c": 1,
+            "material_id": "blue-glass"
           }
         ],
         "1,5": [
           {
-            "id": "geo-r01-c03",
-            "shape": "sphere",
+            "id": "geo-r03-c03",
+            "shape": "quadratic equation",
             "center": [
               0,
               0,
               0
             ],
-            "r": 0.16,
-            "material_id": "clear-glass"
+            "scale": [
+              0.16,
+              0.16,
+              0.18
+            ],
+            "a": [
+              1,
+              0,
+              0,
+              0,
+              1,
+              0,
+              0,
+              0,
+              -0.36
+            ],
+            "b": [
+              0,
+              0,
+              -0.72
+            ],
+            "c": -0.36,
+            "bounds": {
+              "pmin": [
+                -0.21,
+                -0.21,
+                -0.18
+              ],
+              "pmax": [
+                0.21,
+                0.21,
+                0.18
+              ]
+            },
+            "material_id": "pure-white-reflection"
           }
         ],
         "1,6": [
@@ -138,7 +276,7 @@
                   0.2
                 ],
                 "r": 0.22,
-                "material_id": "emissive-cyan"
+                "material_id": "pure-cyan-reflection"
               },
               {
                 "id": "triangle-from-r02-c04",
@@ -163,7 +301,7 @@
                   0,
                   0.24
                 ],
-                "material_id": "fabric-teal"
+                "material_id": "pure-red-reflection"
               }
             ]
           }

@@ -12,7 +12,7 @@
   ],
   "render": {
     "dimension": 3,
-    "samples": 20,
+    "samples": 10,
     "thread_num": 0,
     "width": 960,
     "height": 800,
