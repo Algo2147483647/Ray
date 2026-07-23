@@ -547,6 +547,155 @@ func TestParseShapeImplicitEquationLegacyFunctionField(t *testing.T) {
 	}
 }
 
+func TestParseShapeImplicitEquationExprField(t *testing.T) {
+	shapes, err := ParseShape(map[string]interface{}{
+		"shape": "implicit equation",
+		"field": map[string]interface{}{
+			"type": "expr",
+			"expr": "x*x + y*y + z*z - r*r",
+			"constants": map[string]interface{}{
+				"r": 1.0,
+			},
+			"gradient": map[string]interface{}{
+				"x": "2*x",
+				"y": "2*y",
+				"z": "2*z",
+			},
+		},
+		"bounds": map[string]interface{}{
+			"pmin": []interface{}{-1.2, -1.2, -1.2},
+			"pmax": []interface{}{1.2, 1.2, 1.2},
+		},
+		"step": 0.01,
+	})
+	if err != nil {
+		t.Fatalf("parse expr implicit equation: %v", err)
+	}
+	implicit, ok := shapes[0].(*shape.ImplicitEquation)
+	if !ok {
+		t.Fatalf("expected *shape.ImplicitEquation, got %T", shapes[0])
+	}
+
+	interaction, ok := implicit.IntersectRange(
+		mat.NewVecDense(3, []float64{0, 0, -1.2}),
+		mat.NewVecDense(3, []float64{0, 0, 1}),
+		0,
+		3,
+	)
+	if !ok {
+		t.Fatal("expected ray to hit expr sphere")
+	}
+	if math.Abs(interaction.Distance-0.2) > 1e-3 {
+		t.Fatalf("expected hit near distance 0.2, got %f", interaction.Distance)
+	}
+	if math.Abs(interaction.GeometricNormal.AtVec(2)+1) > 1e-6 {
+		t.Fatalf("expected analytic expr normal to face negative z, got %v", interaction.GeometricNormal.RawVector().Data)
+	}
+}
+
+func TestParseShapeImplicitEquationExprFieldUsesNumericalGradientFallback(t *testing.T) {
+	shapes, err := ParseShape(map[string]interface{}{
+		"shape": "implicit equation",
+		"field": map[string]interface{}{
+			"type": "expr",
+			"expr": "abs(x) + y*y + z*z - 1",
+		},
+		"bounds": map[string]interface{}{
+			"pmin": []interface{}{-1.2, -1.2, -1.2},
+			"pmax": []interface{}{1.2, 1.2, 1.2},
+		},
+	})
+	if err != nil {
+		t.Fatalf("parse expr implicit equation: %v", err)
+	}
+	implicit := shapes[0].(*shape.ImplicitEquation)
+	if implicit.Gradient(mat.NewVecDense(3, []float64{1, 0, 0}), mat.NewVecDense(3, nil)) != nil {
+		t.Fatal("expected unsupported autodiff expression to return nil analytic gradient")
+	}
+
+	normal := implicit.GetNormalVector(
+		mat.NewVecDense(3, []float64{1, 0, 0}),
+		mat.NewVecDense(3, nil),
+	)
+	if math.Abs(normal.AtVec(0)-1) > 1e-5 {
+		t.Fatalf("expected numerical expr normal to face positive x, got %v", normal.RawVector().Data)
+	}
+}
+
+func TestParseShapeImplicitEquationExprFieldAutoDiffGradient(t *testing.T) {
+	shapes, err := ParseShape(map[string]interface{}{
+		"shape": "implicit equation",
+		"field": map[string]interface{}{
+			"type": "expr",
+			"expr": "pow(x, 2) + sin(y) + sqrt(z + 2) - r",
+			"constants": map[string]interface{}{
+				"r": 2.0,
+			},
+		},
+		"bounds": map[string]interface{}{
+			"pmin": []interface{}{-2, -2, -2},
+			"pmax": []interface{}{2, 2, 2},
+		},
+	})
+	if err != nil {
+		t.Fatalf("parse autodiff expr implicit equation: %v", err)
+	}
+	implicit := shapes[0].(*shape.ImplicitEquation)
+	gradient := implicit.Gradient(
+		mat.NewVecDense(3, []float64{3, 0, 2}),
+		mat.NewVecDense(3, nil),
+	)
+	if gradient == nil {
+		t.Fatal("expected autodiff gradient")
+	}
+	if math.Abs(gradient.AtVec(0)-6) > 1e-9 {
+		t.Fatalf("expected d/dx = 6, got %v", gradient.RawVector().Data)
+	}
+	if math.Abs(gradient.AtVec(1)-1) > 1e-9 {
+		t.Fatalf("expected d/dy = 1, got %v", gradient.RawVector().Data)
+	}
+	if math.Abs(gradient.AtVec(2)-0.25) > 1e-9 {
+		t.Fatalf("expected d/dz = 0.25, got %v", gradient.RawVector().Data)
+	}
+}
+
+func TestParseShapeImplicitEquationExprFieldRejectsInvalidExpression(t *testing.T) {
+	_, err := ParseShape(map[string]interface{}{
+		"shape": "implicit equation",
+		"field": map[string]interface{}{
+			"type": "expr",
+			"expr": "x + missing",
+		},
+		"bounds": map[string]interface{}{
+			"pmin": []interface{}{-1, -1, -1},
+			"pmax": []interface{}{1, 1, 1},
+		},
+	})
+	if err == nil {
+		t.Fatal("expected invalid expr field to fail")
+	}
+}
+
+func TestParseShapeImplicitEquationExprFieldRejectsReservedConstant(t *testing.T) {
+	_, err := ParseShape(map[string]interface{}{
+		"shape": "implicit equation",
+		"field": map[string]interface{}{
+			"type": "expr",
+			"expr": "x",
+			"constants": map[string]interface{}{
+				"sin": 1.0,
+			},
+		},
+		"bounds": map[string]interface{}{
+			"pmin": []interface{}{-1, -1, -1},
+			"pmax": []interface{}{1, 1, 1},
+		},
+	})
+	if err == nil {
+		t.Fatal("expected reserved expr constant to fail")
+	}
+}
+
 func TestParseShapeImplicitEquationRejectsUnknownField(t *testing.T) {
 	_, err := ParseShape(map[string]interface{}{
 		"shape": "implicit equation",

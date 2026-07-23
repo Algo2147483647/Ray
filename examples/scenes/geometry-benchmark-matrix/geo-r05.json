@@ -3,7 +3,6 @@
     {
       "id": "geo-r05-c07",
       "shape": "polynomial surface",
-      "mode": "implicit",
       "input_dim": 3,
       "center": [
         0.88,
@@ -139,7 +138,6 @@
     {
       "id": "geo-r05-c06-dupin-cyclide-equation",
       "shape": "polynomial surface",
-      "mode": "implicit",
       "input_dim": 3,
       "center": [
         0.88,

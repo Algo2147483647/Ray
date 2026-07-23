@@ -189,6 +189,34 @@ Supported built-in fields:
 ```text
 torus: major_radius, minor_radius
 gyroid: frequency, offset
+expr: expr, constants, optional gradient
+```
+
+For `field.type: "expr"`, the expression is evaluated in local coordinates
+`x`, `y`, and `z`, and the surface is the zero level set. `constants` may define
+finite numeric symbols. If `gradient` is omitted, the engine tries symbolic
+automatic differentiation for supported smooth expressions before falling back
+to finite differences. Optional `gradient.x`, `gradient.y`, and `gradient.z`
+provide local partial derivatives for analytic normals:
+
+```json
+{
+  "shape": "implicit equation",
+  "field": {
+    "type": "expr",
+    "expr": "x*x + y*y + z*z - r*r",
+    "constants": { "r": 1 },
+    "gradient": {
+      "x": "2*x",
+      "y": "2*y",
+      "z": "2*z"
+    }
+  },
+  "bounds": {
+    "pmin": [-1.2, -1.2, -1.2],
+    "pmax": [1.2, 1.2, 1.2]
+  }
+}
 ```
 
 The legacy top-level `"function"` field is still accepted, but `field.type` is

@@ -72,7 +72,6 @@
     {
       "id": "geo-r03-c06",
       "shape": "polynomial surface",
-      "mode": "implicit",
       "input_dim": 3,
       "center": [
         1.44,

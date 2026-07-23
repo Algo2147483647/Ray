@@ -381,6 +381,37 @@ Supported built-in implicit fields:
 ```text
 torus: major_radius, minor_radius
 gyroid: frequency, offset
+expr: expr, constants, optional gradient
+```
+
+`field.type: "expr"` evaluates a scalar expression in local coordinates
+`x`, `y`, and `z`; the rendered surface is `expr == 0`. `constants` is an
+optional object of finite numeric values. If `gradient` is omitted, the engine
+tries symbolic automatic differentiation for smooth supported expressions and
+falls back to numerical gradients when that is not possible. `gradient`, when
+provided, must contain `x`, `y`, and `z` expressions for the local partial
+derivatives:
+
+```json
+{
+  "shape": "implicit equation",
+  "field": {
+    "type": "expr",
+    "expr": "x*x + y*y + z*z - r*r",
+    "constants": {
+      "r": 1
+    },
+    "gradient": {
+      "x": "2*x",
+      "y": "2*y",
+      "z": "2*z"
+    }
+  },
+  "bounds": {
+    "pmin": [-1.2, -1.2, -1.2],
+    "pmax": [1.2, 1.2, 1.2]
+  }
+}
 ```
 
 The legacy top-level `"function": "torus"` / `"function": "gyroid"` form is

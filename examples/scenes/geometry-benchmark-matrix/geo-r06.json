@@ -4,9 +4,12 @@
       "id": "geo-r06-c06-blue-crystal-gyroid",
       "shape": "implicit equation",
       "field": {
-        "type": "gyroid",
-        "frequency": 4.4,
-        "offset": 0.24
+        "type": "expr",
+        "expr": "sin(f*x)*cos(f*y) + sin(f*y)*cos(f*z) + sin(f*z)*cos(f*x) - offset",
+        "constants": {
+          "f": 4.4,
+          "offset": 0.24
+        }
       },
       "center": [
         0.6,
@@ -15,7 +18,7 @@
       ],
       "scale": 0.16,
       "step": 0.0012,
-      "value_tol": 1e-06,
+      "value_tol": 0.000001,
       "bounds": {
         "center": [
           0.6,
@@ -34,9 +37,12 @@
       "id": "geo-r06-c06-red-crystal-gyroid",
       "shape": "implicit equation",
       "field": {
-        "type": "gyroid",
-        "frequency": 4.4,
-        "offset": -0.24
+        "type": "expr",
+        "expr": "sin(f*x)*cos(f*y) + sin(f*y)*cos(f*z) + sin(f*z)*cos(f*x) - offset",
+        "constants": {
+          "f": 4.4,
+          "offset": -0.24
+        }
       },
       "center": [
         0.6,
@@ -45,7 +51,7 @@
       ],
       "scale": 0.16,
       "step": 0.0012,
-      "value_tol": 1e-06,
+      "value_tol": 0.000001,
       "bounds": {
         "center": [
           0.6,
@@ -102,7 +108,6 @@
     {
       "id": "geo-r06-c05-chmutov-order-8",
       "shape": "polynomial surface",
-      "mode": "implicit",
       "input_dim": 3,
       "center": [
         0.6,
@@ -241,7 +246,6 @@
     {
       "id": "geo-r06-c04",
       "shape": "implicit equation",
-      "function": "gyroid",
       "center": [
         0.6,
         0,
@@ -252,8 +256,6 @@
         0.15,
         0.15
       ],
-      "frequency": 3.3,
-      "offset": 0.08,
       "step": 0.0014,
       "bounds": {
         "center": [
@@ -267,7 +269,15 @@
           0.38
         ]
       },
-      "material_id": "porcelain-glaze-cyan-blue"
+      "material_id": "porcelain-glaze-cyan-blue",
+      "field": {
+        "type": "expr",
+        "expr": "sin(f*x)*cos(f*y) + sin(f*y)*cos(f*z) + sin(f*z)*cos(f*x) - offset",
+        "constants": {
+          "f": 3.3,
+          "offset": 0.08
+        }
+      }
     },
     {
       "id": "geo-r06-c03",

@@ -238,8 +238,8 @@ F(x) = 0
 ```
 
 The controller/factory layer uses a small field registry for built-in
-non-polynomial fields such as torus and gyroid. Scene JSON selects the field
-type and provides parameters:
+non-polynomial fields such as torus and gyroid, plus expression-backed scalar
+fields. Scene JSON selects the field type and provides parameters:
 
 ```json
 {
@@ -255,6 +255,13 @@ type and provides parameters:
   }
 }
 ```
+
+For `field.type: "expr"`, the scalar field is compiled from an `expr-lang/expr`
+expression over local variables `x`, `y`, and `z`. If analytic gradients are not
+provided, the parser attempts symbolic automatic differentiation for supported
+smooth expressions such as arithmetic, constant powers, `sin`, `cos`, `tan`,
+`exp`, `log`, and `sqrt`; unsupported expressions fall back to the existing
+finite-difference normal.
 
 Intersection is numerical rather than analytic:
 

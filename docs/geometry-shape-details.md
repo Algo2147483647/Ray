@@ -91,6 +91,7 @@ keys in the same shape.
 | --- | --- | --- | --- |
 | `torus` | `major_radius`, `minor_radius` | `major_radius = 0.58`, `minor_radius = 0.22` | Both must be positive; `minor_radius < major_radius`. |
 | `gyroid` | `frequency`, `offset` | `frequency = 3.2`, `offset = 0.0` | `frequency` must be positive. |
+| `expr` | `expr`, optional `constants`, optional `gradient` | None | Expression must compile to a finite number at runtime. Constants must be finite numbers and cannot use reserved math names. Missing gradients use symbolic automatic differentiation when supported, otherwise numerical gradients. |
 
 Preferred form:
 

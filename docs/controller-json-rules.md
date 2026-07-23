@@ -222,6 +222,33 @@ Coefficients are stored as sparse tensor terms:
 
 The example above represents `x^2 + y^2 + z^2 - 1 = 0`.
 
+`implicit equation` requires `bounds` and supports registered `field.type`
+values including `torus`, `gyroid`, and `expr`. The `expr` field evaluates a
+math expression in local coordinates `x`, `y`, and `z`; optional `constants`
+adds finite numeric symbols. If `gradient` is omitted, supported smooth
+expressions use symbolic automatic differentiation; unsupported expressions fall
+back to finite differences. Optional `gradient` supplies analytic local partials:
+
+```json
+{
+  "shape": "implicit equation",
+  "field": {
+    "type": "expr",
+    "expr": "x*x + y*y + z*z - r*r",
+    "constants": { "r": 1 },
+    "gradient": {
+      "x": "2*x",
+      "y": "2*y",
+      "z": "2*z"
+    }
+  },
+  "bounds": {
+    "pmin": [-1.2, -1.2, -1.2],
+    "pmax": [1.2, 1.2, 1.2]
+  }
+}
+```
+
 ## Cameras
 
 Supported camera types:

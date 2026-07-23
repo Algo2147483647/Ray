@@ -17,6 +17,7 @@ type implicitFieldFactory func(map[string]interface{}, [3]float64, [3]float64) (
 )
 
 var implicitFieldRegistry = map[string]implicitFieldFactory{
+	"expr":   parseImplicitExprField,
 	"torus":  parseImplicitTorusField,
 	"gyroid": parseImplicitGyroidField,
 }

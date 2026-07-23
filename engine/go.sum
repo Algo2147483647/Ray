@@ -1,4 +1,6 @@
 github.com/Algo2147483647/golang_toolkit v0.0.8 h1:9h9wMHXEyJo5e04L8nqbvXV8KZfwdi1wfhUolralL94=
 github.com/Algo2147483647/golang_toolkit v0.0.8/go.mod h1:EtB02JIP5ehN5fp1WUZRJsbTDF9jd5mx7w47um9n0ZI=
+github.com/expr-lang/expr v1.17.8 h1:W1loDTT+0PQf5YteHSTpju2qfUfNoBt4yw9+wOEU9VM=
+github.com/expr-lang/expr v1.17.8/go.mod h1:8/vRC7+7HBzESEqt5kKpYXxrxkr31SaO8r40VO/1IT4=
 gonum.org/v1/gonum v0.16.0 h1:5+ul4Swaf3ESvrOnidPp4GZbzf0mxVQpDCYUQE7OJfk=
 gonum.org/v1/gonum v0.16.0/go.mod h1:fef3am4MQ93R2HHpKnLk4/Tbh/s0+wqD5nfa6Pnwy4E=
