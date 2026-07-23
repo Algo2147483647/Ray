@@ -2,6 +2,7 @@ package factory
 
 import (
 	"math"
+	"sync"
 	"testing"
 
 	"github.com/Algo2147483647/ray/engine/model/shape"
@@ -647,6 +648,65 @@ func TestParseShapeImplicitEquationExprFieldAutoDiffGradient(t *testing.T) {
 	}
 	if math.Abs(gradient.AtVec(2)-0.25) > 1e-9 {
 		t.Fatalf("expected d/dz = 0.25, got %v", gradient.RawVector().Data)
+	}
+}
+
+func TestParseShapeImplicitEquationExprFieldConcurrentEvaluation(t *testing.T) {
+	shapes, err := ParseShape(map[string]interface{}{
+		"shape": "implicit equation",
+		"field": map[string]interface{}{
+			"type": "expr",
+			"expr": "x*1000000 + y*1000 + z + bias",
+			"constants": map[string]interface{}{
+				"bias": 7.0,
+			},
+			"gradient": map[string]interface{}{
+				"x": "1000000",
+				"y": "1000",
+				"z": "1",
+			},
+		},
+		"bounds": map[string]interface{}{
+			"pmin": []interface{}{-1, -1, -1},
+			"pmax": []interface{}{1, 1, 1},
+		},
+	})
+	if err != nil {
+		t.Fatalf("parse expr implicit equation: %v", err)
+	}
+	implicit := shapes[0].(*shape.ImplicitEquation)
+
+	const workers = 32
+	const iterations = 200
+	errCh := make(chan string, workers)
+	var wg sync.WaitGroup
+	wg.Add(workers)
+	for worker := 0; worker < workers; worker++ {
+		worker := worker
+		go func() {
+			defer wg.Done()
+			for iteration := 0; iteration < iterations; iteration++ {
+				x := float64(worker)
+				y := float64(iteration)
+				z := float64(worker + iteration)
+				point := mat.NewVecDense(3, []float64{x, y, z})
+				expected := x*1000000 + y*1000 + z + 7
+				if got := implicit.Function(point); got != expected {
+					errCh <- "concurrent expr evaluate returned mixed env values"
+					return
+				}
+				gradient := implicit.Gradient(point, mat.NewVecDense(3, nil))
+				if gradient == nil || gradient.AtVec(0) != 1000000 || gradient.AtVec(1) != 1000 || gradient.AtVec(2) != 1 {
+					errCh <- "concurrent expr gradient returned mixed env values"
+					return
+				}
+			}
+		}()
+	}
+	wg.Wait()
+	close(errCh)
+	for msg := range errCh {
+		t.Fatal(msg)
 	}
 }
 
