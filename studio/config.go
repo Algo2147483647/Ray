@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strconv"
 
 	"github.com/Algo2147483647/ray/studio/schema"
@@ -189,6 +190,13 @@ func (c studioConfig) engineArgs(scriptPath, outputFilmOverride string, samplesO
 		args = append(args, "--working-space", c.colorSpace)
 	}
 	return args
+}
+
+func engineCommand(config studioConfig, repoRoot string) (string, []string, error) {
+	if config.engineBin != "" {
+		return config.engineBin, nil, nil
+	}
+	return "go", []string{"-C", filepath.Join(repoRoot, "engine"), "run", "."}, nil
 }
 
 func resolveDimension(script *schema.StudioScript, config studioConfig) int {

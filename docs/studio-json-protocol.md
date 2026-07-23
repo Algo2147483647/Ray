@@ -51,6 +51,14 @@ analysis:
 npm run studio -- --script studio.json --script geometry.json --script render.json
 ```
 
+Top-level object ids must normally be unique. The exception is authoring-only
+containers: if repeated files define the same `id` with `shape: "group"` or the
+same `id` with `shape: "array"`, studio merges those containers instead of
+raising a duplicate-id error. Later files override container-level fields, while
+child objects are merged by id recursively for nested groups and arrays. This
+allows a scene grid or group scaffold to live in one file and individual cells
+or children to live in other files.
+
 After adaptation, studio writes the generated engine script to:
 
 ```text
@@ -245,6 +253,73 @@ Placement composition:
 world_center = parent.center + parent.scale * local.center
 world_scale = parent.scale * local.scale
 ```
+
+## Array Objects
+
+Studio adds `shape: "array"` as an authoring-only object for sparse 1D, 2D, or
+3D cell layouts. Engine never receives array objects. Array placement and field
+inheritance match `group`, but each occupied cell adds a regular lattice
+offset.
+
+```json
+{
+  "id": "matrix",
+  "shape": "array",
+  "origin": [0, 0, 0],
+  "delta": [
+    [0.56, 0, 0],
+    [0, 0.56, 0]
+  ],
+  "counts": [3, 2],
+  "material_id": "white-card",
+  "objects": {
+    "1,1": [
+      {
+        "id": "ball",
+        "shape": "sphere",
+        "center": [0, 0, 0],
+        "r": 0.12
+      }
+    ],
+    "3,2": [
+      {
+        "id": "box",
+        "shape": "cuboid",
+        "center": [0, 0, 0],
+        "size": [0.2, 0.2, 0.2]
+      }
+    ]
+  }
+}
+```
+
+Array behavior:
+
+```text
+origin: required base position of cell 1,1,1
+delta: required list of 1 to 3 spacing vectors
+counts: required list of 1 to 3 positive integer cell counts
+objects: required map from 1-based cell key to child object list
+id: prefixes child ids as array/i1-j1/child
+material_id, medium_id, emission_id, bounds: inherited by children unless overridden
+```
+
+Cell keys are comma-separated, 1-based coordinates. Their dimension must match
+`counts`, and each coordinate must be inside the corresponding count. Missing
+cells are empty. For a cell key `(i, j, k)`, the cell context center is:
+
+```text
+cell_center =
+  parent.center
+  + parent.scale * origin
+  + parent.scale * array.scale * ((i - 1) * delta[0]
+                                + (j - 1) * delta[1]
+                                + (k - 1) * delta[2])
+```
+
+`array.scale` is optional and uses the same scalar-or-vector rules as `group`.
+Groups may be nested inside arrays, and arrays may be nested inside groups or
+other arrays.
 
 ## Current Shape Adapters
 

@@ -222,12 +222,12 @@ Coefficients are stored as sparse tensor terms:
 
 The example above represents `x^2 + y^2 + z^2 - 1 = 0`.
 
-`implicit equation` requires `bounds` and supports registered `field.type`
-values including `torus`, `gyroid`, and `expr`. The `expr` field evaluates a
-math expression in local coordinates `x`, `y`, and `z`; optional `constants`
-adds finite numeric symbols. If `gradient` is omitted, supported smooth
-expressions use symbolic automatic differentiation; unsupported expressions fall
-back to finite differences. Optional `gradient` supplies analytic local partials:
+`implicit equation` requires `bounds` and supports `field.type: "expr"`. The
+`expr` field evaluates a math expression in local coordinates `x`, `y`, and
+`z`; optional `constants` adds finite numeric symbols. If `gradient` is omitted,
+supported smooth expressions use symbolic automatic differentiation;
+unsupported expressions fall back to finite differences. Optional `gradient`
+supplies analytic local partials:
 
 ```json
 {

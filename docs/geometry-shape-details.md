@@ -34,7 +34,7 @@ shape behavior and support status.
 | `quadratic equation` | `shape.QuadraticEquation` | Supported | 3D implicit quadratic surface |
 | `cubic equation` | `shape.CubicEquation` | Supported | 3D implicit cubic algebraic surface |
 | `four-order equation` | `shape.FourOrderEquation` | Supported | 3D implicit quartic algebraic surface |
-| `implicit equation` | `shape.ImplicitEquation` | Supported | Registered non-polynomial scalar fields such as torus and gyroid |
+| `implicit equation` | `shape.ImplicitEquation` | Supported | Expr-backed scalar zero level set |
 | `polynomial surface` | `shape.PolynomialSurface` | Supported | Sparse arbitrary-degree implicit polynomial surface |
 | `stl` | many `shape.Triangle` values | Supported | ASCII or binary STL mesh import |
 | `plane` | `shape.Plane` exists | Recognized but rejected by JSON factory | Infinite mathematical plane, not currently scene-loadable |
@@ -68,7 +68,7 @@ paraboloid remains an open clipped surface, not a closed solid.
 | `quadratic equation` | `a` length 9, `b`, `c` | `center`/`scale` are baked by studio into coefficients | Effectively 3D: `a` is parsed as a 3 x 3 matrix. | Solves ray-substituted quadratic; normal is gradient `2Ax + b`. |
 | `cubic equation` | `a` or `A` with 64 coefficients | `center`/`scale` are baked by studio into coefficients | 3D algebraic surface using basis indices `0=1`, `1=x`, `2=y`, `3=z`. | Substitutes ray into cubic polynomial; normal from tensor gradient. |
 | `four-order equation` | `a` or `A` with 256 coefficients | `center`/`scale`/`basis` are baked by studio into coefficients | 3D algebraic surface using basis indices `0=1`, `1=x`, `2=y`, `3=z`. | Substitutes ray into quartic polynomial; normal from tensor gradient. |
-| `implicit equation` | `field.type` or legacy `function`, plus `bounds` | Pass-through today | Current registered fields are 3D. Bounds are required. | Clips to bounds, scans along ray, detects sign changes, refines by bisection; normal from registered or numerical gradient. |
+| `implicit equation` | `field.type: "expr"`, plus `bounds` | Pass-through today | Current expr field is 3D. Bounds are required. | Clips to bounds, scans along ray, detects sign changes, refines by bisection; normal from expr gradient, symbolic autodiff, or numerical gradient. |
 | `polynomial surface` | `input_dim`, `degree`, `coefficients.terms`, optional `transform` | `center`/`scale`/`basis` are combined into `transform` by studio | Ray intersection currently requires at least 3 ray dimensions; common use is 3D. | Builds a one-variable ray polynomial and solves real roots; normal from sparse polynomial gradient. |
 | `stl` | `file`, `center`, `z_dir`, `x_dir`, `scale` | Pass-through today | 3D mesh import. | Parses ASCII or binary STL facets, transforms vertices, emits triangles. |
 | `plane` | Source type has `A`, `b` | None through JSON | `shape.Plane` exists in code, but `ParseShape` returns an error for JSON `plane`. | Infinite plane ray solve exists in code; not scene-loadable until factory parsing is implemented. |
@@ -85,12 +85,10 @@ paraboloid remains an open clipped surface, not a closed solid.
 Sparse cubic/four-order coefficient objects cannot mix flat keys and coordinate
 keys in the same shape.
 
-## Implicit Field Registry
+## Implicit Expr Field
 
 | Field type | Parameters | Defaults | Validation |
 | --- | --- | --- | --- |
-| `torus` | `major_radius`, `minor_radius` | `major_radius = 0.58`, `minor_radius = 0.22` | Both must be positive; `minor_radius < major_radius`. |
-| `gyroid` | `frequency`, `offset` | `frequency = 3.2`, `offset = 0.0` | `frequency` must be positive. |
 | `expr` | `expr`, optional `constants`, optional `gradient` | None | Expression must compile to a finite number at runtime. Constants must be finite numbers and cannot use reserved math names. Missing gradients use symbolic automatic differentiation when supported, otherwise numerical gradients. |
 
 Preferred form:
@@ -99,9 +97,12 @@ Preferred form:
 {
   "shape": "implicit equation",
   "field": {
-    "type": "gyroid",
-    "frequency": 3.2,
-    "offset": 0
+    "type": "expr",
+    "expr": "sin(f*x)*cos(f*y) + sin(f*y)*cos(f*z) + sin(f*z)*cos(f*x) - offset",
+    "constants": {
+      "f": 3.2,
+      "offset": 0
+    }
   },
   "bounds": {
     "pmin": [-1, -1, -1],
@@ -110,18 +111,8 @@ Preferred form:
 }
 ```
 
-Legacy form is still accepted:
-
-```json
-{
-  "shape": "implicit equation",
-  "function": "torus",
-  "bounds": {
-    "pmin": [-1, -1, -1],
-    "pmax": [1, 1, 1]
-  }
-}
-```
+The legacy top-level `"function"` form and built-in field names such as
+`torus` and `gyroid` are no longer accepted.
 
 ## Bounds Details
 

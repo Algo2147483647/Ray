@@ -155,6 +155,173 @@ func TestGroupDoesNotRequireMaterialID(t *testing.T) {
 	}
 }
 
+func TestStudioAdaptsArrayCells(t *testing.T) {
+	script := &studioScript{
+		Objects: []map[string]interface{}{
+			{
+				"id":          "grid",
+				"shape":       "array",
+				"origin":      []interface{}{10, 0, 0},
+				"delta":       []interface{}{[]interface{}{1, 0, 0}, []interface{}{0, 2, 0}},
+				"counts":      []interface{}{2, 2},
+				"material_id": "array-material",
+				"objects": map[string]interface{}{
+					"1,1": []interface{}{
+						map[string]interface{}{
+							"id":     "a",
+							"shape":  "sphere",
+							"center": []interface{}{0.5, 0, 0},
+							"r":      0.25,
+						},
+					},
+					"2,2": []interface{}{
+						map[string]interface{}{
+							"id":     "b",
+							"shape":  "sphere",
+							"center": []interface{}{0, 0.5, 0},
+							"r":      0.25,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	adapted, err := adaptScript(script, []string{"scene.json"}, 3)
+	if err != nil {
+		t.Fatalf("adapt array: %v", err)
+	}
+	if len(adapted.Objects) != 2 {
+		t.Fatalf("expected two array objects, got %d", len(adapted.Objects))
+	}
+
+	first := adapted.Objects[0]
+	if first["id"] != "grid/i1-j1/a" {
+		t.Fatalf("unexpected first id: %v", first["id"])
+	}
+	assertFloatSlice(t, first["center"], []float64{10.5, 0, 0})
+	if first["material_id"] != "array-material" {
+		t.Fatalf("expected inherited material, got %v", first["material_id"])
+	}
+
+	second := adapted.Objects[1]
+	if second["id"] != "grid/i2-j2/b" {
+		t.Fatalf("unexpected second id: %v", second["id"])
+	}
+	assertFloatSlice(t, second["center"], []float64{11, 2.5, 0})
+}
+
+func TestStudioMergesArrayObjectsAcrossFiles(t *testing.T) {
+	dir := t.TempDir()
+	firstPath := filepath.Join(dir, "a.json")
+	secondPath := filepath.Join(dir, "b.json")
+	if err := os.WriteFile(firstPath, []byte(`{
+	  "objects": [
+	    {
+	      "id": "grid",
+	      "shape": "array",
+	      "origin": [0, 0, 0],
+	      "delta": [[1, 0, 0]],
+	      "counts": [2],
+	      "material_id": "shared",
+	      "objects": {
+	        "1": [
+	          { "id": "left", "shape": "sphere", "center": [0, 0, 0], "r": 0.25 }
+	        ]
+	      }
+	    }
+	  ]
+	}`), 0o644); err != nil {
+		t.Fatalf("write first script: %v", err)
+	}
+	if err := os.WriteFile(secondPath, []byte(`{
+	  "objects": [
+	    {
+	      "id": "grid",
+	      "shape": "array",
+	      "objects": {
+	        "2": [
+	          { "id": "right", "shape": "sphere", "center": [0, 0, 0], "r": 0.25 }
+	        ]
+	      }
+	    }
+	  ]
+	}`), 0o644); err != nil {
+		t.Fatalf("write second script: %v", err)
+	}
+
+	script, err := readStudioScriptFiles([]string{firstPath, secondPath})
+	if err != nil {
+		t.Fatalf("read merged studio scripts: %v", err)
+	}
+	if len(script.Objects) != 1 {
+		t.Fatalf("expected one merged array, got %d", len(script.Objects))
+	}
+
+	adapted, err := adaptScript(script, []string{firstPath, secondPath}, 3)
+	if err != nil {
+		t.Fatalf("adapt merged array: %v", err)
+	}
+	if len(adapted.Objects) != 2 {
+		t.Fatalf("expected two merged array children, got %d", len(adapted.Objects))
+	}
+	if adapted.Objects[0]["id"] != "grid/i1/left" || adapted.Objects[1]["id"] != "grid/i2/right" {
+		t.Fatalf("unexpected merged ids: %v, %v", adapted.Objects[0]["id"], adapted.Objects[1]["id"])
+	}
+	assertFloatSlice(t, adapted.Objects[0]["center"], []float64{0, 0, 0})
+	assertFloatSlice(t, adapted.Objects[1]["center"], []float64{1, 0, 0})
+}
+
+func TestStudioMergesGroupObjectsAcrossFiles(t *testing.T) {
+	dir := t.TempDir()
+	firstPath := filepath.Join(dir, "group-a.json")
+	secondPath := filepath.Join(dir, "group-b.json")
+	if err := os.WriteFile(firstPath, []byte(`{
+	  "objects": [
+	    {
+	      "id": "cluster",
+	      "shape": "group",
+	      "center": [2, 0, 0],
+	      "objects": [
+	        { "id": "left", "shape": "sphere", "center": [0, 0, 0], "r": 0.25, "material_id": "mat" }
+	      ]
+	    }
+	  ]
+	}`), 0o644); err != nil {
+		t.Fatalf("write first group script: %v", err)
+	}
+	if err := os.WriteFile(secondPath, []byte(`{
+	  "objects": [
+	    {
+	      "id": "cluster",
+	      "shape": "group",
+	      "objects": [
+	        { "id": "right", "shape": "sphere", "center": [1, 0, 0], "r": 0.25, "material_id": "mat" }
+	      ]
+	    }
+	  ]
+	}`), 0o644); err != nil {
+		t.Fatalf("write second group script: %v", err)
+	}
+
+	script, err := readStudioScriptFiles([]string{firstPath, secondPath})
+	if err != nil {
+		t.Fatalf("read merged group scripts: %v", err)
+	}
+	adapted, err := adaptScript(script, []string{firstPath, secondPath}, 3)
+	if err != nil {
+		t.Fatalf("adapt merged group: %v", err)
+	}
+	if len(adapted.Objects) != 2 {
+		t.Fatalf("expected two merged group children, got %d", len(adapted.Objects))
+	}
+	if adapted.Objects[0]["id"] != "cluster/left" || adapted.Objects[1]["id"] != "cluster/right" {
+		t.Fatalf("unexpected merged group ids: %v, %v", adapted.Objects[0]["id"], adapted.Objects[1]["id"])
+	}
+	assertFloatSlice(t, adapted.Objects[0]["center"], []float64{2, 0, 0})
+	assertFloatSlice(t, adapted.Objects[1]["center"], []float64{3, 0, 0})
+}
+
 func TestStudioAdaptsTriangleCenterAndGroupPlacement(t *testing.T) {
 	script := &studioScript{
 		Objects: []map[string]interface{}{
@@ -310,9 +477,12 @@ func TestStudioAdaptsBoundsCenterSizeToMinMax(t *testing.T) {
 	script := &studioScript{
 		Objects: []map[string]interface{}{
 			{
-				"id":       "gyroid",
-				"shape":    "implicit equation",
-				"function": "gyroid",
+				"id":    "expr",
+				"shape": "implicit equation",
+				"field": map[string]interface{}{
+					"type": "expr",
+					"expr": "x*x + y*y + z*z - 1",
+				},
 				"bounds": map[string]interface{}{
 					"center": []interface{}{1, 2, 3},
 					"size":   []interface{}{2, 4, 6},
@@ -665,12 +835,15 @@ func TestStudioAdaptsCopiedGeometryBenchmarkMatrixExample(t *testing.T) {
 	if adapted.Studio.Version == "" {
 		t.Fatal("expected studio metadata on intermediate script")
 	}
-	if len(adapted.Objects) != 21 {
-		t.Fatalf("expected room plus example geometry objects, got %d", len(adapted.Objects))
+	if len(adapted.Objects) != 20 {
+		t.Fatalf("expected room objects without example geometry, got %d", len(adapted.Objects))
 	}
 	for _, object := range adapted.Objects {
 		if shape, _ := stringField(object, "shape"); strings.EqualFold(shape, "group") {
 			t.Fatalf("studio intermediate output must not contain group object: %#v", object)
+		}
+		if shape, _ := stringField(object, "shape"); strings.EqualFold(shape, "array") {
+			t.Fatalf("studio intermediate output must not contain array object: %#v", object)
 		}
 	}
 

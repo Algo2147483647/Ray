@@ -165,15 +165,18 @@ implicit zero level set `F(x,y,z)=0`.
 
 ### Implicit Equation
 
-`implicit equation` uses an engine-owned function registry:
+`implicit equation` uses an expression field:
 
 ```json
 {
   "shape": "implicit equation",
   "field": {
-    "type": "gyroid",
-    "frequency": 3.2,
-    "offset": 0
+    "type": "expr",
+    "expr": "sin(f*x)*cos(f*y) + sin(f*y)*cos(f*z) + sin(f*z)*cos(f*x) - offset",
+    "constants": {
+      "f": 3.2,
+      "offset": 0
+    }
   },
   "bounds": {
     "pmin": [-1, -1, -1],
@@ -184,11 +187,9 @@ implicit zero level set `F(x,y,z)=0`.
 }
 ```
 
-Supported built-in fields:
+Supported fields:
 
 ```text
-torus: major_radius, minor_radius
-gyroid: frequency, offset
 expr: expr, constants, optional gradient
 ```
 
@@ -219,8 +220,8 @@ provide local partial derivatives for analytic normals:
 }
 ```
 
-The legacy top-level `"function"` field is still accepted, but `field.type` is
-the preferred engine protocol.
+The legacy top-level `"function"` field and built-in implicit field names such
+as `torus` and `gyroid` are not accepted. Use `field.type: "expr"`.
 
 ## Materials, Media, Cameras, Render
 

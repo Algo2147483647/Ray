@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/Algo2147483647/ray/studio/adapt"
 	"github.com/Algo2147483647/ray/studio/schema"
@@ -105,7 +106,7 @@ func mergeStudioScripts(dst, src *schema.StudioScript, source string) error {
 	if err := appendUniqueStudioIDMaps(&dst.Materials, src.Materials, "material", source); err != nil {
 		return err
 	}
-	if err := appendUniqueStudioIDMaps(&dst.Objects, src.Objects, "object", source); err != nil {
+	if err := appendOrMergeStudioObjects(&dst.Objects, src.Objects, source); err != nil {
 		return err
 	}
 	if err := appendUniqueStudioCameras(&dst.Cameras, src.Cameras, source); err != nil {
@@ -155,6 +156,240 @@ func appendUniqueStudioIDMaps(dst *[]map[string]interface{}, src []map[string]in
 		*dst = append(*dst, adapt.CloneMap(item))
 	}
 	return nil
+}
+
+func appendOrMergeStudioObjects(dst *[]map[string]interface{}, src []map[string]interface{}, source string) error {
+	ids := map[string]int{}
+	for index, item := range *dst {
+		if id, ok := adapt.StringField(item, "id"); ok {
+			ids[id] = index
+		}
+	}
+	for _, item := range src {
+		id, ok := adapt.StringField(item, "id")
+		if !ok {
+			*dst = append(*dst, adapt.CloneMap(item))
+			continue
+		}
+		if existingIndex, exists := ids[id]; exists {
+			merged, err := mergeStudioObject((*dst)[existingIndex], item, source)
+			if err != nil {
+				return err
+			}
+			(*dst)[existingIndex] = merged
+			continue
+		}
+		ids[id] = len(*dst)
+		*dst = append(*dst, adapt.CloneMap(item))
+	}
+	return nil
+}
+
+func mergeStudioObject(base, override map[string]interface{}, source string) (map[string]interface{}, error) {
+	baseShape, _ := adapt.StringField(base, "shape")
+	overrideShape, _ := adapt.StringField(override, "shape")
+	baseShape = strings.ToLower(baseShape)
+	overrideShape = strings.ToLower(overrideShape)
+	if !mergeableContainerShape(baseShape) || !mergeableContainerShape(overrideShape) || baseShape != overrideShape {
+		id, _ := adapt.StringField(base, "id")
+		return nil, fmt.Errorf("duplicate object id %q while merging %s", id, source)
+	}
+
+	merged := adapt.CloneMap(base)
+	overrideClone := adapt.CloneMap(override)
+	for key, value := range overrideClone {
+		if key == "objects" {
+			continue
+		}
+		merged[key] = value
+	}
+
+	switch baseShape {
+	case "group":
+		if objects, ok, err := mergeOptionalStudioObjectLists(merged["objects"], override["objects"], source); err != nil {
+			return nil, err
+		} else if ok {
+			merged["objects"] = objects
+		}
+	case "array":
+		if objects, ok, err := mergeOptionalStudioArrayObjects(merged["objects"], override["objects"], source); err != nil {
+			return nil, err
+		} else if ok {
+			merged["objects"] = objects
+		}
+	}
+	return merged, nil
+}
+
+func mergeableContainerShape(shape string) bool {
+	return shape == "group" || shape == "array"
+}
+
+func mergeStudioObjectLists(baseRaw, overrideRaw interface{}, source string) ([]interface{}, error) {
+	baseItems, err := objectListRaw(baseRaw, "objects")
+	if err != nil {
+		return nil, err
+	}
+	overrideItems, err := objectListRaw(overrideRaw, "objects")
+	if err != nil {
+		return nil, err
+	}
+
+	merged := cloneInterfaceSlice(baseItems)
+	ids := map[string]int{}
+	for index, item := range merged {
+		object, ok := item.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if id, ok := adapt.StringField(object, "id"); ok {
+			ids[id] = index
+		}
+	}
+	for _, item := range overrideItems {
+		object, ok := item.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("field %q: expected object, got %T", "objects", item)
+		}
+		id, hasID := adapt.StringField(object, "id")
+		if !hasID {
+			merged = append(merged, cloneInterfaceValue(item))
+			continue
+		}
+		if existingIndex, exists := ids[id]; exists {
+			existing, ok := merged[existingIndex].(map[string]interface{})
+			if !ok {
+				return nil, fmt.Errorf("duplicate object id %q while merging %s", id, source)
+			}
+			nested, err := mergeStudioObject(existing, object, source)
+			if err != nil {
+				return nil, err
+			}
+			merged[existingIndex] = nested
+			continue
+		}
+		ids[id] = len(merged)
+		merged = append(merged, cloneInterfaceValue(item))
+	}
+	return merged, nil
+}
+
+func mergeOptionalStudioObjectLists(baseRaw, overrideRaw interface{}, source string) ([]interface{}, bool, error) {
+	if baseRaw == nil && overrideRaw == nil {
+		return nil, false, nil
+	}
+	if baseRaw == nil {
+		overrideItems, err := objectListRaw(overrideRaw, "objects")
+		if err != nil {
+			return nil, false, err
+		}
+		return cloneInterfaceSlice(overrideItems), true, nil
+	}
+	if overrideRaw == nil {
+		baseItems, err := objectListRaw(baseRaw, "objects")
+		if err != nil {
+			return nil, false, err
+		}
+		return cloneInterfaceSlice(baseItems), true, nil
+	}
+	merged, err := mergeStudioObjectLists(baseRaw, overrideRaw, source)
+	return merged, err == nil, err
+}
+
+func mergeStudioArrayObjects(baseRaw, overrideRaw interface{}, source string) (map[string]interface{}, error) {
+	baseMap, err := objectMapRaw(baseRaw, "objects")
+	if err != nil {
+		return nil, err
+	}
+	overrideMap, err := objectMapRaw(overrideRaw, "objects")
+	if err != nil {
+		return nil, err
+	}
+	merged := cloneStringInterfaceMap(baseMap)
+	for cell, overrideItems := range overrideMap {
+		baseItems, exists := merged[cell]
+		if !exists {
+			merged[cell] = cloneInterfaceValue(overrideItems)
+			continue
+		}
+		items, err := mergeStudioObjectLists(baseItems, overrideItems, source)
+		if err != nil {
+			return nil, err
+		}
+		merged[cell] = items
+	}
+	return merged, nil
+}
+
+func mergeOptionalStudioArrayObjects(baseRaw, overrideRaw interface{}, source string) (map[string]interface{}, bool, error) {
+	if baseRaw == nil && overrideRaw == nil {
+		return nil, false, nil
+	}
+	if baseRaw == nil {
+		overrideMap, err := objectMapRaw(overrideRaw, "objects")
+		if err != nil {
+			return nil, false, err
+		}
+		return cloneStringInterfaceMap(overrideMap), true, nil
+	}
+	if overrideRaw == nil {
+		baseMap, err := objectMapRaw(baseRaw, "objects")
+		if err != nil {
+			return nil, false, err
+		}
+		return cloneStringInterfaceMap(baseMap), true, nil
+	}
+	merged, err := mergeStudioArrayObjects(baseRaw, overrideRaw, source)
+	return merged, err == nil, err
+}
+
+func objectListRaw(raw interface{}, key string) ([]interface{}, error) {
+	items, ok := raw.([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("field %q: expected array, got %T", key, raw)
+	}
+	return items, nil
+}
+
+func objectMapRaw(raw interface{}, key string) (map[string]interface{}, error) {
+	items, ok := raw.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("field %q: expected object, got %T", key, raw)
+	}
+	return items, nil
+}
+
+func cloneStringInterfaceMap(value map[string]interface{}) map[string]interface{} {
+	result := make(map[string]interface{}, len(value))
+	for key, item := range value {
+		result[key] = cloneInterfaceValue(item)
+	}
+	return result
+}
+
+func cloneInterfaceSlice(value []interface{}) []interface{} {
+	result := make([]interface{}, len(value))
+	for i, item := range value {
+		result[i] = cloneInterfaceValue(item)
+	}
+	return result
+}
+
+func cloneInterfaceValue(value interface{}) interface{} {
+	switch v := value.(type) {
+	case map[string]interface{}:
+		return adapt.CloneMap(v)
+	case []interface{}:
+		return cloneInterfaceSlice(v)
+	case []map[string]interface{}:
+		result := make([]interface{}, len(v))
+		for i, item := range v {
+			result[i] = adapt.CloneMap(item)
+		}
+		return result
+	default:
+		return value
+	}
 }
 
 func appendUniqueStudioCameras(dst *[]schema.StudioCameraScript, src []schema.StudioCameraScript, source string) error {

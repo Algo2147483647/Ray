@@ -237,17 +237,19 @@ Relevant code:
 F(x) = 0
 ```
 
-The controller/factory layer uses a small field registry for built-in
-non-polynomial fields such as torus and gyroid, plus expression-backed scalar
-fields. Scene JSON selects the field type and provides parameters:
+The controller/factory layer supports expression-backed scalar fields. Scene
+JSON provides the expression and any constants:
 
 ```json
 {
   "shape": "implicit equation",
   "field": {
-    "type": "gyroid",
-    "frequency": 3.2,
-    "offset": 0
+    "type": "expr",
+    "expr": "sin(f*x)*cos(f*y) + sin(f*y)*cos(f*z) + sin(f*z)*cos(f*x) - offset",
+    "constants": {
+      "f": 3.2,
+      "offset": 0
+    }
   },
   "bounds": {
     "position": [0, 0, 0],

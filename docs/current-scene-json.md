@@ -48,7 +48,7 @@ Merge rules:
 ```text
 media: merged by id; duplicate ids fail
 materials: appended by id; duplicate ids fail
-objects: appended by id; duplicate ids fail
+objects: appended by id; duplicate ids fail except matching studio group/array ids merge recursively
 cameras: appended by id when present; duplicate camera ids fail
 render: scalar render fields inherit from includes and are overridden by later files
 renders: appended as separate render jobs
@@ -352,23 +352,24 @@ Example Barth sextic surface:
 }
 ```
 
-Non-polynomial implicit surfaces use `shape: "implicit equation"` with a
-registered field type and field-specific parameters. The renderer owns the
-field registry and numeric intersection logic; scene JSON owns the selected
-field, parameters, placement, bounds, and tolerances:
+Implicit expression surfaces use `shape: "implicit equation"` with
+`field.type: "expr"`. The renderer owns the numeric intersection logic; scene
+JSON owns the expression, constants, placement, bounds, and tolerances:
 
 ```json
 {
-  "id": "gyroid-cell",
+  "id": "expr-sphere",
   "shape": "implicit equation",
   "field": {
-    "type": "gyroid",
-    "frequency": 3.2,
-    "offset": 0.0
+    "type": "expr",
+    "expr": "x*x + y*y + z*z - r*r",
+    "constants": {
+      "r": 1
+    }
   },
   "bounds": {
-    "pmin": [-1, -1, -1],
-    "pmax": [1, 1, 1]
+    "pmin": [-1.2, -1.2, -1.2],
+    "pmax": [1.2, 1.2, 1.2]
   },
   "step": 0.01,
   "value_tol": 1e-7,
@@ -376,11 +377,9 @@ field, parameters, placement, bounds, and tolerances:
 }
 ```
 
-Supported built-in implicit fields:
+Supported implicit fields:
 
 ```text
-torus: major_radius, minor_radius
-gyroid: frequency, offset
 expr: expr, constants, optional gradient
 ```
 
@@ -414,8 +413,9 @@ derivatives:
 }
 ```
 
-The legacy top-level `"function": "torus"` / `"function": "gyroid"` form is
-still accepted, but new scenes should prefer the `field.type` form.
+The legacy top-level `"function"` form and built-in implicit fields such as
+`torus` and `gyroid` are no longer accepted. Write those surfaces as `expr`
+zero-level sets instead.
 
 ### Rough Conductor
 

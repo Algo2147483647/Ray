@@ -46,6 +46,14 @@ func flattenObjects(objects []map[string]interface{}, ctx groupContext, dimensio
 			flattened = append(flattened, children...)
 			continue
 		}
+		if strings.EqualFold(shapeName, "array") {
+			children, err := flattenArrayObject(object, ctx, index, dimension)
+			if err != nil {
+				return nil, err
+			}
+			flattened = append(flattened, children...)
+			continue
+		}
 
 		adapted, err := adaptObject(object, ctx, index, dimension)
 		if err != nil {
