@@ -90,6 +90,32 @@ func TestFourOrderEquationIntersectsQuarticWithShiftedRoots(t *testing.T) {
 	}
 }
 
+func TestFourOrderEquationCalculateStorageCachesNonZeroTerms(t *testing.T) {
+	a := maths.NewTensor[float64]([]int{4, 4, 4, 4})
+	a.Set(3, 0, 0, 0, 0)
+	a.Set(-2, 1, 1, 0, 0)
+	a.Set(5, 2, 3, 0, 0)
+	a.Set(7, 0, 1, 1, 0)
+	quartic := NewFourOrderEquation(a.Data)
+
+	if len(quartic.Mem.Terms) != 3 {
+		t.Fatalf("expected three cached non-zero terms, got %d", len(quartic.Mem.Terms))
+	}
+	got := map[[4]int]float64{}
+	for _, term := range quartic.Mem.Terms {
+		got[[4]int{term.Powers[0], term.Powers[1], term.Powers[2], 0}] = term.Value
+	}
+	for index, expected := range map[[4]int]float64{
+		[4]int{0, 0, 0, 0}: 3,
+		[4]int{2, 0, 0, 0}: 5,
+		[4]int{0, 1, 1, 0}: 5,
+	} {
+		if got[index] != expected {
+			t.Fatalf("expected cached term %v=%g, got %g", index, expected, got[index])
+		}
+	}
+}
+
 func fourOrderCoefficients(values map[[4]int]float64) []float64 {
 	coeffs := make([]float64, 256)
 	for index, value := range values {

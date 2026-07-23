@@ -9,15 +9,34 @@ import (
 
 type FourOrderEquation struct {
 	BaseShape
-	A *maths.Tensor[float64] `json:"a"`
+	A   *maths.Tensor[float64] `json:"a"`
+	Mem FourOrderEquationCalculateStorage
+}
+
+type FourOrderEquationCalculateStorage struct {
+	Terms []fourOrderEquationTerm
+}
+
+type fourOrderEquationTerm struct {
+	Powers [3]int
+	Value  float64
 }
 
 func NewFourOrderEquation(A []float64) *FourOrderEquation { // Index order: 1, x, y, z
 	ATensor := maths.NewTensorFromSlice(A, []int{4, 4, 4, 4})
 
-	return &FourOrderEquation{
+	equation := &FourOrderEquation{
 		A: ATensor,
 	}
+	equation.RebuildCalculateStorage()
+	return equation
+}
+
+func (p *FourOrderEquation) RebuildCalculateStorage() {
+	if p == nil {
+		return
+	}
+	p.Mem = buildFourOrderEquationCalculateStorage(p.A)
 }
 
 func (p *FourOrderEquation) Name() string {
@@ -34,8 +53,8 @@ func (p *FourOrderEquation) Intersect(raySt, rayDir *mat.VecDense) float64 {
 
 func (p *FourOrderEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
 	var (
-		coeffs = []float64{0, 0, 0, 0, 0} // Coefficients from the fourth-degree term to the constant term.
-		stx    = raySt.AtVec(0)           // Get ray origin and direction components.
+		coeffs [5]float64       // Coefficients from the fourth-degree term to the constant term.
+		stx    = raySt.AtVec(0) // Get ray origin and direction components.
 		sty    = raySt.AtVec(1)
 		stz    = raySt.AtVec(2)
 		dirx   = rayDir.AtVec(0)
@@ -43,52 +62,30 @@ func (p *FourOrderEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tM
 		dirz   = rayDir.AtVec(2)
 	)
 
-	for i := 0; i < 4; i++ { // Iterate over tensor A indices (0 to 3).
-		for j := 0; j < 4; j++ {
-			for k := 0; k < 4; k++ {
-				for l := 0; l < 4; l++ {
-					c := p.A.Get(i, j, k, l)
-					if c == 0 {
-						continue
-					}
-
-					poly := [5]float64{1, 0, 0, 0, 0} // Initialize the current term polynomial coefficients (constant term is 1).
-					indices := [4]int{i, j, k, l}     // Process the factor for each index.
-					for _, idx := range indices {
-						var polyFactor [2]float64
-						switch idx {
-						case 0:
-							polyFactor = [2]float64{1, 0} // Constant factor 1
-						case 1:
-							polyFactor = [2]float64{stx, dirx} // x factor
-						case 2:
-							polyFactor = [2]float64{sty, diry} // y factor
-						case 3:
-							polyFactor = [2]float64{stz, dirz} // z factor
-						default:
-							polyFactor = [2]float64{0, 0} // Invalid index, default to 0.
-						}
-
-						newPoly := [5]float64{} // Multiply the current polynomial by the factor polynomial.
-						for d1, coef1 := range poly {
-							for d2, coef2 := range polyFactor {
-								if d1+d2 < 5 {
-									newPoly[d1+d2] += coef1 * coef2
-								}
-							}
-						}
-						poly = newPoly
-					}
-
-					for degree, coef := range poly { // Multiply the current term polynomial coefficients by c and accumulate them.
-						coeffs[len(coeffs)-1-degree] += c * coef
-					}
+	xPowers := linearRayPowerTable(stx, dirx)
+	yPowers := linearRayPowerTable(sty, diry)
+	zPowers := linearRayPowerTable(stz, dirz)
+	for _, term := range p.calculateStorage().Terms {
+		xPower, yPower, zPower := term.Powers[0], term.Powers[1], term.Powers[2]
+		for xDegree := 0; xDegree <= xPower; xDegree++ {
+			xCoefficient := xPowers[xPower][xDegree]
+			if xCoefficient == 0 {
+				continue
+			}
+			for yDegree := 0; yDegree <= yPower; yDegree++ {
+				xyCoefficient := xCoefficient * yPowers[yPower][yDegree]
+				if xyCoefficient == 0 {
+					continue
+				}
+				for zDegree := 0; zDegree <= zPower; zDegree++ {
+					degree := xDegree + yDegree + zDegree
+					coeffs[len(coeffs)-1-degree] += term.Value * xyCoefficient * zPowers[zPower][zDegree]
 				}
 			}
 		}
 	}
 
-	roots, err := maths.SolvePolynomialReal(coeffs)
+	roots, err := maths.SolvePolynomialReal(coeffs[:])
 	if err != nil {
 		return SurfaceInteraction{}, false
 	}
@@ -117,65 +114,25 @@ func (p *FourOrderEquation) GetNormalVector(intersect, res *mat.VecDense) *mat.V
 		grad    = [3]float64{0, 0, 0}    // dx, dy, dz	// Initialize the gradient vector.
 	)
 
-	// Iterate over tensor A indices (0 to 3).
-	for i := 0; i < 4; i++ {
-		for j := 0; j < 4; j++ {
-			for k := 0; k < 4; k++ {
-				for l := 0; l < 4; l++ {
-					c := p.A.Get(i, j, k, l)
-					if c == 0 {
-						continue
-					}
-
-					// Compute the partial derivative contribution for x.
-					dx := 0.0
-					if i == 1 {
-						dx += factors[j] * factors[k] * factors[l]
-					}
-					if j == 1 {
-						dx += factors[i] * factors[k] * factors[l]
-					}
-					if k == 1 {
-						dx += factors[i] * factors[j] * factors[l]
-					}
-					if l == 1 {
-						dx += factors[i] * factors[j] * factors[k]
-					}
-					grad[0] += c * dx
-
-					// Compute the partial derivative contribution for y.
-					dy := 0.0
-					if i == 2 {
-						dy += factors[j] * factors[k] * factors[l]
-					}
-					if j == 2 {
-						dy += factors[i] * factors[k] * factors[l]
-					}
-					if k == 2 {
-						dy += factors[i] * factors[j] * factors[l]
-					}
-					if l == 2 {
-						dy += factors[i] * factors[j] * factors[k]
-					}
-					grad[1] += c * dy
-
-					// Compute the partial derivative contribution for z.
-					dz := 0.0
-					if i == 3 {
-						dz += factors[j] * factors[k] * factors[l]
-					}
-					if j == 3 {
-						dz += factors[i] * factors[k] * factors[l]
-					}
-					if k == 3 {
-						dz += factors[i] * factors[j] * factors[l]
-					}
-					if l == 3 {
-						dz += factors[i] * factors[j] * factors[k]
-					}
-					grad[2] += c * dz
-				}
-			}
+	for _, term := range p.calculateStorage().Terms {
+		xPower, yPower, zPower := term.Powers[0], term.Powers[1], term.Powers[2]
+		if xPower > 0 {
+			grad[0] += term.Value * float64(xPower) *
+				smallPower(factors[1], xPower-1) *
+				smallPower(factors[2], yPower) *
+				smallPower(factors[3], zPower)
+		}
+		if yPower > 0 {
+			grad[1] += term.Value * float64(yPower) *
+				smallPower(factors[1], xPower) *
+				smallPower(factors[2], yPower-1) *
+				smallPower(factors[3], zPower)
+		}
+		if zPower > 0 {
+			grad[2] += term.Value * float64(zPower) *
+				smallPower(factors[1], xPower) *
+				smallPower(factors[2], yPower) *
+				smallPower(factors[3], zPower-1)
 		}
 	}
 
@@ -183,4 +140,89 @@ func (p *FourOrderEquation) GetNormalVector(intersect, res *mat.VecDense) *mat.V
 	res.SetVec(1, grad[1])
 	res.SetVec(2, grad[2])
 	return maths.Normalize(res)
+}
+
+func (p *FourOrderEquation) calculateStorage() FourOrderEquationCalculateStorage {
+	if p == nil {
+		return FourOrderEquationCalculateStorage{}
+	}
+	if p.Mem.Terms == nil && p.A != nil {
+		p.RebuildCalculateStorage()
+	}
+	return p.Mem
+}
+
+func buildFourOrderEquationCalculateStorage(a *maths.Tensor[float64]) FourOrderEquationCalculateStorage {
+	mem := FourOrderEquationCalculateStorage{
+		Terms: []fourOrderEquationTerm{},
+	}
+	if a == nil {
+		return mem
+	}
+	terms := map[[3]int]float64{}
+	for i := 0; i < 4; i++ {
+		for j := 0; j < 4; j++ {
+			for k := 0; k < 4; k++ {
+				for l := 0; l < 4; l++ {
+					value := a.Get(i, j, k, l)
+					if value == 0 {
+						continue
+					}
+					powers := fourOrderEquationPowers([4]int{i, j, k, l})
+					terms[powers] += value
+				}
+			}
+		}
+	}
+	for powers, value := range terms {
+		if value == 0 {
+			continue
+		}
+		mem.Terms = append(mem.Terms, fourOrderEquationTerm{
+			Powers: powers,
+			Value:  value,
+		})
+	}
+	return mem
+}
+
+func fourOrderEquationPowers(indices [4]int) [3]int {
+	powers := [3]int{}
+	for _, index := range indices {
+		if index >= 1 && index <= 3 {
+			powers[index-1]++
+		}
+	}
+	return powers
+}
+
+func linearRayPowerTable(start, direction float64) [5][5]float64 {
+	powers := [5][5]float64{}
+	powers[0][0] = 1
+	for exponent := 1; exponent <= 4; exponent++ {
+		for degree := 0; degree <= exponent-1; degree++ {
+			coefficient := powers[exponent-1][degree]
+			powers[exponent][degree] += coefficient * start
+			powers[exponent][degree+1] += coefficient * direction
+		}
+	}
+	return powers
+}
+
+func smallPower(value float64, exponent int) float64 {
+	switch exponent {
+	case 0:
+		return 1
+	case 1:
+		return value
+	case 2:
+		return value * value
+	case 3:
+		return value * value * value
+	case 4:
+		squared := value * value
+		return squared * squared
+	default:
+		return math.Pow(value, float64(exponent))
+	}
 }
