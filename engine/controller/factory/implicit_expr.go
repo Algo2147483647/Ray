@@ -17,8 +17,6 @@ type implicitExprField struct {
 	gradientY *vm.Program
 	gradientZ *vm.Program
 	constants map[string]float64
-	center    [3]float64
-	scale     [3]float64
 	Mem       implicitExprCalculateStorage
 }
 
@@ -29,7 +27,6 @@ type implicitExprCalculateStorage struct {
 
 func parseImplicitExprField(
 	fieldDef map[string]interface{},
-	center, scale [3]float64,
 ) (
 	func(*mat.VecDense) float64,
 	func(point, res *mat.VecDense) *mat.VecDense,
@@ -53,8 +50,6 @@ func parseImplicitExprField(
 	field := &implicitExprField{
 		program:   program,
 		constants: constants,
-		center:    center,
-		scale:     scale,
 		Mem:       newImplicitExprCalculateStorage(constants),
 	}
 
@@ -132,7 +127,7 @@ func (f *implicitExprField) evaluate(point *mat.VecDense) float64 {
 	if f == nil || point == nil || point.Len() < 3 {
 		return math.NaN()
 	}
-	x, y, z := implicitLocalPoint(point, f.center, f.scale)
+	x, y, z := point.AtVec(0), point.AtVec(1), point.AtVec(2)
 	env := f.Mem.getEnv(x, y, z)
 	value := runImplicitExprProgram(f.program, env)
 	f.Mem.putEnv(env)
@@ -149,7 +144,7 @@ func (f *implicitExprField) gradient(point, res *mat.VecDense) *mat.VecDense {
 		res.Zero()
 	}
 
-	x, y, z := implicitLocalPoint(point, f.center, f.scale)
+	x, y, z := point.AtVec(0), point.AtVec(1), point.AtVec(2)
 	env := f.Mem.getEnv(x, y, z)
 	gx := runImplicitExprProgram(f.gradientX, env)
 	gy := runImplicitExprProgram(f.gradientY, env)
@@ -159,9 +154,9 @@ func (f *implicitExprField) gradient(point, res *mat.VecDense) *mat.VecDense {
 		return nil
 	}
 
-	res.SetVec(0, gx/f.scale[0])
-	res.SetVec(1, gy/f.scale[1])
-	res.SetVec(2, gz/f.scale[2])
+	res.SetVec(0, gx)
+	res.SetVec(1, gy)
+	res.SetVec(2, gz)
 	return res
 }
 

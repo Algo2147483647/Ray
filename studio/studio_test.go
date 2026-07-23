@@ -510,6 +510,55 @@ func TestStudioAdaptsBoundsCenterSizeToMinMax(t *testing.T) {
 	}
 }
 
+func TestStudioAdaptsImplicitEquationCenterScaleBasisToTransform(t *testing.T) {
+	script := &studioScript{
+		Objects: []map[string]interface{}{
+			{
+				"id":    "expr",
+				"shape": "implicit equation",
+				"field": map[string]interface{}{
+					"type": "expr",
+					"expr": "x",
+				},
+				"center": []interface{}{2, 0, 0},
+				"scale":  []interface{}{3, 1, 1},
+				"basis": []interface{}{
+					[]interface{}{0, 0, 1},
+					[]interface{}{0, 1, 0},
+					[]interface{}{-1, 0, 0},
+				},
+				"bounds": map[string]interface{}{
+					"pmin": []interface{}{-3, -3, -3},
+					"pmax": []interface{}{3, 3, 3},
+				},
+			},
+		},
+	}
+
+	adapted, err := adaptScript(script, []string{"scene.json"}, 3)
+	if err != nil {
+		t.Fatalf("adapt implicit equation: %v", err)
+	}
+	object := adapted.Objects[0]
+	if _, ok := object["center"]; ok {
+		t.Fatal("implicit equation intermediate object should not keep center")
+	}
+	if _, ok := object["scale"]; ok {
+		t.Fatal("implicit equation intermediate object should not keep scale")
+	}
+	if _, ok := object["basis"]; ok {
+		t.Fatal("implicit equation intermediate object should not keep basis")
+	}
+
+	transform, ok := object["transform"].([][]float64)
+	if !ok {
+		t.Fatalf("expected transform matrix, got %T", object["transform"])
+	}
+	assertFloatSlice(t, transform[1], []float64{0, 0, 0, 1.0 / 3.0})
+	assertFloatSlice(t, transform[2], []float64{0, 0, 1, 0})
+	assertFloatSlice(t, transform[3], []float64{2, -1, 0, 0})
+}
+
 func TestStudioAdaptsCameraLookAtFromRawFields(t *testing.T) {
 	script := &studioScript{}
 	cameras := []studioCameraScript{

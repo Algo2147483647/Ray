@@ -2,6 +2,7 @@ package factory
 
 import (
 	"fmt"
+	"math"
 	"strings"
 
 	"github.com/Algo2147483647/ray/engine/model/shape"
@@ -9,7 +10,7 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-type implicitFieldFactory func(map[string]interface{}, [3]float64, [3]float64) (
+type implicitFieldFactory func(map[string]interface{}) (
 	func(*mat.VecDense) float64,
 	func(point, res *mat.VecDense) *mat.VecDense,
 	error,
@@ -20,7 +21,7 @@ var implicitFieldRegistry = map[string]implicitFieldFactory{
 }
 
 func parseImplicitEquation(objDef map[string]interface{}) ([]shape.Shape, error) {
-	center, scale, err := parsePolynomialCenterScale(objDef)
+	transform, err := parseImplicitTransform(objDef)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +34,7 @@ func parseImplicitEquation(objDef map[string]interface{}) ([]shape.Shape, error)
 		return nil, fmt.Errorf("implicit equation requires bounds")
 	}
 
-	function, gradient, err := buildImplicitField(objDef, center, scale)
+	function, gradient, err := buildImplicitField(objDef)
 	if err != nil {
 		return nil, err
 	}
@@ -43,6 +44,7 @@ func parseImplicitEquation(objDef map[string]interface{}) ([]shape.Shape, error)
 		gradient,
 		[2]*mat.VecDense{bounds.Pmin, bounds.Pmax},
 	)
+	equation.Transform = transform
 	if step, ok, err := utils.OptionalFloat64Field(objDef, "step"); err != nil {
 		return nil, err
 	} else if ok {
@@ -65,7 +67,6 @@ func parseImplicitEquation(objDef map[string]interface{}) ([]shape.Shape, error)
 
 func buildImplicitField(
 	objDef map[string]interface{},
-	center, scale [3]float64,
 ) (
 	func(*mat.VecDense) float64,
 	func(point, res *mat.VecDense) *mat.VecDense,
@@ -80,7 +81,7 @@ func buildImplicitField(
 	if !ok {
 		return nil, nil, fmt.Errorf("unsupported implicit field %q", fieldType)
 	}
-	return factory(fieldDef, center, scale)
+	return factory(fieldDef)
 }
 
 func implicitFieldDefinition(objDef map[string]interface{}) (map[string]interface{}, string, error) {
@@ -100,8 +101,87 @@ func implicitFieldDefinition(objDef map[string]interface{}) (map[string]interfac
 	return nil, "", fmt.Errorf(`implicit equation requires "field" with type "expr"`)
 }
 
-func implicitLocalPoint(point *mat.VecDense, center, scale [3]float64) (float64, float64, float64) {
-	return (point.AtVec(0) - center[0]) / scale[0],
-		(point.AtVec(1) - center[1]) / scale[1],
-		(point.AtVec(2) - center[2]) / scale[2]
+func parseImplicitTransform(objDef map[string]interface{}) ([4][4]float64, error) {
+	if _, ok := objDef["transform"]; ok {
+		return parsePolynomialSurfaceTransform(objDef)
+	}
+
+	center, scale, err := parsePolynomialCenterScale(objDef)
+	if err != nil {
+		return [4][4]float64{}, err
+	}
+	basis, err := parseImplicitBasis(objDef)
+	if err != nil {
+		return [4][4]float64{}, err
+	}
+
+	transform := identityTransform4()
+	for localAxis := 0; localAxis < 3; localAxis++ {
+		transform[localAxis+1][0] = 0
+		for worldAxis := 0; worldAxis < 3; worldAxis++ {
+			transform[localAxis+1][0] -= basis[localAxis][worldAxis] * center[worldAxis] / scale[localAxis]
+			transform[localAxis+1][worldAxis+1] = basis[localAxis][worldAxis] / scale[localAxis]
+		}
+	}
+	return transform, nil
+}
+
+func parseImplicitBasis(objDef map[string]interface{}) ([3][3]float64, error) {
+	basis := [3][3]float64{
+		{1, 0, 0},
+		{0, 1, 0},
+		{0, 0, 1},
+	}
+	raw, ok := objDef["basis"]
+	if !ok {
+		return basis, nil
+	}
+	rows, ok := raw.([]interface{})
+	if !ok {
+		return [3][3]float64{}, fmt.Errorf("field %q: expected array, got %T", "basis", raw)
+	}
+	if len(rows) != 3 {
+		return [3][3]float64{}, fmt.Errorf("field %q must contain 3 vectors, got %d", "basis", len(rows))
+	}
+	for row, rawRow := range rows {
+		values, err := utils.ToFloat64Slice(rawRow)
+		if err != nil {
+			return [3][3]float64{}, fmt.Errorf("basis[%d]: %w", row, err)
+		}
+		if len(values) != 3 {
+			return [3][3]float64{}, fmt.Errorf("basis[%d] must contain 3 values, got %d", row, len(values))
+		}
+		copy(basis[row][:], values)
+	}
+	if err := validateImplicitBasis(basis); err != nil {
+		return [3][3]float64{}, err
+	}
+	return basis, nil
+}
+
+func validateImplicitBasis(basis [3][3]float64) error {
+	const tol = 1e-6
+	for row := 0; row < 3; row++ {
+		lengthSquared := 0.0
+		for axis := 0; axis < 3; axis++ {
+			value := basis[row][axis]
+			if math.IsNaN(value) || math.IsInf(value, 0) {
+				return fmt.Errorf("basis[%d][%d] must be finite", row, axis)
+			}
+			lengthSquared += value * value
+		}
+		if math.Abs(lengthSquared-1) > tol {
+			return fmt.Errorf("basis[%d] must be unit length", row)
+		}
+		for other := row + 1; other < 3; other++ {
+			dot := 0.0
+			for axis := 0; axis < 3; axis++ {
+				dot += basis[row][axis] * basis[other][axis]
+			}
+			if math.Abs(dot) > tol {
+				return fmt.Errorf("basis[%d] and basis[%d] must be orthogonal", row, other)
+			}
+		}
+	}
+	return nil
 }

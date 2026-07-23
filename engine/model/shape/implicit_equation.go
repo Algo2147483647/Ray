@@ -16,9 +16,10 @@ const (
 
 type ImplicitEquation struct {
 	BaseShape
-	Function func(*mat.VecDense) float64 // implicit scalar field F(p), whose surface is F(p)=0.
-	Gradient func(point, res *mat.VecDense) *mat.VecDense
-	Range    [2]*mat.VecDense
+	Function  func(*mat.VecDense) float64 // Local implicit scalar field F(p), whose surface is F(p)=0.
+	Gradient  func(point, res *mat.VecDense) *mat.VecDense
+	Range     [2]*mat.VecDense
+	Transform [4][4]float64 // World-to-local homogeneous transform matrix.
 
 	Step        float64
 	MaxSteps    int
@@ -31,6 +32,7 @@ func NewImplicitEquation(Function func(*mat.VecDense) float64, Range [2]*mat.Vec
 	return &ImplicitEquation{
 		Function:    Function,
 		Range:       Range,
+		Transform:   identityTransform4(),
 		MaxSteps:    defaultImplicitMaxSteps,
 		RootTol:     defaultImplicitRootTol,
 		ValueTol:    defaultImplicitValueTol,
@@ -141,9 +143,11 @@ func (f *ImplicitEquation) GetNormalVector(intersect, res *mat.VecDense) *mat.Ve
 	}
 
 	if f != nil && f.Gradient != nil {
-		gradient := f.Gradient(intersect, res)
-		if gradient != nil {
-			return maths.Normalize(gradient)
+		local := f.localPoint(intersect, nil)
+		localGradient := f.Gradient(local, mat.NewVecDense(local.Len(), nil))
+		if localGradient != nil {
+			f.localGradientToWorld(localGradient, res)
+			return maths.Normalize(res)
 		}
 	}
 
@@ -163,7 +167,7 @@ func (f *ImplicitEquation) BuildBoundingBox() (pmin, pmax *mat.VecDense) {
 
 func (f *ImplicitEquation) evaluateRay(raySt, rayDir *mat.VecDense, t float64) float64 {
 	point := pointAt(raySt, rayDir, t)
-	return f.Function(point)
+	return f.evaluateWorld(point)
 }
 
 func (f *ImplicitEquation) interactionAt(raySt, rayDir *mat.VecDense, distance float64) SurfaceInteraction {
@@ -220,16 +224,59 @@ func (f *ImplicitEquation) numericalGradient(point, res *mat.VecDense) {
 		original := point.AtVec(axis)
 
 		work.SetVec(axis, original+eps)
-		plus := f.Function(work)
+		plus := f.evaluateWorld(work)
 
 		work.SetVec(axis, original-eps)
-		minus := f.Function(work)
+		minus := f.evaluateWorld(work)
 
 		work.SetVec(axis, original)
 		if isFinite(plus) && isFinite(minus) {
 			res.SetVec(axis, (plus-minus)/(2*eps))
 		}
 	}
+}
+
+func (f *ImplicitEquation) evaluateWorld(point *mat.VecDense) float64 {
+	if f == nil || f.Function == nil || point == nil {
+		return math.NaN()
+	}
+	return f.Function(f.localPoint(point, nil))
+}
+
+func (f *ImplicitEquation) localPoint(point, res *mat.VecDense) *mat.VecDense {
+	if point == nil {
+		return res
+	}
+	dim := minInt(point.Len(), utils.Dimension)
+	if res == nil || res.Len() != dim {
+		res = mat.NewVecDense(dim, nil)
+	} else {
+		res.Zero()
+	}
+	for localAxis := 0; localAxis < dim; localAxis++ {
+		value := f.Transform[localAxis+1][0]
+		for worldAxis := 0; worldAxis < dim; worldAxis++ {
+			value += f.Transform[localAxis+1][worldAxis+1] * point.AtVec(worldAxis)
+		}
+		res.SetVec(localAxis, value)
+	}
+	return res
+}
+
+func (f *ImplicitEquation) localGradientToWorld(localGradient, res *mat.VecDense) *mat.VecDense {
+	if f == nil || localGradient == nil || res == nil {
+		return res
+	}
+	res.Zero()
+	localDim := minInt(localGradient.Len(), utils.Dimension)
+	worldDim := minInt(res.Len(), utils.Dimension)
+	for localAxis := 0; localAxis < localDim; localAxis++ {
+		value := localGradient.AtVec(localAxis)
+		for worldAxis := 0; worldAxis < worldDim; worldAxis++ {
+			res.SetVec(worldAxis, res.AtVec(worldAxis)+value*f.Transform[localAxis+1][worldAxis+1])
+		}
+	}
+	return res
 }
 
 func (f *ImplicitEquation) hasValidRange() bool {

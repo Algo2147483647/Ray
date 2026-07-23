@@ -464,25 +464,33 @@ func adaptImplicitEquation(object map[string]interface{}, ctx groupContext, dime
 		return nil, fmt.Errorf("implicit equation adapter requires dimension 3, got %d", dimension)
 	}
 
-	localCenter, err := optionalVector(object, "center", dimension, zeroVector(dimension))
-	if err != nil {
-		return nil, err
-	}
-	localScale, err := optionalScale(object, "scale", dimension, unitVector(dimension))
-	if err != nil {
-		return nil, err
-	}
-
-	worldCenter := make([]float64, dimension)
-	worldScale := make([]float64, dimension)
-	for i := 0; i < dimension; i++ {
-		worldCenter[i] = ctx.center[i] + ctx.scale[i]*localCenter[i]
-		worldScale[i] = ctx.scale[i] * localScale[i]
-	}
-
 	adapted := cloneMap(object)
-	adapted["center"] = worldCenter
-	adapted["scale"] = worldScale
+	transform, hasTransform, err := optionalTransform(adapted)
+	if err != nil {
+		return nil, err
+	}
+
+	if hasTransform {
+		adapted["transform"] = transformToSlices(composeWithGroupInverse(transform, ctx))
+	} else {
+		localCenter, err := optionalVector(object, "center", dimension, zeroVector(dimension))
+		if err != nil {
+			return nil, err
+		}
+		localScale, err := optionalScale(object, "scale", dimension, unitVector(dimension))
+		if err != nil {
+			return nil, err
+		}
+		basis, err := optionalBasis(object, dimension)
+		if err != nil {
+			return nil, err
+		}
+		adapted["transform"] = transformToSlices(worldToLocalTransformMatrix(ctx, localCenter, localScale, basis))
+	}
+
+	delete(adapted, "center")
+	delete(adapted, "scale")
+	delete(adapted, "basis")
 	return adapted, nil
 }
 

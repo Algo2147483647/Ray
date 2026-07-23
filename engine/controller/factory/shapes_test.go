@@ -585,6 +585,83 @@ func TestParseShapeImplicitEquationExprField(t *testing.T) {
 	}
 }
 
+func TestParseShapeImplicitEquationTransformMapsWorldToLocal(t *testing.T) {
+	shapes, err := ParseShape(map[string]interface{}{
+		"shape": "implicit equation",
+		"field": map[string]interface{}{
+			"type": "expr",
+			"expr": "x",
+			"gradient": map[string]interface{}{
+				"x": "1",
+				"y": "0",
+				"z": "0",
+			},
+		},
+		"transform": []interface{}{
+			[]interface{}{1, 0, 0, 0},
+			[]interface{}{0, 0, 1, 0},
+			[]interface{}{0, 1, 0, 0},
+			[]interface{}{0, 0, 0, 1},
+		},
+		"bounds": map[string]interface{}{
+			"pmin": []interface{}{-2, -2, -2},
+			"pmax": []interface{}{2, 2, 2},
+		},
+		"step": 0.01,
+	})
+	if err != nil {
+		t.Fatalf("parse transformed expr implicit equation: %v", err)
+	}
+	implicit := shapes[0].(*shape.ImplicitEquation)
+
+	interaction, ok := implicit.IntersectRange(
+		mat.NewVecDense(3, []float64{1, -1, 0}),
+		mat.NewVecDense(3, []float64{0, 1, 0}),
+		0,
+		3,
+	)
+	if !ok {
+		t.Fatal("expected transformed implicit plane to hit")
+	}
+	if math.Abs(interaction.Distance-1) > 1e-3 {
+		t.Fatalf("expected transformed plane hit at distance 1, got %f", interaction.Distance)
+	}
+	if math.Abs(interaction.GeometricNormal.AtVec(1)-1) > 1e-6 {
+		t.Fatalf("expected transformed normal to face positive y, got %v", interaction.GeometricNormal.RawVector().Data)
+	}
+}
+
+func TestParseShapeImplicitEquationBasisBuildsTransform(t *testing.T) {
+	shapes, err := ParseShape(map[string]interface{}{
+		"shape": "implicit equation",
+		"field": map[string]interface{}{
+			"type": "expr",
+			"expr": "x",
+		},
+		"center": []interface{}{2, 0, 0},
+		"scale":  []interface{}{2, 1, 1},
+		"basis": []interface{}{
+			[]interface{}{0, 0, 1},
+			[]interface{}{0, 1, 0},
+			[]interface{}{-1, 0, 0},
+		},
+		"bounds": map[string]interface{}{
+			"pmin": []interface{}{-3, -3, -3},
+			"pmax": []interface{}{3, 3, 3},
+		},
+	})
+	if err != nil {
+		t.Fatalf("parse implicit equation basis: %v", err)
+	}
+	implicit := shapes[0].(*shape.ImplicitEquation)
+	if math.Abs(implicit.Transform[1][3]-0.5) > 1e-12 {
+		t.Fatalf("expected local x to use scaled world z, got %v", implicit.Transform)
+	}
+	if math.Abs(implicit.Transform[3][0]-2) > 1e-12 || math.Abs(implicit.Transform[3][1]+1) > 1e-12 {
+		t.Fatalf("expected transformed local z row, got %v", implicit.Transform)
+	}
+}
+
 func TestParseShapeImplicitEquationExprFieldUsesNumericalGradientFallback(t *testing.T) {
 	shapes, err := ParseShape(map[string]interface{}{
 		"shape": "implicit equation",
