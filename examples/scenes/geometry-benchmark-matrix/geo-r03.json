@@ -74,7 +74,6 @@
       "shape": "polynomial surface",
       "mode": "implicit",
       "input_dim": 3,
-      "degree": 5,
       "center": [
         1.44,
         -1.12,
@@ -88,7 +87,6 @@
           6,
           6
         ],
-        "degree_policy": "total",
         "terms": [
           {
             "index": [

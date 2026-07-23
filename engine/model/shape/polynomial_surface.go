@@ -20,30 +20,45 @@ type PolynomialSurface struct {
 	BaseShape
 	Mode         PolynomialSurfaceMode        // Surface equation mode: implicit F(x)=0 or explicit z=P(x).
 	InputDim     int                          // Number of local input coordinates used by the polynomial.
-	OutputDim    int                          // Number of polynomial output channels encoded in coefficients.
-	Degree       int                          // Maximum polynomial degree used for ray substitution.
 	ExplicitAxis int                          // Local axis solved by explicit mode, usually z.
 	Coefficients *maths.SparseTensor[float64] // Sparse polynomial coefficients indexed by exponents.
 	Transform    [4][4]float64                // World-to-local homogeneous transform matrix.
+	Mem          PolynomialSurfaceCalculateStorage
+}
+
+type PolynomialSurfaceCalculateStorage struct {
+	Degree        int
+	HasOutputAxis bool
+	Terms         []polynomialSurfaceTerm
+}
+
+type polynomialSurfaceTerm struct {
+	Output    int
+	Exponents []int
+	Value     float64
 }
 
 func NewPolynomialSurface(
 	mode PolynomialSurfaceMode,
-	inputDim, outputDim, degree int,
+	inputDim int,
 	coefficients *maths.SparseTensor[float64],
 ) *PolynomialSurface {
-	if outputDim <= 0 {
-		outputDim = 1
-	}
-	return &PolynomialSurface{
+	surface := &PolynomialSurface{
 		Mode:         mode,
 		InputDim:     inputDim,
-		OutputDim:    outputDim,
-		Degree:       degree,
 		ExplicitAxis: 2,
 		Coefficients: coefficients,
 		Transform:    identityTransform4(),
 	}
+	surface.RebuildCalculateStorage()
+	return surface
+}
+
+func (p *PolynomialSurface) RebuildCalculateStorage() {
+	if p == nil {
+		return
+	}
+	p.Mem = buildPolynomialSurfaceCalculateStorage(p.InputDim, p.Coefficients)
 }
 
 func (p *PolynomialSurface) Name() string {
@@ -97,30 +112,20 @@ func (p *PolynomialSurface) EvaluateOutput(input []float64, output int) float64 
 		return math.NaN()
 	}
 
-	powers := precomputePowers(input, p.Degree)
+	mem := p.calculateStorage()
+	powers := precomputePowers(input, mem.Degree)
 	result := 0.0
-	hasOutputAxis := p.coefficientsHaveOutputAxis()
 
-	p.Coefficients.IterNonZero(func(index []int, value float64) {
-		if hasOutputAxis {
-			if index[0] != output {
-				return
-			}
-			index = index[1:]
+	for _, polynomialTerm := range mem.Terms {
+		if mem.HasOutputAxis && polynomialTerm.Output != output {
+			continue
 		}
-		if len(index) != p.InputDim {
-			return
-		}
-
-		term := value
-		for axis, exponent := range index {
-			if exponent > p.Degree {
-				return
-			}
+		term := polynomialTerm.Value
+		for axis, exponent := range polynomialTerm.Exponents {
 			term *= powers[axis][exponent]
 		}
 		result += term
-	})
+	}
 	return result
 }
 
@@ -134,27 +139,20 @@ func (p *PolynomialSurface) GradientOutput(input []float64, output int) []float6
 		return gradient
 	}
 
-	powers := precomputePowers(input, p.Degree)
-	hasOutputAxis := p.coefficientsHaveOutputAxis()
+	mem := p.calculateStorage()
+	powers := precomputePowers(input, mem.Degree)
 
-	p.Coefficients.IterNonZero(func(index []int, value float64) {
-		if hasOutputAxis {
-			if index[0] != output {
-				return
-			}
-			index = index[1:]
+	for _, polynomialTerm := range mem.Terms {
+		if mem.HasOutputAxis && polynomialTerm.Output != output {
+			continue
 		}
-		if len(index) != p.InputDim {
-			return
-		}
-
-		for derivativeAxis, derivativeExponent := range index {
+		for derivativeAxis, derivativeExponent := range polynomialTerm.Exponents {
 			if derivativeExponent == 0 {
 				continue
 			}
 
-			term := value * float64(derivativeExponent)
-			for axis, exponent := range index {
+			term := polynomialTerm.Value * float64(derivativeExponent)
+			for axis, exponent := range polynomialTerm.Exponents {
 				switch {
 				case axis == derivativeAxis:
 					term *= powers[axis][exponent-1]
@@ -164,7 +162,7 @@ func (p *PolynomialSurface) GradientOutput(input []float64, output int) []float6
 			}
 			gradient[derivativeAxis] += term
 		}
-	})
+	}
 	return gradient
 }
 
@@ -210,7 +208,7 @@ func (p *PolynomialSurface) implicitRayPolynomial(localSt, localDir []float64) (
 	if p.InputDim > len(localSt) {
 		return nil, ErrPolynomialSurfaceDimension
 	}
-	ascending := make([]float64, p.Degree+1)
+	ascending := make([]float64, p.calculateStorage().Degree+1)
 	p.addTermsToRayPolynomial(ascending, localSt[:p.InputDim], localDir[:p.InputDim], 0)
 	return descendingPolynomial(ascending), nil
 }
@@ -228,7 +226,7 @@ func (p *PolynomialSurface) explicitRayPolynomial(localSt, localDir []float64) (
 		inputDir[i] = localDir[axis]
 	}
 
-	ascending := make([]float64, p.Degree+1)
+	ascending := make([]float64, p.calculateStorage().Degree+1)
 	p.addTermsToRayPolynomial(ascending, inputSt, inputDir, 0)
 	ascending[0] -= localSt[p.ExplicitAxis]
 	if len(ascending) < 2 {
@@ -239,27 +237,21 @@ func (p *PolynomialSurface) explicitRayPolynomial(localSt, localDir []float64) (
 }
 
 func (p *PolynomialSurface) addTermsToRayPolynomial(ascending, starts, dirs []float64, output int) {
-	hasOutputAxis := p.coefficientsHaveOutputAxis()
-	p.Coefficients.IterNonZero(func(index []int, value float64) {
-		if hasOutputAxis {
-			if index[0] != output {
-				return
-			}
-			index = index[1:]
+	mem := p.calculateStorage()
+	maxDegree := len(ascending) - 1
+	for _, polynomialTerm := range mem.Terms {
+		if mem.HasOutputAxis && polynomialTerm.Output != output {
+			continue
 		}
-		if len(index) != p.InputDim {
-			return
-		}
-
-		termPoly := []float64{value}
-		for axis, exponent := range index {
+		termPoly := []float64{polynomialTerm.Value}
+		for axis, exponent := range polynomialTerm.Exponents {
 			factor := linearPowerPolynomial(starts[axis], dirs[axis], exponent)
-			termPoly = multiplyPolynomialsAscending(termPoly, factor, p.Degree)
+			termPoly = multiplyPolynomialsAscending(termPoly, factor, maxDegree)
 		}
 		for degree, coefficient := range termPoly {
 			ascending[degree] += coefficient
 		}
-	})
+	}
 }
 
 func (p *PolynomialSurface) localSurfaceGradient(local []float64) []float64 {
@@ -294,11 +286,70 @@ func (p *PolynomialSurface) explicitInputAxes() []int {
 	return axes
 }
 
+func (p *PolynomialSurface) calculateStorage() PolynomialSurfaceCalculateStorage {
+	if p == nil {
+		return PolynomialSurfaceCalculateStorage{}
+	}
+	if p.Mem.Terms == nil && p.Coefficients != nil && p.Coefficients.NNZ() > 0 {
+		p.RebuildCalculateStorage()
+	}
+	return p.Mem
+}
+
+func coefficientsHavePolynomialOutputAxis(inputDim int, coefficients *maths.SparseTensor[float64]) bool {
+	if coefficients == nil {
+		return false
+	}
+	return len(coefficients.Shape) == inputDim+1
+}
+
+func buildPolynomialSurfaceCalculateStorage(inputDim int, coefficients *maths.SparseTensor[float64]) PolynomialSurfaceCalculateStorage {
+	mem := PolynomialSurfaceCalculateStorage{
+		HasOutputAxis: coefficientsHavePolynomialOutputAxis(inputDim, coefficients),
+	}
+	if coefficients == nil {
+		return mem
+	}
+
+	coefficients.IterNonZero(func(index []int, value float64) {
+		output := 0
+		if mem.HasOutputAxis {
+			output = index[0]
+			index = index[1:]
+		}
+		if len(index) != inputDim {
+			return
+		}
+
+		exponents := append([]int(nil), index...)
+		totalDegree := 0
+		for _, exponent := range exponents {
+			totalDegree += exponent
+		}
+		if totalDegree > mem.Degree {
+			mem.Degree = totalDegree
+		}
+		mem.Terms = append(mem.Terms, polynomialSurfaceTerm{
+			Output:    output,
+			Exponents: exponents,
+			Value:     value,
+		})
+	})
+	return mem
+}
+
 func (p *PolynomialSurface) coefficientsHaveOutputAxis() bool {
 	if p == nil || p.Coefficients == nil {
 		return false
 	}
-	return p.OutputDim > 1 && len(p.Coefficients.Shape) == p.InputDim+1
+	return p.calculateStorage().HasOutputAxis
+}
+
+func (p *PolynomialSurface) polynomialDegree() int {
+	if p == nil || p.Coefficients == nil {
+		return 0
+	}
+	return p.calculateStorage().Degree
 }
 
 func (p *PolynomialSurface) localPoint(point *mat.VecDense) []float64 {

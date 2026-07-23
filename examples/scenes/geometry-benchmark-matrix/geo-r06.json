@@ -104,7 +104,6 @@
       "shape": "polynomial surface",
       "mode": "implicit",
       "input_dim": 3,
-      "degree": 8,
       "center": [
         0.6,
         -0.56,
@@ -118,7 +117,6 @@
           9,
           9
         ],
-        "degree_policy": "total",
         "terms": [
           {
             "index": [
@@ -276,7 +274,6 @@
       "shape": "polynomial surface",
       "mode": "implicit",
       "input_dim": 3,
-      "degree": 3,
       "center": [
         0.6,
         0.56,
@@ -290,7 +287,6 @@
           4,
           4
         ],
-        "degree_policy": "total",
         "terms": [
           {
             "index": [
@@ -473,7 +469,6 @@
       "shape": "polynomial surface",
       "mode": "implicit",
       "input_dim": 3,
-      "degree": 5,
       "center": [
         0.6,
         1.12,
@@ -487,7 +482,6 @@
           6,
           6
         ],
-        "degree_policy": "total",
         "terms": [
           {
             "index": [
@@ -694,7 +688,6 @@
       "shape": "polynomial surface",
       "mode": "implicit",
       "input_dim": 3,
-      "degree": 6,
       "center": [
         0.6,
         1.68,
@@ -708,7 +701,6 @@
           7,
           7
         ],
-        "degree_policy": "total",
         "terms": [
           {
             "index": [

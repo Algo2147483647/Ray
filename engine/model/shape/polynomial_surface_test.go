@@ -19,7 +19,7 @@ func TestPolynomialSurfaceImplicitSphereIntersection(t *testing.T) {
 		t.Fatalf("create coefficients: %v", err)
 	}
 
-	surface := NewPolynomialSurface(PolynomialSurfaceImplicit, 3, 1, 2, coefficients)
+	surface := NewPolynomialSurface(PolynomialSurfaceImplicit, 3, coefficients)
 	interaction, ok := surface.IntersectRange(
 		mat.NewVecDense(3, []float64{0, 0, -3}),
 		mat.NewVecDense(3, []float64{0, 0, 1}),
@@ -46,7 +46,7 @@ func TestPolynomialSurfaceExplicitParaboloid(t *testing.T) {
 		t.Fatalf("create coefficients: %v", err)
 	}
 
-	surface := NewPolynomialSurface(PolynomialSurfaceExplicit, 2, 1, 2, coefficients)
+	surface := NewPolynomialSurface(PolynomialSurfaceExplicit, 2, coefficients)
 	if got := surface.Evaluate([]float64{2, 3}); got != 13 {
 		t.Fatalf("expected polynomial value 13, got %v", got)
 	}
@@ -78,7 +78,7 @@ func TestPolynomialSurfaceTransformRotatesImplicitSurface(t *testing.T) {
 		t.Fatalf("create coefficients: %v", err)
 	}
 
-	surface := NewPolynomialSurface(PolynomialSurfaceImplicit, 3, 1, 1, coefficients)
+	surface := NewPolynomialSurface(PolynomialSurfaceImplicit, 3, coefficients)
 	surface.Transform = [4][4]float64{
 		{1, 0, 0, 0},
 		{0, math.Sqrt(3) / 2, 0, 0.5},
@@ -107,6 +107,30 @@ func TestPolynomialSurfaceTransformRotatesImplicitSurface(t *testing.T) {
 	}
 	if math.Abs(mat.Dot(interaction.GeometricNormal, normal)-1) > 1e-9 {
 		t.Fatalf("expected rotated normal %v, got %v", normal.RawVector().Data, interaction.GeometricNormal.RawVector().Data)
+	}
+}
+
+func TestPolynomialSurfaceCalculateStorageCachesTerms(t *testing.T) {
+	coefficients, err := maths.NewSparseTensorFromEntries([]int{2, 4, 3}, maths.SparseTensorHash, []maths.SparseTensorEntry[float64]{
+		{Index: []int{0, 3, 0}, Value: 2},
+		{Index: []int{1, 1, 2}, Value: 5},
+	})
+	if err != nil {
+		t.Fatalf("create coefficients: %v", err)
+	}
+
+	surface := NewPolynomialSurface(PolynomialSurfaceImplicit, 2, coefficients)
+	if !surface.Mem.HasOutputAxis {
+		t.Fatal("expected output axis to be cached")
+	}
+	if surface.Mem.Degree != 3 {
+		t.Fatalf("expected cached degree 3, got %d", surface.Mem.Degree)
+	}
+	if len(surface.Mem.Terms) != 2 {
+		t.Fatalf("expected two cached terms, got %d", len(surface.Mem.Terms))
+	}
+	if got := surface.EvaluateOutput([]float64{2, 3}, 1); got != 90 {
+		t.Fatalf("expected output 1 value 90, got %v", got)
 	}
 }
 
@@ -214,7 +238,7 @@ func newTaubinHeartSurface(t *testing.T) *PolynomialSurface {
 	if err != nil {
 		t.Fatalf("create Taubin heart coefficients: %v", err)
 	}
-	return NewPolynomialSurface(PolynomialSurfaceImplicit, 3, 1, 6, coefficients)
+	return NewPolynomialSurface(PolynomialSurfaceImplicit, 3, coefficients)
 }
 
 func multiplyTermMaps(a, b map[[3]int]float64) map[[3]int]float64 {

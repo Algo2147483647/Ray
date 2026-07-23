@@ -391,7 +391,6 @@ func TestParseShapePolynomialSurface(t *testing.T) {
 		"shape":     "polynomial surface",
 		"mode":      "implicit",
 		"input_dim": 3,
-		"degree":    2,
 		"coefficients": map[string]interface{}{
 			"format": "coo",
 			"terms": []interface{}{
@@ -427,7 +426,6 @@ func TestParseShapePolynomialSurfaceTransform(t *testing.T) {
 		"shape":     "polynomial surface",
 		"mode":      "implicit",
 		"input_dim": 3,
-		"degree":    1,
 		"transform": []interface{}{
 			[]interface{}{1, 0, 0, 0},
 			[]interface{}{0, math.Sqrt(3) / 2, 0, 0.5},
@@ -459,7 +457,6 @@ func TestParseShapeRejectsInvalidPolynomialSurfaceTransform(t *testing.T) {
 		"shape":     "polynomial surface",
 		"mode":      "implicit",
 		"input_dim": 3,
-		"degree":    1,
 		"transform": []interface{}{
 			[]interface{}{1, 0, 0, 0},
 			[]interface{}{0, 1, 0, 0},

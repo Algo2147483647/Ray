@@ -29,28 +29,17 @@ func parsePolynomialSurface(objDef map[string]interface{}) ([]shape.Shape, error
 	if inputDim > 3 {
 		return nil, fmt.Errorf("field %q must be <= 3 when using a 4x4 transform", "input_dim")
 	}
-	degree, err := requiredNonNegativeIntField(objDef, "degree")
-	if err != nil {
-		return nil, err
-	}
-	outputDim, err := optionalPositiveIntField(objDef, "output_dim", 1)
-	if err != nil {
-		return nil, err
-	}
 	explicitAxis, err := optionalNonNegativeIntField(objDef, "explicit_axis", 2)
 	if err != nil {
 		return nil, err
 	}
 
-	coefficients, effectiveDegree, err := parsePolynomialSurfaceCoefficients(objDef, inputDim, outputDim, degree)
+	coefficients, err := parsePolynomialSurfaceCoefficients(objDef, inputDim)
 	if err != nil {
 		return nil, err
 	}
-	if effectiveDegree > degree {
-		degree = effectiveDegree
-	}
 
-	surface := shape.NewPolynomialSurface(mode, inputDim, outputDim, degree, coefficients)
+	surface := shape.NewPolynomialSurface(mode, inputDim, coefficients)
 	surface.ExplicitAxis = explicitAxis
 
 	transform, err := parsePolynomialSurfaceTransform(objDef)
@@ -64,11 +53,11 @@ func parsePolynomialSurface(objDef map[string]interface{}) ([]shape.Shape, error
 
 func parsePolynomialSurfaceCoefficients(
 	objDef map[string]interface{},
-	inputDim, outputDim, degree int,
-) (*maths.SparseTensor[float64], int, error) {
+	inputDim int,
+) (*maths.SparseTensor[float64], error) {
 	coeffDef, ok, err := utils.OptionalMapField(objDef, "coefficients")
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 	if !ok {
 		coeffDef = objDef
@@ -76,81 +65,59 @@ func parsePolynomialSurfaceCoefficients(
 
 	formatText, ok, err := utils.OptionalStringField(coeffDef, "format")
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 	format := maths.SparseTensorHash
 	if ok {
 		format = maths.SparseTensorFormat(formatText)
 	}
 	if format != maths.SparseTensorCOO && format != maths.SparseTensorHash {
-		return nil, 0, fmt.Errorf("field %q supports %q or %q for polynomial surface coefficients", "format", maths.SparseTensorCOO, maths.SparseTensorHash)
-	}
-
-	tensorShape, err := polynomialSurfaceTensorShape(coeffDef, inputDim, outputDim, degree)
-	if err != nil {
-		return nil, 0, err
+		return nil, fmt.Errorf("field %q supports %q or %q for polynomial surface coefficients", "format", maths.SparseTensorCOO, maths.SparseTensorHash)
 	}
 
 	rawTerms, ok := coeffDef["terms"]
 	if !ok {
-		return nil, 0, fmt.Errorf(`missing required field "terms"`)
+		return nil, fmt.Errorf(`missing required field "terms"`)
 	}
 	terms, ok := rawTerms.([]interface{})
 	if !ok {
-		return nil, 0, fmt.Errorf("field %q: expected array, got %T", "terms", rawTerms)
-	}
-
-	degreePolicy, ok, err := utils.OptionalStringField(coeffDef, "degree_policy")
-	if err != nil {
-		return nil, 0, err
-	}
-	if !ok {
-		degreePolicy = "total"
-	}
-	if degreePolicy != "total" && degreePolicy != "per_axis" {
-		return nil, 0, fmt.Errorf("field %q must be %q or %q", "degree_policy", "total", "per_axis")
+		return nil, fmt.Errorf("field %q: expected array, got %T", "terms", rawTerms)
 	}
 
 	entries := make([]maths.SparseTensorEntry[float64], 0, len(terms))
-	maxTermDegree := degree
+	var tensorShape []int
 	for i, rawTerm := range terms {
 		term, ok := rawTerm.(map[string]interface{})
 		if !ok {
-			return nil, 0, fmt.Errorf("terms[%d]: expected object, got %T", i, rawTerm)
+			return nil, fmt.Errorf("terms[%d]: expected object, got %T", i, rawTerm)
 		}
 
 		index, err := requiredIntSliceField(term, "index")
 		if err != nil {
-			return nil, 0, fmt.Errorf("terms[%d]: %w", i, err)
+			return nil, fmt.Errorf("terms[%d]: %w", i, err)
 		}
-		if len(index) != len(tensorShape) {
-			return nil, 0, fmt.Errorf("terms[%d]: index rank %d does not match coefficient rank %d", i, len(index), len(tensorShape))
-		}
-
-		alpha := index
-		if outputDim > 1 {
-			if index[0] < 0 || index[0] >= outputDim {
-				return nil, 0, fmt.Errorf("terms[%d]: output index must be in [0,%d)", i, outputDim)
-			}
-			alpha = index[1:]
-		}
-		totalDegree := 0
-		for axis, exponent := range alpha {
-			if exponent < 0 || exponent > degree {
-				return nil, 0, fmt.Errorf("terms[%d]: exponent on axis %d must be in [0,%d]", i, axis, degree)
-			}
-			totalDegree += exponent
-		}
-		if degreePolicy == "total" && totalDegree > degree {
-			return nil, 0, fmt.Errorf("terms[%d]: total degree %d exceeds declared degree %d", i, totalDegree, degree)
-		}
-		if totalDegree > maxTermDegree {
-			maxTermDegree = totalDegree
+		if len(index) != inputDim && len(index) != inputDim+1 {
+			return nil, fmt.Errorf("terms[%d]: index rank must be %d or %d, got %d", i, inputDim, inputDim+1, len(index))
 		}
 
 		value, err := utils.RequiredFloat64Field(term, "value")
 		if err != nil {
-			return nil, 0, fmt.Errorf("terms[%d]: %w", i, err)
+			return nil, fmt.Errorf("terms[%d]: %w", i, err)
+		}
+
+		if tensorShape == nil {
+			tensorShape = make([]int, len(index))
+		}
+		if len(index) != len(tensorShape) {
+			return nil, fmt.Errorf("terms[%d]: index rank %d does not match coefficient rank %d", i, len(index), len(tensorShape))
+		}
+		for axis, exponent := range index {
+			if exponent < 0 {
+				return nil, fmt.Errorf("terms[%d]: index on axis %d must be >= 0", i, axis)
+			}
+			if exponent+1 > tensorShape[axis] {
+				tensorShape[axis] = exponent + 1
+			}
 		}
 
 		entries = append(entries, maths.SparseTensorEntry[float64]{
@@ -159,40 +126,44 @@ func parsePolynomialSurfaceCoefficients(
 		})
 	}
 
+	tensorShape, err = polynomialSurfaceTensorShape(coeffDef, inputDim, tensorShape)
+	if err != nil {
+		return nil, err
+	}
+
 	tensor, err := maths.NewSparseTensorFromEntries(tensorShape, format, entries)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
-	return tensor, maxTermDegree, nil
+	return tensor, nil
 }
 
-func polynomialSurfaceTensorShape(coeffDef map[string]interface{}, inputDim, outputDim, degree int) ([]int, error) {
+func polynomialSurfaceTensorShape(coeffDef map[string]interface{}, inputDim int, inferredShape []int) ([]int, error) {
 	if rawShape, ok := coeffDef["shape"]; ok {
 		values, err := requiredIntSliceValue("shape", rawShape)
 		if err != nil {
 			return nil, err
 		}
-		expectedRank := inputDim
-		if outputDim > 1 {
-			expectedRank++
-		}
-		if len(values) != expectedRank {
-			return nil, fmt.Errorf("field %q rank must be %d, got %d", "shape", expectedRank, len(values))
+		if len(values) != inputDim && len(values) != inputDim+1 {
+			return nil, fmt.Errorf("field %q rank must be %d or %d, got %d", "shape", inputDim, inputDim+1, len(values))
 		}
 		for i, value := range values {
 			if value <= 0 {
 				return nil, fmt.Errorf("shape index %d must be > 0", i)
 			}
+			if len(inferredShape) == len(values) && value < inferredShape[i] {
+				return nil, fmt.Errorf("shape index %d must be >= %d to contain coefficient terms", i, inferredShape[i])
+			}
 		}
 		return values, nil
 	}
 
+	if inferredShape != nil {
+		return inferredShape, nil
+	}
 	tensorShape := make([]int, inputDim)
 	for i := range tensorShape {
-		tensorShape[i] = degree + 1
-	}
-	if outputDim > 1 {
-		tensorShape = append([]int{outputDim}, tensorShape...)
+		tensorShape[i] = 1
 	}
 	return tensorShape, nil
 }
