@@ -2,64 +2,39 @@ package factory
 
 import (
 	"fmt"
-	"math"
-	"strings"
 
 	"github.com/Algo2147483647/ray/engine/model/shape"
 	"github.com/Algo2147483647/ray/engine/utils"
-	"gonum.org/v1/gonum/mat"
 )
-
-type parametricSurfaceFactory func(map[string]interface{}, [3]float64, [3]float64) (shape.ParametricFunction, shape.ParametricDerivative, [2]float64, [2]float64, error)
-
-var parametricSurfaceRegistry = map[string]parametricSurfaceFactory{
-	"plane_patch":   parseParametricPlanePatch,
-	"sphere":        parseParametricSphere,
-	"spiral_flower": parseParametricSpiralFlower,
-	"torus":         parseParametricTorus,
-}
 
 func parseParametricEquation(objDef map[string]interface{}) ([]shape.Shape, error) {
 	if utils.Dimension != 3 {
 		return nil, fmt.Errorf("shape %q requires render dimension 3, got %d", ShapeParametricEquation, utils.Dimension)
 	}
 
-	center, scale, err := parsePolynomialCenterScale(objDef)
-	if err != nil {
-		return nil, err
-	}
-
 	surfaceDef, surfaceType, err := parametricSurfaceDefinition(objDef)
 	if err != nil {
 		return nil, err
 	}
-	factory, ok := parametricSurfaceRegistry[strings.ToLower(surfaceType)]
-	if !ok {
-		return nil, fmt.Errorf("unsupported parametric surface %q", surfaceType)
+	if surfaceType != "" {
+		return nil, fmt.Errorf("unsupported parametric surface %q; built-in parametric functions have been removed", surfaceType)
 	}
 
-	function, derivative, defaultURange, defaultVRange, err := factory(surfaceDef, center, scale)
+	uRange, err := optionalRange(objDef, "u_range", [2]float64{0, 1})
 	if err != nil {
 		return nil, err
 	}
-	uRange, err := optionalRange(objDef, "u_range", defaultURange)
-	if err != nil {
-		return nil, err
-	}
-	vRange, err := optionalRange(objDef, "v_range", defaultVRange)
+	vRange, err := optionalRange(objDef, "v_range", [2]float64{0, 1})
 	if err != nil {
 		return nil, err
 	}
 
-	equation := shape.NewParametricEquation(function, uRange, vRange)
-	equation.Derivative = derivative
+	equation := shape.NewParametricEquation(nil, uRange, vRange)
 	if err := applyParametricOptions(equation, objDef); err != nil {
 		return nil, err
 	}
-	if err := equation.Validate(); err != nil {
-		return nil, err
-	}
-	return wrapSingleShapeWithBounds(equation, objDef)
+	_ = surfaceDef
+	return nil, fmt.Errorf("parametric equation requires a non-built-in surface implementation")
 }
 
 func parametricSurfaceDefinition(objDef map[string]interface{}) (map[string]interface{}, string, error) {
@@ -73,117 +48,10 @@ func parametricSurfaceDefinition(objDef map[string]interface{}) (map[string]inte
 		return surfaceDef, surfaceType, nil
 	}
 
-	surfaceType, err := utils.RequiredStringField(objDef, "function")
-	if err != nil {
-		return nil, "", err
+	if _, ok := objDef["function"]; ok {
+		return nil, "", fmt.Errorf(`field "function" is no longer supported; use "surface"`)
 	}
-	return objDef, surfaceType, nil
-}
-
-func parseParametricPlanePatch(
-	objDef map[string]interface{},
-	center, scale [3]float64,
-) (shape.ParametricFunction, shape.ParametricDerivative, [2]float64, [2]float64, error) {
-	function := func(u, v float64) *mat.VecDense {
-		return mat.NewVecDense(3, []float64{
-			center[0] + scale[0]*u,
-			center[1] + scale[1]*v,
-			center[2],
-		})
-	}
-	derivative := func(u, v float64, du, dv *mat.VecDense) (*mat.VecDense, *mat.VecDense) {
-		du.SetVec(0, scale[0])
-		du.SetVec(1, 0)
-		du.SetVec(2, 0)
-		dv.SetVec(0, 0)
-		dv.SetVec(1, scale[1])
-		dv.SetVec(2, 0)
-		return du, dv
-	}
-	return function, derivative, [2]float64{-1, 1}, [2]float64{-1, 1}, nil
-}
-
-func parseParametricSphere(
-	objDef map[string]interface{},
-	center, scale [3]float64,
-) (shape.ParametricFunction, shape.ParametricDerivative, [2]float64, [2]float64, error) {
-	radius, err := optionalPositiveFloatField(objDef, "r", 1)
-	if err != nil {
-		return nil, nil, [2]float64{}, [2]float64{}, err
-	}
-	function := func(u, v float64) *mat.VecDense {
-		cosV := math.Cos(v)
-		return mat.NewVecDense(3, []float64{
-			center[0] + scale[0]*radius*cosV*math.Cos(u),
-			center[1] + scale[1]*radius*cosV*math.Sin(u),
-			center[2] + scale[2]*radius*math.Sin(v),
-		})
-	}
-	derivative := func(u, v float64, du, dv *mat.VecDense) (*mat.VecDense, *mat.VecDense) {
-		cosV := math.Cos(v)
-		sinV := math.Sin(v)
-		du.SetVec(0, -scale[0]*radius*cosV*math.Sin(u))
-		du.SetVec(1, scale[1]*radius*cosV*math.Cos(u))
-		du.SetVec(2, 0)
-		dv.SetVec(0, -scale[0]*radius*sinV*math.Cos(u))
-		dv.SetVec(1, -scale[1]*radius*sinV*math.Sin(u))
-		dv.SetVec(2, scale[2]*radius*cosV)
-		return du, dv
-	}
-	return function, derivative, [2]float64{0, 2 * math.Pi}, [2]float64{-0.5 * math.Pi, 0.5 * math.Pi}, nil
-}
-
-func parseParametricTorus(
-	objDef map[string]interface{},
-	center, scale [3]float64,
-) (shape.ParametricFunction, shape.ParametricDerivative, [2]float64, [2]float64, error) {
-	majorRadius, minorRadius, err := parseImplicitTorusRadii(objDef)
-	if err != nil {
-		return nil, nil, [2]float64{}, [2]float64{}, err
-	}
-	function := func(u, v float64) *mat.VecDense {
-		ring := majorRadius + minorRadius*math.Cos(v)
-		return mat.NewVecDense(3, []float64{
-			center[0] + scale[0]*ring*math.Cos(u),
-			center[1] + scale[1]*ring*math.Sin(u),
-			center[2] + scale[2]*minorRadius*math.Sin(v),
-		})
-	}
-	derivative := func(u, v float64, du, dv *mat.VecDense) (*mat.VecDense, *mat.VecDense) {
-		ring := majorRadius + minorRadius*math.Cos(v)
-		du.SetVec(0, -scale[0]*ring*math.Sin(u))
-		du.SetVec(1, scale[1]*ring*math.Cos(u))
-		du.SetVec(2, 0)
-		dv.SetVec(0, -scale[0]*minorRadius*math.Sin(v)*math.Cos(u))
-		dv.SetVec(1, -scale[1]*minorRadius*math.Sin(v)*math.Sin(u))
-		dv.SetVec(2, scale[2]*minorRadius*math.Cos(v))
-		return du, dv
-	}
-	return function, derivative, [2]float64{0, 2 * math.Pi}, [2]float64{0, 2 * math.Pi}, nil
-}
-
-func parseParametricSpiralFlower(
-	objDef map[string]interface{},
-	center, scale [3]float64,
-) (shape.ParametricFunction, shape.ParametricDerivative, [2]float64, [2]float64, error) {
-	function := func(r, theta float64) *mat.VecDense {
-		edgePhase := math.Mod(3.6*theta, 2*math.Pi)
-		edge := 1 - 0.5*math.Pow(1-edgePhase/math.Pi, 4) + math.Sin(15*theta)/150
-		f2 := 2 * math.Pow(r*r-r, 2)
-		alpha := 0.5 * math.Pi * math.Exp(-theta/(8*math.Pi))
-		sinAlpha := math.Sin(alpha)
-		cosAlpha := math.Cos(alpha)
-		h := f2 * sinAlpha
-		radius := sinAlpha*r + cosAlpha*h
-		height := cosAlpha*r - sinAlpha*h
-
-		return mat.NewVecDense(3, []float64{
-			center[0] + scale[0]*edge*radius*math.Cos(theta),
-			center[1] + scale[1]*edge*radius*math.Sin(theta),
-			center[2] + scale[2]*edge*height,
-		})
-	}
-	return function, nil, [2]float64{0, 1}, [2]float64{4 * math.Pi, 24 * math.Pi}, nil
+	return nil, "", fmt.Errorf(`parametric equation requires "surface"`)
 }
 
 func applyParametricOptions(equation *shape.ParametricEquation, objDef map[string]interface{}) error {
@@ -241,15 +109,4 @@ func optionalRange(objDef map[string]interface{}, key string, fallback [2]float6
 		return [2]float64{}, fmt.Errorf("%s must be increasing", key)
 	}
 	return [2]float64{values[0], values[1]}, nil
-}
-
-func optionalPositiveFloatField(objDef map[string]interface{}, key string, fallback float64) (float64, error) {
-	value, ok, err := utils.OptionalFloat64Field(objDef, key)
-	if err != nil || !ok {
-		return fallback, err
-	}
-	if value <= 0 {
-		return 0, fmt.Errorf("field %q must be > 0", key)
-	}
-	return value, nil
 }

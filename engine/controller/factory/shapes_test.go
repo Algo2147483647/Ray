@@ -491,8 +491,8 @@ func TestParseShapeRejectsExplicitPolynomialSurfaceMode(t *testing.T) {
 	}
 }
 
-func TestParseShapeImplicitEquationFieldRegistry(t *testing.T) {
-	shapes, err := ParseShape(map[string]interface{}{
+func TestParseShapeImplicitEquationRejectsBuiltInField(t *testing.T) {
+	_, err := ParseShape(map[string]interface{}{
 		"shape": "implicit equation",
 		"field": map[string]interface{}{
 			"type":         "torus",
@@ -504,33 +504,13 @@ func TestParseShapeImplicitEquationFieldRegistry(t *testing.T) {
 			"pmax": []interface{}{1, 1, 1},
 		},
 	})
-	if err != nil {
-		t.Fatalf("parse implicit equation field: %v", err)
-	}
-	if len(shapes) != 1 {
-		t.Fatalf("expected one shape, got %d", len(shapes))
-	}
-	implicit, ok := shapes[0].(*shape.ImplicitEquation)
-	if !ok {
-		t.Fatalf("expected *shape.ImplicitEquation, got %T", shapes[0])
-	}
-
-	interaction, ok := implicit.IntersectRange(
-		mat.NewVecDense(3, []float64{0.6, 0, -1}),
-		mat.NewVecDense(3, []float64{0, 0, 1}),
-		0,
-		2,
-	)
-	if !ok {
-		t.Fatal("expected ray to hit configured implicit torus")
-	}
-	if math.Abs(interaction.Distance-0.8) > 1e-3 {
-		t.Fatalf("expected hit near distance 0.8, got %f", interaction.Distance)
+	if err == nil {
+		t.Fatal("expected built-in implicit field to fail")
 	}
 }
 
-func TestParseShapeImplicitEquationLegacyFunctionField(t *testing.T) {
-	shapes, err := ParseShape(map[string]interface{}{
+func TestParseShapeImplicitEquationRejectsLegacyFunctionField(t *testing.T) {
+	_, err := ParseShape(map[string]interface{}{
 		"shape":     "implicit equation",
 		"function":  "gyroid",
 		"frequency": 1,
@@ -539,11 +519,22 @@ func TestParseShapeImplicitEquationLegacyFunctionField(t *testing.T) {
 			"pmax": []interface{}{1, 1, 1},
 		},
 	})
-	if err != nil {
-		t.Fatalf("parse legacy implicit equation function: %v", err)
+	if err == nil {
+		t.Fatal("expected legacy implicit function field to fail")
 	}
-	if _, ok := shapes[0].(*shape.ImplicitEquation); !ok {
-		t.Fatalf("expected *shape.ImplicitEquation, got %T", shapes[0])
+}
+
+func TestParseShapeParametricEquationRejectsBuiltInFunction(t *testing.T) {
+	_, err := ParseShape(map[string]interface{}{
+		"shape":    "parametric equation",
+		"function": "spiral_flower",
+		"bounds": map[string]interface{}{
+			"pmin": []interface{}{-1, -1, -1},
+			"pmax": []interface{}{1, 1, 1},
+		},
+	})
+	if err == nil {
+		t.Fatal("expected built-in parametric function to fail")
 	}
 }
 

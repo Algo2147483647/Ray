@@ -1,25 +1,3 @@
 {
-  "objects": [
-    {
-      "id": "geo-example-parametric-spiral-flower",
-      "shape": "parametric equation",
-      "function": "spiral_flower",
-      "center": [-0.761624, 0, 1.14],
-      "scale": [0.72, 0.72, 0.82],
-      "u_range": [0, 1],
-      "v_range": [12.566370614359172, 75.39822368615503],
-      "samples_u": 48,
-      "samples_v": 320,
-      "newton_tol": 0.000001,
-      "newton_max_iter": 48,
-      "derivative_eps": 0.00001,
-      "residual_tol": 0.00001,
-      "bounds_padding": 0.003,
-      "bounds": {
-        "center": [-0.761624, 0, 1.55],
-        "size": [1.55, 1.55, 1.75]
-      },
-      "material_id": "matte-pink-metal"
-    }
-  ]
+  "objects": []
 }

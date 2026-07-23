@@ -2,7 +2,6 @@ package factory
 
 import (
 	"fmt"
-	"math"
 	"strings"
 
 	"github.com/Algo2147483647/ray/engine/model/shape"
@@ -17,9 +16,7 @@ type implicitFieldFactory func(map[string]interface{}, [3]float64, [3]float64) (
 )
 
 var implicitFieldRegistry = map[string]implicitFieldFactory{
-	"expr":   parseImplicitExprField,
-	"torus":  parseImplicitTorusField,
-	"gyroid": parseImplicitGyroidField,
+	"expr": parseImplicitExprField,
 }
 
 func parseImplicitEquation(objDef map[string]interface{}) ([]shape.Shape, error) {
@@ -97,146 +94,10 @@ func implicitFieldDefinition(objDef map[string]interface{}) (map[string]interfac
 		return fieldDef, fieldType, nil
 	}
 
-	functionName, err := utils.RequiredStringField(objDef, "function")
-	if err != nil {
-		return nil, "", err
+	if _, ok := objDef["function"]; ok {
+		return nil, "", fmt.Errorf(`field "function" is no longer supported; use "field" with type "expr"`)
 	}
-	return objDef, functionName, nil
-}
-
-func parseImplicitTorusField(
-	fieldDef map[string]interface{},
-	center, scale [3]float64,
-) (
-	func(*mat.VecDense) float64,
-	func(point, res *mat.VecDense) *mat.VecDense,
-	error,
-) {
-	majorRadius, minorRadius, err := parseImplicitTorusRadii(fieldDef)
-	if err != nil {
-		return nil, nil, err
-	}
-	return implicitTorusFunction(center, scale, majorRadius, minorRadius),
-		implicitTorusGradient(center, scale, majorRadius),
-		nil
-}
-
-func parseImplicitGyroidField(
-	fieldDef map[string]interface{},
-	center, scale [3]float64,
-) (
-	func(*mat.VecDense) float64,
-	func(point, res *mat.VecDense) *mat.VecDense,
-	error,
-) {
-	frequency, offset, err := parseImplicitGyroidParameters(fieldDef)
-	if err != nil {
-		return nil, nil, err
-	}
-	return implicitGyroidFunction(center, scale, frequency, offset),
-		implicitGyroidGradient(center, scale, frequency),
-		nil
-}
-
-func parseImplicitTorusRadii(objDef map[string]interface{}) (float64, float64, error) {
-	majorRadius := 0.58
-	minorRadius := 0.22
-
-	if value, ok, err := utils.OptionalFloat64Field(objDef, "major_radius"); err != nil {
-		return 0, 0, err
-	} else if ok {
-		majorRadius = value
-	}
-	if value, ok, err := utils.OptionalFloat64Field(objDef, "minor_radius"); err != nil {
-		return 0, 0, err
-	} else if ok {
-		minorRadius = value
-	}
-	if majorRadius <= 0 || minorRadius <= 0 {
-		return 0, 0, fmt.Errorf("torus radii must be > 0")
-	}
-	if minorRadius >= majorRadius {
-		return 0, 0, fmt.Errorf("minor_radius must be smaller than major_radius")
-	}
-	return majorRadius, minorRadius, nil
-}
-
-func parseImplicitGyroidParameters(objDef map[string]interface{}) (float64, float64, error) {
-	frequency := 3.2
-	offset := 0.0
-
-	if value, ok, err := utils.OptionalFloat64Field(objDef, "frequency"); err != nil {
-		return 0, 0, err
-	} else if ok {
-		frequency = value
-	}
-	if value, ok, err := utils.OptionalFloat64Field(objDef, "offset"); err != nil {
-		return 0, 0, err
-	} else if ok {
-		offset = value
-	}
-	if frequency <= 0 {
-		return 0, 0, fmt.Errorf("frequency must be > 0")
-	}
-	return frequency, offset, nil
-}
-
-func implicitTorusFunction(center, scale [3]float64, majorRadius, minorRadius float64) func(*mat.VecDense) float64 {
-	return func(point *mat.VecDense) float64 {
-		x, y, z := implicitLocalPoint(point, center, scale)
-		ringDistance := math.Sqrt(x*x+y*y) - majorRadius
-		return ringDistance*ringDistance + z*z - minorRadius*minorRadius
-	}
-}
-
-func implicitTorusGradient(center, scale [3]float64, majorRadius float64) func(*mat.VecDense, *mat.VecDense) *mat.VecDense {
-	return func(point, res *mat.VecDense) *mat.VecDense {
-		if res == nil || res.Len() != point.Len() {
-			res = mat.NewVecDense(point.Len(), nil)
-		} else {
-			res.Zero()
-		}
-
-		x, y, z := implicitLocalPoint(point, center, scale)
-		q := math.Sqrt(x*x + y*y)
-		if q > utils.EPS {
-			common := 2 * (q - majorRadius)
-			res.SetVec(0, common*x/q/scale[0])
-			res.SetVec(1, common*y/q/scale[1])
-		}
-		res.SetVec(2, 2*z/scale[2])
-		return res
-	}
-}
-
-func implicitGyroidFunction(center, scale [3]float64, frequency, offset float64) func(*mat.VecDense) float64 {
-	return func(point *mat.VecDense) float64 {
-		x, y, z := implicitLocalPoint(point, center, scale)
-		x *= frequency
-		y *= frequency
-		z *= frequency
-		return math.Sin(x)*math.Cos(y) + math.Sin(y)*math.Cos(z) + math.Sin(z)*math.Cos(x) - offset
-	}
-}
-
-func implicitGyroidGradient(center, scale [3]float64, frequency float64) func(*mat.VecDense, *mat.VecDense) *mat.VecDense {
-	return func(point, res *mat.VecDense) *mat.VecDense {
-		if res == nil || res.Len() != point.Len() {
-			res = mat.NewVecDense(point.Len(), nil)
-		} else {
-			res.Zero()
-		}
-
-		x, y, z := implicitLocalPoint(point, center, scale)
-		x *= frequency
-		y *= frequency
-		z *= frequency
-
-		res.SetVec(0, frequency*(math.Cos(x)*math.Cos(y)-math.Sin(z)*math.Sin(x))/scale[0])
-		res.SetVec(1, frequency*(-math.Sin(x)*math.Sin(y)+math.Cos(y)*math.Cos(z))/scale[1])
-		res.SetVec(2, frequency*(-math.Sin(y)*math.Sin(z)+math.Cos(z)*math.Cos(x))/scale[2])
-		return res
-	}
+	return nil, "", fmt.Errorf(`implicit equation requires "field" with type "expr"`)
 }
 
 func implicitLocalPoint(point *mat.VecDense, center, scale [3]float64) (float64, float64, float64) {
