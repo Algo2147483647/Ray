@@ -9,18 +9,9 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-type PolynomialSurfaceMode string
-
-const (
-	PolynomialSurfaceImplicit PolynomialSurfaceMode = "implicit"
-	PolynomialSurfaceExplicit PolynomialSurfaceMode = "explicit"
-)
-
 type PolynomialSurface struct {
 	BaseShape
-	Mode         PolynomialSurfaceMode        // Surface equation mode: implicit F(x)=0 or explicit z=P(x).
-	InputDim     int                          // Number of local input coordinates used by the polynomial.
-	ExplicitAxis int                          // Local axis solved by explicit mode, usually z.
+	InputDim     int                          // Number of local input coordinates used by the implicit polynomial.
 	Coefficients *maths.SparseTensor[float64] // Sparse polynomial coefficients indexed by exponents.
 	Transform    [4][4]float64                // World-to-local homogeneous transform matrix.
 	Mem          PolynomialSurfaceCalculateStorage
@@ -39,14 +30,11 @@ type polynomialSurfaceTerm struct {
 }
 
 func NewPolynomialSurface(
-	mode PolynomialSurfaceMode,
 	inputDim int,
 	coefficients *maths.SparseTensor[float64],
 ) *PolynomialSurface {
 	surface := &PolynomialSurface{
-		Mode:         mode,
 		InputDim:     inputDim,
-		ExplicitAxis: 2,
 		Coefficients: coefficients,
 		Transform:    identityTransform4(),
 	}
@@ -193,46 +181,11 @@ func (p *PolynomialSurface) BuildBoundingBox() (pmin, pmax *mat.VecDense) {
 func (p *PolynomialSurface) rayPolynomial(raySt, rayDir *mat.VecDense) ([]float64, error) {
 	localSt := p.localPoint(raySt)
 	localDir := p.localDirection(rayDir)
-
-	switch p.Mode {
-	case PolynomialSurfaceExplicit:
-		return p.explicitRayPolynomial(localSt, localDir)
-	case PolynomialSurfaceImplicit, "":
-		return p.implicitRayPolynomial(localSt, localDir)
-	default:
-		return nil, fmt.Errorf("unsupported polynomial surface mode %q", p.Mode)
-	}
-}
-
-func (p *PolynomialSurface) implicitRayPolynomial(localSt, localDir []float64) ([]float64, error) {
 	if p.InputDim > len(localSt) {
 		return nil, ErrPolynomialSurfaceDimension
 	}
 	ascending := make([]float64, p.calculateStorage().Degree+1)
 	p.addTermsToRayPolynomial(ascending, localSt[:p.InputDim], localDir[:p.InputDim], 0)
-	return descendingPolynomial(ascending), nil
-}
-
-func (p *PolynomialSurface) explicitRayPolynomial(localSt, localDir []float64) ([]float64, error) {
-	axes := p.explicitInputAxes()
-	if len(axes) != p.InputDim || p.ExplicitAxis < 0 || p.ExplicitAxis >= len(localSt) {
-		return nil, ErrPolynomialSurfaceDimension
-	}
-
-	inputSt := make([]float64, p.InputDim)
-	inputDir := make([]float64, p.InputDim)
-	for i, axis := range axes {
-		inputSt[i] = localSt[axis]
-		inputDir[i] = localDir[axis]
-	}
-
-	ascending := make([]float64, p.calculateStorage().Degree+1)
-	p.addTermsToRayPolynomial(ascending, inputSt, inputDir, 0)
-	ascending[0] -= localSt[p.ExplicitAxis]
-	if len(ascending) < 2 {
-		ascending = append(ascending, 0)
-	}
-	ascending[1] -= localDir[p.ExplicitAxis]
 	return descendingPolynomial(ascending), nil
 }
 
@@ -255,35 +208,7 @@ func (p *PolynomialSurface) addTermsToRayPolynomial(ascending, starts, dirs []fl
 }
 
 func (p *PolynomialSurface) localSurfaceGradient(local []float64) []float64 {
-	switch p.Mode {
-	case PolynomialSurfaceExplicit:
-		result := make([]float64, len(local))
-		axes := p.explicitInputAxes()
-		input := make([]float64, len(axes))
-		for i, axis := range axes {
-			input[i] = local[axis]
-		}
-		gradient := p.Gradient(input)
-		for i, axis := range axes {
-			result[axis] = gradient[i]
-		}
-		if p.ExplicitAxis >= 0 && p.ExplicitAxis < len(result) {
-			result[p.ExplicitAxis] = -1
-		}
-		return result
-	default:
-		return p.Gradient(local[:p.InputDim])
-	}
-}
-
-func (p *PolynomialSurface) explicitInputAxes() []int {
-	axes := make([]int, 0, p.InputDim)
-	for axis := 0; len(axes) < p.InputDim && axis < 3; axis++ {
-		if axis != p.ExplicitAxis {
-			axes = append(axes, axis)
-		}
-	}
-	return axes
+	return p.Gradient(local[:p.InputDim])
 }
 
 func (p *PolynomialSurface) calculateStorage() PolynomialSurfaceCalculateStorage {

@@ -189,8 +189,8 @@ Important shape fields:
 
 `stl` expands into many `triangle` shapes.
 
-`polynomial surface` is a sparse arbitrary-degree polynomial shape. It accepts
-`mode: "implicit"` for `F(x,y,z)=0` or `mode: "explicit"` for `z=P(x,y)`.
+`polynomial surface` is a sparse arbitrary-degree polynomial shape representing
+one implicit zero level set `F(x,y,z)=0`.
 Engine canonical JSON may include `transform`, a 4 x 4 world-to-local
 homogeneous matrix. Studio authoring JSON may use `center`, `scale`, and
 `basis`; studio combines them into `transform`.
@@ -199,7 +199,6 @@ Coefficients are stored as sparse tensor terms:
 ```json
 {
   "shape": "polynomial surface",
-  "mode": "implicit",
   "input_dim": 3,
   "degree": 2,
   "transform": [

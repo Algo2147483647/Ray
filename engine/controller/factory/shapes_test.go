@@ -389,7 +389,6 @@ func TestParseShapeCubicEquationUsesBakedCoefficientsDirectly(t *testing.T) {
 func TestParseShapePolynomialSurface(t *testing.T) {
 	shapes, err := ParseShape(map[string]interface{}{
 		"shape":     "polynomial surface",
-		"mode":      "implicit",
 		"input_dim": 3,
 		"coefficients": map[string]interface{}{
 			"format": "coo",
@@ -424,7 +423,6 @@ func TestParseShapePolynomialSurface(t *testing.T) {
 func TestParseShapePolynomialSurfaceTransform(t *testing.T) {
 	shapes, err := ParseShape(map[string]interface{}{
 		"shape":     "polynomial surface",
-		"mode":      "implicit",
 		"input_dim": 3,
 		"transform": []interface{}{
 			[]interface{}{1, 0, 0, 0},
@@ -455,7 +453,6 @@ func TestParseShapePolynomialSurfaceTransform(t *testing.T) {
 func TestParseShapeRejectsInvalidPolynomialSurfaceTransform(t *testing.T) {
 	_, err := ParseShape(map[string]interface{}{
 		"shape":     "polynomial surface",
-		"mode":      "implicit",
 		"input_dim": 3,
 		"transform": []interface{}{
 			[]interface{}{1, 0, 0, 0},
@@ -473,6 +470,24 @@ func TestParseShapeRejectsInvalidPolynomialSurfaceTransform(t *testing.T) {
 	})
 	if err == nil {
 		t.Fatal("expected non-orthogonal polynomial surface basis to fail")
+	}
+}
+
+func TestParseShapeRejectsExplicitPolynomialSurfaceMode(t *testing.T) {
+	_, err := ParseShape(map[string]interface{}{
+		"shape":         "polynomial surface",
+		"mode":          "explicit",
+		"input_dim":     2,
+		"explicit_axis": 2,
+		"coefficients": map[string]interface{}{
+			"format": "coo",
+			"terms": []interface{}{
+				map[string]interface{}{"index": []interface{}{2, 0}, "value": 1},
+			},
+		},
+	})
+	if err == nil {
+		t.Fatal("expected explicit polynomial surface mode to fail")
 	}
 }
 

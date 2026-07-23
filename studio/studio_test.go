@@ -598,7 +598,6 @@ func TestStudioAdaptsPolynomialSurfaceCenterScaleBasisToTransform(t *testing.T) 
 			{
 				"id":        "surface",
 				"shape":     "polynomial surface",
-				"mode":      "implicit",
 				"input_dim": 3,
 				"center":    []interface{}{2, 0, 0},
 				"scale":     []interface{}{3, 1, 1},

@@ -195,16 +195,10 @@ Relevant code:
 fixed quadratic, cubic, and fourth-order implementations without replacing
 them.
 
-Implicit mode represents:
+`PolynomialSurface` represents one implicit zero level set:
 
 ```text
 F(x_1, ..., x_n) = sum c_alpha * product x_i^alpha_i = 0
-```
-
-Explicit mode represents `z=P(x,y)` by converting it internally to:
-
-```text
-F(x,y,z) = P(x,y) - z = 0
 ```
 
 Coefficients are stored in `maths.SparseTensor[float64]`, so only non-zero

@@ -35,7 +35,7 @@ shape behavior and support status.
 | `cubic equation` | `shape.CubicEquation` | Supported | 3D implicit cubic algebraic surface |
 | `four-order equation` | `shape.FourOrderEquation` | Supported | 3D implicit quartic algebraic surface |
 | `implicit equation` | `shape.ImplicitEquation` | Supported | Registered non-polynomial scalar fields such as torus and gyroid |
-| `polynomial surface` | `shape.PolynomialSurface` | Supported | Sparse arbitrary-degree implicit or explicit polynomial surface |
+| `polynomial surface` | `shape.PolynomialSurface` | Supported | Sparse arbitrary-degree implicit polynomial surface |
 | `stl` | many `shape.Triangle` values | Supported | ASCII or binary STL mesh import |
 | `plane` | `shape.Plane` exists | Recognized but rejected by JSON factory | Infinite mathematical plane, not currently scene-loadable |
 
@@ -80,7 +80,7 @@ paraboloid remains an open clipped surface, not a closed solid.
 | `quadratic equation` | `a` is 9 numbers, row-major 3 x 3; `b` is a vector; `c` is scalar | Not supported by the quadratic parser | Surface is `x^T A x + b^T x + c = 0`. |
 | `cubic equation` | `a` / `A` is 64 numbers | Object keys may be flat indices like `"21"` or coordinate keys like `"1, 1, 1"` | Each tensor axis uses `0=1`, `1=x`, `2=y`, `3=z`. |
 | `four-order equation` | `a` / `A` is 256 numbers | Object keys may be flat indices or coordinate keys like `"1, 1, 1, 1"` | Same basis as cubic, with four tensor axes. |
-| `polynomial surface` | Not a flat dense list | `coefficients.terms` contains `{ "index": [...], "value": number }` entries | For implicit mode, index is the monomial exponent tuple. For `output_dim > 1`, the first index is the output channel. |
+| `polynomial surface` | Not a flat dense list | `coefficients.terms` contains `{ "index": [...], "value": number }` entries | The index is the monomial exponent tuple. For `output_dim > 1`, the first index is the output channel. |
 
 Sparse cubic/four-order coefficient objects cannot mix flat keys and coordinate
 keys in the same shape.

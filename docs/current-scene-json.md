@@ -295,9 +295,8 @@ is the exponent tuple `[alpha_x, alpha_y, alpha_z]` for the monomial:
 c * x^alpha_x * y^alpha_y * z^alpha_z
 ```
 
-The shape currently supports `mode: "implicit"` for `F(x,y,z)=0` and
-`mode: "explicit"` for `z=P(x,y)` by default. Engine canonical JSON uses a
-4 x 4 world-to-local homogeneous `transform` matrix:
+The shape represents one implicit zero level set `F(x,y,z)=0`. Engine canonical
+JSON uses a 4 x 4 world-to-local homogeneous `transform` matrix:
 
 ```text
 local = transform * [1, world_x, world_y, world_z]^T
@@ -313,7 +312,6 @@ Example Barth sextic surface:
 {
   "id": "barth-sextic",
   "shape": "polynomial surface",
-  "mode": "implicit",
   "input_dim": 3,
   "degree": 6,
   "transform": [

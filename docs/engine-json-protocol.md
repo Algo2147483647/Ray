@@ -136,13 +136,12 @@ applying authoring `center`/`scale`/`basis` before invoking `engine`.
 
 ### Polynomial Surface
 
-`polynomial surface` is the generic sparse polynomial shape. It supports
-`mode: "implicit"` for `F(x,y,z)=0` and `mode: "explicit"` for `z=P(x,y)`.
+`polynomial surface` is the generic sparse polynomial shape. It represents one
+implicit zero level set `F(x,y,z)=0`.
 
 ```json
 {
   "shape": "polynomial surface",
-  "mode": "implicit",
   "input_dim": 3,
   "degree": 2,
   "transform": [

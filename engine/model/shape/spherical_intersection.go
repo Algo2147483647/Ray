@@ -119,20 +119,7 @@ func (p *PolynomialSurface) IntersectSphericalCandidate(rayStart, rayDir *mat.Ve
 	}
 	candidate, ok := sphericalScalarCandidate(rayStart, rayDir, sMin, sMax, func(point *mat.VecDense) float64 {
 		local := p.localPoint(point)
-		switch p.Mode {
-		case PolynomialSurfaceExplicit:
-			axes := p.explicitInputAxes()
-			if len(axes) != p.InputDim || p.ExplicitAxis < 0 || p.ExplicitAxis >= len(local) {
-				return math.NaN()
-			}
-			input := make([]float64, p.InputDim)
-			for i, axis := range axes {
-				input[i] = local[axis]
-			}
-			return p.Evaluate(input) - local[p.ExplicitAxis]
-		default:
-			return p.Evaluate(local[:p.InputDim])
-		}
+		return p.Evaluate(local[:p.InputDim])
 	}, func(point *mat.VecDense) *mat.VecDense {
 		return p.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
 	})

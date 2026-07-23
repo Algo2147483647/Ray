@@ -10,16 +10,13 @@ import (
 )
 
 func parsePolynomialSurface(objDef map[string]interface{}) ([]shape.Shape, error) {
-	modeText, ok, err := utils.OptionalStringField(objDef, "mode")
-	if err != nil {
+	if modeText, ok, err := utils.OptionalStringField(objDef, "mode"); err != nil {
 		return nil, err
+	} else if ok && modeText != "implicit" {
+		return nil, fmt.Errorf(`field "mode" no longer supports %q; use implicit coefficients F(x,y,z)=0`, modeText)
 	}
-	if !ok {
-		modeText = string(shape.PolynomialSurfaceImplicit)
-	}
-	mode := shape.PolynomialSurfaceMode(modeText)
-	if mode != shape.PolynomialSurfaceImplicit && mode != shape.PolynomialSurfaceExplicit {
-		return nil, fmt.Errorf("field %q must be %q or %q", "mode", shape.PolynomialSurfaceImplicit, shape.PolynomialSurfaceExplicit)
+	if _, ok := objDef["explicit_axis"]; ok {
+		return nil, fmt.Errorf(`field "explicit_axis" is no longer supported; use implicit coefficients F(x,y,z)=0`)
 	}
 
 	inputDim, err := requiredPositiveIntField(objDef, "input_dim")
@@ -29,18 +26,13 @@ func parsePolynomialSurface(objDef map[string]interface{}) ([]shape.Shape, error
 	if inputDim > 3 {
 		return nil, fmt.Errorf("field %q must be <= 3 when using a 4x4 transform", "input_dim")
 	}
-	explicitAxis, err := optionalNonNegativeIntField(objDef, "explicit_axis", 2)
-	if err != nil {
-		return nil, err
-	}
 
 	coefficients, err := parsePolynomialSurfaceCoefficients(objDef, inputDim)
 	if err != nil {
 		return nil, err
 	}
 
-	surface := shape.NewPolynomialSurface(mode, inputDim, coefficients)
-	surface.ExplicitAxis = explicitAxis
+	surface := shape.NewPolynomialSurface(inputDim, coefficients)
 
 	transform, err := parsePolynomialSurfaceTransform(objDef)
 	if err != nil {
