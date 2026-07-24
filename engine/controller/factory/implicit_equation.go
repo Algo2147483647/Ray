@@ -30,19 +30,20 @@ func parseImplicitEquation(objDef map[string]interface{}) ([]shape.Shape, error)
 	if err != nil {
 		return nil, err
 	}
-	if !ok {
-		return nil, fmt.Errorf("implicit equation requires bounds")
-	}
 
 	function, gradient, err := buildImplicitField(objDef)
 	if err != nil {
 		return nil, err
 	}
 
+	var implicitRange [2]*mat.VecDense
+	if ok {
+		implicitRange = [2]*mat.VecDense{bounds.Pmin, bounds.Pmax}
+	}
 	equation := shape.NewImplicitEquationWithGradient(
 		function,
 		gradient,
-		[2]*mat.VecDense{bounds.Pmin, bounds.Pmax},
+		implicitRange,
 	)
 	equation.Transform = transform
 	if step, ok, err := utils.OptionalFloat64Field(objDef, "step"); err != nil {
