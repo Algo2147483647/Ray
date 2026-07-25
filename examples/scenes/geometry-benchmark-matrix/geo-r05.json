@@ -4,19 +4,19 @@
       "id": "geometry-benchmark-matrix",
       "shape": "array",
       "origin": [
-        2,
-        -1.68,
-        3.26
+        0.5999999999999999,
+        1.6800000000000004,
+        0.5599999999999996
       ],
       "delta": [
         [
-          -0.28,
+          0.28,
           0,
-          -0.54
+          0.54
         ],
         [
           0,
-          0.56,
+          -0.56,
           0
         ]
       ],
@@ -27,157 +27,672 @@
       "objects": {
         "5,1": [
           {
-            "id": "geo-r05-c07",
-            "shape": "polynomial surface",
-            "input_dim": 3,
+            "id": "geo-high-frequency-shell-ridges",
+            "shape": "implicit equation",
+            "field": {
+              "type": "expr",
+              "expr": "x*x + y*y + z*z - pow(r + ridge*(0.5 + 0.5*sin(freq*atan2(z, y) + twist*x + micro*sin(microf*(y-z)))) + fine*sin(finef*(y+z))*sin(finef*(y-z)), 2)",
+              "constants": {
+                "r": 0.76,
+                "ridge": 0.24,
+                "freq": 36,
+                "twist": 13,
+                "micro": 0.65,
+                "microf": 17,
+                "fine": 0.035,
+                "finef": 28
+              }
+            },
             "center": [
               0,
               0,
               0
             ],
-            "scale": [
-              0.18,
-              0.18,
-              0.18
-            ],
-            "basis": [
-              [
-                0.766044443119,
+            "scale": 0.21,
+            "step": 0.0008,
+            "value_tol": 0.000001,
+            "bounds": {
+              "center": [
                 0,
-                0.642787609687
-              ],
-              [
                 0,
-                1,
                 0
               ],
-              [
-                -0.642787609687,
-                0,
-                0.766044443119
-              ]
-            ],
-            "coefficients": {
-              "format": "coo",
-              "shape": [
-                5,
-                5,
-                5
-              ],
-              "terms": [
-                {
-                  "index": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "value": 0.1521
-                },
-                {
-                  "index": [
-                    2,
-                    0,
-                    0
-                  ],
-                  "value": -1.22
-                },
-                {
-                  "index": [
-                    0,
-                    2,
-                    0
-                  ],
-                  "value": -1.22
-                },
-                {
-                  "index": [
-                    0,
-                    0,
-                    2
-                  ],
-                  "value": 0.78
-                },
-                {
-                  "index": [
-                    4,
-                    0,
-                    0
-                  ],
-                  "value": 1
-                },
-                {
-                  "index": [
-                    0,
-                    4,
-                    0
-                  ],
-                  "value": 1
-                },
-                {
-                  "index": [
-                    0,
-                    0,
-                    4
-                  ],
-                  "value": 1
-                },
-                {
-                  "index": [
-                    2,
-                    2,
-                    0
-                  ],
-                  "value": 2
-                },
-                {
-                  "index": [
-                    2,
-                    0,
-                    2
-                  ],
-                  "value": 2
-                },
-                {
-                  "index": [
-                    0,
-                    2,
-                    2
-                  ],
-                  "value": 2
-                }
+              "size": [
+                0.56,
+                0.56,
+                0.56
               ]
             },
+            "material_id": "foam"
+          }
+        ],
+        "5,2": [
+          {
+            "id": "geo-clear-placeholder-sphere-04",
+            "shape": "sphere",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "r": 0.16,
+            "material_id": "clear-glass"
+          }
+        ],
+        "5,3": [
+          {
+            "id": "geo-four-lobe-near-separation-metaballs",
+            "shape": "implicit equation",
+            "field": {
+              "type": "expr",
+              "expr": "w1*exp(-k*((x-x1)*(x-x1)+(y-y1)*(y-y1)+(z-z1)*(z-z1))) + w2*exp(-k*((x-x2)*(x-x2)+(y-y2)*(y-y2)+(z-z2)*(z-z2))) + w3*exp(-k*((x-x3)*(x-x3)+(y-y3)*(y-y3)+(z-z3)*(z-z3))) - iso",
+              "constants": {
+                "k": 5.2,
+                "iso": 0.34,
+                "x1": -0.08,
+                "y1": -0.18,
+                "z1": 0.02,
+                "w1": 1.08,
+                "x2": -0.08,
+                "y2": 0.11,
+                "z2": 0.04,
+                "w2": 1,
+                "x3": -0.08,
+                "y3": 0.78,
+                "z3": -0.14,
+                "w3": 0.92
+              }
+            },
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "scale": 0.16,
+            "step": 0.001,
+            "value_tol": 0.000001,
             "bounds": {
-              "pmin": [
-                -0.243,
-                -0.243,
-                -0.243
+              "center": [
+                -0.08,
+                0.24,
+                0
               ],
-              "pmax": [
-                0.243,
-                0.243,
-                0.243
+              "size": [
+                0.5,
+                0.82,
+                0.5
               ]
             },
             "material_id": "rough-gold"
           }
         ],
-        "5,2": [
+        "5,4": [
           {
-            "id": "geo-r05-c06-dupin-cyclide-equation",
-            "shape": "polynomial surface",
-            "input_dim": 3,
+            "id": "geo-clear-placeholder-sphere-05",
+            "shape": "sphere",
             "center": [
               0,
               0,
               0
             ],
-            "scale": 0.45,
+            "r": 0.16,
+            "material_id": "clear-glass"
+          }
+        ],
+        "5,5": [
+          {
+            "id": "geo-clear-placeholder-sphere-06",
+            "shape": "sphere",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "r": 0.16,
+            "material_id": "clear-glass"
+          }
+        ],
+        "5,6": [
+          {
+            "id": "geo-szilassi-vertex-01",
+            "shape": "sphere",
+            "center": [
+              0.268296,
+              0.041772,
+              -0.000439
+            ],
+            "r": 0.014,
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-vertex-02",
+            "shape": "sphere",
+            "center": [
+              0.026815,
+              -0.170023,
+              0.210003
+            ],
+            "r": 0.014,
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-vertex-03",
+            "shape": "sphere",
+            "center": [
+              -0.171338,
+              0.21822,
+              0.023014
+            ],
+            "r": 0.014,
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-vertex-04",
+            "shape": "sphere",
+            "center": [
+              -0.123773,
+              -0.089969,
+              -0.232578
+            ],
+            "r": 0.014,
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-vertex-05",
+            "shape": "sphere",
+            "center": [
+              -0.068809,
+              -0.000749,
+              -0.138104
+            ],
+            "r": 0.014,
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-vertex-06",
+            "shape": "sphere",
+            "center": [
+              -0.127931,
+              0.086249,
+              -0.001605
+            ],
+            "r": 0.014,
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-vertex-07",
+            "shape": "sphere",
+            "center": [
+              -0.006236,
+              0.094986,
+              -0.021043
+            ],
+            "r": 0.014,
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-vertex-08",
+            "shape": "sphere",
+            "center": [
+              -0.067542,
+              -0.062923,
+              -0.031348
+            ],
+            "r": 0.014,
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-vertex-09",
+            "shape": "sphere",
+            "center": [
+              0.074589,
+              -0.00155,
+              -0.04735
+            ],
+            "r": 0.014,
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-vertex-10",
+            "shape": "sphere",
+            "center": [
+              -0.025404,
+              -0.019825,
+              0.082278
+            ],
+            "r": 0.014,
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-vertex-11",
+            "shape": "sphere",
+            "center": [
+              0.095025,
+              0.051086,
+              -0.043915
+            ],
+            "r": 0.014,
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-vertex-12",
+            "shape": "sphere",
+            "center": [
+              -0.045839,
+              -0.072461,
+              0.078842
+            ],
+            "r": 0.014,
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-vertex-13",
+            "shape": "sphere",
+            "center": [
+              0.090306,
+              0.08166,
+              -0.018559
+            ],
+            "r": 0.014,
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-vertex-14",
+            "shape": "sphere",
+            "center": [
+              -0.041121,
+              -0.103036,
+              0.053486
+            ],
+            "r": 0.014,
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-edge-01",
+            "shape": "cylinder",
+            "center": [
+              0.147555,
+              -0.064125,
+              0.104782
+            ],
+            "r": 0.007,
+            "height": 0.384,
+            "axis": [
+              -0.241481,
+              -0.211795,
+              0.210442
+            ],
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-edge-02",
+            "shape": "cylinder",
+            "center": [
+              0.099743,
+              0.020512,
+              -0.069272
+            ],
+            "r": 0.007,
+            "height": 0.366605,
+            "axis": [
+              -0.337105,
+              -0.042521,
+              -0.137665
+            ],
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-edge-03",
+            "shape": "cylinder",
+            "center": [
+              0.179301,
+              0.061716,
+              -0.009499
+            ],
+            "r": 0.007,
+            "height": 0.183303,
+            "axis": [
+              -0.17799,
+              0.039888,
+              -0.01812
+            ],
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-edge-04",
+            "shape": "cylinder",
+            "center": [
+              -0.050558,
+              -0.041887,
+              0.104199
+            ],
+            "r": 0.007,
+            "height": 0.366606,
+            "axis": [
+              -0.154746,
+              0.256272,
+              -0.211608
+            ],
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-edge-05",
+            "shape": "cylinder",
+            "center": [
+              -0.007153,
+              -0.136529,
+              0.131744
+            ],
+            "r": 0.007,
+            "height": 0.183303,
+            "axis": [
+              -0.067936,
+              0.066987,
+              -0.156517
+            ],
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-edge-06",
+            "shape": "cylinder",
+            "center": [
+              -0.147556,
+              0.064126,
+              -0.104782
+            ],
+            "r": 0.007,
+            "height": 0.4032,
+            "axis": [
+              0.047565,
+              -0.308189,
+              -0.255592
+            ],
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-edge-07",
+            "shape": "cylinder",
+            "center": [
+              -0.149635,
+              0.152235,
+              0.010704
+            ],
+            "r": 0.007,
+            "height": 0.141091,
+            "axis": [
+              0.043407,
+              -0.131971,
+              -0.024619
+            ],
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-edge-08",
+            "shape": "cylinder",
+            "center": [
+              -0.038157,
+              0.134653,
+              -0.010451
+            ],
+            "r": 0.007,
+            "height": 0.3215,
+            "axis": [
+              0.266363,
+              -0.167134,
+              -0.066929
+            ],
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-edge-09",
+            "shape": "cylinder",
+            "center": [
+              -0.096291,
+              -0.045359,
+              -0.185341
+            ],
+            "r": 0.007,
+            "height": 0.141091,
+            "axis": [
+              0.054964,
+              0.08922,
+              0.094474
+            ],
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-edge-10",
+            "shape": "cylinder",
+            "center": [
+              -0.084806,
+              -0.081215,
+              -0.076868
+            ],
+            "r": 0.007,
+            "height": 0.321501,
+            "axis": [
+              0.077934,
+              0.017508,
+              0.31142
+            ],
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-edge-11",
+            "shape": "cylinder",
+            "center": [
+              -0.068176,
+              -0.031836,
+              -0.084726
+            ],
+            "r": 0.007,
+            "height": 0.123548,
+            "axis": [
+              0.001267,
+              -0.062174,
+              0.106756
+            ],
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-edge-12",
+            "shape": "cylinder",
+            "center": [
+              -0.067084,
+              0.090618,
+              -0.011324
+            ],
+            "r": 0.007,
+            "height": 0.123547,
+            "axis": [
+              0.121695,
+              0.008737,
+              -0.019438
+            ],
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-edge-13",
+            "shape": "cylinder",
+            "center": [
+              -0.036889,
+              0.016032,
+              -0.026195
+            ],
+            "r": 0.007,
+            "height": 0.169705,
+            "axis": [
+              -0.061306,
+              -0.157909,
+              -0.010305
+            ],
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-edge-14",
+            "shape": "cylinder",
+            "center": [
+              -0.01582,
+              0.037581,
+              0.030618
+            ],
+            "r": 0.007,
+            "height": 0.155641,
+            "axis": [
+              -0.019168,
+              -0.114811,
+              0.103321
+            ],
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-edge-15",
+            "shape": "cylinder",
+            "center": [
+              0.003523,
+              -0.032236,
+              -0.039349
+            ],
+            "r": 0.007,
+            "height": 0.15564,
+            "axis": [
+              0.142131,
+              0.061373,
+              -0.016002
+            ],
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-edge-16",
+            "shape": "cylinder",
+            "center": [
+              0.084807,
+              0.024768,
+              -0.045633
+            ],
+            "r": 0.007,
+            "height": 0.056568,
+            "axis": [
+              0.020436,
+              0.052636,
+              0.003435
+            ],
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-edge-17",
+            "shape": "cylinder",
+            "center": [
+              0.016734,
+              -0.052293,
+              0.003068
+            ],
+            "r": 0.007,
+            "height": 0.184,
+            "axis": [
+              -0.11571,
+              -0.101486,
+              0.100836
+            ],
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-edge-18",
+            "shape": "cylinder",
+            "center": [
+              -0.035622,
+              -0.046143,
+              0.08056
+            ],
+            "r": 0.007,
+            "height": 0.056568,
+            "axis": [
+              -0.020435,
+              -0.052636,
+              -0.003436
+            ],
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-edge-19",
+            "shape": "cylinder",
+            "center": [
+              0.032451,
+              0.030918,
+              0.03186
+            ],
+            "r": 0.007,
+            "height": 0.184,
+            "axis": [
+              0.11571,
+              0.101485,
+              -0.100837
+            ],
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-edge-20",
+            "shape": "cylinder",
+            "center": [
+              0.092665,
+              0.066373,
+              -0.031237
+            ],
+            "r": 0.007,
+            "height": 0.04,
+            "axis": [
+              -0.004719,
+              0.030574,
+              0.025356
+            ],
+            "material_id": "green-glass"
+          },
+          {
+            "id": "geo-szilassi-edge-21",
+            "shape": "cylinder",
+            "center": [
+              -0.04348,
+              -0.087748,
+              0.066164
+            ],
+            "r": 0.007,
+            "height": 0.04,
+            "axis": [
+              0.004718,
+              -0.030575,
+              -0.025356
+            ],
+            "material_id": "green-glass"
+          }
+        ],
+        "5,7": [
+          {
+            "id": "geo-diagonal-ridged-torus",
+            "shape": "implicit equation",
+            "field": {
+              "type": "expr",
+              "expr": "pow(sqrt(x*x + y*y) - R, 2) + z*z - pow(r + ridge*(0.5 + 0.5*sin(freq*(diag*atan2(y, x) + diag*atan2(z, sqrt(x*x + y*y) - R)))) + micro*sin(microf*(diag*atan2(y, x) - diag*atan2(z, sqrt(x*x + y*y) - R))), 2)",
+              "constants": {
+                "R": 0.72,
+                "r": 0.21,
+                "ridge": 0.095,
+                "freq": 56,
+                "micro": 0.35,
+                "microf": 9,
+                "diag": 0.7071067811865476
+              }
+            },
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "scale": 0.21,
             "basis": [
               [
                 0.8660254037844386,
                 0,
-                0.5
+                -0.5
               ],
               [
                 0,
@@ -185,338 +700,26 @@
                 0
               ],
               [
-                -0.5,
+                0.5,
                 0,
                 0.8660254037844386
               ]
             ],
-            "coefficients": {
-              "format": "coo",
-              "shape": [
-                5,
-                5,
-                5
-              ],
-              "terms": [
-                {
-                  "index": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "value": -0.0241476435720371
-                },
-                {
-                  "index": [
-                    1,
-                    0,
-                    0
-                  ],
-                  "value": -0.526006963093939
-                },
-                {
-                  "index": [
-                    0,
-                    0,
-                    2
-                  ],
-                  "value": 0.7744
-                },
-                {
-                  "index": [
-                    0,
-                    2,
-                    0
-                  ],
-                  "value": -0.968
-                },
-                {
-                  "index": [
-                    2,
-                    0,
-                    0
-                  ],
-                  "value": -0.968000000000004
-                },
-                {
-                  "index": [
-                    1,
-                    0,
-                    2
-                  ],
-                  "value": 1.80048
-                },
-                {
-                  "index": [
-                    1,
-                    2,
-                    0
-                  ],
-                  "value": 1.80048
-                },
-                {
-                  "index": [
-                    3,
-                    0,
-                    0
-                  ],
-                  "value": 1.80048
-                },
-                {
-                  "index": [
-                    0,
-                    0,
-                    4
-                  ],
-                  "value": 3.59631009
-                },
-                {
-                  "index": [
-                    0,
-                    2,
-                    2
-                  ],
-                  "value": 7.19262018
-                },
-                {
-                  "index": [
-                    0,
-                    4,
-                    0
-                  ],
-                  "value": 3.59631009
-                },
-                {
-                  "index": [
-                    2,
-                    0,
-                    2
-                  ],
-                  "value": 7.19262018
-                },
-                {
-                  "index": [
-                    2,
-                    2,
-                    0
-                  ],
-                  "value": 7.19262018
-                },
-                {
-                  "index": [
-                    4,
-                    0,
-                    0
-                  ],
-                  "value": 3.59631009
-                }
-              ]
-            },
-            "material_id": "jade-glass"
-          }
-        ],
-        "5,3": [
-          {
-            "id": "geo-r05-c05",
-            "shape": "four-order equation",
-            "a": {
-              "0, 0, 0, 0": -1,
-              "1, 1, 1, 1": 1,
-              "2, 2, 2, 2": 1,
-              "3, 3, 3, 3": 1
-            },
-            "center": [
-              0,
-              0,
-              0
-            ],
-            "scale": [
-              0.18,
-              0.18,
-              0.18
-            ],
+            "step": 0.001,
+            "value_tol": 0.000001,
             "bounds": {
-              "pmin": [
-                -0.243,
-                -0.243,
-                -0.243
-              ],
-              "pmax": [
-                0.243,
-                0.243,
-                0.243
-              ]
-            },
-            "material_id": "clear-glass"
-          }
-        ],
-        "5,4": [
-          {
-            "id": "geo-r05-c04",
-            "shape": "four-order equation",
-            "a": {
-              "1, 1, 2, 2": 1,
-              "2, 2, 3, 3": 1,
-              "1, 1, 3, 3": 1,
-              "1, 2, 3, 0": -1
-            },
-            "center": [
-              0,
-              0,
-              0
-            ],
-            "scale": [
-              0.5,
-              0.5,
-              0.5
-            ],
-            "basis": [
-              [
-                -0.200521015621,
+              "center": [
                 0,
-                0.979689400929
+                0,
+                0
               ],
-              [
-                -0.733253781576,
-                0.663185175243,
-                -0.150081028589
-              ],
-              [
-                -0.64971548704,
-                -0.74845535828,
-                -0.132982564885
+              "size": [
+                0.56,
+                0.56,
+                0.56
               ]
-            ],
+            },
             "material_id": "pale-pink-sheen"
-          }
-        ],
-        "5,5": [
-          {
-            "id": "geo-r05-c03",
-            "shape": "four-order equation",
-            "a": {
-              "1, 1, 0, 0": 1,
-              "2, 2, 3, 3": -1,
-              "3, 3, 3, 3": 0.08
-            },
-            "center": [
-              0,
-              0,
-              0
-            ],
-            "scale": [
-              0.18,
-              0.18,
-              0.2
-            ],
-            "bounds": {
-              "pmin": [
-                -0.243,
-                -0.243,
-                -0.27
-              ],
-              "pmax": [
-                0.243,
-                0.243,
-                0.27
-              ]
-            },
-            "material_id": "marble-cool"
-          }
-        ],
-        "5,6": [
-          {
-            "id": "geo-r05-c02",
-            "shape": "four-order equation",
-            "a": {
-              "0, 0, 0, 0": 11.8,
-              "1, 1, 0, 0": -5,
-              "1, 1, 1, 1": 1,
-              "2, 2, 0, 0": -5,
-              "2, 2, 2, 2": 1,
-              "3, 3, 0, 0": -5,
-              "3, 3, 3, 3": 1
-            },
-            "center": [
-              0,
-              0,
-              0
-            ],
-            "scale": [
-              0.1,
-              0.1,
-              0.1
-            ],
-            "material_id": "plastic-red"
-          }
-        ],
-        "5,7": [
-          {
-            "id": "geo-r05-c01",
-            "shape": "polynomial surface",
-            "mode": "implicit",
-            "input_dim": 3,
-            "center": [
-              0,
-              0,
-              -0.027
-            ],
-            "scale": 0.27,
-            "coefficients": {
-              "format": "coo",
-              "shape": [
-                4,
-                4,
-                4
-              ],
-              "terms": [
-                {
-                  "index": [
-                    2,
-                    0,
-                    0
-                  ],
-                  "value": 1
-                },
-                {
-                  "index": [
-                    0,
-                    2,
-                    0
-                  ],
-                  "value": 1
-                },
-                {
-                  "index": [
-                    0,
-                    0,
-                    3
-                  ],
-                  "value": 1
-                },
-                {
-                  "index": [
-                    0,
-                    0,
-                    2
-                  ],
-                  "value": -1
-                }
-              ]
-            },
-            "bounds": {
-              "pmin": [
-                -0.243,
-                -0.243,
-                -0.243
-              ],
-              "pmax": [
-                0.243,
-                0.243,
-                0.243
-              ]
-            },
-            "material_id": "blue-glass"
           }
         ]
       }

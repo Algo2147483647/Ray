@@ -4,19 +4,19 @@
       "id": "geometry-benchmark-matrix",
       "shape": "array",
       "origin": [
-        2,
-        -1.68,
-        3.26
+        0.5999999999999999,
+        1.6800000000000004,
+        0.5599999999999996
       ],
       "delta": [
         [
-          -0.28,
+          0.28,
           0,
-          -0.54
+          0.54
         ],
         [
           0,
-          0.56,
+          -0.56,
           0
         ]
       ],
@@ -27,400 +27,3431 @@
       "objects": {
         "3,1": [
           {
-            "id": "geo-r03-c07",
-            "shape": "four-order equation",
-            "a": {
-              "0, 0, 0, 0": 16,
-              "0, 0, 1, 1": 1.3333333333333333,
-              "0, 0, 2, 2": 2.6666666666666665,
-              "0, 0, 3, 3": 21.333333333333332,
-              "0, 1, 0, 1": 1.3333333333333333,
-              "0, 1, 1, 0": 1.3333333333333333,
-              "0, 2, 0, 2": 2.6666666666666665,
-              "0, 2, 2, 0": 2.6666666666666665,
-              "0, 3, 0, 3": 21.333333333333332,
-              "0, 3, 3, 0": 21.333333333333332,
-              "1, 0, 0, 1": 1.3333333333333333,
-              "1, 0, 1, 0": 1.3333333333333333,
-              "1, 1, 0, 0": 1.3333333333333333,
-              "1, 1, 1, 1": 1,
-              "1, 1, 2, 2": 0.6666666666666666,
-              "1, 1, 3, 3": -61.333333333333336,
-              "1, 2, 1, 2": 0.6666666666666666,
-              "1, 2, 2, 1": 0.6666666666666666,
-              "1, 3, 1, 3": -61.333333333333336,
-              "1, 3, 3, 1": -61.333333333333336,
-              "2, 0, 0, 2": 2.6666666666666665,
-              "2, 0, 2, 0": 2.6666666666666665,
-              "2, 1, 1, 2": 0.6666666666666666,
-              "2, 1, 2, 1": 0.6666666666666666,
-              "2, 2, 0, 0": 2.6666666666666665,
-              "2, 2, 1, 1": 0.6666666666666666,
-              "2, 2, 2, 2": 4,
-              "2, 2, 3, 3": -122.66666666666667,
-              "2, 3, 2, 3": -122.66666666666667,
-              "2, 3, 3, 2": -122.66666666666667,
-              "3, 0, 0, 3": 21.333333333333332,
-              "3, 0, 3, 0": 21.333333333333332,
-              "3, 1, 1, 3": -61.333333333333336,
-              "3, 1, 3, 1": -61.333333333333336,
-              "3, 2, 2, 3": -122.66666666666667,
-              "3, 2, 3, 2": -122.66666666666667,
-              "3, 3, 0, 0": 21.333333333333332,
-              "3, 3, 1, 1": -61.333333333333336,
-              "3, 3, 2, 2": -122.66666666666667,
-              "3, 3, 3, 3": 256
-            },
+            "id": "geo-small-stellated-dodecahedron-face-01-1",
+            "shape": "triangle",
             "center": [
               0,
               0,
               0
             ],
-            "scale": [
-              0.18,
-              0.18,
-              0.18
+            "p1": [
+              -0.137533,
+              0,
+              0.052533
             ],
-            "bounds": {
-              "pmin": [
-                -0.243,
-                -0.243,
-                -0.243
-              ],
-              "pmax": [
-                0.243,
-                0.243,
-                0.243
-              ]
-            },
-            "material_id": "pure-white-reflection"
+            "p2": [
+              -0.137533,
+              0,
+              -0.052533
+            ],
+            "p3": [
+              -0.204156,
+              -0.126175,
+              0
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-01-2",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.137533,
+              0,
+              -0.052533
+            ],
+            "p2": [
+              -0.085,
+              -0.085,
+              -0.085
+            ],
+            "p3": [
+              -0.204156,
+              -0.126175,
+              0
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-01-3",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.085,
+              -0.085,
+              -0.085
+            ],
+            "p2": [
+              -0.052533,
+              -0.137533,
+              0
+            ],
+            "p3": [
+              -0.204156,
+              -0.126175,
+              0
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-01-4",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.052533,
+              -0.137533,
+              0
+            ],
+            "p2": [
+              -0.085,
+              -0.085,
+              0.085
+            ],
+            "p3": [
+              -0.204156,
+              -0.126175,
+              0
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-01-5",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.085,
+              -0.085,
+              0.085
+            ],
+            "p2": [
+              -0.137533,
+              0,
+              0.052533
+            ],
+            "p3": [
+              -0.204156,
+              -0.126175,
+              0
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-02-1",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0,
+              0.052533,
+              -0.137533
+            ],
+            "p2": [
+              0,
+              -0.052533,
+              -0.137533
+            ],
+            "p3": [
+              -0.126175,
+              0,
+              -0.204156
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-02-2",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0,
+              -0.052533,
+              -0.137533
+            ],
+            "p2": [
+              -0.085,
+              -0.085,
+              -0.085
+            ],
+            "p3": [
+              -0.126175,
+              0,
+              -0.204156
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-02-3",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.085,
+              -0.085,
+              -0.085
+            ],
+            "p2": [
+              -0.137533,
+              0,
+              -0.052533
+            ],
+            "p3": [
+              -0.126175,
+              0,
+              -0.204156
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-02-4",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.137533,
+              0,
+              -0.052533
+            ],
+            "p2": [
+              -0.085,
+              0.085,
+              -0.085
+            ],
+            "p3": [
+              -0.126175,
+              0,
+              -0.204156
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-02-5",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.085,
+              0.085,
+              -0.085
+            ],
+            "p2": [
+              0,
+              0.052533,
+              -0.137533
+            ],
+            "p3": [
+              -0.126175,
+              0,
+              -0.204156
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-03-1",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.052533,
+              -0.137533,
+              0
+            ],
+            "p2": [
+              -0.052533,
+              -0.137533,
+              0
+            ],
+            "p3": [
+              0,
+              -0.204156,
+              -0.126175
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-03-2",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.052533,
+              -0.137533,
+              0
+            ],
+            "p2": [
+              -0.085,
+              -0.085,
+              -0.085
+            ],
+            "p3": [
+              0,
+              -0.204156,
+              -0.126175
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-03-3",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.085,
+              -0.085,
+              -0.085
+            ],
+            "p2": [
+              0,
+              -0.052533,
+              -0.137533
+            ],
+            "p3": [
+              0,
+              -0.204156,
+              -0.126175
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-03-4",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0,
+              -0.052533,
+              -0.137533
+            ],
+            "p2": [
+              0.085,
+              -0.085,
+              -0.085
+            ],
+            "p3": [
+              0,
+              -0.204156,
+              -0.126175
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-03-5",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.085,
+              -0.085,
+              -0.085
+            ],
+            "p2": [
+              0.052533,
+              -0.137533,
+              0
+            ],
+            "p3": [
+              0,
+              -0.204156,
+              -0.126175
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-04-1",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.085,
+              0.085,
+              0.085
+            ],
+            "p2": [
+              -0.137533,
+              0,
+              0.052533
+            ],
+            "p3": [
+              -0.126175,
+              0,
+              0.204156
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-04-2",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.137533,
+              0,
+              0.052533
+            ],
+            "p2": [
+              -0.085,
+              -0.085,
+              0.085
+            ],
+            "p3": [
+              -0.126175,
+              0,
+              0.204156
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-04-3",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.085,
+              -0.085,
+              0.085
+            ],
+            "p2": [
+              0,
+              -0.052533,
+              0.137533
+            ],
+            "p3": [
+              -0.126175,
+              0,
+              0.204156
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-04-4",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0,
+              -0.052533,
+              0.137533
+            ],
+            "p2": [
+              0,
+              0.052533,
+              0.137533
+            ],
+            "p3": [
+              -0.126175,
+              0,
+              0.204156
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-04-5",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0,
+              0.052533,
+              0.137533
+            ],
+            "p2": [
+              -0.085,
+              0.085,
+              0.085
+            ],
+            "p3": [
+              -0.126175,
+              0,
+              0.204156
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-05-1",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.085,
+              -0.085,
+              0.085
+            ],
+            "p2": [
+              0,
+              -0.052533,
+              0.137533
+            ],
+            "p3": [
+              0,
+              -0.204156,
+              0.126175
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-05-2",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0,
+              -0.052533,
+              0.137533
+            ],
+            "p2": [
+              -0.085,
+              -0.085,
+              0.085
+            ],
+            "p3": [
+              0,
+              -0.204156,
+              0.126175
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-05-3",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.085,
+              -0.085,
+              0.085
+            ],
+            "p2": [
+              -0.052533,
+              -0.137533,
+              0
+            ],
+            "p3": [
+              0,
+              -0.204156,
+              0.126175
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-05-4",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.052533,
+              -0.137533,
+              0
+            ],
+            "p2": [
+              0.052533,
+              -0.137533,
+              0
+            ],
+            "p3": [
+              0,
+              -0.204156,
+              0.126175
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-05-5",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.052533,
+              -0.137533,
+              0
+            ],
+            "p2": [
+              0.085,
+              -0.085,
+              0.085
+            ],
+            "p3": [
+              0,
+              -0.204156,
+              0.126175
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-06-1",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.085,
+              0.085,
+              0.085
+            ],
+            "p2": [
+              -0.052533,
+              0.137533,
+              0
+            ],
+            "p3": [
+              -0.204156,
+              0.126175,
+              0
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-06-2",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.052533,
+              0.137533,
+              0
+            ],
+            "p2": [
+              -0.085,
+              0.085,
+              -0.085
+            ],
+            "p3": [
+              -0.204156,
+              0.126175,
+              0
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-06-3",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.085,
+              0.085,
+              -0.085
+            ],
+            "p2": [
+              -0.137533,
+              0,
+              -0.052533
+            ],
+            "p3": [
+              -0.204156,
+              0.126175,
+              0
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-06-4",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.137533,
+              0,
+              -0.052533
+            ],
+            "p2": [
+              -0.137533,
+              0,
+              0.052533
+            ],
+            "p3": [
+              -0.204156,
+              0.126175,
+              0
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-06-5",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.137533,
+              0,
+              0.052533
+            ],
+            "p2": [
+              -0.085,
+              0.085,
+              0.085
+            ],
+            "p3": [
+              -0.204156,
+              0.126175,
+              0
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-07-1",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.085,
+              0.085,
+              -0.085
+            ],
+            "p2": [
+              0,
+              0.052533,
+              -0.137533
+            ],
+            "p3": [
+              0,
+              0.204156,
+              -0.126175
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-07-2",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0,
+              0.052533,
+              -0.137533
+            ],
+            "p2": [
+              -0.085,
+              0.085,
+              -0.085
+            ],
+            "p3": [
+              0,
+              0.204156,
+              -0.126175
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-07-3",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.085,
+              0.085,
+              -0.085
+            ],
+            "p2": [
+              -0.052533,
+              0.137533,
+              0
+            ],
+            "p3": [
+              0,
+              0.204156,
+              -0.126175
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-07-4",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.052533,
+              0.137533,
+              0
+            ],
+            "p2": [
+              0.052533,
+              0.137533,
+              0
+            ],
+            "p3": [
+              0,
+              0.204156,
+              -0.126175
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-07-5",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.052533,
+              0.137533,
+              0
+            ],
+            "p2": [
+              0.085,
+              0.085,
+              -0.085
+            ],
+            "p3": [
+              0,
+              0.204156,
+              -0.126175
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-08-1",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.052533,
+              0.137533,
+              0
+            ],
+            "p2": [
+              -0.052533,
+              0.137533,
+              0
+            ],
+            "p3": [
+              0,
+              0.204156,
+              0.126175
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-08-2",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.052533,
+              0.137533,
+              0
+            ],
+            "p2": [
+              -0.085,
+              0.085,
+              0.085
+            ],
+            "p3": [
+              0,
+              0.204156,
+              0.126175
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-08-3",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.085,
+              0.085,
+              0.085
+            ],
+            "p2": [
+              0,
+              0.052533,
+              0.137533
+            ],
+            "p3": [
+              0,
+              0.204156,
+              0.126175
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-08-4",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0,
+              0.052533,
+              0.137533
+            ],
+            "p2": [
+              0.085,
+              0.085,
+              0.085
+            ],
+            "p3": [
+              0,
+              0.204156,
+              0.126175
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-08-5",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.085,
+              0.085,
+              0.085
+            ],
+            "p2": [
+              0.052533,
+              0.137533,
+              0
+            ],
+            "p3": [
+              0,
+              0.204156,
+              0.126175
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-09-1",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.085,
+              -0.085,
+              0.085
+            ],
+            "p2": [
+              0.052533,
+              -0.137533,
+              0
+            ],
+            "p3": [
+              0.204156,
+              -0.126175,
+              0
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-09-2",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.052533,
+              -0.137533,
+              0
+            ],
+            "p2": [
+              0.085,
+              -0.085,
+              -0.085
+            ],
+            "p3": [
+              0.204156,
+              -0.126175,
+              0
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-09-3",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.085,
+              -0.085,
+              -0.085
+            ],
+            "p2": [
+              0.137533,
+              0,
+              -0.052533
+            ],
+            "p3": [
+              0.204156,
+              -0.126175,
+              0
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-09-4",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.137533,
+              0,
+              -0.052533
+            ],
+            "p2": [
+              0.137533,
+              0,
+              0.052533
+            ],
+            "p3": [
+              0.204156,
+              -0.126175,
+              0
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-09-5",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.137533,
+              0,
+              0.052533
+            ],
+            "p2": [
+              0.085,
+              -0.085,
+              0.085
+            ],
+            "p3": [
+              0.204156,
+              -0.126175,
+              0
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-10-1",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.085,
+              0.085,
+              -0.085
+            ],
+            "p2": [
+              0.137533,
+              0,
+              -0.052533
+            ],
+            "p3": [
+              0.126175,
+              0,
+              -0.204156
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-10-2",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.137533,
+              0,
+              -0.052533
+            ],
+            "p2": [
+              0.085,
+              -0.085,
+              -0.085
+            ],
+            "p3": [
+              0.126175,
+              0,
+              -0.204156
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-10-3",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.085,
+              -0.085,
+              -0.085
+            ],
+            "p2": [
+              0,
+              -0.052533,
+              -0.137533
+            ],
+            "p3": [
+              0.126175,
+              0,
+              -0.204156
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-10-4",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0,
+              -0.052533,
+              -0.137533
+            ],
+            "p2": [
+              0,
+              0.052533,
+              -0.137533
+            ],
+            "p3": [
+              0.126175,
+              0,
+              -0.204156
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-10-5",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0,
+              0.052533,
+              -0.137533
+            ],
+            "p2": [
+              0.085,
+              0.085,
+              -0.085
+            ],
+            "p3": [
+              0.126175,
+              0,
+              -0.204156
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-11-1",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0,
+              0.052533,
+              0.137533
+            ],
+            "p2": [
+              0,
+              -0.052533,
+              0.137533
+            ],
+            "p3": [
+              0.126175,
+              0,
+              0.204156
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-11-2",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0,
+              -0.052533,
+              0.137533
+            ],
+            "p2": [
+              0.085,
+              -0.085,
+              0.085
+            ],
+            "p3": [
+              0.126175,
+              0,
+              0.204156
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-11-3",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.085,
+              -0.085,
+              0.085
+            ],
+            "p2": [
+              0.137533,
+              0,
+              0.052533
+            ],
+            "p3": [
+              0.126175,
+              0,
+              0.204156
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-11-4",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.137533,
+              0,
+              0.052533
+            ],
+            "p2": [
+              0.085,
+              0.085,
+              0.085
+            ],
+            "p3": [
+              0.126175,
+              0,
+              0.204156
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-11-5",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.085,
+              0.085,
+              0.085
+            ],
+            "p2": [
+              0,
+              0.052533,
+              0.137533
+            ],
+            "p3": [
+              0.126175,
+              0,
+              0.204156
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-12-1",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.137533,
+              0,
+              0.052533
+            ],
+            "p2": [
+              0.137533,
+              0,
+              -0.052533
+            ],
+            "p3": [
+              0.204156,
+              0.126175,
+              0
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-12-2",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.137533,
+              0,
+              -0.052533
+            ],
+            "p2": [
+              0.085,
+              0.085,
+              -0.085
+            ],
+            "p3": [
+              0.204156,
+              0.126175,
+              0
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-12-3",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.085,
+              0.085,
+              -0.085
+            ],
+            "p2": [
+              0.052533,
+              0.137533,
+              0
+            ],
+            "p3": [
+              0.204156,
+              0.126175,
+              0
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-12-4",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.052533,
+              0.137533,
+              0
+            ],
+            "p2": [
+              0.085,
+              0.085,
+              0.085
+            ],
+            "p3": [
+              0.204156,
+              0.126175,
+              0
+            ],
+            "material_id": "yellow-glass"
+          },
+          {
+            "id": "geo-small-stellated-dodecahedron-face-12-5",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.085,
+              0.085,
+              0.085
+            ],
+            "p2": [
+              0.137533,
+              0,
+              0.052533
+            ],
+            "p3": [
+              0.204156,
+              0.126175,
+              0
+            ],
+            "material_id": "yellow-glass"
           }
         ],
         "3,2": [
           {
-            "id": "geo-r03-c06",
-            "shape": "polynomial surface",
-            "input_dim": 3,
+            "id": "geo-ultra-dispersion-prism-01-cap-left-a",
+            "shape": "triangle",
             "center": [
               0,
               0,
               0
             ],
-            "scale": 0.09,
-            "coefficients": {
-              "format": "coo",
-              "shape": [
-                6,
-                6,
-                6
-              ],
-              "terms": [
-                {
-                  "index": [
-                    0,
-                    0,
-                    5
-                  ],
-                  "value": 3.3055433871775866
-                },
-                {
-                  "index": [
-                    0,
-                    2,
-                    3
-                  ],
-                  "value": -6.15700466398828
-                },
-                {
-                  "index": [
-                    0,
-                    4,
-                    1
-                  ],
-                  "value": 0.3717480344601847
-                },
-                {
-                  "index": [
-                    1,
-                    4,
-                    0
-                  ],
-                  "value": -1.2030019100150915
-                },
-                {
-                  "index": [
-                    2,
-                    0,
-                    3
-                  ],
-                  "value": -6.15700466398828
-                },
-                {
-                  "index": [
-                    2,
-                    2,
-                    1
-                  ],
-                  "value": 0.7434960689203702
-                },
-                {
-                  "index": [
-                    3,
-                    2,
-                    0
-                  ],
-                  "value": 2.4060038200301825
-                },
-                {
-                  "index": [
-                    4,
-                    0,
-                    1
-                  ],
-                  "value": 0.371748034460184
-                },
-                {
-                  "index": [
-                    5,
-                    0,
-                    0
-                  ],
-                  "value": -0.24060038200301812
-                },
-                {
-                  "index": [
-                    0,
-                    0,
-                    4
-                  ],
-                  "value": 0.6545084971874737
-                },
-                {
-                  "index": [
-                    0,
-                    2,
-                    2
-                  ],
-                  "value": 1.618033988749895
-                },
-                {
-                  "index": [
-                    0,
-                    4,
-                    0
-                  ],
-                  "value": 1
-                },
-                {
-                  "index": [
-                    2,
-                    0,
-                    2
-                  ],
-                  "value": 1.618033988749895
-                },
-                {
-                  "index": [
-                    2,
-                    2,
-                    0
-                  ],
-                  "value": 2
-                },
-                {
-                  "index": [
-                    4,
-                    0,
-                    0
-                  ],
-                  "value": 1
-                },
-                {
-                  "index": [
-                    0,
-                    0,
-                    3
-                  ],
-                  "value": 1.3449970239279145
-                },
-                {
-                  "index": [
-                    0,
-                    2,
-                    1
-                  ],
-                  "value": 1.6625077511098136
-                },
-                {
-                  "index": [
-                    2,
-                    0,
-                    1
-                  ],
-                  "value": 1.6625077511098136
-                },
-                {
-                  "index": [
-                    0,
-                    0,
-                    2
-                  ],
-                  "value": -1.618033988749895
-                },
-                {
-                  "index": [
-                    0,
-                    2,
-                    0
-                  ],
-                  "value": -2
-                },
-                {
-                  "index": [
-                    2,
-                    0,
-                    0
-                  ],
-                  "value": -2
-                },
-                {
-                  "index": [
-                    0,
-                    0,
-                    1
-                  ],
-                  "value": -0.8312538755549068
-                },
-                {
-                  "index": [
-                    0,
-                    0,
-                    0
-                  ],
-                  "value": 1
-                }
-              ]
-            },
-            "bounds": {
-              "pmin": [
-                -0.24,
-                -0.24,
-                -0.24
-              ],
-              "pmax": [
-                0.24,
-                0.24,
-                0.24
-              ]
-            },
-            "material_id": "pale-blue-sheen"
+            "p1": [
+              -0.24,
+              -0.19,
+              -0.15
+            ],
+            "p2": [
+              -0.24,
+              0,
+              0.21
+            ],
+            "p3": [
+              -0.24,
+              0.19,
+              -0.15
+            ],
+            "material_id": "ultra-high-dispersion-prism-glass"
+          },
+          {
+            "id": "geo-ultra-dispersion-prism-02-cap-right-a",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.24,
+              -0.19,
+              -0.15
+            ],
+            "p2": [
+              0.24,
+              0.19,
+              -0.15
+            ],
+            "p3": [
+              0.24,
+              0,
+              0.21
+            ],
+            "material_id": "ultra-high-dispersion-prism-glass"
+          },
+          {
+            "id": "geo-ultra-dispersion-prism-03-side-bottom-a",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.24,
+              -0.19,
+              -0.15
+            ],
+            "p2": [
+              -0.24,
+              0.19,
+              -0.15
+            ],
+            "p3": [
+              0.24,
+              0.19,
+              -0.15
+            ],
+            "material_id": "ultra-high-dispersion-prism-glass"
+          },
+          {
+            "id": "geo-ultra-dispersion-prism-04-side-bottom-b",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.24,
+              -0.19,
+              -0.15
+            ],
+            "p2": [
+              0.24,
+              0.19,
+              -0.15
+            ],
+            "p3": [
+              0.24,
+              -0.19,
+              -0.15
+            ],
+            "material_id": "ultra-high-dispersion-prism-glass"
+          },
+          {
+            "id": "geo-ultra-dispersion-prism-05-side-upper-a",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.24,
+              0.19,
+              -0.15
+            ],
+            "p2": [
+              -0.24,
+              0,
+              0.21
+            ],
+            "p3": [
+              0.24,
+              0,
+              0.21
+            ],
+            "material_id": "ultra-high-dispersion-prism-glass"
+          },
+          {
+            "id": "geo-ultra-dispersion-prism-06-side-upper-b",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.24,
+              0.19,
+              -0.15
+            ],
+            "p2": [
+              0.24,
+              0,
+              0.21
+            ],
+            "p3": [
+              0.24,
+              0.19,
+              -0.15
+            ],
+            "material_id": "ultra-high-dispersion-prism-glass"
+          },
+          {
+            "id": "geo-ultra-dispersion-prism-07-side-lower-a",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.24,
+              0,
+              0.21
+            ],
+            "p2": [
+              -0.24,
+              -0.19,
+              -0.15
+            ],
+            "p3": [
+              0.24,
+              -0.19,
+              -0.15
+            ],
+            "material_id": "ultra-high-dispersion-prism-glass"
+          },
+          {
+            "id": "geo-ultra-dispersion-prism-08-side-lower-b",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.24,
+              0,
+              0.21
+            ],
+            "p2": [
+              0.24,
+              -0.19,
+              -0.15
+            ],
+            "p3": [
+              0.24,
+              0,
+              0.21
+            ],
+            "material_id": "ultra-high-dispersion-prism-glass"
           }
         ],
         "3,3": [
           {
-            "id": "geo-r03-c05",
-            "shape": "sphere",
+            "id": "geo-regular-icosahedron-face-01",
+            "shape": "triangle",
             "center": [
               0,
               0,
               0
             ],
-            "r": 0.16,
-            "material_id": "clear-glass"
+            "p1": [
+              0,
+              -0.134061,
+              -0.216916
+            ],
+            "p2": [
+              -0.134061,
+              -0.216916,
+              0
+            ],
+            "p3": [
+              -0.216916,
+              0,
+              -0.134061
+            ],
+            "material_id": "rough-gold"
+          },
+          {
+            "id": "geo-regular-icosahedron-face-02",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.216916,
+              0,
+              0.134061
+            ],
+            "p2": [
+              -0.134061,
+              0.216916,
+              0
+            ],
+            "p3": [
+              -0.216916,
+              0,
+              -0.134061
+            ],
+            "material_id": "rough-gold"
+          },
+          {
+            "id": "geo-regular-icosahedron-face-03",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.216916,
+              0,
+              0.134061
+            ],
+            "p2": [
+              -0.134061,
+              -0.216916,
+              0
+            ],
+            "p3": [
+              -0.216916,
+              0,
+              -0.134061
+            ],
+            "material_id": "rough-gold"
+          },
+          {
+            "id": "geo-regular-icosahedron-face-04",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.216916,
+              0,
+              0.134061
+            ],
+            "p2": [
+              0,
+              -0.134061,
+              0.216916
+            ],
+            "p3": [
+              -0.134061,
+              -0.216916,
+              0
+            ],
+            "material_id": "rough-gold"
+          },
+          {
+            "id": "geo-regular-icosahedron-face-05",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0,
+              0.134061,
+              -0.216916
+            ],
+            "p2": [
+              -0.134061,
+              0.216916,
+              0
+            ],
+            "p3": [
+              -0.216916,
+              0,
+              -0.134061
+            ],
+            "material_id": "rough-gold"
+          },
+          {
+            "id": "geo-regular-icosahedron-face-06",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0,
+              0.134061,
+              -0.216916
+            ],
+            "p2": [
+              0,
+              -0.134061,
+              -0.216916
+            ],
+            "p3": [
+              0.216916,
+              0,
+              -0.134061
+            ],
+            "material_id": "rough-gold"
+          },
+          {
+            "id": "geo-regular-icosahedron-face-07",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0,
+              0.134061,
+              -0.216916
+            ],
+            "p2": [
+              0,
+              -0.134061,
+              -0.216916
+            ],
+            "p3": [
+              -0.216916,
+              0,
+              -0.134061
+            ],
+            "material_id": "rough-gold"
+          },
+          {
+            "id": "geo-regular-icosahedron-face-08",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.134061,
+              -0.216916,
+              0
+            ],
+            "p2": [
+              0,
+              -0.134061,
+              0.216916
+            ],
+            "p3": [
+              -0.134061,
+              -0.216916,
+              0
+            ],
+            "material_id": "rough-gold"
+          },
+          {
+            "id": "geo-regular-icosahedron-face-09",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.134061,
+              -0.216916,
+              0
+            ],
+            "p2": [
+              0,
+              -0.134061,
+              -0.216916
+            ],
+            "p3": [
+              0.216916,
+              0,
+              -0.134061
+            ],
+            "material_id": "rough-gold"
+          },
+          {
+            "id": "geo-regular-icosahedron-face-10",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.134061,
+              -0.216916,
+              0
+            ],
+            "p2": [
+              0,
+              -0.134061,
+              -0.216916
+            ],
+            "p3": [
+              -0.134061,
+              -0.216916,
+              0
+            ],
+            "material_id": "rough-gold"
+          },
+          {
+            "id": "geo-regular-icosahedron-face-11",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.134061,
+              -0.216916,
+              0
+            ],
+            "p2": [
+              0.216916,
+              0,
+              0.134061
+            ],
+            "p3": [
+              0,
+              -0.134061,
+              0.216916
+            ],
+            "material_id": "rough-gold"
+          },
+          {
+            "id": "geo-regular-icosahedron-face-12",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.134061,
+              -0.216916,
+              0
+            ],
+            "p2": [
+              0.216916,
+              0,
+              0.134061
+            ],
+            "p3": [
+              0.216916,
+              0,
+              -0.134061
+            ],
+            "material_id": "rough-gold"
+          },
+          {
+            "id": "geo-regular-icosahedron-face-13",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0,
+              0.134061,
+              0.216916
+            ],
+            "p2": [
+              0.216916,
+              0,
+              0.134061
+            ],
+            "p3": [
+              0,
+              -0.134061,
+              0.216916
+            ],
+            "material_id": "rough-gold"
+          },
+          {
+            "id": "geo-regular-icosahedron-face-14",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0,
+              0.134061,
+              0.216916
+            ],
+            "p2": [
+              -0.216916,
+              0,
+              0.134061
+            ],
+            "p3": [
+              0,
+              -0.134061,
+              0.216916
+            ],
+            "material_id": "rough-gold"
+          },
+          {
+            "id": "geo-regular-icosahedron-face-15",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0,
+              0.134061,
+              0.216916
+            ],
+            "p2": [
+              -0.216916,
+              0,
+              0.134061
+            ],
+            "p3": [
+              -0.134061,
+              0.216916,
+              0
+            ],
+            "material_id": "rough-gold"
+          },
+          {
+            "id": "geo-regular-icosahedron-face-16",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.134061,
+              0.216916,
+              0
+            ],
+            "p2": [
+              0,
+              0.134061,
+              -0.216916
+            ],
+            "p3": [
+              0.216916,
+              0,
+              -0.134061
+            ],
+            "material_id": "rough-gold"
+          },
+          {
+            "id": "geo-regular-icosahedron-face-17",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.134061,
+              0.216916,
+              0
+            ],
+            "p2": [
+              0.216916,
+              0,
+              0.134061
+            ],
+            "p3": [
+              0.216916,
+              0,
+              -0.134061
+            ],
+            "material_id": "rough-gold"
+          },
+          {
+            "id": "geo-regular-icosahedron-face-18",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.134061,
+              0.216916,
+              0
+            ],
+            "p2": [
+              0,
+              0.134061,
+              -0.216916
+            ],
+            "p3": [
+              -0.134061,
+              0.216916,
+              0
+            ],
+            "material_id": "rough-gold"
+          },
+          {
+            "id": "geo-regular-icosahedron-face-19",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.134061,
+              0.216916,
+              0
+            ],
+            "p2": [
+              0,
+              0.134061,
+              0.216916
+            ],
+            "p3": [
+              0.216916,
+              0,
+              0.134061
+            ],
+            "material_id": "rough-gold"
+          },
+          {
+            "id": "geo-regular-icosahedron-face-20",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.134061,
+              0.216916,
+              0
+            ],
+            "p2": [
+              0,
+              0.134061,
+              0.216916
+            ],
+            "p3": [
+              -0.134061,
+              0.216916,
+              0
+            ],
+            "material_id": "rough-gold"
           }
         ],
         "3,4": [
           {
-            "id": "geo-r03-c04",
-            "shape": "four-order equation",
-            "a": {
-              "1, 1, 0, 0": -1,
-              "2, 2, 0, 0": -1,
-              "3, 3, 3, 3": 1
-            },
+            "id": "geo-regular-dodecahedron-face-01",
+            "shape": "triangle",
             "center": [
               0,
               0,
               0
             ],
-            "scale": [
-              0.18,
-              0.18,
-              0.2
+            "p1": [
+              0.152998,
+              -0.152998,
+              -0.152998
             ],
-            "bounds": {
-              "pmin": [
-                -0.261,
-                -0.261,
-                -0.29
-              ],
-              "pmax": [
-                0.261,
-                0.261,
-                0.29
-              ]
-            },
-            "material_id": "white-card"
+            "p2": [
+              0.094558,
+              -0.247556,
+              0
+            ],
+            "p3": [
+              -0.094558,
+              -0.247556,
+              0
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-02",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.152998,
+              -0.152998,
+              -0.152998
+            ],
+            "p2": [
+              -0.152998,
+              -0.152998,
+              -0.152998
+            ],
+            "p3": [
+              -0.094558,
+              -0.247556,
+              0
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-03",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.152998,
+              -0.152998,
+              -0.152998
+            ],
+            "p2": [
+              -0.152998,
+              -0.152998,
+              -0.152998
+            ],
+            "p3": [
+              0,
+              -0.094558,
+              -0.247556
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-04",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.152998,
+              0.152998,
+              -0.152998
+            ],
+            "p2": [
+              -0.152998,
+              -0.152998,
+              -0.152998
+            ],
+            "p3": [
+              -0.247556,
+              0,
+              -0.094558
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-05",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.152998,
+              0.152998,
+              -0.152998
+            ],
+            "p2": [
+              -0.152998,
+              -0.152998,
+              -0.152998
+            ],
+            "p3": [
+              0,
+              -0.094558,
+              -0.247556
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-06",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.152998,
+              0.152998,
+              -0.152998
+            ],
+            "p2": [
+              0,
+              0.094558,
+              -0.247556
+            ],
+            "p3": [
+              0,
+              -0.094558,
+              -0.247556
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-07",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0,
+              0.094558,
+              0.247556
+            ],
+            "p2": [
+              -0.152998,
+              0.152998,
+              0.152998
+            ],
+            "p3": [
+              -0.094558,
+              0.247556,
+              0
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-08",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0,
+              0.094558,
+              0.247556
+            ],
+            "p2": [
+              0.094558,
+              0.247556,
+              0
+            ],
+            "p3": [
+              0.152998,
+              0.152998,
+              0.152998
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-09",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0,
+              0.094558,
+              0.247556
+            ],
+            "p2": [
+              0.094558,
+              0.247556,
+              0
+            ],
+            "p3": [
+              -0.094558,
+              0.247556,
+              0
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-10",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.247556,
+              0,
+              0.094558
+            ],
+            "p2": [
+              -0.152998,
+              -0.152998,
+              0.152998
+            ],
+            "p3": [
+              -0.094558,
+              -0.247556,
+              0
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-11",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.247556,
+              0,
+              0.094558
+            ],
+            "p2": [
+              -0.152998,
+              -0.152998,
+              -0.152998
+            ],
+            "p3": [
+              -0.247556,
+              0,
+              -0.094558
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-12",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.247556,
+              0,
+              0.094558
+            ],
+            "p2": [
+              -0.152998,
+              -0.152998,
+              -0.152998
+            ],
+            "p3": [
+              -0.094558,
+              -0.247556,
+              0
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-13",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.247556,
+              0,
+              0.094558
+            ],
+            "p2": [
+              -0.152998,
+              0.152998,
+              -0.152998
+            ],
+            "p3": [
+              -0.247556,
+              0,
+              -0.094558
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-14",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.247556,
+              0,
+              0.094558
+            ],
+            "p2": [
+              -0.152998,
+              0.152998,
+              -0.152998
+            ],
+            "p3": [
+              -0.094558,
+              0.247556,
+              0
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-15",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.247556,
+              0,
+              0.094558
+            ],
+            "p2": [
+              -0.152998,
+              0.152998,
+              0.152998
+            ],
+            "p3": [
+              -0.094558,
+              0.247556,
+              0
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-16",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.247556,
+              0,
+              0.094558
+            ],
+            "p2": [
+              -0.152998,
+              -0.152998,
+              0.152998
+            ],
+            "p3": [
+              0,
+              -0.094558,
+              0.247556
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-17",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.247556,
+              0,
+              0.094558
+            ],
+            "p2": [
+              0,
+              0.094558,
+              0.247556
+            ],
+            "p3": [
+              0,
+              -0.094558,
+              0.247556
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-18",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.247556,
+              0,
+              0.094558
+            ],
+            "p2": [
+              0,
+              0.094558,
+              0.247556
+            ],
+            "p3": [
+              -0.152998,
+              0.152998,
+              0.152998
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-19",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.152998,
+              -0.152998,
+              0.152998
+            ],
+            "p2": [
+              -0.152998,
+              -0.152998,
+              0.152998
+            ],
+            "p3": [
+              0,
+              -0.094558,
+              0.247556
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-20",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.152998,
+              -0.152998,
+              0.152998
+            ],
+            "p2": [
+              -0.152998,
+              -0.152998,
+              0.152998
+            ],
+            "p3": [
+              -0.094558,
+              -0.247556,
+              0
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-21",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.152998,
+              -0.152998,
+              0.152998
+            ],
+            "p2": [
+              0.094558,
+              -0.247556,
+              0
+            ],
+            "p3": [
+              -0.094558,
+              -0.247556,
+              0
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-22",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.152998,
+              -0.152998,
+              0.152998
+            ],
+            "p2": [
+              0.152998,
+              -0.152998,
+              -0.152998
+            ],
+            "p3": [
+              0.247556,
+              0,
+              -0.094558
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-23",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.152998,
+              -0.152998,
+              0.152998
+            ],
+            "p2": [
+              0.152998,
+              -0.152998,
+              -0.152998
+            ],
+            "p3": [
+              0.094558,
+              -0.247556,
+              0
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-24",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.152998,
+              -0.152998,
+              0.152998
+            ],
+            "p2": [
+              0.247556,
+              0,
+              0.094558
+            ],
+            "p3": [
+              0.247556,
+              0,
+              -0.094558
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-25",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.152998,
+              -0.152998,
+              0.152998
+            ],
+            "p2": [
+              0.247556,
+              0,
+              0.094558
+            ],
+            "p3": [
+              0.152998,
+              0.152998,
+              0.152998
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-26",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.152998,
+              -0.152998,
+              0.152998
+            ],
+            "p2": [
+              0,
+              0.094558,
+              0.247556
+            ],
+            "p3": [
+              0.152998,
+              0.152998,
+              0.152998
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-27",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.152998,
+              -0.152998,
+              0.152998
+            ],
+            "p2": [
+              0,
+              0.094558,
+              0.247556
+            ],
+            "p3": [
+              0,
+              -0.094558,
+              0.247556
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-28",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.152998,
+              0.152998,
+              -0.152998
+            ],
+            "p2": [
+              0.152998,
+              -0.152998,
+              -0.152998
+            ],
+            "p3": [
+              0.247556,
+              0,
+              -0.094558
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-29",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.152998,
+              0.152998,
+              -0.152998
+            ],
+            "p2": [
+              0,
+              0.094558,
+              -0.247556
+            ],
+            "p3": [
+              0,
+              -0.094558,
+              -0.247556
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-30",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.152998,
+              0.152998,
+              -0.152998
+            ],
+            "p2": [
+              0.152998,
+              -0.152998,
+              -0.152998
+            ],
+            "p3": [
+              0,
+              -0.094558,
+              -0.247556
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-31",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.152998,
+              0.152998,
+              -0.152998
+            ],
+            "p2": [
+              0.247556,
+              0,
+              0.094558
+            ],
+            "p3": [
+              0.247556,
+              0,
+              -0.094558
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-32",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.152998,
+              0.152998,
+              -0.152998
+            ],
+            "p2": [
+              0.247556,
+              0,
+              0.094558
+            ],
+            "p3": [
+              0.152998,
+              0.152998,
+              0.152998
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-33",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.152998,
+              0.152998,
+              -0.152998
+            ],
+            "p2": [
+              0.094558,
+              0.247556,
+              0
+            ],
+            "p3": [
+              0.152998,
+              0.152998,
+              0.152998
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-34",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.152998,
+              0.152998,
+              -0.152998
+            ],
+            "p2": [
+              -0.152998,
+              0.152998,
+              -0.152998
+            ],
+            "p3": [
+              -0.094558,
+              0.247556,
+              0
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-35",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.152998,
+              0.152998,
+              -0.152998
+            ],
+            "p2": [
+              -0.152998,
+              0.152998,
+              -0.152998
+            ],
+            "p3": [
+              0,
+              0.094558,
+              -0.247556
+            ],
+            "material_id": "sandstone"
+          },
+          {
+            "id": "geo-regular-dodecahedron-face-36",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.152998,
+              0.152998,
+              -0.152998
+            ],
+            "p2": [
+              0.094558,
+              0.247556,
+              0
+            ],
+            "p3": [
+              -0.094558,
+              0.247556,
+              0
+            ],
+            "material_id": "sandstone"
           }
         ],
         "3,5": [
           {
-            "id": "geo-r01-c03",
-            "shape": "sphere",
+            "id": "geo-regular-octahedron-face-01",
+            "shape": "triangle",
             "center": [
               0,
               0,
               0
             ],
-            "r": 0.16,
-            "material_id": "clear-glass"
+            "p1": [
+              0.24,
+              0,
+              0
+            ],
+            "p2": [
+              0,
+              0.24,
+              0
+            ],
+            "p3": [
+              0,
+              0,
+              0.24
+            ],
+            "material_id": "blue-glass"
+          },
+          {
+            "id": "geo-regular-octahedron-face-02",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0,
+              0.24,
+              0
+            ],
+            "p2": [
+              -0.24,
+              0,
+              0
+            ],
+            "p3": [
+              0,
+              0,
+              0.24
+            ],
+            "material_id": "blue-glass"
+          },
+          {
+            "id": "geo-regular-octahedron-face-03",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.24,
+              0,
+              0
+            ],
+            "p2": [
+              0,
+              -0.24,
+              0
+            ],
+            "p3": [
+              0,
+              0,
+              0.24
+            ],
+            "material_id": "blue-glass"
+          },
+          {
+            "id": "geo-regular-octahedron-face-04",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0,
+              -0.24,
+              0
+            ],
+            "p2": [
+              0.24,
+              0,
+              0
+            ],
+            "p3": [
+              0,
+              0,
+              0.24
+            ],
+            "material_id": "blue-glass"
+          },
+          {
+            "id": "geo-regular-octahedron-face-05",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0,
+              0.24,
+              0
+            ],
+            "p2": [
+              0.24,
+              0,
+              0
+            ],
+            "p3": [
+              0,
+              0,
+              -0.24
+            ],
+            "material_id": "blue-glass"
+          },
+          {
+            "id": "geo-regular-octahedron-face-06",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.24,
+              0,
+              0
+            ],
+            "p2": [
+              0,
+              0.24,
+              0
+            ],
+            "p3": [
+              0,
+              0,
+              -0.24
+            ],
+            "material_id": "blue-glass"
+          },
+          {
+            "id": "geo-regular-octahedron-face-07",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0,
+              -0.24,
+              0
+            ],
+            "p2": [
+              -0.24,
+              0,
+              0
+            ],
+            "p3": [
+              0,
+              0,
+              -0.24
+            ],
+            "material_id": "blue-glass"
+          },
+          {
+            "id": "geo-regular-octahedron-face-08",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              0.24,
+              0,
+              0
+            ],
+            "p2": [
+              0,
+              -0.24,
+              0
+            ],
+            "p3": [
+              0,
+              0,
+              -0.24
+            ],
+            "material_id": "blue-glass"
           }
         ],
         "3,6": [
           {
-            "id": "geo-r01-c05",
-            "shape": "sphere",
+            "id": "geo-cube",
+            "shape": "cuboid",
             "center": [
               0,
               0,
               0
             ],
-            "r": 0.16,
-            "material_id": "clear-glass"
+            "size": [
+              0.34,
+              0.34,
+              0.34
+            ],
+            "material_id": "high-dispersion-prism"
           }
         ],
         "3,7": [
           {
-            "id": "geo-r03-c01",
-            "shape": "cubic equation",
+            "id": "geo-regular-tetrahedron-face-01",
+            "shape": "triangle",
             "center": [
               0,
               0,
               0
             ],
-            "a": {
-              "0, 1, 1": 1,
-              "2, 2, 3": -1,
-              "0, 2, 2": -0.09
-            },
-            "scale": [
-              2,
-              2,
-              2
+            "p1": [
+              -0.1386,
+              0.1386,
+              -0.1386
             ],
-            "bounds": {
-              "pmin": [
-                -0.2,
-                -0.2,
-                -0.2
-              ],
-              "pmax": [
-                0.2,
-                0.2,
-                0.2
-              ]
-            },
-            "material_id": "rough-gold"
+            "p2": [
+              0.1386,
+              0.1386,
+              0.1386
+            ],
+            "p3": [
+              0.1386,
+              -0.1386,
+              -0.1386
+            ],
+            "material_id": "plastic-red"
+          },
+          {
+            "id": "geo-regular-tetrahedron-face-02",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.1386,
+              -0.1386,
+              0.1386
+            ],
+            "p2": [
+              0.1386,
+              0.1386,
+              0.1386
+            ],
+            "p3": [
+              0.1386,
+              -0.1386,
+              -0.1386
+            ],
+            "material_id": "plastic-red"
+          },
+          {
+            "id": "geo-regular-tetrahedron-face-03",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.1386,
+              -0.1386,
+              0.1386
+            ],
+            "p2": [
+              0.1386,
+              0.1386,
+              0.1386
+            ],
+            "p3": [
+              -0.1386,
+              0.1386,
+              -0.1386
+            ],
+            "material_id": "plastic-red"
+          },
+          {
+            "id": "geo-regular-tetrahedron-face-04",
+            "shape": "triangle",
+            "center": [
+              0,
+              0,
+              0
+            ],
+            "p1": [
+              -0.1386,
+              -0.1386,
+              0.1386
+            ],
+            "p2": [
+              0.1386,
+              -0.1386,
+              -0.1386
+            ],
+            "p3": [
+              -0.1386,
+              0.1386,
+              -0.1386
+            ],
+            "material_id": "plastic-red"
           }
         ]
       }
