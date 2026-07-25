@@ -192,35 +192,42 @@
         ],
         "6,4": [
           {
-            "id": "geo-general-shifted-quadric",
+            "id": "geo-triaxial-ellipsoid",
             "shape": "quadratic equation",
             "center": [
               0,
               0,
               0
             ],
-            "scale": [
-              0.12,
-              0.12,
-              0.12
-            ],
             "a": [
-              0.25,
+              20.66115702479339,
               0,
               0,
               0,
-              0.49,
+              51.0204081632653,
               0,
               0,
               0,
-              1
+              100
             ],
             "b": [
               0,
               0,
               0
             ],
-            "c": 1,
+            "c": -1,
+            "bounds": {
+              "pmin": [
+                -0.22,
+                -0.14,
+                -0.1
+              ],
+              "pmax": [
+                0.22,
+                0.14,
+                0.1
+              ]
+            },
             "material_id": "blue-glass"
           }
         ],

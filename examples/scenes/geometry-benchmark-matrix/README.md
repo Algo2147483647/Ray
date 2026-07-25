@@ -51,7 +51,7 @@ r5-c7: Transparent placeholder sphere
 r6-c1: Grouped finite disk and triangle
 r6-c2: Example vertical coaxial cone/paraboloid group
 r6-c3: Example superellipsoid/amethyst group
-r6-c4: General shifted quadric with linear terms
+r6-c4: Triaxial ellipsoid
 r6-c5: Elliptic paraboloid quadric
 r6-c6: Hyperbolic paraboloid quadric
 r6-c7: Hyperboloid quadric
@@ -60,7 +60,7 @@ r6-c7: Hyperboloid quadric
 
 | Cell  | Mathematical Geometry | Formula / Definition | Material |
 | ----- | --------------------- | -------------------- | -------- |
-| r1-c1 | Barth sextic surface | Barth sextic $4(\phi^2x^2-y^2)(\phi^2y^2-z^2)(\phi^2z^2-x^2)-(1+2\phi)(x^2+y^2+z^2-1)^2=0$, $\phi=(1+\sqrt5)/2$. | `plastic-blue`: Lambertian blue plastic, albedo `[0.05, 0.16, 0.75]`. |
+| r1-c1 | Barth sextic surface | Barth sextic $4(\phi^2x^2-y^2)(\phi^2y^2-z^2)(\phi^2z^2-x^2)-(1+2\phi)(x^2+y^2+z^2-1)^2=0$, $\phi=(1+\sqrt5)/2$. | `pale-blue-sheen`: pale blue specular reflection, reflectance `[0.62, 0.78, 0.92]`. |
 | r1-c2 | Togliatti quintic surface | Togliatti quintic $F_5(x,y,z)=0$, a degree-$5$ nodal algebraic surface. | `grass-rough-metal`: grass-colored rough conductor, eta `[1.35, 0.35, 1.55]`, k `[1.45, 3.2, 1.65]`, roughness `0.42`. |
 | r1-c3 | Clebsch diagonal cubic surface | Clebsch diagonal cubic $81(x^3+y^3+z^3)-189(x^2y+x^2z+xy^2+y^2z+xz^2+yz^2)+54xyz-9(x^2+y^2+z^2)+126(xy+xz+yz)-9(x+y+z)+1=0$. | `pale-pink-sheen`: pale pink specular reflection, reflectance `[0.96, 0.68, 0.76]`. |
 | r1-c4 | Gyroid minimal-surface | Gyroid level set $G_{3.3}(x,y,z)=0.08$, where $G_k=\sin(kx)\cos(ky)+\sin(ky)\cos(kz)+\sin(kz)\cos(kx)$. | `porcelain-glaze-cyan-blue`: specular reflection, reflectance `[0.62, 0.82, 0.78]`. |
@@ -123,7 +123,7 @@ r6-c7: Hyperboloid quadric
 | r6-c1 | Grouped finite disk and triangle | `shape: "group"` combines a scaled disk $D_R^2$, $R=0.22$ before group scale, with a filled triangle in the same cell. | `emissive-cyan`: constant cyan emission, color `[0.5, 3.6, 4.8]`; `fabric-teal`: Lambertian teal fabric, albedo `[0.05, 0.42, 0.38]`. |
 | r6-c2 | Example vertical coaxial cone/paraboloid group | `shape: "group"` retained as a matrix-cell local legacy example, combining a vertical finite cone opening reference with a coaxial vertical cylinder. | `rough-gold`: rough conductor on the cone; `ultra-high-dispersion-prism-glass`: transparent Cauchy dielectric on the cylinder. |
 | r6-c3 | Example superellipsoid/amethyst group | `shape: "group"` copied from `geo_example.json` into matrix-cell local placement, combining an $L^4$ superellipsoid and a same-center, same-radius amethyst sphere. | `clear-glass`: transparent superellipsoid; `pale-blue-sheen-crystal`: specular dielectric sphere. |
-| r6-c4 | General shifted quadric with linear terms | Shifted second-degree quadric $0.25x^2+0.49y^2+z^2+x+y+z+1=0$. | `blue-glass`: specular dielectric, transmittance `[0.55, 0.78, 1]`, eta `1.52`. |
+| r6-c4 | Triaxial ellipsoid | Pure ellipsoid with three distinct intrinsic semi-axes $(0.22, 0.14, 0.10)$, authored directly as $20.6612x^2+51.0204y^2+100z^2-1=0$ without non-uniform `scale`. | `blue-glass`: specular dielectric, transmittance `[0.55, 0.78, 1]`, eta `1.52`. |
 | r6-c5 | Elliptic paraboloid quadric | Elliptic paraboloid $z=11.1111x^2+16.0000y^2-0.18$. | `ceramic-white`: Lambertian ceramic white, albedo `[0.86, 0.84, 0.78]`. |
 | r6-c6 | Hyperbolic paraboloid quadric | Doubly ruled saddle $z=10.9375(x^2-y^2)$. | `brushed-aluminum`: rough conductor, eta `[1.44, 0.93, 0.62]`, k `[7.4, 6.6, 5.3]`, roughness `0.32`. |
 | r6-c7 | Hyperboloid quadric | Second-degree hyperboloid $82.6446x^2+44.4444y^2-17.3611z^2-1=0$. | `rough-gold`: rough conductor, eta `[0.17, 0.35, 1.5]`, k `[3.1, 2.7, 1.9]`, roughness `0.18`. |
