@@ -27,21 +27,22 @@ type CameraScript struct {
 }
 
 type RenderScript struct {
-	Dimension         int     `json:"dimension"`
-	Samples           int64   `json:"samples"`
-	ThreadNum         int     `json:"thread_num"`
-	CameraIndex       int     `json:"camera_index"`
-	CameraIndexSet    bool    `json:"-"`
-	Width             int     `json:"width"`
-	Height            int     `json:"height"`
-	OutputFilm        string  `json:"output_film"`
-	Exposure          float64 `json:"exposure"`
-	ToneMapping       string  `json:"tone_mapping"`
-	Gamma             float64 `json:"gamma"`
-	SpectrumMode      string  `json:"spectrum_mode"`
-	WavelengthSamples int     `json:"wavelength_samples"`
-	ColorSpace        string  `json:"color_space"`
-	FilmColorSpace    string  `json:"working_space"`
+	Dimension         int                       `json:"dimension"`
+	Samples           int64                     `json:"samples"`
+	ThreadNum         int                       `json:"thread_num"`
+	CameraIndex       int                       `json:"camera_index"`
+	CameraIndexSet    bool                      `json:"-"`
+	Width             int                       `json:"width"`
+	Height            int                       `json:"height"`
+	OutputFilm        string                    `json:"output_film"`
+	Exposure          float64                   `json:"exposure"`
+	ToneMapping       string                    `json:"tone_mapping"`
+	Gamma             float64                   `json:"gamma"`
+	SpectrumMode      string                    `json:"spectrum_mode"`
+	WavelengthSamples int                       `json:"wavelength_samples"`
+	ColorSpace        string                    `json:"color_space"`
+	FilmColorSpace    string                    `json:"working_space"`
+	PixelWindows      []modelcamera.PixelWindow `json:"pixel_windows"`
 }
 
 type GeometryScript struct {

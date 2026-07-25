@@ -14,23 +14,24 @@ type StudioScript struct {
 }
 
 type StudioRenderScript struct {
-	Dimension         int     `json:"dimension"`
-	Samples           int64   `json:"samples"`
-	ThreadNum         int     `json:"thread_num"`
-	CameraIndex       int     `json:"camera_index"`
-	CameraIndexSet    bool    `json:"-"`
-	Width             int     `json:"width"`
-	Height            int     `json:"height"`
-	OutputImage       string  `json:"output_image"`
-	OutputFilm        string  `json:"output_film"`
-	ResumeFilm        string  `json:"resume_film"`
-	Exposure          float64 `json:"exposure"`
-	ToneMapping       string  `json:"tone_mapping"`
-	Gamma             float64 `json:"gamma"`
-	SpectrumMode      string  `json:"spectrum_mode"`
-	WavelengthSamples int     `json:"wavelength_samples"`
-	ColorSpace        string  `json:"color_space"`
-	FilmColorSpace    string  `json:"working_space"`
+	Dimension         int                 `json:"dimension"`
+	Samples           int64               `json:"samples"`
+	ThreadNum         int                 `json:"thread_num"`
+	CameraIndex       int                 `json:"camera_index"`
+	CameraIndexSet    bool                `json:"-"`
+	Width             int                 `json:"width"`
+	Height            int                 `json:"height"`
+	OutputImage       string              `json:"output_image"`
+	OutputFilm        string              `json:"output_film"`
+	ResumeFilm        string              `json:"resume_film"`
+	Exposure          float64             `json:"exposure"`
+	ToneMapping       string              `json:"tone_mapping"`
+	Gamma             float64             `json:"gamma"`
+	SpectrumMode      string              `json:"spectrum_mode"`
+	WavelengthSamples int                 `json:"wavelength_samples"`
+	ColorSpace        string              `json:"color_space"`
+	FilmColorSpace    string              `json:"working_space"`
+	PixelWindows      []PixelWindowScript `json:"pixel_windows"`
 }
 
 func (r *StudioRenderScript) UnmarshalJSON(data []byte) error {
@@ -61,6 +62,11 @@ type StudioCameraScript struct {
 	Coordinates  [][]float64 `json:"coordinates"`
 	AspectRatio  float64     `json:"aspect_ratio"`
 	Ortho        bool        `json:"ortho"`
+}
+
+type PixelWindowScript struct {
+	Min []int `json:"min"`
+	Max []int `json:"max"`
 }
 
 type IntermediateScript struct {

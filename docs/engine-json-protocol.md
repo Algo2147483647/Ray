@@ -32,6 +32,7 @@ the CLI:
 --spectrum-mode
 --wavelength-samples
 --working-space
+--pixel-window
 ```
 
 ## Top Level
@@ -252,6 +253,38 @@ engine/controller/factory/media.go
 engine/controller/factory/cameras.go
 engine/controller/render_config.go
 ```
+
+### Pixel Windows
+
+`pixel_windows` limits rendering to one or more Film-space pixel ranges while
+keeping the Film dimensions unchanged. Pixels outside the requested windows are
+not traced and remain zero in the output Film.
+
+Ranges are half-open: `min` is included and `max` is excluded. This example
+renders `x = 100..149` and `y = 600..649`:
+
+```json
+{
+  "render": {
+    "width": 800,
+    "height": 800,
+    "pixel_windows": [
+      { "min": [100, 600], "max": [150, 650] }
+    ]
+  }
+}
+```
+
+The CLI override is repeatable. Both `:` and `-` separators are accepted:
+
+```bash
+go -C engine run . --script ../scene.json --pixel-window 100:150,600:650
+go -C engine run . --script ../scene.json --pixel-window 100-150,600-650
+```
+
+For Films with more than two dimensions, omitted trailing dimensions span the
+full extent, so `min: [100, 600]` and `max: [150, 650]` render that x/y window
+for every higher-dimensional slice.
 
 For detailed material and renderer behavior, see:
 

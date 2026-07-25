@@ -9,6 +9,7 @@ import (
 type studioScript = schema.StudioScript
 type studioRenderScript = schema.StudioRenderScript
 type studioCameraScript = schema.StudioCameraScript
+type pixelWindowScript = schema.PixelWindowScript
 type engineCameraScript = schema.EngineCameraScript
 type intermediateScript = schema.IntermediateScript
 

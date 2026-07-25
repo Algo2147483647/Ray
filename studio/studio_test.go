@@ -604,6 +604,31 @@ func TestStudioDoesNotEmitResumeFilmToIntermediateScript(t *testing.T) {
 	}
 }
 
+func TestStudioEmitsPixelWindowsToIntermediateScript(t *testing.T) {
+	script := &studioScript{
+		Render: studioRenderScript{
+			PixelWindows: []pixelWindowScript{
+				{Min: []int{100, 600}, Max: []int{150, 650}},
+			},
+		},
+	}
+
+	adapted, err := adaptScript(script, []string{"scene.json"}, 3)
+	if err != nil {
+		t.Fatalf("adapt script: %v", err)
+	}
+
+	windows, ok := adapted.Render["pixel_windows"].([]pixelWindowScript)
+	if !ok {
+		t.Fatalf("expected pixel_windows in intermediate render config, got %T", adapted.Render["pixel_windows"])
+	}
+	if len(windows) != 1 {
+		t.Fatalf("expected one pixel window, got %d", len(windows))
+	}
+	assertIntSlice(t, windows[0].Min, []int{100, 600})
+	assertIntSlice(t, windows[0].Max, []int{150, 650})
+}
+
 func TestStudioEngineArgsDoNotForwardResumeFilm(t *testing.T) {
 	config := studioConfig{
 		provided: map[string]bool{
@@ -624,6 +649,41 @@ func TestStudioEngineArgsDoNotForwardResumeFilm(t *testing.T) {
 	if containsString(args, "final.bin") {
 		t.Fatalf("final output film should be written by studio, not engine: %v", args)
 	}
+}
+
+func TestStudioEngineArgsForwardsPixelWindows(t *testing.T) {
+	config := studioConfig{
+		provided: map[string]bool{"pixel-window": true},
+		pixelWindows: []pixelWindowScript{
+			{Min: []int{100, 600}, Max: []int{150, 650}},
+			{Min: []int{2, 6}, Max: []int{4, 8}},
+		},
+	}
+
+	args := config.engineArgs("intermediate.json", "", 0)
+	if !containsString(args, "--pixel-window") ||
+		!containsString(args, "100:150,600:650") ||
+		!containsString(args, "2:4,6:8") {
+		t.Fatalf("expected pixel windows to be forwarded to engine: %v", args)
+	}
+}
+
+func TestParseStudioConfigAcceptsPixelWindows(t *testing.T) {
+	config, err := parseStudioConfig([]string{
+		"--pixel-window", "100-150,600-650",
+		"--pixel-window", "2:4,6:8",
+	})
+	if err != nil {
+		t.Fatalf("parse studio config: %v", err)
+	}
+
+	if len(config.pixelWindows) != 2 {
+		t.Fatalf("expected two pixel windows, got %d", len(config.pixelWindows))
+	}
+	assertIntSlice(t, config.pixelWindows[0].Min, []int{100, 600})
+	assertIntSlice(t, config.pixelWindows[0].Max, []int{150, 650})
+	assertIntSlice(t, config.pixelWindows[1].Min, []int{2, 6})
+	assertIntSlice(t, config.pixelWindows[1].Max, []int{4, 8})
 }
 
 func TestParseStudioConfigRequiresEndlessCheckpointSettings(t *testing.T) {
@@ -959,6 +1019,18 @@ func assertDirectFloatSlice(t *testing.T, values, expected []float64) {
 	}
 	for i := range values {
 		if math.Abs(values[i]-expected[i]) > 1e-10 {
+			t.Fatalf("index %d: expected %v, got %v", i, expected, values)
+		}
+	}
+}
+
+func assertIntSlice(t *testing.T, values, expected []int) {
+	t.Helper()
+	if len(values) != len(expected) {
+		t.Fatalf("expected %d values, got %d: %v", len(expected), len(values), values)
+	}
+	for i := range values {
+		if values[i] != expected[i] {
 			t.Fatalf("index %d: expected %v, got %v", i, expected, values)
 		}
 	}

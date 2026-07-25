@@ -23,19 +23,21 @@ func (h *Handler) TraceScene(
 	objectTree *object.ObjectTree,
 	film *camera.Film,
 	samples int64,
+	pixelWindows []camera.PixelWindow,
 ) {
 	h.prepareFilm(film)
 
 	var (
 		shape       = film.Data[0].Shape
-		totalPixels = len(film.Data[0].Data)
-		tiles       = buildTileCoordinates(shape, h.BlockCols, h.BlockRows)
+		tiles       []TileCoordinate
+		totalPixels int64
 		progress    int64
 		done        = make(chan struct{})
 		workerCount = h.ThreadNum
 		nextTile    int64
 		wg          sync.WaitGroup
 	)
+	tiles, totalPixels = buildTileCoordinatesForWindows(shape, pixelWindows, h.BlockCols, h.BlockRows)
 
 	if workerCount <= 0 {
 		workerCount = 1
@@ -43,7 +45,7 @@ func (h *Handler) TraceScene(
 
 	wg.Add(workerCount)
 
-	go reportProgress(done, &progress, int64(totalPixels))
+	go reportProgress(done, &progress, totalPixels)
 
 	for range workerCount {
 		go func() {
@@ -106,6 +108,10 @@ func reportProgress(done <-chan struct{}, progress *int64, totalPixels int64) {
 	defer ticker.Stop()
 
 	print := func(current int64) {
+		if totalPixels == 0 {
+			fmt.Printf("\rRendering: 0/0 pixels (100.00%%) Time: %v", time.Since(start).Round(time.Second))
+			return
+		}
 		percent := float64(current) / float64(totalPixels) * 100
 		elapsed := time.Since(start).Round(time.Second)
 

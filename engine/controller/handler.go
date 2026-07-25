@@ -92,6 +92,12 @@ func (h *Handler) ConfigureRenderConfig(config RenderConfig) *Handler {
 	if len(filmShape) > 1 {
 		config.Height = filmShape[1]
 	}
+	normalizedWindows, err := camera.NormalizePixelWindows(config.PixelWindows, filmShape)
+	if err != nil {
+		h.err = err
+		return h
+	}
+	config.PixelWindows = normalizedWindows
 	h.Config = config
 	h.ActiveCamera = renderCamera
 	h.Film = camera.NewFilm(filmShape...)
@@ -201,7 +207,7 @@ func (h *Handler) Render() *Handler {
 	renderHandler.FilmColorSpace = h.Film.ColorSpace
 	renderHandler.SceneGeometry = h.Scene.Geometry
 	renderHandler.MaxArc = h.Scene.MaxArc
-	renderHandler.TraceScene(h.ActiveCamera, h.Scene.ObjectTree, h.Film, h.Config.Samples)
+	renderHandler.TraceScene(h.ActiveCamera, h.Scene.ObjectTree, h.Film, h.Config.Samples, h.Config.PixelWindows)
 
 	fmt.Printf("Rendering completed in %v\n", time.Since(start))
 	return h

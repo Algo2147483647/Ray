@@ -141,7 +141,13 @@
               0.34,
               0.34
             ],
-            "material_id": "pure-white-reflection"
+            "material_id": "high-ior-pale-amethyst-crystal",
+            "medium_boundary": {
+              "outside": "air",
+              "inside": "pale_amethyst_crystal",
+              "priority": 10,
+              "thin": false
+            }
           }
         ],
         "3,3": [

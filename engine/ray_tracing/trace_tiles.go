@@ -58,11 +58,29 @@ func buildTileCoordinates(shape []int, tileWidth, tileHeight int) []TileCoordina
 	return build2DRenderTiles(shape[0], shape[1], tileWidth, tileHeight)
 }
 
-func buildLinearRenderTiles(shape []int, chunkSize int) []TileCoordinate {
-	total := 1
-	for _, dim := range shape {
-		total *= dim
+func buildTileCoordinatesForWindows(shape []int, windows []camera.PixelWindow, tileWidth, tileHeight int) ([]TileCoordinate, int64) {
+	total := shapeElementCount(shape)
+	if len(windows) == 0 {
+		return buildTileCoordinates(shape, tileWidth, tileHeight), int64(total)
 	}
+
+	if tileWidth <= 0 {
+		tileWidth = defaultTileSize
+	}
+	if tileHeight <= 0 {
+		tileHeight = defaultTileSize
+	}
+
+	normalized, err := camera.NormalizePixelWindows(windows, shape)
+	if err != nil {
+		return nil, 0
+	}
+	mask, pixels := buildPixelWindowMask(shape, normalized)
+	return buildMaskedLinearRenderTiles(mask, tileWidth*tileHeight), pixels
+}
+
+func buildLinearRenderTiles(shape []int, chunkSize int) []TileCoordinate {
+	total := shapeElementCount(shape)
 
 	tiles := make([]TileCoordinate, 0, (total+chunkSize-1)/chunkSize)
 
@@ -78,6 +96,82 @@ func buildLinearRenderTiles(shape []int, chunkSize int) []TileCoordinate {
 	}
 
 	return tiles
+}
+
+func buildMaskedLinearRenderTiles(mask []bool, chunkSize int) []TileCoordinate {
+	if chunkSize <= 0 {
+		chunkSize = defaultTileSize * defaultTileSize
+	}
+
+	tiles := []TileCoordinate{}
+	for start := 0; start < len(mask); {
+		if !mask[start] {
+			start++
+			continue
+		}
+
+		end := start + 1
+		for end < len(mask) && mask[end] {
+			end++
+		}
+
+		for chunkStart := start; chunkStart < end; chunkStart += chunkSize {
+			chunkEnd := min(chunkStart+chunkSize, end)
+			tiles = append(tiles, TileCoordinate{
+				X0: chunkStart,
+				X1: chunkEnd,
+				Y0: 0,
+				Y1: 1,
+			})
+		}
+		start = end
+	}
+	return tiles
+}
+
+func buildPixelWindowMask(shape []int, windows []camera.PixelWindow) ([]bool, int64) {
+	total := shapeElementCount(shape)
+	mask := make([]bool, total)
+	strides := pixelStrides(shape)
+	var pixels int64
+
+	var mark func(window camera.PixelWindow, dim, index int)
+	mark = func(window camera.PixelWindow, dim, index int) {
+		if dim == len(shape) {
+			if !mask[index] {
+				mask[index] = true
+				pixels++
+			}
+			return
+		}
+
+		for coord := window.Min[dim]; coord < window.Max[dim]; coord++ {
+			mark(window, dim+1, index+coord*strides[dim])
+		}
+	}
+
+	for _, window := range windows {
+		mark(window, 0, 0)
+	}
+	return mask, pixels
+}
+
+func pixelStrides(shape []int) []int {
+	strides := make([]int, len(shape))
+	stride := 1
+	for i, dim := range shape {
+		strides[i] = stride
+		stride *= dim
+	}
+	return strides
+}
+
+func shapeElementCount(shape []int) int {
+	total := 1
+	for _, dim := range shape {
+		total *= dim
+	}
+	return total
 }
 
 func build2DRenderTiles(width, height, tileWidth, tileHeight int) []TileCoordinate {

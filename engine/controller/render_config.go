@@ -6,6 +6,8 @@ import (
 	"github.com/Algo2147483647/ray/engine/controller/parser"
 	"io"
 	"runtime"
+	"strconv"
+	"strings"
 
 	"github.com/Algo2147483647/ray/engine/model/camera"
 )
@@ -34,6 +36,7 @@ type RenderOverrides struct {
 	SpectrumMode      string
 	WavelengthSamples int
 	ColorSpace        string
+	PixelWindows      []camera.PixelWindow
 }
 
 type RenderConfig struct {
@@ -51,6 +54,7 @@ type RenderConfig struct {
 	SpectrumMode      string
 	WavelengthSamples int
 	ColorSpace        string
+	PixelWindows      []camera.PixelWindow
 }
 
 func ParseRenderOverrides(args []string) (RenderOverrides, error) {
@@ -58,10 +62,12 @@ func ParseRenderOverrides(args []string) (RenderOverrides, error) {
 		CameraIndex: -1,
 	}
 	scriptPaths := stringListFlag{}
+	pixelWindowFlags := stringListFlag{}
 
 	flagSet := flag.NewFlagSet("ray", flag.ContinueOnError)
 	flagSet.SetOutput(io.Discard)
 	flagSet.Var(&scriptPaths, "script", "path to a canonical scene script")
+	flagSet.Var(&pixelWindowFlags, "pixel-window", "pixel render window, for example 100:150,600:650; repeat for multiple windows")
 	flagSet.IntVar(&overrides.Dimension, "dimension", 0, "scene dimension")
 	flagSet.IntVar(&overrides.CameraIndex, "camera-index", -1, "camera index to render")
 	flagSet.IntVar(&overrides.ThreadNum, "threads", 0, "worker thread count")
@@ -78,6 +84,14 @@ func ParseRenderOverrides(args []string) (RenderOverrides, error) {
 
 	if err := flagSet.Parse(args); err != nil {
 		return RenderOverrides{}, err
+	}
+
+	if len(pixelWindowFlags) > 0 {
+		windows, err := parsePixelWindowFlags(pixelWindowFlags)
+		if err != nil {
+			return RenderOverrides{}, err
+		}
+		overrides.PixelWindows = windows
 	}
 
 	overrides.ScriptPaths = append(overrides.ScriptPaths, scriptPaths...)
@@ -186,6 +200,9 @@ func ResolveRenderConfig(script *parser.Script, overrides RenderOverrides) Rende
 		} else if script.Render.FilmColorSpace != "" {
 			config.ColorSpace = script.Render.FilmColorSpace
 		}
+		if len(script.Render.PixelWindows) > 0 {
+			config.PixelWindows = clonePixelWindows(script.Render.PixelWindows)
+		}
 	}
 
 	if overrides.CameraIndex >= 0 {
@@ -226,6 +243,9 @@ func ResolveRenderConfig(script *parser.Script, overrides RenderOverrides) Rende
 	}
 	if overrides.ColorSpace != "" {
 		config.ColorSpace = overrides.ColorSpace
+	}
+	if len(overrides.PixelWindows) > 0 {
+		config.PixelWindows = clonePixelWindows(overrides.PixelWindows)
 	}
 	if config.SpectrumMode == "sampled" && config.WavelengthSamples <= 1 {
 		config.WavelengthSamples = 4
@@ -297,6 +317,9 @@ func applyRenderScriptToConfig(config RenderConfig, render parser.RenderScript) 
 	} else if render.FilmColorSpace != "" {
 		config.ColorSpace = render.FilmColorSpace
 	}
+	if len(render.PixelWindows) > 0 {
+		config.PixelWindows = clonePixelWindows(render.PixelWindows)
+	}
 	if config.SpectrumMode == "sampled" && config.WavelengthSamples <= 1 {
 		config.WavelengthSamples = 4
 	}
@@ -343,10 +366,95 @@ func applyRenderOverridesToConfig(config RenderConfig, overrides RenderOverrides
 	if overrides.ColorSpace != "" {
 		config.ColorSpace = overrides.ColorSpace
 	}
+	if len(overrides.PixelWindows) > 0 {
+		config.PixelWindows = clonePixelWindows(overrides.PixelWindows)
+	}
 	if config.SpectrumMode == "sampled" && config.WavelengthSamples <= 1 {
 		config.WavelengthSamples = 4
 	}
 	return config
+}
+
+func parsePixelWindowFlags(values []string) ([]camera.PixelWindow, error) {
+	windows := make([]camera.PixelWindow, 0, len(values))
+	for _, value := range values {
+		window, err := parsePixelWindowFlag(value)
+		if err != nil {
+			return nil, err
+		}
+		windows = append(windows, window)
+	}
+	return windows, nil
+}
+
+func parsePixelWindowFlag(value string) (camera.PixelWindow, error) {
+	parts := strings.Split(value, ",")
+	if len(parts) == 0 {
+		return camera.PixelWindow{}, fmt.Errorf("pixel-window is empty")
+	}
+
+	min := make([]int, len(parts))
+	max := make([]int, len(parts))
+	for dim, part := range parts {
+		lo, hi, err := parsePixelWindowAxis(part)
+		if err != nil {
+			return camera.PixelWindow{}, fmt.Errorf("pixel-window dimension %d: %w", dim, err)
+		}
+		min[dim] = lo
+		max[dim] = hi
+	}
+	return camera.PixelWindow{Min: min, Max: max}, nil
+}
+
+func parsePixelWindowAxis(value string) (int, int, error) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return 0, 0, fmt.Errorf("range is empty")
+	}
+
+	separator := ":"
+	if strings.Contains(value, ":") {
+		separator = ":"
+	} else if strings.Contains(value, "-") {
+		separator = "-"
+	} else {
+		return 0, 0, fmt.Errorf("range must use ':' or '-'")
+	}
+
+	parts := strings.Split(value, separator)
+	if len(parts) != 2 {
+		return 0, 0, fmt.Errorf("range must contain exactly one separator")
+	}
+
+	lo, err := strconv.Atoi(strings.TrimSpace(parts[0]))
+	if err != nil {
+		return 0, 0, fmt.Errorf("invalid min %q", strings.TrimSpace(parts[0]))
+	}
+	hi, err := strconv.Atoi(strings.TrimSpace(parts[1]))
+	if err != nil {
+		return 0, 0, fmt.Errorf("invalid max %q", strings.TrimSpace(parts[1]))
+	}
+	if lo < 0 || hi < 0 {
+		return 0, 0, fmt.Errorf("bounds must be non-negative")
+	}
+	if lo >= hi {
+		return 0, 0, fmt.Errorf("min must be less than max")
+	}
+	return lo, hi, nil
+}
+
+func clonePixelWindows(windows []camera.PixelWindow) []camera.PixelWindow {
+	if len(windows) == 0 {
+		return nil
+	}
+	cloned := make([]camera.PixelWindow, len(windows))
+	for i, window := range windows {
+		cloned[i] = camera.PixelWindow{
+			Min: append([]int(nil), window.Min...),
+			Max: append([]int(nil), window.Max...),
+		}
+	}
+	return cloned
 }
 
 type stringListFlag []string

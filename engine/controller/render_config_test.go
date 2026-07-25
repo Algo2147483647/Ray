@@ -57,6 +57,31 @@ func TestParseRenderOverridesRejectsResumeFilm(t *testing.T) {
 	}
 }
 
+func TestParseRenderOverridesAcceptsPixelWindows(t *testing.T) {
+	overrides, err := ParseRenderOverrides([]string{
+		"--pixel-window", "100-150,600-650",
+		"--pixel-window", "2:4,6:8",
+	})
+	if err != nil {
+		t.Fatalf("parse overrides: %v", err)
+	}
+
+	if len(overrides.PixelWindows) != 2 {
+		t.Fatalf("expected two pixel windows, got %d", len(overrides.PixelWindows))
+	}
+	assertIntSlice(t, overrides.PixelWindows[0].Min, []int{100, 600})
+	assertIntSlice(t, overrides.PixelWindows[0].Max, []int{150, 650})
+	assertIntSlice(t, overrides.PixelWindows[1].Min, []int{2, 6})
+	assertIntSlice(t, overrides.PixelWindows[1].Max, []int{4, 8})
+}
+
+func TestParseRenderOverridesRejectsInvalidPixelWindow(t *testing.T) {
+	_, err := ParseRenderOverrides([]string{"--pixel-window", "10:10,0:1"})
+	if err == nil {
+		t.Fatal("expected invalid pixel window to fail")
+	}
+}
+
 func TestResolveRenderConfigsExpandsRenderJobs(t *testing.T) {
 	configs := ResolveRenderConfigs(&parser.Script{
 		Render: parser.RenderScript{
@@ -79,6 +104,27 @@ func TestResolveRenderConfigsExpandsRenderJobs(t *testing.T) {
 	if configs[1].Samples != 32 || configs[1].Width != 320 || configs[1].OutputFilm != "detail.bin" {
 		t.Fatalf("unexpected second render config: %+v", configs[1])
 	}
+}
+
+func TestResolveRenderConfigPrefersOverridePixelWindows(t *testing.T) {
+	config := ResolveRenderConfig(&parser.Script{
+		Render: parser.RenderScript{
+			PixelWindows: []camera.PixelWindow{
+				{Min: []int{1, 1}, Max: []int{2, 2}},
+			},
+		},
+	}, RenderOverrides{
+		CameraIndex: -1,
+		PixelWindows: []camera.PixelWindow{
+			{Min: []int{3, 3}, Max: []int{4, 4}},
+		},
+	})
+
+	if len(config.PixelWindows) != 1 {
+		t.Fatalf("expected one pixel window, got %d", len(config.PixelWindows))
+	}
+	assertIntSlice(t, config.PixelWindows[0].Min, []int{3, 3})
+	assertIntSlice(t, config.PixelWindows[0].Max, []int{4, 4})
 }
 
 func TestResolveRenderConfigsRenderJobInheritsCameraIndexWhenOmitted(t *testing.T) {
@@ -148,5 +194,41 @@ func TestSelectRenderCameraAppliesOverridesToSphericalCamera(t *testing.T) {
 	}
 	if cam.Width != 160 || cam.Height != 100 || shape[0] != 160 || shape[1] != 100 {
 		t.Fatalf("expected spherical camera dimensions to update, got camera=%dx%d shape=%v", cam.Width, cam.Height, shape)
+	}
+}
+
+func TestConfigureRenderConfigRejectsOutOfBoundsPixelWindow(t *testing.T) {
+	cam := &camera.SphericalCamera{
+		Position:     mat.NewVecDense(4, []float64{1, 0, 0, 0}),
+		Forward:      mat.NewVecDense(4, []float64{0, 1, 0, 0}),
+		Up:           mat.NewVecDense(4, []float64{0, 0, 1, 0}),
+		Width:        400,
+		Height:       400,
+		FieldOfViews: []float64{70, 70},
+	}
+	h := NewHandler()
+	h.Scene.Cameras = []camera.Camera{cam}
+
+	h.ConfigureRenderConfig(RenderConfig{
+		CameraIndex:  0,
+		Width:        10,
+		Height:       10,
+		PixelWindows: []camera.PixelWindow{{Min: []int{9, 0}, Max: []int{11, 1}}},
+	})
+
+	if h.err == nil {
+		t.Fatal("expected out-of-bounds pixel window to fail")
+	}
+}
+
+func assertIntSlice(t *testing.T, got, want []int) {
+	t.Helper()
+	if len(got) != len(want) {
+		t.Fatalf("got %v, want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("got %v, want %v", got, want)
+		}
 	}
 }

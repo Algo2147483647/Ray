@@ -32,6 +32,7 @@ Studio accepts the same render override flags as engine:
 --spectrum-mode
 --wavelength-samples
 --working-space
+--pixel-window
 --engine-bin
 ```
 
@@ -99,6 +100,33 @@ go -C studio run . --script ../examples/scenes/default.json \
 
 If `output_film` is omitted, studio uses the engine default Film path. If
 `output_image` is omitted, studio uses the default image path.
+
+### Pixel Windows
+
+Studio accepts engine-compatible `pixel_windows` in `render` and `renders`, and
+passes them through to the generated engine JSON. The output Film and image keep
+their configured dimensions; pixels outside the requested windows remain zero.
+
+Ranges are half-open: `min` is included and `max` is excluded.
+
+```json
+{
+  "render": {
+    "width": 800,
+    "height": 800,
+    "pixel_windows": [
+      { "min": [100, 600], "max": [150, 650] }
+    ]
+  }
+}
+```
+
+The CLI override is repeatable and accepts `:` or `-` separators:
+
+```bash
+go -C studio run . --script ../scene.json --pixel-window 100:150,600:650
+go -C studio run . --script ../scene.json --pixel-window 100-150,600-650
+```
 
 ### Endless Checkpoints
 

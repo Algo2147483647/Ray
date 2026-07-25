@@ -80,6 +80,9 @@ func renderToMap(render studioRenderScript) map[string]interface{} {
 	if render.FilmColorSpace != "" {
 		result["working_space"] = render.FilmColorSpace
 	}
+	if len(render.PixelWindows) > 0 {
+		result["pixel_windows"] = clonePixelWindows(render.PixelWindows)
+	}
 	return result
 }
 
@@ -92,4 +95,18 @@ func rendersToMaps(renders []studioRenderScript) []map[string]interface{} {
 		result[i] = renderToMap(render)
 	}
 	return result
+}
+
+func clonePixelWindows(windows []pixelWindowScript) []pixelWindowScript {
+	if len(windows) == 0 {
+		return nil
+	}
+	cloned := make([]pixelWindowScript, len(windows))
+	for i, window := range windows {
+		cloned[i] = pixelWindowScript{
+			Min: append([]int(nil), window.Min...),
+			Max: append([]int(nil), window.Max...),
+		}
+	}
+	return cloned
 }

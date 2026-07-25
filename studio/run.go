@@ -83,7 +83,7 @@ func run(args []string) int {
 
 	outputFilm := resolveOutputFilm(script, config)
 	fmt.Printf("Studio merging film: %s + %s -> %s\n", resumeFilm, tempFilmPath, outputFilm)
-	if err := studiofilm.MergeFilmFiles(resumeFilm, tempFilmPath, outputFilm); err != nil {
+	if err := studiofilm.MergeFilmFilesWithPixelWindows(resumeFilm, tempFilmPath, outputFilm, resolvePixelWindows(script, config)); err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return 1
 	}
@@ -128,7 +128,7 @@ func runEndless(scriptPath string, script *schema.StudioScript, config studioCon
 		if currentFilm == "" {
 			err = studiofilm.CopyFilmFile(tempFilmPath, checkpointFilm)
 		} else {
-			err = studiofilm.MergeFilmFiles(currentFilm, tempFilmPath, checkpointFilm)
+			err = studiofilm.MergeFilmFilesWithPixelWindows(currentFilm, tempFilmPath, checkpointFilm, resolvePixelWindows(script, config))
 		}
 		os.Remove(tempFilmPath)
 		if err != nil {
@@ -198,6 +198,28 @@ func resolveOutputFilm(script *schema.StudioScript, config studioConfig) string 
 		return outputs[0].FilmPath
 	}
 	return defaultEngineOutputFilm
+}
+
+func resolvePixelWindows(script *schema.StudioScript, config studioConfig) []modelcamera.PixelWindow {
+	if config.provided["pixel-window"] {
+		return studioPixelWindowsToEngine(config.pixelWindows)
+	}
+	render := baseStudioRender(script)
+	return studioPixelWindowsToEngine(render.PixelWindows)
+}
+
+func studioPixelWindowsToEngine(windows []schema.PixelWindowScript) []modelcamera.PixelWindow {
+	if len(windows) == 0 {
+		return nil
+	}
+	result := make([]modelcamera.PixelWindow, len(windows))
+	for i, window := range windows {
+		result[i] = modelcamera.PixelWindow{
+			Min: append([]int(nil), window.Min...),
+			Max: append([]int(nil), window.Max...),
+		}
+	}
+	return result
 }
 
 func resolveRenderOutputs(script *schema.StudioScript, config studioConfig, outputFilmOverride string) []studioRenderOutput {

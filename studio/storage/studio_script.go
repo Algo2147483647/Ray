@@ -462,5 +462,22 @@ func mergeStudioRenderScript(base, override schema.StudioRenderScript) schema.St
 	if override.FilmColorSpace != "" {
 		result.FilmColorSpace = override.FilmColorSpace
 	}
+	if len(override.PixelWindows) > 0 {
+		result.PixelWindows = cloneStudioPixelWindows(override.PixelWindows)
+	}
 	return result
+}
+
+func cloneStudioPixelWindows(windows []schema.PixelWindowScript) []schema.PixelWindowScript {
+	if len(windows) == 0 {
+		return nil
+	}
+	cloned := make([]schema.PixelWindowScript, len(windows))
+	for i, window := range windows {
+		cloned[i] = schema.PixelWindowScript{
+			Min: append([]int(nil), window.Min...),
+			Max: append([]int(nil), window.Max...),
+		}
+	}
+	return cloned
 }

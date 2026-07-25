@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/Algo2147483647/ray/studio/schema"
 )
@@ -41,6 +42,7 @@ type studioConfig struct {
 	spectrumMode       string
 	wavelengthSamples  int
 	colorSpace         string
+	pixelWindows       []schema.PixelWindowScript
 }
 
 type stringListFlag []string
@@ -60,10 +62,12 @@ func parseStudioConfig(args []string) (studioConfig, error) {
 		provided:    map[string]bool{},
 	}
 	scriptPaths := stringListFlag{}
+	pixelWindowFlags := stringListFlag{}
 
 	flagSet := flag.NewFlagSet("ray", flag.ContinueOnError)
 	flagSet.SetOutput(io.Discard)
 	flagSet.Var(&scriptPaths, "script", "path to a scene script; repeat to merge multiple scripts")
+	flagSet.Var(&pixelWindowFlags, "pixel-window", "pixel render window, for example 100:150,600:650; repeat for multiple windows")
 	flagSet.IntVar(&config.dimension, "dimension", 0, "scene dimension")
 	flagSet.IntVar(&config.cameraIndex, "camera-index", -1, "camera index to render")
 	flagSet.IntVar(&config.threadNum, "threads", 0, "worker thread count")
@@ -91,6 +95,13 @@ func parseStudioConfig(args []string) (studioConfig, error) {
 	flagSet.Visit(func(f *flag.Flag) {
 		config.provided[f.Name] = true
 	})
+	if len(pixelWindowFlags) > 0 {
+		windows, err := parseStudioPixelWindowFlags(pixelWindowFlags)
+		if err != nil {
+			return studioConfig{}, err
+		}
+		config.pixelWindows = windows
+	}
 
 	config.scriptPaths = append(config.scriptPaths, scriptPaths...)
 	if len(config.scriptPaths) == 0 && len(flagSet.Args()) > 0 {
@@ -189,7 +200,86 @@ func (c studioConfig) engineArgs(scriptPath, outputFilmOverride string, samplesO
 	if c.provided["working-space"] {
 		args = append(args, "--working-space", c.colorSpace)
 	}
+	for _, window := range c.pixelWindows {
+		args = append(args, "--pixel-window", formatStudioPixelWindow(window))
+	}
 	return args
+}
+
+func parseStudioPixelWindowFlags(values []string) ([]schema.PixelWindowScript, error) {
+	windows := make([]schema.PixelWindowScript, 0, len(values))
+	for _, value := range values {
+		window, err := parseStudioPixelWindowFlag(value)
+		if err != nil {
+			return nil, err
+		}
+		windows = append(windows, window)
+	}
+	return windows, nil
+}
+
+func parseStudioPixelWindowFlag(value string) (schema.PixelWindowScript, error) {
+	parts := strings.Split(value, ",")
+	if len(parts) == 0 {
+		return schema.PixelWindowScript{}, fmt.Errorf("pixel-window is empty")
+	}
+
+	min := make([]int, len(parts))
+	max := make([]int, len(parts))
+	for dim, part := range parts {
+		lo, hi, err := parseStudioPixelWindowAxis(part)
+		if err != nil {
+			return schema.PixelWindowScript{}, fmt.Errorf("pixel-window dimension %d: %w", dim, err)
+		}
+		min[dim] = lo
+		max[dim] = hi
+	}
+	return schema.PixelWindowScript{Min: min, Max: max}, nil
+}
+
+func parseStudioPixelWindowAxis(value string) (int, int, error) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return 0, 0, fmt.Errorf("range is empty")
+	}
+
+	separator := ":"
+	if strings.Contains(value, ":") {
+		separator = ":"
+	} else if strings.Contains(value, "-") {
+		separator = "-"
+	} else {
+		return 0, 0, fmt.Errorf("range must use ':' or '-'")
+	}
+
+	parts := strings.Split(value, separator)
+	if len(parts) != 2 {
+		return 0, 0, fmt.Errorf("range must contain exactly one separator")
+	}
+
+	lo, err := strconv.Atoi(strings.TrimSpace(parts[0]))
+	if err != nil {
+		return 0, 0, fmt.Errorf("invalid min %q", strings.TrimSpace(parts[0]))
+	}
+	hi, err := strconv.Atoi(strings.TrimSpace(parts[1]))
+	if err != nil {
+		return 0, 0, fmt.Errorf("invalid max %q", strings.TrimSpace(parts[1]))
+	}
+	if lo < 0 || hi < 0 {
+		return 0, 0, fmt.Errorf("bounds must be non-negative")
+	}
+	if lo >= hi {
+		return 0, 0, fmt.Errorf("min must be less than max")
+	}
+	return lo, hi, nil
+}
+
+func formatStudioPixelWindow(window schema.PixelWindowScript) string {
+	parts := make([]string, 0, len(window.Min))
+	for i := range window.Min {
+		parts = append(parts, strconv.Itoa(window.Min[i])+":"+strconv.Itoa(window.Max[i]))
+	}
+	return strings.Join(parts, ",")
 }
 
 func engineCommand(config studioConfig, repoRoot string) (string, []string, error) {

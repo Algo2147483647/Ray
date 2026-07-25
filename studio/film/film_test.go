@@ -48,6 +48,59 @@ func TestMergeFilmFilesWritesWeightedMerge(t *testing.T) {
 	assertClose(t, merged.Data[2].Data[0], 0.5625)
 }
 
+func TestMergeFilmFilesWithPixelWindowsLeavesOutsidePixelsUntouched(t *testing.T) {
+	dir := t.TempDir()
+	basePath := filepath.Join(dir, "base.bin")
+	updatePath := filepath.Join(dir, "update.bin")
+	outputPath := filepath.Join(dir, "merged.bin")
+
+	base := modelcamera.NewFilm(4, 4)
+	base.Samples = 2
+	for ch := 0; ch < 3; ch++ {
+		for i := range base.Data[ch].Data {
+			base.Data[ch].Data[i] = 0.2
+		}
+	}
+	if err := base.SaveToFile(basePath); err != nil {
+		t.Fatalf("save base film: %v", err)
+	}
+
+	update := modelcamera.NewFilm(4, 4)
+	update.Samples = 6
+	for ch := 0; ch < 3; ch++ {
+		for i := range update.Data[ch].Data {
+			update.Data[ch].Data[i] = 1
+		}
+	}
+	if err := update.SaveToFile(updatePath); err != nil {
+		t.Fatalf("save update film: %v", err)
+	}
+
+	windows := []modelcamera.PixelWindow{{Min: []int{1, 1}, Max: []int{3, 3}}}
+	if err := MergeFilmFilesWithPixelWindows(basePath, updatePath, outputPath, windows); err != nil {
+		t.Fatalf("merge films with pixel windows: %v", err)
+	}
+
+	merged := modelcamera.NewFilm()
+	if err := merged.LoadFromFile(outputPath); err != nil {
+		t.Fatalf("load merged film: %v", err)
+	}
+	if merged.Samples != 8 {
+		t.Fatalf("expected 8 merged samples, got %d", merged.Samples)
+	}
+
+	for y := 0; y < 4; y++ {
+		for x := 0; x < 4; x++ {
+			index := y*4 + x
+			expected := 0.2
+			if x >= 1 && x < 3 && y >= 1 && y < 3 {
+				expected = 0.8
+			}
+			assertClose(t, merged.Data[0].Data[index], expected)
+		}
+	}
+}
+
 func assertClose(t *testing.T, got, expected float64) {
 	t.Helper()
 	if math.Abs(got-expected) > 1e-10 {
