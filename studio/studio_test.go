@@ -944,8 +944,8 @@ func TestStudioAdaptsCopiedGeometryBenchmarkMatrixExample(t *testing.T) {
 	if adapted.Studio.Version == "" {
 		t.Fatal("expected studio metadata on intermediate script")
 	}
-	if len(adapted.Objects) != 20 {
-		t.Fatalf("expected room objects without example geometry, got %d", len(adapted.Objects))
+	if len(adapted.Objects) != 56 {
+		t.Fatalf("expected r3-c4 example polyhedron geometry to expand to 56 objects, got %d", len(adapted.Objects))
 	}
 	for _, object := range adapted.Objects {
 		if shape, _ := stringField(object, "shape"); strings.EqualFold(shape, "group") {

@@ -539,6 +539,145 @@ func TestParseShapeParametricEquationRejectsBuiltInFunction(t *testing.T) {
 	}
 }
 
+func TestParseShapeParametricEquationExprPlane(t *testing.T) {
+	shapes, err := ParseShape(map[string]interface{}{
+		"shape": "parametric equation",
+		"surface": map[string]interface{}{
+			"type": "expr",
+			"x":    "u",
+			"y":    "v",
+			"z":    "0",
+		},
+		"u_range":   []interface{}{-1, 1},
+		"v_range":   []interface{}{-1, 1},
+		"samples_u": 8,
+		"samples_v": 8,
+	})
+	if err != nil {
+		t.Fatalf("parse parametric expr plane: %v", err)
+	}
+	parametric, ok := shapes[0].(*shape.ParametricEquation)
+	if !ok {
+		t.Fatalf("expected *shape.ParametricEquation, got %T", shapes[0])
+	}
+
+	interaction, ok := parametric.IntersectRange(
+		mat.NewVecDense(3, []float64{0.25, -0.5, -2}),
+		mat.NewVecDense(3, []float64{0, 0, 1}),
+		1e-6,
+		math.MaxFloat64,
+	)
+	if !ok {
+		t.Fatal("expected parametric expr plane hit")
+	}
+	if math.Abs(interaction.Distance-2) > 1e-6 {
+		t.Fatalf("expected hit at distance 2, got %.12f", interaction.Distance)
+	}
+	if interaction.DPDU == nil || math.Abs(interaction.DPDU.AtVec(0)-1) > 1e-9 {
+		t.Fatalf("expected autodiff dpdu, got %v", interaction.DPDU)
+	}
+}
+
+func TestParseShapeParametricEquationExprExplicitDerivative(t *testing.T) {
+	shapes, err := ParseShape(map[string]interface{}{
+		"shape": "parametric equation",
+		"surface": map[string]interface{}{
+			"type": "expr",
+			"x":    "u*u",
+			"y":    "v",
+			"z":    "0",
+			"derivative": map[string]interface{}{
+				"du": map[string]interface{}{"x": "2*u", "y": "0", "z": "0"},
+				"dv": map[string]interface{}{"x": "0", "y": "1", "z": "0"},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("parse parametric expr explicit derivative: %v", err)
+	}
+	parametric := shapes[0].(*shape.ParametricEquation)
+	du, dv := parametric.Derivative(0.5, 0.25, mat.NewVecDense(3, nil), mat.NewVecDense(3, nil))
+	if du == nil || dv == nil {
+		t.Fatal("expected explicit derivative")
+	}
+	if math.Abs(du.AtVec(0)-1) > 1e-9 || math.Abs(dv.AtVec(1)-1) > 1e-9 {
+		t.Fatalf("unexpected derivative: du=%v dv=%v", du.RawVector().Data, dv.RawVector().Data)
+	}
+}
+
+func TestParseShapeParametricEquationExprConstantsTorus(t *testing.T) {
+	shapes, err := ParseShape(map[string]interface{}{
+		"shape": "parametric equation",
+		"surface": map[string]interface{}{
+			"type": "expr",
+			"x":    "(R + r*cos(v))*cos(u)",
+			"y":    "(R + r*cos(v))*sin(u)",
+			"z":    "r*sin(v)",
+			"constants": map[string]interface{}{
+				"R": 2.0,
+				"r": 0.5,
+			},
+		},
+		"u_range":   []interface{}{0, 2 * math.Pi},
+		"v_range":   []interface{}{0, 2 * math.Pi},
+		"samples_u": 48,
+		"samples_v": 24,
+	})
+	if err != nil {
+		t.Fatalf("parse parametric expr torus: %v", err)
+	}
+	parametric := shapes[0].(*shape.ParametricEquation)
+	interaction, ok := parametric.IntersectRange(
+		mat.NewVecDense(3, []float64{0, -3, 0}),
+		mat.NewVecDense(3, []float64{0, 1, 0}),
+		1e-6,
+		math.MaxFloat64,
+	)
+	if !ok {
+		t.Fatal("expected parametric expr torus hit")
+	}
+	if math.Abs(interaction.Distance-0.5) > 1e-5 {
+		t.Fatalf("expected nearest hit at 0.5, got %.12f", interaction.Distance)
+	}
+}
+
+func TestParseShapeParametricEquationExprNumericalDerivativeFallback(t *testing.T) {
+	shapes, err := ParseShape(map[string]interface{}{
+		"shape": "parametric equation",
+		"surface": map[string]interface{}{
+			"type": "expr",
+			"x":    "abs(u)",
+			"y":    "v",
+			"z":    "0",
+		},
+	})
+	if err != nil {
+		t.Fatalf("parse parametric expr with numerical derivative fallback: %v", err)
+	}
+	parametric := shapes[0].(*shape.ParametricEquation)
+	if parametric.Derivative != nil {
+		t.Fatal("expected unsupported autodiff expression to use runtime numerical derivative fallback")
+	}
+}
+
+func TestParseShapeParametricEquationExprRejectsReservedConstant(t *testing.T) {
+	_, err := ParseShape(map[string]interface{}{
+		"shape": "parametric equation",
+		"surface": map[string]interface{}{
+			"type": "expr",
+			"x":    "u",
+			"y":    "v",
+			"z":    "0",
+			"constants": map[string]interface{}{
+				"u": 1,
+			},
+		},
+	})
+	if err == nil {
+		t.Fatal("expected reserved parametric constant to fail")
+	}
+}
+
 func TestParseShapeImplicitEquationExprField(t *testing.T) {
 	shapes, err := ParseShape(map[string]interface{}{
 		"shape": "implicit equation",

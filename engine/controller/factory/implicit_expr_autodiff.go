@@ -9,24 +9,28 @@ import (
 )
 
 func autodiffImplicitExpr(source string) (string, string, string, bool) {
+	derivatives, ok := autodiffExpr(source, "x", "y", "z")
+	if !ok {
+		return "", "", "", false
+	}
+	return derivatives[0], derivatives[1], derivatives[2], true
+}
+
+func autodiffExpr(source string, variables ...string) ([]string, bool) {
 	tree, err := parser.Parse(source)
 	if err != nil || tree == nil || tree.Node == nil {
-		return "", "", "", false
+		return nil, false
 	}
 
-	gx, ok := diffExprNode(tree.Node, "x")
-	if !ok {
-		return "", "", "", false
+	derivatives := make([]string, len(variables))
+	for i, variable := range variables {
+		derivative, ok := diffExprNode(tree.Node, variable)
+		if !ok {
+			return nil, false
+		}
+		derivatives[i] = derivative
 	}
-	gy, ok := diffExprNode(tree.Node, "y")
-	if !ok {
-		return "", "", "", false
-	}
-	gz, ok := diffExprNode(tree.Node, "z")
-	if !ok {
-		return "", "", "", false
-	}
-	return gx, gy, gz, true
+	return derivatives, true
 }
 
 func diffExprNode(node ast.Node, variable string) (string, bool) {

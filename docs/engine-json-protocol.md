@@ -98,6 +98,7 @@ Canonical shape fields for normalized engine JSON:
 | `four-order equation` | `a` length 256, or sparse `a`/`A` object |
 | `polynomial surface` | `mode`, `input_dim`, `degree`, `coefficients` |
 | `implicit equation` | `field`, `bounds` |
+| `parametric equation` | `surface`, `u_range`, `v_range` |
 | `stl` | `file`, `center`, `z_dir`, `x_dir`, `scale` |
 
 `plane` is recognized but intentionally returns an error because it is declared
@@ -223,6 +224,51 @@ provide local partial derivatives for analytic normals:
 
 The legacy top-level `"function"` field and built-in implicit field names such
 as `torus` and `gyroid` are not accepted. Use `field.type: "expr"`.
+
+### Parametric Equation
+
+`parametric equation` uses an expression-backed surface map
+`S(u,v)=(x(u,v), y(u,v), z(u,v))`:
+
+```json
+{
+  "shape": "parametric equation",
+  "surface": {
+    "type": "expr",
+    "x": "(R + r*cos(v))*cos(u)",
+    "y": "(R + r*cos(v))*sin(u)",
+    "z": "r*sin(v)",
+    "constants": {
+      "R": 0.32,
+      "r": 0.08
+    }
+  },
+  "u_range": [0, 6.283185307179586],
+  "v_range": [0, 6.283185307179586],
+  "samples_u": 64,
+  "samples_v": 24
+}
+```
+
+Supported `surface.type` values:
+
+```text
+expr: x, y, z, constants, optional derivative
+```
+
+For `surface.type: "expr"`, expressions are evaluated with variables `u` and
+`v`. If `surface.derivative` is omitted, the engine attempts symbolic automatic
+differentiation for supported smooth expressions before falling back to the
+parametric surface's numerical derivative path. Explicit derivatives use:
+
+```json
+{
+  "derivative": {
+    "du": { "x": "-sin(u)", "y": "cos(u)", "z": "0" },
+    "dv": { "x": "0", "y": "0", "z": "1" }
+  }
+}
+```
 
 ## Materials, Media, Cameras, Render
 

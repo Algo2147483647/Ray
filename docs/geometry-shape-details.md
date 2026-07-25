@@ -35,6 +35,7 @@ shape behavior and support status.
 | `cubic equation` | `shape.CubicEquation` | Supported | 3D implicit cubic algebraic surface |
 | `four-order equation` | `shape.FourOrderEquation` | Supported | 3D implicit quartic algebraic surface |
 | `implicit equation` | `shape.ImplicitEquation` | Supported | Expr-backed scalar zero level set |
+| `parametric equation` | `shape.ParametricEquation` | Supported | Expr-backed parametric surface map |
 | `polynomial surface` | `shape.PolynomialSurface` | Supported | Sparse arbitrary-degree implicit polynomial surface |
 | `stl` | many `shape.Triangle` values | Supported | ASCII or binary STL mesh import |
 | `plane` | `shape.Plane` exists | Recognized but rejected by JSON factory | Infinite mathematical plane, not currently scene-loadable |
@@ -69,6 +70,7 @@ paraboloid remains an open clipped surface, not a closed solid.
 | `cubic equation` | `a` or `A` with 64 coefficients | `center`/`scale` are baked by studio into coefficients | 3D algebraic surface using basis indices `0=1`, `1=x`, `2=y`, `3=z`. | Substitutes ray into cubic polynomial; normal from tensor gradient. |
 | `four-order equation` | `a` or `A` with 256 coefficients | `center`/`scale`/`basis` are baked by studio into coefficients | 3D algebraic surface using basis indices `0=1`, `1=x`, `2=y`, `3=z`. | Substitutes ray into quartic polynomial; normal from tensor gradient. |
 | `implicit equation` | `field.type: "expr"`, plus `bounds` | Pass-through today | Current expr field is 3D. Bounds are required. | Clips to bounds, scans along ray, detects sign changes, refines by bisection; normal from expr gradient, symbolic autodiff, or numerical gradient. |
+| `parametric equation` | `surface.type: "expr"`, `u_range`, `v_range` | `center`/`scale` are preserved by studio as authoring transform data | Current expr surface is 3D. | Builds a sampled patch BVH, refines ray/surface hits by Newton iteration, and uses explicit, autodiff, or numerical parametric derivatives for normals. |
 | `polynomial surface` | `input_dim`, `degree`, `coefficients.terms`, optional `transform` | `center`/`scale`/`basis` are combined into `transform` by studio | Ray intersection currently requires at least 3 ray dimensions; common use is 3D. | Builds a one-variable ray polynomial and solves real roots; normal from sparse polynomial gradient. |
 | `stl` | `file`, `center`, `z_dir`, `x_dir`, `scale` | Pass-through today | 3D mesh import. | Parses ASCII or binary STL facets, transforms vertices, emits triangles. |
 | `plane` | Source type has `A`, `b` | None through JSON | `shape.Plane` exists in code, but `ParseShape` returns an error for JSON `plane`. | Infinite plane ray solve exists in code; not scene-loadable until factory parsing is implemented. |

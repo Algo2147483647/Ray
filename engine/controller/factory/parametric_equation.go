@@ -16,8 +16,17 @@ func parseParametricEquation(objDef map[string]interface{}) ([]shape.Shape, erro
 	if err != nil {
 		return nil, err
 	}
-	if surfaceType != "" {
-		return nil, fmt.Errorf("unsupported parametric surface %q; built-in parametric functions have been removed", surfaceType)
+
+	var function shape.ParametricFunction
+	var derivative shape.ParametricDerivative
+	switch surfaceType {
+	case "expr":
+		function, derivative, err = parseParametricExprSurface(surfaceDef)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		return nil, fmt.Errorf("unsupported parametric surface %q", surfaceType)
 	}
 
 	uRange, err := optionalRange(objDef, "u_range", [2]float64{0, 1})
@@ -29,12 +38,12 @@ func parseParametricEquation(objDef map[string]interface{}) ([]shape.Shape, erro
 		return nil, err
 	}
 
-	equation := shape.NewParametricEquation(nil, uRange, vRange)
+	equation := shape.NewParametricEquation(function, uRange, vRange)
+	equation.Derivative = derivative
 	if err := applyParametricOptions(equation, objDef); err != nil {
 		return nil, err
 	}
-	_ = surfaceDef
-	return nil, fmt.Errorf("parametric equation requires a non-built-in surface implementation")
+	return wrapSingleShapeWithBounds(equation, objDef)
 }
 
 func parametricSurfaceDefinition(objDef map[string]interface{}) (map[string]interface{}, string, error) {

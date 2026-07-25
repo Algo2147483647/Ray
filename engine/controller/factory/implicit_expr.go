@@ -115,7 +115,14 @@ func (f *implicitExprField) compileGradient(gradientDef map[string]interface{}) 
 }
 
 func compileImplicitExprProgram(label, source string, constants map[string]float64) (*vm.Program, error) {
+	return compileExprProgram(label, source, constants, "x", "y", "z")
+}
+
+func compileExprProgram(label, source string, constants map[string]float64, variableNames ...string) (*vm.Program, error) {
 	env := implicitExprBaseEnvWithConstants(constants)
+	for _, name := range variableNames {
+		env[name] = 0.0
+	}
 	program, err := expr.Compile(source, expr.Env(env), expr.AsFloat64())
 	if err != nil {
 		return nil, fmt.Errorf("%s: compile expression: %w", label, err)
