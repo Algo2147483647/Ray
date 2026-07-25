@@ -123,7 +123,8 @@
               6.283185307179586
             ],
             "samples": 768,
-            "material_id": "plastic-red"
+            "material_id": "plastic-red",
+            "scale": 0.7
           }
         ],
         "5,5": [
