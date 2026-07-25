@@ -141,13 +141,7 @@
               0.34,
               0.34
             ],
-            "material_id": "high-ior-pale-amethyst-crystal",
-            "medium_boundary": {
-              "outside": "air",
-              "inside": "pale_amethyst_crystal",
-              "priority": 10,
-              "thin": false
-            }
+            "material_id": "clear-glass"
           }
         ],
         "3,3": [
@@ -234,7 +228,7 @@
               -0.247556,
               0
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-02",
@@ -259,7 +253,7 @@
               -0.247556,
               0
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-03",
@@ -284,7 +278,7 @@
               -0.094558,
               -0.247556
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-04",
@@ -309,7 +303,7 @@
               0,
               -0.094558
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-05",
@@ -334,7 +328,7 @@
               -0.094558,
               -0.247556
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-06",
@@ -359,7 +353,7 @@
               -0.094558,
               -0.247556
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-07",
@@ -384,7 +378,7 @@
               0.247556,
               0
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-08",
@@ -409,7 +403,7 @@
               0.152998,
               0.152998
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-09",
@@ -434,7 +428,7 @@
               0.247556,
               0
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-10",
@@ -459,7 +453,7 @@
               -0.247556,
               0
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-11",
@@ -484,7 +478,7 @@
               0,
               -0.094558
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-12",
@@ -509,7 +503,7 @@
               -0.247556,
               0
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-13",
@@ -534,7 +528,7 @@
               0,
               -0.094558
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-14",
@@ -559,7 +553,7 @@
               0.247556,
               0
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-15",
@@ -584,7 +578,7 @@
               0.247556,
               0
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-16",
@@ -609,7 +603,7 @@
               -0.094558,
               0.247556
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-17",
@@ -634,7 +628,7 @@
               -0.094558,
               0.247556
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-18",
@@ -659,7 +653,7 @@
               0.152998,
               0.152998
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-19",
@@ -684,7 +678,7 @@
               -0.094558,
               0.247556
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-20",
@@ -709,7 +703,7 @@
               -0.247556,
               0
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-21",
@@ -734,7 +728,7 @@
               -0.247556,
               0
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-22",
@@ -759,7 +753,7 @@
               0,
               -0.094558
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-23",
@@ -784,7 +778,7 @@
               -0.247556,
               0
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-24",
@@ -809,7 +803,7 @@
               0,
               -0.094558
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-25",
@@ -834,7 +828,7 @@
               0.152998,
               0.152998
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-26",
@@ -859,7 +853,7 @@
               0.152998,
               0.152998
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-27",
@@ -884,7 +878,7 @@
               -0.094558,
               0.247556
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-28",
@@ -909,7 +903,7 @@
               0,
               -0.094558
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-29",
@@ -934,7 +928,7 @@
               -0.094558,
               -0.247556
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-30",
@@ -959,7 +953,7 @@
               -0.094558,
               -0.247556
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-31",
@@ -984,7 +978,7 @@
               0,
               -0.094558
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-32",
@@ -1009,7 +1003,7 @@
               0.152998,
               0.152998
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-33",
@@ -1034,7 +1028,7 @@
               0.152998,
               0.152998
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-34",
@@ -1059,7 +1053,7 @@
               0.247556,
               0
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-35",
@@ -1084,7 +1078,7 @@
               0.094558,
               -0.247556
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           },
           {
             "id": "geo-regular-dodecahedron-face-36",
@@ -1109,7 +1103,7 @@
               0.247556,
               0
             ],
-            "material_id": "sandstone"
+            "material_id": "jade-glass"
           }
         ],
         "3,5": [

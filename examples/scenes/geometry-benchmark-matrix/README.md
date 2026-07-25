@@ -85,9 +85,9 @@ r6-c7: Hyperboloid quadric
 | Cell  | Mathematical Geometry | Formula / Definition | Material |
 | ----- | --------------------- | -------------------- | -------- |
 | r3-c1 | Regular Tetrahedron | Tetrahedron $\operatorname{conv}(v_1,v_2,v_3,v_4)$, simplex with $V=4$, $E=6$, $F=4$. | `plastic-red`: Lambertian red, albedo `[0.85, 0.05, 0.035]`. |
-| r3-c2 | Cube | Cube $[-0.17,0.17]^3$, side length $0.34$. | `high-ior-pale-amethyst-crystal`: pale purple specular dielectric crystal, transmittance `[0.9, 0.74, 1]`, eta `1.82`, with `pale_amethyst_crystal` as the interior medium. |
+| r3-c2 | Cube | Cube $[-0.17,0.17]^3$, side length $0.34$. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
 | r3-c3 | Astroidal surface inside transparent L1 crystal | Nested implicit surfaces: inner astroidal surface $\lvert x\rvert^{2/3}+\lvert y\rvert^{2/3}+\lvert z\rvert^{2/3}=1$ inside an $L^1$ unit ball $\lvert x\rvert+\lvert y\rvert+\lvert z\rvert=1$. | `plastic-blue`: Lambertian blue inner surface; `clear-glass`: transparent dielectric outer shell. |
-| r3-c4 | Regular dodecahedron | Chamfered cube-like closed polyhedron, triangulated into $36$ faces. | `sandstone`: Lambertian sandstone, albedo `[0.64, 0.52, 0.34]`. |
+| r3-c4 | Regular dodecahedron | Chamfered cube-like closed polyhedron, triangulated into $36$ faces. | `jade-glass`: specular dielectric, transmittance `[0.2, 0.88, 0.55]`, eta `1.57`. |
 | r3-c5 | Regular icosahedron | Regular icosahedron: convex Platonic solid with $V=12$, $E=30$, $F=20$. | `rough-gold`: rough conductor, eta `[0.17, 0.35, 1.5]`, k `[3.1, 2.7, 1.9]`, roughness `0.18`. |
 | r3-c6 | Triangular prism | Closed triangular prism: $2$ triangular bases plus $3$ rectangular sides, triangulated into $8$ faces. | `ultra-high-dispersion-prism-glass`: transparent specular dielectric, Cauchy IOR `a=1.33`, `b=0.12`, `c=0.004`. |
 | r3-c7 | Small stellated dodecahedron | Dodecahedral stellation: $12$ pentagonal pyramids, triangulated into $60$ faces. | `yellow-glass`: specular dielectric, transmittance `[1, 0.86, 0.24]`, eta `1.5`. |
