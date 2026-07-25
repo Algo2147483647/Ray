@@ -1,17 +1,48 @@
 {
   "objects": [
     {
-      "id": "geo-example-vertical-coaxial-cone-paraboloid-group",
+      "id": "geo-example-catenoid-hyperboloid-group",
       "shape": "group",
       "center": [
         0,
         0,
-        1.62
+        1.76
       ],
-      "scale": 2.6,
+      "scale": 0.5,
+      "bounds": {
+        "center": [
+          0,
+          0,
+          0
+        ],
+        "size": [
+          5,
+          5,
+          1.8
+        ]
+      },
       "objects": [
         {
-          "id": "geo-vertical-finite-cone-opening-reference",
+          "id": "geo-example-catenoid",
+          "shape": "implicit equation",
+          "step": 0.01,
+          "value_tol": 0.000001,
+          "material_id": "rough-gold",
+          "field": {
+            "type": "expr",
+            "expr": "x*x + y*y - a*a*pow(cosh(z/a), 2)",
+            "constants": {
+              "a": 0.55
+            },
+            "gradient": {
+              "x": "2*x",
+              "y": "2*y",
+              "z": "-2*a*cosh(z/a)*sinh(z/a)"
+            }
+          }
+        },
+        {
+          "id": "geo-example-hyperboloid-matched-catenoid",
           "shape": "quadratic equation",
           "a": [
             1,
@@ -22,44 +53,19 @@
             0,
             0,
             0,
-            -0.28444444444444444
+            -2.28005625465644
           ],
           "b": [
             0,
             0,
-            -0.1024
-          ],
-          "c": -0.009216,
-          "bounds": {
-            "pmin": [
-              -0.192,
-              -0.192,
-              -0.18
-            ],
-            "pmax": [
-              0.192,
-              0.192,
-              0.18
-            ]
-          },
-          "material_id": "rough-gold"
-        },
-        {
-          "id": "geo-vertical-cylinder-high-dispersion-crystal",
-          "shape": "cylinder",
-          "center": [
-            0,
-            0,
             0
           ],
-          "axis": [
-            0,
-            0,
-            1
-          ],
-          "r": 0.192,
-          "height": 0.36,
-          "material_id": "ultra-high-dispersion-prism-glass"
+          "c": -0.3025,
+          "material_id": "silver-fine-wire-mesh",
+          "metadata": {
+            "matched_catenoid_a": 0.55,
+            "matched_opening_z": 0.9
+          }
         }
       ]
     }
