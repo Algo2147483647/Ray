@@ -585,6 +585,27 @@
       }
     },
     {
+      "id": "pale-pink-jade",
+      "surface": {
+        "type": "specular_dielectric",
+        "reflectance": [
+          1,
+          0.88,
+          0.94
+        ],
+        "transmittance": [
+          0.96,
+          0.62,
+          0.74
+        ],
+        "eta_outside": 1,
+        "ior": {
+          "type": "constant",
+          "eta": 1.57
+        }
+      }
+    },
+    {
       "id": "dispersive-crystal",
       "surface": {
         "type": "specular_dielectric",
@@ -604,6 +625,49 @@
           "a": 1.47,
           "b": 0.018,
           "c": 0
+        }
+      }
+    },
+    {
+      "id": "silver-fine-wire-mesh",
+      "surface": {
+        "type": "cylindrical_grid_cutout",
+        "origin": [
+          0,
+          0,
+          1.76
+        ],
+        "axis": [
+          0,
+          0,
+          1
+        ],
+        "reference_axis": [
+          1,
+          0,
+          0
+        ],
+        "meridian_count": 48,
+        "line_width": 0.006,
+        "ring_gap": 0.055,
+        "line_surface": {
+          "type": "rough_conductor",
+          "eta": [
+            0.15,
+            0.14,
+            0.13
+          ],
+          "k": [
+            4.1,
+            3.5,
+            2.7
+          ],
+          "roughness": 0.22,
+          "weight": [
+            0.88,
+            0.9,
+            0.92
+          ]
         }
       }
     },

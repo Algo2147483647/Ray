@@ -3,7 +3,10 @@ package factory
 import (
 	"errors"
 	"fmt"
+	"math"
+
 	"github.com/Algo2147483647/ray/engine/controller/parser"
+	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/model/material"
 	"github.com/Algo2147483647/ray/engine/model/material/bsdf"
 	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
@@ -157,6 +160,9 @@ func parseSurface(def map[string]interface{}) (bsdf.BSDF, error) {
 		conductor.Weight = weight
 		return bsdf.NewSingle(conductor), nil
 
+	case "cylindrical_grid_cutout", "wire_mesh":
+		return parseCylindricalGridCutoutSurface(def)
+
 	case "rough_dielectric_transmission":
 		transmittance, _, err := optionalSpectralParameterField(def, "transmittance", spectrum_parameter.NewConstantParameter(1))
 		if err != nil {
@@ -192,6 +198,155 @@ func parseSurface(def map[string]interface{}) (bsdf.BSDF, error) {
 	default:
 		return nil, fmt.Errorf("unsupported surface type %q", surfaceType)
 	}
+}
+
+func parseCylindricalGridCutoutSurface(def map[string]interface{}) (bsdf.BSDF, error) {
+	lineSurface, err := parseGridLineSurface(def)
+	if err != nil {
+		return nil, err
+	}
+
+	origin, err := optionalDirectionField(def, "origin", maths.NewDirection(0, 0, 0))
+	if err != nil {
+		return nil, err
+	}
+	axis, err := optionalDirectionField(def, "axis", maths.NewDirection(0, 0, 1))
+	if err != nil {
+		return nil, err
+	}
+	if axis.Length() == 0 {
+		return nil, fmt.Errorf("axis must have non-zero length")
+	}
+	referenceAxis, err := optionalDirectionField(def, "reference_axis", maths.NewDirection(1, 0, 0))
+	if err != nil {
+		return nil, err
+	}
+
+	meridianCount, err := optionalPositiveIntegerField(def, "meridian_count", 48)
+	if err != nil {
+		return nil, err
+	}
+
+	lineWidth, ok, err := utils.OptionalFloat64Field(def, "line_width")
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		lineWidth = 0.006
+	}
+	if lineWidth < 0 {
+		return nil, fmt.Errorf("line_width must be >= 0")
+	}
+
+	meridianLineWidth, ok, err := utils.OptionalFloat64Field(def, "meridian_line_width")
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		meridianLineWidth = lineWidth
+	}
+	if meridianLineWidth < 0 {
+		return nil, fmt.Errorf("meridian_line_width must be >= 0")
+	}
+
+	ringLineWidth, ok, err := utils.OptionalFloat64Field(def, "ring_line_width")
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		ringLineWidth = lineWidth
+	}
+	if ringLineWidth < 0 {
+		return nil, fmt.Errorf("ring_line_width must be >= 0")
+	}
+
+	ringSpacing, ok, err := utils.OptionalFloat64Field(def, "ring_spacing")
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		ringGap, gapOK, err := utils.OptionalFloat64Field(def, "ring_gap")
+		if err != nil {
+			return nil, err
+		}
+		if !gapOK {
+			ringGap = 0.055
+		}
+		if ringGap < 0 {
+			return nil, fmt.Errorf("ring_gap must be >= 0")
+		}
+		ringSpacing = ringGap + ringLineWidth
+	}
+	if ringSpacing <= 0 {
+		return nil, fmt.Errorf("ring_spacing must be > 0")
+	}
+
+	ringOffset, ok, err := utils.OptionalFloat64Field(def, "ring_offset")
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		ringOffset = 0
+	}
+
+	return bsdf.NewCylindricalGridCutout(
+		lineSurface,
+		origin,
+		axis,
+		referenceAxis,
+		meridianCount,
+		meridianLineWidth,
+		ringSpacing,
+		ringLineWidth,
+		ringOffset,
+	), nil
+}
+
+func parseGridLineSurface(def map[string]interface{}) (bsdf.BSDF, error) {
+	lineSurfaceDef, ok, err := utils.OptionalMapField(def, "line_surface")
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		lineSurfaceDef = map[string]interface{}{
+			"type":      "rough_conductor",
+			"eta":       []interface{}{0.15, 0.14, 0.13},
+			"k":         []interface{}{4.1, 3.5, 2.7},
+			"roughness": 0.22,
+			"weight":    []interface{}{0.88, 0.9, 0.92},
+		}
+	}
+	return parseSurface(lineSurfaceDef)
+}
+
+func optionalDirectionField(def map[string]interface{}, key string, fallback maths.Direction) (maths.Direction, error) {
+	values, ok, err := utils.OptionalFloat64SliceField(def, key, 3)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return fallback, nil
+	}
+	for i, value := range values {
+		if math.IsNaN(value) || math.IsInf(value, 0) {
+			return nil, fmt.Errorf("%s index %d must be finite", key, i)
+		}
+	}
+	return maths.NewDirection(values[0], values[1], values[2]), nil
+}
+
+func optionalPositiveIntegerField(def map[string]interface{}, key string, fallback int) (int, error) {
+	value, ok, err := utils.OptionalFloat64Field(def, key)
+	if err != nil {
+		return 0, err
+	}
+	if !ok {
+		return fallback, nil
+	}
+	if value <= 0 || math.Trunc(value) != value {
+		return 0, fmt.Errorf("%s must be a positive integer", key)
+	}
+	return int(value), nil
 }
 
 func parseEmission(def map[string]interface{}) (emission.Emitter, error) {

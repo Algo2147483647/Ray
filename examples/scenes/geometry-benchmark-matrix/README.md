@@ -43,7 +43,7 @@ r4-c7: Anisotropic quartic torus / spindle surface
 r5-c1: Transparent placeholder sphere
 r5-c2: Transparent placeholder sphere
 r5-c3: Four-lobe near-separation metaballs
-r5-c4: Transparent placeholder sphere
+r5-c4: Trefoil knot curve
 r5-c5: Transparent placeholder sphere
 r5-c6: Szilassi polyhedron
 r5-c7: Diagonal ridged torus
@@ -111,7 +111,7 @@ r6-c7: Hyperboloid quadric
 | r5-c1 | Transparent placeholder sphere | Clear-glass sphere $S_R^2$, $R=0.16$, used as a placeholder for this cell. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
 | r5-c2 | Transparent placeholder sphere | Clear-glass sphere $S_R^2$, $R=0.16$, used as a placeholder for this cell. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
 | r5-c3 | Four-lobe near-separation metaballs | Gaussian implicit blend $\sum_{i=1}^{4}w_i e^{-2.6\lVert p-p_i\rVert^2}-0.52=0$, with two lateral lobes, one upper lobe, and one offset rear lobe arranged near disconnection. | `rough-gold`: rough conductor, eta `[0.17, 0.35, 1.5]`, k `[3.1, 2.7, 1.9]`, roughness `0.18`. |
-| r5-c4 | Transparent placeholder sphere | Clear-glass sphere $S_R^2$, $R=0.16$, used as a placeholder for this cell. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
+| r5-c4 | Trefoil knot curve | Parametric thick curve using the classic trefoil embedding, rotated so the three-lobed projection faces the benchmark camera: $x=-0.16\sin(3t)$, $y=0.105(\sin t+2\sin 2t)$, $z=0.105(\cos t-2\cos 2t)$, $0\le t\le2\pi$. | `pale-pink-jade`: pale pink jade-like specular dielectric, transmittance `[0.96, 0.62, 0.74]`, eta `1.57`. |
 | r5-c5 | Transparent placeholder sphere | Clear-glass sphere $S_R^2$, $R=0.16$, used as a placeholder for this cell. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
 | r5-c6 | Szilassi polyhedron | Szilassi graph on a toroidal polyhedron: genus $1$, $V=14$, $E=21$, $F=7$. | `green-glass`: specular dielectric, transmittance `[0.34, 1, 0.52]`, eta `1.5`. |
 | r5-c7 | Diagonal ridged torus | High-frequency ridged torus authored as a non-polynomial implicit field with diagonal angular modulation. The backup copy is retained in `geo-r05-c07-diagonal-ridged-torus-backup.json`. | `pale-pink-sheen`: pale pink specular reflection, reflectance `[0.96, 0.68, 0.76]`. |

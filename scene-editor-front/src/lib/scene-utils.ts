@@ -12,7 +12,8 @@ const shapeTypes: ShapeType[] = [
   "triangle",
   "plane",
   "quadratic equation",
-  "four-order equation"
+  "four-order equation",
+  "parametric curve"
 ];
 
 export function serializeScene(scene: SceneDocument): string {
@@ -59,7 +60,8 @@ export function getMaterialForObject(
 export function getPreviewSupport(shape: ShapeType): "exact" | "proxy" {
   if (
     shape === "quadratic equation" ||
-    shape === "four-order equation"
+    shape === "four-order equation" ||
+    shape === "parametric curve"
   ) {
     return "proxy";
   }

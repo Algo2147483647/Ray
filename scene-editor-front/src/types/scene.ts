@@ -6,7 +6,8 @@ export type ShapeType =
   | "triangle"
   | "plane"
   | "quadratic equation"
-  | "four-order equation";
+  | "four-order equation"
+  | "parametric curve";
 
 export interface SceneMaterial {
   id: string;

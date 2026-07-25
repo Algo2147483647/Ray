@@ -28,6 +28,7 @@ const (
 	ShapeFourOrderEquation  = "four-order equation"
 	ShapeImplicitEquation   = "implicit equation"
 	ShapeParametricEquation = "parametric equation"
+	ShapeParametricCurve    = "parametric curve"
 	ShapePolynomialSurface  = "polynomial surface"
 	ShapeKleinBottle        = "klein_bottle"
 	ShapeSTL                = "stl"
@@ -72,6 +73,9 @@ func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
 
 	case ShapeParametricEquation:
 		return parseParametricEquation(objDef)
+
+	case ShapeParametricCurve:
+		return parseParametricCurve(objDef)
 
 	case ShapePolynomialSurface:
 		return parsePolynomialSurface(objDef)

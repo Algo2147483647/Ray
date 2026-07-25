@@ -944,10 +944,13 @@ func TestStudioAdaptsCopiedGeometryBenchmarkMatrixExample(t *testing.T) {
 	if adapted.Studio.Version == "" {
 		t.Fatal("expected studio metadata on intermediate script")
 	}
-	if len(adapted.Objects) != 21 {
-		t.Fatalf("expected trihyperboloid example geometry to expand to 21 objects, got %d", len(adapted.Objects))
+	if len(adapted.Objects) != 22 {
+		t.Fatalf("expected catenoid/hyperboloid example geometry to expand to 22 objects, got %d", len(adapted.Objects))
 	}
-	foundTrihyperboloid := false
+	foundCatenoid := false
+	foundHyperboloid := false
+	expectedBoundsPmin := []float64{-1.25, -1.25, 1.31}
+	expectedBoundsPmax := []float64{1.25, 1.25, 2.21}
 	for _, object := range adapted.Objects {
 		if shape, _ := stringField(object, "shape"); strings.EqualFold(shape, "group") {
 			t.Fatalf("studio intermediate output must not contain group object: %#v", object)
@@ -955,21 +958,36 @@ func TestStudioAdaptsCopiedGeometryBenchmarkMatrixExample(t *testing.T) {
 		if shape, _ := stringField(object, "shape"); strings.EqualFold(shape, "array") {
 			t.Fatalf("studio intermediate output must not contain array object: %#v", object)
 		}
-		if id, _ := stringField(object, "id"); id == "geo-example-trihyperboloid" {
-			foundTrihyperboloid = true
+		if id, _ := stringField(object, "id"); id == "geo-example-catenoid-hyperboloid-group/geo-example-catenoid" {
+			foundCatenoid = true
 			if shape, _ := stringField(object, "shape"); !strings.EqualFold(shape, "implicit equation") {
-				t.Fatalf("expected trihyperboloid to remain an implicit equation, got %q", shape)
+				t.Fatalf("expected catenoid to remain an implicit equation, got %q", shape)
 			}
 			bounds, ok := object["bounds"].(map[string]interface{})
 			if !ok {
-				t.Fatalf("expected trihyperboloid to keep world bounds, got %T", object["bounds"])
+				t.Fatalf("expected catenoid to keep world bounds, got %T", object["bounds"])
 			}
-			assertFloatSlice(t, bounds["pmin"], []float64{-0.675, -0.675, 1.085})
-			assertFloatSlice(t, bounds["pmax"], []float64{0.675, 0.675, 2.435})
+			assertFloatSlice(t, bounds["pmin"], expectedBoundsPmin)
+			assertFloatSlice(t, bounds["pmax"], expectedBoundsPmax)
+		}
+		if id, _ := stringField(object, "id"); id == "geo-example-catenoid-hyperboloid-group/geo-example-hyperboloid-matched-catenoid" {
+			foundHyperboloid = true
+			if shape, _ := stringField(object, "shape"); !strings.EqualFold(shape, "quadratic equation") {
+				t.Fatalf("expected hyperboloid to remain a quadratic equation, got %q", shape)
+			}
+			bounds, ok := object["bounds"].(map[string]interface{})
+			if !ok {
+				t.Fatalf("expected hyperboloid to keep world bounds, got %T", object["bounds"])
+			}
+			assertFloatSlice(t, bounds["pmin"], expectedBoundsPmin)
+			assertFloatSlice(t, bounds["pmax"], expectedBoundsPmax)
 		}
 	}
-	if !foundTrihyperboloid {
-		t.Fatal("expected copied geometry benchmark example to include geo-example-trihyperboloid")
+	if !foundCatenoid {
+		t.Fatal("expected copied geometry benchmark example to include geo-example-catenoid")
+	}
+	if !foundHyperboloid {
+		t.Fatal("expected copied geometry benchmark example to include matched hyperboloid")
 	}
 
 	data, err := json.Marshal(adapted)

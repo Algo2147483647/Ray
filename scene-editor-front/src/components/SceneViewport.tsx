@@ -279,7 +279,29 @@ function buildRenderableObject(
     case "four-order equation": {
       return buildProxyVolume(object, materialInfo, isSelected, "octahedron");
     }
+    case "parametric curve": {
+      return buildParametricCurveProxy(object, materialInfo, isSelected);
+    }
   }
+}
+
+function buildParametricCurveProxy(
+  object: SceneObject,
+  materialInfo: SceneMaterial | undefined,
+  isSelected: boolean
+) {
+  const points: THREE.Vector3[] = [];
+  for (let i = 0; i <= 96; i++) {
+    const t = (i / 96) * Math.PI * 2;
+    points.push(new THREE.Vector3(120 * Math.cos(t), 120 * Math.sin(t), 40 * t));
+  }
+
+  const path = new THREE.CatmullRomCurve3(points);
+  const geometry = new THREE.TubeGeometry(path, 96, 12, 12, false);
+  const material = createSurfaceMaterial(materialInfo, isSelected, true);
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.position.fromArray(estimateObjectCenter(object));
+  return decorateSelection(mesh, geometry, isSelected);
 }
 
 function buildProxyVolume(

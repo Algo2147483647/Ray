@@ -36,7 +36,8 @@ export const shapeSchemas: Record<ShapeType, ShapeField[]> = {
   "four-order equation": [
     { key: "position", label: "Anchor", kind: "vector3", hint: "Preview anchor point" },
     { key: "a", label: "Coefficient list", kind: "numberList", hint: "Flat coefficient array" }
-  ]
+  ],
+  "parametric curve": []
 };
 
 export const shapeLabels: Record<ShapeType, string> = {
@@ -45,7 +46,8 @@ export const shapeLabels: Record<ShapeType, string> = {
   triangle: "Triangle",
   plane: "Plane",
   "quadratic equation": "Quadratic Surface",
-  "four-order equation": "Fourth-order Surface"
+  "four-order equation": "Fourth-order Surface",
+  "parametric curve": "Parametric Curve"
 };
 
 export function createObjectTemplate(
@@ -105,6 +107,21 @@ export function createObjectTemplate(
         shape,
         position: [0, 0, 0],
         a: [1, 0, 0, 0, 1, 0, 0, 1],
+        material_id: materialId
+      };
+    case "parametric curve":
+      return {
+        id: `${idBase}-${index}`,
+        shape,
+        curve: {
+          type: "expr",
+          x: "120*cos(t)",
+          y: "120*sin(t)",
+          z: "40*t",
+          radius: 12
+        },
+        t_range: [0, 6.283185307179586],
+        samples: 256,
         material_id: materialId
       };
   }

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/Algo2147483647/ray/engine/controller/parser"
+	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/model/material/bsdf"
 	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
 )
@@ -81,5 +82,45 @@ func TestParseRoughDielectricTransmission(t *testing.T) {
 	}
 	if got.Alpha <= 0 || got.Alpha > 1 {
 		t.Fatalf("expected clamped alpha in (0,1], got %f", got.Alpha)
+	}
+}
+
+func TestParseCylindricalGridCutout(t *testing.T) {
+	script := &parser.Script{
+		Materials: []map[string]interface{}{
+			{
+				"id": "silver-mesh",
+				"surface": map[string]interface{}{
+					"type":           "cylindrical_grid_cutout",
+					"origin":         []interface{}{0, 0, 1.76},
+					"axis":           []interface{}{0, 0, 1},
+					"meridian_count": 16,
+					"line_width":     0.01,
+					"ring_gap":       0.05,
+				},
+			},
+		},
+	}
+
+	materials, err := ParseMaterials(script)
+	if err != nil {
+		t.Fatalf("ParseMaterials failed: %v", err)
+	}
+
+	got, ok := materials["silver-mesh"].Surface.(bsdf.CylindricalGridCutout)
+	if !ok {
+		t.Fatalf("expected cylindrical grid cutout, got %T", materials["silver-mesh"].Surface)
+	}
+	if got.MeridianCount != 16 {
+		t.Fatalf("expected 16 meridians, got %d", got.MeridianCount)
+	}
+	if got.RingSpacing <= got.RingLineWidth {
+		t.Fatalf("expected configurable ring gap to exceed line width, spacing=%f line=%f", got.RingSpacing, got.RingLineWidth)
+	}
+	if !got.OnGridLine(bxdf.ShadingContext{HitPoint: maths.NewDirection(1, 0, 1.76)}) {
+		t.Fatal("expected point on reference meridian to be a grid line")
+	}
+	if got.OnGridLine(bxdf.ShadingContext{HitPoint: maths.NewDirection(1, 0.1, 1.78)}) {
+		t.Fatal("expected point away from meridians and rings to be a cutout gap")
 	}
 }

@@ -99,6 +99,7 @@ Canonical shape fields for normalized engine JSON:
 | `polynomial surface` | `mode`, `input_dim`, `degree`, `coefficients` |
 | `implicit equation` | `field`, `bounds` |
 | `parametric equation` | `surface`, `u_range`, `v_range` |
+| `parametric curve` | `curve`, `t_range`, optional `samples` |
 | `stl` | `file`, `center`, `z_dir`, `x_dir`, `scale` |
 
 `plane` is recognized but intentionally returns an error because it is declared
@@ -269,6 +270,51 @@ parametric surface's numerical derivative path. Explicit derivatives use:
   }
 }
 ```
+
+### Parametric Curve
+
+`parametric curve` uses an expression-backed centerline
+`C(t)=(x(t), y(t), z(t))` plus a positive radius. The rendered shape is the
+tube swept by that radius along the curve.
+
+```json
+{
+  "shape": "parametric curve",
+  "curve": {
+    "type": "expr",
+    "x": "0.5*cos(t)",
+    "y": "0.5*sin(t)",
+    "z": "0.15*t",
+    "radius": 0.04
+  },
+  "t_range": [0, 6.283185307179586],
+  "samples": 256
+}
+```
+
+Supported `curve.type` values:
+
+```text
+expr: x, y, z, radius, constants, optional derivative
+```
+
+`radius` may be a number or an expression using `t`. Explicit derivatives use:
+
+```json
+{
+  "derivative": {
+    "x": "-0.5*sin(t)",
+    "y": "0.5*cos(t)",
+    "z": "0.15"
+  }
+}
+```
+
+If `curve.derivative` is omitted, the engine attempts symbolic automatic
+differentiation for supported smooth expressions before falling back to finite
+differences. Intersection is numerical: the ray is tested against the thick
+curve by sampling `t`, finding valid swept-sphere entries, and refining the
+earliest hit.
 
 ## Materials, Media, Cameras, Render
 

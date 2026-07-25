@@ -678,6 +678,95 @@ func TestParseShapeParametricEquationExprRejectsReservedConstant(t *testing.T) {
 	}
 }
 
+func TestParseShapeParametricCurveExpr(t *testing.T) {
+	shapes, err := ParseShape(map[string]interface{}{
+		"shape": "parametric curve",
+		"curve": map[string]interface{}{
+			"type":   "expr",
+			"x":      "0",
+			"y":      "t",
+			"z":      "0",
+			"radius": "r",
+			"constants": map[string]interface{}{
+				"r": 0.25,
+			},
+			"derivative": map[string]interface{}{
+				"x": "0",
+				"y": "1",
+				"z": "0",
+			},
+		},
+		"t_range": []interface{}{-1, 1},
+		"samples": 64,
+	})
+	if err != nil {
+		t.Fatalf("parse parametric expr curve: %v", err)
+	}
+	curve, ok := shapes[0].(*shape.ParametricCurve)
+	if !ok {
+		t.Fatalf("expected *shape.ParametricCurve, got %T", shapes[0])
+	}
+
+	interaction, ok := curve.IntersectRange(
+		mat.NewVecDense(3, []float64{-1, 0, 0}),
+		mat.NewVecDense(3, []float64{1, 0, 0}),
+		1e-6,
+		math.MaxFloat64,
+	)
+	if !ok {
+		t.Fatal("expected parametric expr curve hit")
+	}
+	if math.Abs(interaction.Distance-0.75) > 1e-5 {
+		t.Fatalf("expected hit at distance 0.75, got %.12f", interaction.Distance)
+	}
+	if interaction.DPDU == nil || math.Abs(interaction.DPDU.AtVec(1)-1) > 1e-9 {
+		t.Fatalf("expected explicit derivative tangent, got %v", interaction.DPDU)
+	}
+}
+
+func TestParseShapeParametricCurveExprAutoDerivativeAndConstantRadius(t *testing.T) {
+	shapes, err := ParseShape(map[string]interface{}{
+		"shape": "parametric curve",
+		"curve": map[string]interface{}{
+			"type":   "expr",
+			"x":      "sin(t)",
+			"y":      "cos(t)",
+			"z":      "t",
+			"radius": 0.1,
+		},
+	})
+	if err != nil {
+		t.Fatalf("parse autodiff parametric expr curve: %v", err)
+	}
+	curve := shapes[0].(*shape.ParametricCurve)
+	if curve.Derivative == nil {
+		t.Fatal("expected autodiff derivative")
+	}
+	tangent := curve.Derivative(0, mat.NewVecDense(3, nil))
+	if tangent == nil || math.Abs(tangent.AtVec(0)-1) > 1e-9 || math.Abs(tangent.AtVec(1)) > 1e-9 || math.Abs(tangent.AtVec(2)-1) > 1e-9 {
+		t.Fatalf("unexpected autodiff tangent: %v", tangent)
+	}
+}
+
+func TestParseShapeParametricCurveExprRejectsReservedConstant(t *testing.T) {
+	_, err := ParseShape(map[string]interface{}{
+		"shape": "parametric curve",
+		"curve": map[string]interface{}{
+			"type":   "expr",
+			"x":      "t",
+			"y":      "0",
+			"z":      "0",
+			"radius": 0.1,
+			"constants": map[string]interface{}{
+				"t": 1,
+			},
+		},
+	})
+	if err == nil {
+		t.Fatal("expected reserved parametric curve constant to fail")
+	}
+}
+
 func TestParseShapeImplicitEquationExprField(t *testing.T) {
 	shapes, err := ParseShape(map[string]interface{}{
 		"shape": "implicit equation",
