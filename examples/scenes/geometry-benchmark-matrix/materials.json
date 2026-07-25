@@ -674,8 +674,8 @@
         "gap_height": 0.03,
         "reference_radius": 0.16,
         "line_surface": {
-          "type": "specular_reflection",
-          "reflectance": [
+          "type": "lambert",
+          "albedo": [
             1,
             0.45,
             0.65
