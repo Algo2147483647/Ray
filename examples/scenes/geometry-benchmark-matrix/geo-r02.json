@@ -109,15 +109,43 @@
         ],
         "2,3": [
           {
-            "id": "geo-clear-placeholder-sphere-11",
-            "shape": "sphere",
+            "id": "geo-superellipsoid-amethyst-group",
+            "shape": "group",
             "center": [
               0,
               0,
               0
             ],
-            "r": 0.16,
-            "material_id": "clear-glass"
+            "scale": 0.18,
+            "objects": [
+              {
+                "id": "geo-l4-unit-superellipsoid",
+                "shape": "four-order equation",
+                "a": {
+                  "0, 0, 0, 0": -1,
+                  "1, 1, 1, 1": 1,
+                  "2, 2, 2, 2": 1,
+                  "3, 3, 3, 3": 1
+                },
+                "center": [
+                  0,
+                  0,
+                  0
+                ],
+                "material_id": "clear-glass"
+              },
+              {
+                "id": "geo-matte-amethyst-sphere",
+                "shape": "sphere",
+                "center": [
+                  0,
+                  0,
+                  0
+                ],
+                "r": 1,
+                "material_id": "pale-blue-sheen-crystal"
+              }
+            ]
           }
         ],
         "2,4": [

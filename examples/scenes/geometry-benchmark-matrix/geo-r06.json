@@ -151,43 +151,15 @@
         ],
         "6,3": [
           {
-            "id": "geo-matrix-superellipsoid-amethyst-group",
-            "shape": "group",
+            "id": "geo-clear-placeholder-sphere-r6-c3",
+            "shape": "sphere",
             "center": [
               0,
               0,
               0
             ],
-            "scale": 0.18,
-            "objects": [
-              {
-                "id": "geo-l4-unit-superellipsoid",
-                "shape": "four-order equation",
-                "a": {
-                  "0, 0, 0, 0": -1,
-                  "1, 1, 1, 1": 1,
-                  "2, 2, 2, 2": 1,
-                  "3, 3, 3, 3": 1
-                },
-                "center": [
-                  0,
-                  0,
-                  0
-                ],
-                "material_id": "clear-glass"
-              },
-              {
-                "id": "geo-matte-amethyst-sphere",
-                "shape": "sphere",
-                "center": [
-                  0,
-                  0,
-                  0
-                ],
-                "r": 1,
-                "material_id": "pale-blue-sheen-crystal"
-              }
-            ]
+            "r": 0.16,
+            "material_id": "clear-glass"
           }
         ],
         "6,4": [
@@ -315,43 +287,88 @@
         ],
         "6,7": [
           {
-            "id": "geo-hyperboloid-quadric",
-            "shape": "quadratic equation",
+            "id": "geo-r6-c7-catenoid-hyperboloid-group",
+            "shape": "group",
             "center": [
               0,
               0,
               0
             ],
-            "a": [
-              82.6446280991736,
-              0,
-              0,
-              0,
-              44.4444444444444,
-              0,
-              0,
-              0,
-              -17.3611111111111
-            ],
-            "b": [
-              0,
-              0,
-              0
-            ],
-            "c": -0.999999999998167,
+            "scale": 0.16,
             "bounds": {
-              "pmin": [
-                -0.21,
-                -0.21,
-                -0.19
+              "center": [
+                0,
+                0,
+                0
               ],
-              "pmax": [
-                0.21,
-                0.21,
-                0.19
+              "size": [
+                3.2,
+                3.2,
+                1.9
               ]
             },
-            "material_id": "rough-gold"
+            "objects": [
+              {
+                "id": "geo-r6-c7-catenoid",
+                "shape": "implicit equation",
+                "step": 0.01,
+                "value_tol": 1e-06,
+                "material_id": "pale-cyan-catenoid-metal-r6-c7",
+                "field": {
+                  "type": "expr",
+                  "expr": "x*x + y*y - a*a*pow(cosh(z/a), 2)",
+                  "constants": {
+                    "a": 0.55
+                  },
+                  "gradient": {
+                    "x": "2*x",
+                    "y": "2*y",
+                    "z": "-2*a*cosh(z/a)*sinh(z/a)"
+                  }
+                }
+              },
+              {
+                "id": "geo-r6-c7-hyperboloid-matched-catenoid",
+                "shape": "quadratic equation",
+                "a": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  -1.66
+                ],
+                "b": [
+                  0,
+                  0,
+                  0
+                ],
+                "c": -1,
+                "material_id": "red-reflective-fine-wire-mesh",
+                "metadata": {
+                  "matched_catenoid_a": 0.55,
+                  "matched_opening_z": 0.9,
+                  "waist_radius": 0.84
+                }
+              }
+            ],
+            "metadata": {
+              "source": "geo_example catenoid/hyperboloid group, scaled for matrix cell r6-c7",
+              "cell_world_center": [
+                2.0,
+                -1.68,
+                3.26
+              ],
+              "scale": 0.16,
+              "world_bounds_size": [
+                0.512,
+                0.512,
+                0.304
+              ]
+            }
           }
         ]
       }

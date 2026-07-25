@@ -222,11 +222,6 @@ func parseCylindricalGridCutoutSurface(def map[string]interface{}) (bsdf.BSDF, e
 		return nil, err
 	}
 
-	meridianCount, err := optionalPositiveIntegerField(def, "meridian_count", 48)
-	if err != nil {
-		return nil, err
-	}
-
 	lineWidth, ok, err := utils.OptionalFloat64Field(def, "line_width")
 	if err != nil {
 		return nil, err
@@ -238,55 +233,37 @@ func parseCylindricalGridCutoutSurface(def map[string]interface{}) (bsdf.BSDF, e
 		return nil, fmt.Errorf("line_width must be >= 0")
 	}
 
-	meridianLineWidth, ok, err := utils.OptionalFloat64Field(def, "meridian_line_width")
+	gapWidth, ok, err := utils.OptionalFloat64Field(def, "gap_width")
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
-		meridianLineWidth = lineWidth
+		gapWidth = 0.03
 	}
-	if meridianLineWidth < 0 {
-		return nil, fmt.Errorf("meridian_line_width must be >= 0")
+	if gapWidth < 0 {
+		return nil, fmt.Errorf("gap_width must be >= 0")
 	}
 
-	ringLineWidth, ok, err := utils.OptionalFloat64Field(def, "ring_line_width")
+	gapHeight, ok, err := utils.OptionalFloat64Field(def, "gap_height")
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
-		ringLineWidth = lineWidth
+		gapHeight = 0.03
 	}
-	if ringLineWidth < 0 {
-		return nil, fmt.Errorf("ring_line_width must be >= 0")
+	if gapHeight < 0 {
+		return nil, fmt.Errorf("gap_height must be >= 0")
 	}
 
-	ringSpacing, ok, err := utils.OptionalFloat64Field(def, "ring_spacing")
+	referenceRadius, ok, err := utils.OptionalFloat64Field(def, "reference_radius")
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
-		ringGap, gapOK, err := utils.OptionalFloat64Field(def, "ring_gap")
-		if err != nil {
-			return nil, err
-		}
-		if !gapOK {
-			ringGap = 0.055
-		}
-		if ringGap < 0 {
-			return nil, fmt.Errorf("ring_gap must be >= 0")
-		}
-		ringSpacing = ringGap + ringLineWidth
+		referenceRadius = 1
 	}
-	if ringSpacing <= 0 {
-		return nil, fmt.Errorf("ring_spacing must be > 0")
-	}
-
-	ringOffset, ok, err := utils.OptionalFloat64Field(def, "ring_offset")
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		ringOffset = 0
+	if referenceRadius <= 0 {
+		return nil, fmt.Errorf("reference_radius must be > 0")
 	}
 
 	return bsdf.NewCylindricalGridCutout(
@@ -294,11 +271,10 @@ func parseCylindricalGridCutoutSurface(def map[string]interface{}) (bsdf.BSDF, e
 		origin,
 		axis,
 		referenceAxis,
-		meridianCount,
-		meridianLineWidth,
-		ringSpacing,
-		ringLineWidth,
-		ringOffset,
+		gapWidth,
+		gapHeight,
+		lineWidth,
+		referenceRadius,
 	), nil
 }
 

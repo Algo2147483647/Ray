@@ -724,6 +724,41 @@ func TestParseShapeParametricCurveExpr(t *testing.T) {
 	}
 }
 
+func TestParseShapeParametricCurveAppliesCenterAndUniformScale(t *testing.T) {
+	shapes, err := ParseShape(map[string]interface{}{
+		"shape":  "parametric curve",
+		"center": []interface{}{1.72, 0, 2.72},
+		"scale":  2.0,
+		"curve": map[string]interface{}{
+			"type":   "expr",
+			"x":      "t",
+			"y":      "0",
+			"z":      "0",
+			"radius": 0.05,
+			"derivative": map[string]interface{}{
+				"x": "1",
+				"y": "0",
+				"z": "0",
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("parse placed parametric curve: %v", err)
+	}
+	curve := shapes[0].(*shape.ParametricCurve)
+	point := curve.Function(1)
+	if math.Abs(point.AtVec(0)-3.72) > 1e-12 || math.Abs(point.AtVec(1)) > 1e-12 || math.Abs(point.AtVec(2)-2.72) > 1e-12 {
+		t.Fatalf("unexpected placed curve point: %v", point)
+	}
+	if math.Abs(curve.Radius(0)-0.1) > 1e-12 {
+		t.Fatalf("expected scaled radius 0.1, got %.12f", curve.Radius(0))
+	}
+	tangent := curve.Derivative(0, mat.NewVecDense(3, nil))
+	if math.Abs(tangent.AtVec(0)-2) > 1e-12 {
+		t.Fatalf("expected scaled tangent, got %v", tangent)
+	}
+}
+
 func TestParseShapeParametricCurveExprAutoDerivativeAndConstantRadius(t *testing.T) {
 	shapes, err := ParseShape(map[string]interface{}{
 		"shape": "parametric curve",

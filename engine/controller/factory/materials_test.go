@@ -91,12 +91,13 @@ func TestParseCylindricalGridCutout(t *testing.T) {
 			{
 				"id": "silver-mesh",
 				"surface": map[string]interface{}{
-					"type":           "cylindrical_grid_cutout",
-					"origin":         []interface{}{0, 0, 1.76},
-					"axis":           []interface{}{0, 0, 1},
-					"meridian_count": 16,
-					"line_width":     0.01,
-					"ring_gap":       0.05,
+					"type":             "cylindrical_grid_cutout",
+					"origin":           []interface{}{0, 0, 1.76},
+					"axis":             []interface{}{0, 0, 1},
+					"line_width":       0.01,
+					"gap_width":        0.05,
+					"gap_height":       0.04,
+					"reference_radius": 1.0,
 				},
 			},
 		},
@@ -111,16 +112,22 @@ func TestParseCylindricalGridCutout(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected cylindrical grid cutout, got %T", materials["silver-mesh"].Surface)
 	}
-	if got.MeridianCount != 16 {
-		t.Fatalf("expected 16 meridians, got %d", got.MeridianCount)
+	if got.GapWidth != 0.05 {
+		t.Fatalf("expected gap width 0.05, got %f", got.GapWidth)
 	}
-	if got.RingSpacing <= got.RingLineWidth {
-		t.Fatalf("expected configurable ring gap to exceed line width, spacing=%f line=%f", got.RingSpacing, got.RingLineWidth)
+	if got.GapHeight != 0.04 {
+		t.Fatalf("expected gap height 0.04, got %f", got.GapHeight)
+	}
+	if got.ReferenceRadius != 1.0 {
+		t.Fatalf("expected reference radius 1.0, got %f", got.ReferenceRadius)
 	}
 	if !got.OnGridLine(bxdf.ShadingContext{HitPoint: maths.NewDirection(1, 0, 1.76)}) {
 		t.Fatal("expected point on reference meridian to be a grid line")
 	}
-	if got.OnGridLine(bxdf.ShadingContext{HitPoint: maths.NewDirection(1, 0.1, 1.78)}) {
+	if !got.OnGridLine(bxdf.ShadingContext{HitPoint: maths.NewDirection(2, 0, 1.76)}) {
+		t.Fatal("expected reference meridian to remain straight across radii")
+	}
+	if got.OnGridLine(bxdf.ShadingContext{HitPoint: maths.NewDirection(1, 0.02, 1.78)}) {
 		t.Fatal("expected point away from meridians and rings to be a cutout gap")
 	}
 }

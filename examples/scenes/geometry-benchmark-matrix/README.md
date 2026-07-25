@@ -54,7 +54,7 @@ r6-c3: Example superellipsoid/amethyst group
 r6-c4: Triaxial ellipsoid
 r6-c5: Elliptic paraboloid quadric
 r6-c6: Hyperbolic paraboloid quadric
-r6-c7: Hyperboloid quadric
+r6-c7: Catenoid and matched hyperboloid group
 
 ## Row 1
 
@@ -126,7 +126,7 @@ r6-c7: Hyperboloid quadric
 | r6-c4 | Triaxial ellipsoid | Pure ellipsoid with three distinct intrinsic semi-axes $(0.22, 0.14, 0.10)$, authored directly as $20.6612x^2+51.0204y^2+100z^2-1=0$ without non-uniform `scale`. | `blue-glass`: specular dielectric, transmittance `[0.55, 0.78, 1]`, eta `1.52`. |
 | r6-c5 | Elliptic paraboloid quadric | Elliptic paraboloid $z=11.1111x^2+16.0000y^2-0.18$. | `ceramic-white`: Lambertian ceramic white, albedo `[0.86, 0.84, 0.78]`. |
 | r6-c6 | Hyperbolic paraboloid quadric | Doubly ruled saddle $z=10.9375(x^2-y^2)$. | `brushed-aluminum`: rough conductor, eta `[1.44, 0.93, 0.62]`, k `[7.4, 6.6, 5.3]`, roughness `0.32`. |
-| r6-c7 | Hyperboloid quadric | Second-degree hyperboloid $82.6446x^2+44.4444y^2-17.3611z^2-1=0$. | `rough-gold`: rough conductor, eta `[0.17, 0.35, 1.5]`, k `[3.1, 2.7, 1.9]`, roughness `0.18`. |
+| r6-c7 | Catenoid and matched hyperboloid group | `shape: "group"` copied from `geo_example.json` into the matrix cell, then uniformly reduced to `scale: 0.16` with shared local bounds `size [3.2, 3.2, 1.9]`. The group contains a catenoid $x^2+y^2-a^2\cosh^2(z/a)=0$, $a=0.55$, and a matched one-sheet hyperboloid $x^2+y^2-2.013513z^2-0.5184=0$ with thicker waist radius $0.72$ and the same opening size at $z=\pm0.9$. | `rough-gold` on the catenoid; `red-reflective-fine-wire-mesh` on the hyperboloid, with red specular grid lines and matrix-cell-adapted line width/gap. |
 
 This example runs the geometry benchmark matrix scene through `studio` first, then lets `engine` render the generated intermediate JSON.
 
