@@ -944,9 +944,10 @@ func TestStudioAdaptsCopiedGeometryBenchmarkMatrixExample(t *testing.T) {
 	if adapted.Studio.Version == "" {
 		t.Fatal("expected studio metadata on intermediate script")
 	}
-	if len(adapted.Objects) != 56 {
-		t.Fatalf("expected r3-c4 example polyhedron geometry to expand to 56 objects, got %d", len(adapted.Objects))
+	if len(adapted.Objects) != 21 {
+		t.Fatalf("expected trihyperboloid example geometry to expand to 21 objects, got %d", len(adapted.Objects))
 	}
+	foundTrihyperboloid := false
 	for _, object := range adapted.Objects {
 		if shape, _ := stringField(object, "shape"); strings.EqualFold(shape, "group") {
 			t.Fatalf("studio intermediate output must not contain group object: %#v", object)
@@ -954,6 +955,21 @@ func TestStudioAdaptsCopiedGeometryBenchmarkMatrixExample(t *testing.T) {
 		if shape, _ := stringField(object, "shape"); strings.EqualFold(shape, "array") {
 			t.Fatalf("studio intermediate output must not contain array object: %#v", object)
 		}
+		if id, _ := stringField(object, "id"); id == "geo-example-trihyperboloid" {
+			foundTrihyperboloid = true
+			if shape, _ := stringField(object, "shape"); !strings.EqualFold(shape, "implicit equation") {
+				t.Fatalf("expected trihyperboloid to remain an implicit equation, got %q", shape)
+			}
+			bounds, ok := object["bounds"].(map[string]interface{})
+			if !ok {
+				t.Fatalf("expected trihyperboloid to keep world bounds, got %T", object["bounds"])
+			}
+			assertFloatSlice(t, bounds["pmin"], []float64{-0.675, -0.675, 1.085})
+			assertFloatSlice(t, bounds["pmax"], []float64{0.675, 0.675, 2.435})
+		}
+	}
+	if !foundTrihyperboloid {
+		t.Fatal("expected copied geometry benchmark example to include geo-example-trihyperboloid")
 	}
 
 	data, err := json.Marshal(adapted)

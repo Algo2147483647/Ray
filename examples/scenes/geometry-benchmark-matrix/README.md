@@ -46,7 +46,7 @@ r5-c3: Four-lobe near-separation metaballs
 r5-c4: Transparent placeholder sphere
 r5-c5: Transparent placeholder sphere
 r5-c6: Szilassi polyhedron
-r5-c7: Transparent placeholder sphere
+r5-c7: Diagonal ridged torus
 
 r6-c1: Grouped finite disk and triangle
 r6-c2: Example vertical coaxial cone/paraboloid group
@@ -114,7 +114,7 @@ r6-c7: Hyperboloid quadric
 | r5-c4 | Transparent placeholder sphere | Clear-glass sphere $S_R^2$, $R=0.16$, used as a placeholder for this cell. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
 | r5-c5 | Transparent placeholder sphere | Clear-glass sphere $S_R^2$, $R=0.16$, used as a placeholder for this cell. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
 | r5-c6 | Szilassi polyhedron | Szilassi graph on a toroidal polyhedron: genus $1$, $V=14$, $E=21$, $F=7$. | `green-glass`: specular dielectric, transmittance `[0.34, 1, 0.52]`, eta `1.5`. |
-| r5-c7 | Transparent placeholder sphere | Clear-glass sphere $S_R^2$, $R=0.16$, used as a placeholder for this cell. The previous diagonal ridged torus is retained in `geo-r05-c07-diagonal-ridged-torus-backup.json`. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
+| r5-c7 | Diagonal ridged torus | High-frequency ridged torus authored as a non-polynomial implicit field with diagonal angular modulation. The backup copy is retained in `geo-r05-c07-diagonal-ridged-torus-backup.json`. | `pale-pink-sheen`: pale pink specular reflection, reflectance `[0.96, 0.68, 0.76]`. |
 
 ## Row 6
 
