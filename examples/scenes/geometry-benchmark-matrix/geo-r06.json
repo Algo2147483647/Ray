@@ -86,67 +86,108 @@
         ],
         "6,2": [
           {
-            "id": "geo-oblique-finite-cylinder",
-            "shape": "cylinder",
+            "id": "geo-vertical-coaxial-cone-paraboloid-group",
+            "shape": "group",
             "center": [
               0,
               0,
               0
             ],
-            "axis": [
-              0.7,
-              -0.25,
-              1
-            ],
-            "r": 0.1,
-            "height": 0.48,
-            "material_id": "rough-gold"
+            "scale": 1,
+            "objects": [
+              {
+                "id": "geo-vertical-finite-cone-opening-reference",
+                "shape": "quadratic equation",
+                "a": [
+                  1,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  -0.28444444444444444
+                ],
+                "b": [
+                  0,
+                  0,
+                  -0.1024
+                ],
+                "c": -0.009216,
+                "bounds": {
+                  "pmin": [
+                    -0.192,
+                    -0.192,
+                    -0.18
+                  ],
+                  "pmax": [
+                    0.192,
+                    0.192,
+                    0.18
+                  ]
+                },
+                "material_id": "rough-gold"
+              },
+              {
+                "id": "geo-vertical-cylinder-high-dispersion-crystal",
+                "shape": "cylinder",
+                "center": [
+                  0,
+                  0,
+                  0
+                ],
+                "axis": [
+                  0,
+                  0,
+                  1
+                ],
+                "r": 0.192,
+                "height": 0.36,
+                "material_id": "ultra-high-dispersion-prism-glass"
+              }
+            ]
           }
         ],
         "6,3": [
           {
-            "id": "geo-vertical-finite-cone",
-            "shape": "quadratic equation",
+            "id": "geo-matrix-superellipsoid-amethyst-group",
+            "shape": "group",
             "center": [
               0,
               0,
               0
             ],
-            "scale": [
-              0.16,
-              0.16,
-              0.18
-            ],
-            "a": [
-              1,
-              0,
-              0,
-              0,
-              1,
-              0,
-              0,
-              0,
-              -0.36
-            ],
-            "b": [
-              0,
-              0,
-              -0.72
-            ],
-            "c": -0.36,
-            "bounds": {
-              "pmin": [
-                -0.21,
-                -0.21,
-                -0.18
-              ],
-              "pmax": [
-                0.21,
-                0.21,
-                0.18
-              ]
-            },
-            "material_id": "pure-white-reflection"
+            "scale": 0.18,
+            "objects": [
+              {
+                "id": "geo-l4-unit-superellipsoid",
+                "shape": "four-order equation",
+                "a": {
+                  "0, 0, 0, 0": -1,
+                  "1, 1, 1, 1": 1,
+                  "2, 2, 2, 2": 1,
+                  "3, 3, 3, 3": 1
+                },
+                "center": [
+                  0,
+                  0,
+                  0
+                ],
+                "material_id": "clear-glass"
+              },
+              {
+                "id": "geo-matte-amethyst-sphere",
+                "shape": "sphere",
+                "center": [
+                  0,
+                  0,
+                  0
+                ],
+                "r": 1,
+                "material_id": "pale-blue-sheen-crystal"
+              }
+            ]
           }
         ],
         "6,4": [

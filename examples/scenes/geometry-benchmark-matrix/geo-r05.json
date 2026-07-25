@@ -27,43 +27,15 @@
       "objects": {
         "5,1": [
           {
-            "id": "geo-high-frequency-shell-ridges",
-            "shape": "implicit equation",
-            "field": {
-              "type": "expr",
-              "expr": "x*x + y*y + z*z - pow(r + ridge*(0.5 + 0.5*sin(freq*atan2(z, y) + twist*x + micro*sin(microf*(y-z)))) + fine*sin(finef*(y+z))*sin(finef*(y-z)), 2)",
-              "constants": {
-                "r": 0.76,
-                "ridge": 0.24,
-                "freq": 36,
-                "twist": 13,
-                "micro": 0.65,
-                "microf": 17,
-                "fine": 0.035,
-                "finef": 28
-              }
-            },
+            "id": "geo-clear-placeholder-sphere-07",
+            "shape": "sphere",
             "center": [
               0,
               0,
               0
             ],
-            "scale": 0.21,
-            "step": 0.0008,
-            "value_tol": 0.000001,
-            "bounds": {
-              "center": [
-                0,
-                0,
-                0
-              ],
-              "size": [
-                0.56,
-                0.56,
-                0.56
-              ]
-            },
-            "material_id": "foam"
+            "r": 0.16,
+            "material_id": "clear-glass"
           }
         ],
         "5,2": [
@@ -85,22 +57,26 @@
             "shape": "implicit equation",
             "field": {
               "type": "expr",
-              "expr": "w1*exp(-k*((x-x1)*(x-x1)+(y-y1)*(y-y1)+(z-z1)*(z-z1))) + w2*exp(-k*((x-x2)*(x-x2)+(y-y2)*(y-y2)+(z-z2)*(z-z2))) + w3*exp(-k*((x-x3)*(x-x3)+(y-y3)*(y-y3)+(z-z3)*(z-z3))) - iso",
+              "expr": "w1*exp(-k*((x-x1)*(x-x1)+(y-y1)*(y-y1)+(z-z1)*(z-z1))) + w2*exp(-k*((x-x2)*(x-x2)+(y-y2)*(y-y2)+(z-z2)*(z-z2))) + w3*exp(-k*((x-x3)*(x-x3)+(y-y3)*(y-y3)+(z-z3)*(z-z3))) + w4*exp(-k*((x-x4)*(x-x4)+(y-y4)*(y-y4)+(z-z4)*(z-z4))) - iso",
               "constants": {
-                "k": 5.2,
-                "iso": 0.34,
-                "x1": -0.08,
-                "y1": -0.18,
-                "z1": 0.02,
-                "w1": 1.08,
-                "x2": -0.08,
-                "y2": 0.11,
-                "z2": 0.04,
-                "w2": 1,
-                "x3": -0.08,
-                "y3": 0.78,
-                "z3": -0.14,
-                "w3": 0.92
+                "k": 2.6,
+                "iso": 0.52,
+                "w1": 1.2,
+                "x1": -0.68,
+                "y1": 0,
+                "z1": 0,
+                "w2": 1.05,
+                "x2": 0.68,
+                "y2": 0.04,
+                "z2": 0,
+                "w3": 0.92,
+                "x3": 0,
+                "y3": 1.03,
+                "z3": 0.12,
+                "w4": 0.9,
+                "x4": 0,
+                "y4": -0.55,
+                "z4": 0.95
               }
             },
             "center": [
@@ -667,59 +643,15 @@
         ],
         "5,7": [
           {
-            "id": "geo-diagonal-ridged-torus",
-            "shape": "implicit equation",
-            "field": {
-              "type": "expr",
-              "expr": "pow(sqrt(x*x + y*y) - R, 2) + z*z - pow(r + ridge*(0.5 + 0.5*sin(freq*(diag*atan2(y, x) + diag*atan2(z, sqrt(x*x + y*y) - R)))) + micro*sin(microf*(diag*atan2(y, x) - diag*atan2(z, sqrt(x*x + y*y) - R))), 2)",
-              "constants": {
-                "R": 0.72,
-                "r": 0.21,
-                "ridge": 0.095,
-                "freq": 56,
-                "micro": 0.35,
-                "microf": 9,
-                "diag": 0.7071067811865476
-              }
-            },
+            "id": "geo-clear-placeholder-sphere-08",
+            "shape": "sphere",
             "center": [
               0,
               0,
               0
             ],
-            "scale": 0.21,
-            "basis": [
-              [
-                0.8660254037844386,
-                0,
-                -0.5
-              ],
-              [
-                0,
-                1,
-                0
-              ],
-              [
-                0.5,
-                0,
-                0.8660254037844386
-              ]
-            ],
-            "step": 0.001,
-            "value_tol": 0.000001,
-            "bounds": {
-              "center": [
-                0,
-                0,
-                0
-              ],
-              "size": [
-                0.56,
-                0.56,
-                0.56
-              ]
-            },
-            "material_id": "pale-pink-sheen"
+            "r": 0.16,
+            "material_id": "clear-glass"
           }
         ]
       }
