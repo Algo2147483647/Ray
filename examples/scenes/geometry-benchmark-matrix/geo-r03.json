@@ -152,204 +152,62 @@
         ],
         "3,3": [
           {
-            "id": "geo-regular-octahedron-face-01",
-            "shape": "triangle",
+            "id": "geo-astroidal-with-l1-crystal",
+            "shape": "group",
             "center": [
               0,
               0,
               0
             ],
-            "p1": [
-              0.24,
-              0,
-              0
-            ],
-            "p2": [
-              0,
-              0.24,
-              0
-            ],
-            "p3": [
-              0,
-              0,
-              0.24
-            ],
-            "material_id": "blue-glass"
-          },
-          {
-            "id": "geo-regular-octahedron-face-02",
-            "shape": "triangle",
-            "center": [
-              0,
-              0,
-              0
-            ],
-            "p1": [
-              0,
-              0.24,
-              0
-            ],
-            "p2": [
-              -0.24,
-              0,
-              0
-            ],
-            "p3": [
-              0,
-              0,
-              0.24
-            ],
-            "material_id": "blue-glass"
-          },
-          {
-            "id": "geo-regular-octahedron-face-03",
-            "shape": "triangle",
-            "center": [
-              0,
-              0,
-              0
-            ],
-            "p1": [
-              -0.24,
-              0,
-              0
-            ],
-            "p2": [
-              0,
-              -0.24,
-              0
-            ],
-            "p3": [
-              0,
-              0,
-              0.24
-            ],
-            "material_id": "blue-glass"
-          },
-          {
-            "id": "geo-regular-octahedron-face-04",
-            "shape": "triangle",
-            "center": [
-              0,
-              0,
-              0
-            ],
-            "p1": [
-              0,
-              -0.24,
-              0
-            ],
-            "p2": [
-              0.24,
-              0,
-              0
-            ],
-            "p3": [
-              0,
-              0,
-              0.24
-            ],
-            "material_id": "blue-glass"
-          },
-          {
-            "id": "geo-regular-octahedron-face-05",
-            "shape": "triangle",
-            "center": [
-              0,
-              0,
-              0
-            ],
-            "p1": [
-              0,
-              0.24,
-              0
-            ],
-            "p2": [
-              0.24,
-              0,
-              0
-            ],
-            "p3": [
-              0,
-              0,
-              -0.24
-            ],
-            "material_id": "blue-glass"
-          },
-          {
-            "id": "geo-regular-octahedron-face-06",
-            "shape": "triangle",
-            "center": [
-              0,
-              0,
-              0
-            ],
-            "p1": [
-              -0.24,
-              0,
-              0
-            ],
-            "p2": [
-              0,
-              0.24,
-              0
-            ],
-            "p3": [
-              0,
-              0,
-              -0.24
-            ],
-            "material_id": "blue-glass"
-          },
-          {
-            "id": "geo-regular-octahedron-face-07",
-            "shape": "triangle",
-            "center": [
-              0,
-              0,
-              0
-            ],
-            "p1": [
-              0,
-              -0.24,
-              0
-            ],
-            "p2": [
-              -0.24,
-              0,
-              0
-            ],
-            "p3": [
-              0,
-              0,
-              -0.24
-            ],
-            "material_id": "blue-glass"
-          },
-          {
-            "id": "geo-regular-octahedron-face-08",
-            "shape": "triangle",
-            "center": [
-              0,
-              0,
-              0
-            ],
-            "p1": [
-              0.24,
-              0,
-              0
-            ],
-            "p2": [
-              0,
-              -0.24,
-              0
-            ],
-            "p3": [
-              0,
-              0,
-              -0.24
-            ],
-            "material_id": "blue-glass"
+            "scale": 0.24,
+            "objects": [
+              {
+                "id": "astroidal-surface",
+                "shape": "implicit equation",
+                "step": 0.006,
+                "value_tol": 0.000001,
+                "bounds": {
+                  "center": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "size": [
+                    2.1,
+                    2.1,
+                    2.1
+                  ]
+                },
+                "material_id": "plastic-blue",
+                "field": {
+                  "type": "expr",
+                  "expr": "pow(abs(x), 2.0/3.0) + pow(abs(y), 2.0/3.0) + pow(abs(z), 2.0/3.0) - 1"
+                }
+              },
+              {
+                "id": "transparent-l1-crystal-ball",
+                "shape": "implicit equation",
+                "step": 0.006,
+                "value_tol": 0.000001,
+                "bounds": {
+                  "center": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "size": [
+                    2.1,
+                    2.1,
+                    2.1
+                  ]
+                },
+                "material_id": "clear-glass",
+                "field": {
+                  "type": "expr",
+                  "expr": "abs(x) + abs(y) + abs(z) - 1"
+                }
+              }
+            ]
           }
         ],
         "3,4": [
