@@ -848,6 +848,110 @@ func TestParseShapeImplicitEquationExprField(t *testing.T) {
 	}
 }
 
+func TestParseShapeImplicitEquationMetaballsField(t *testing.T) {
+	shapes, err := ParseShape(map[string]interface{}{
+		"shape": "implicit equation",
+		"field": map[string]interface{}{
+			"type": "metaballs",
+			"k":    2.0,
+			"iso":  0.5,
+			"balls": []interface{}{
+				map[string]interface{}{
+					"weight": 1.0,
+					"center": []interface{}{0, 0, 0},
+				},
+			},
+		},
+		"bounds": map[string]interface{}{
+			"pmin": []interface{}{-2, -2, -2},
+			"pmax": []interface{}{2, 2, 2},
+		},
+		"step": 0.01,
+	})
+	if err != nil {
+		t.Fatalf("parse metaballs implicit equation: %v", err)
+	}
+	implicit, ok := shapes[0].(*shape.ImplicitEquation)
+	if !ok {
+		t.Fatalf("expected *shape.ImplicitEquation, got %T", shapes[0])
+	}
+
+	centerValue := implicit.Function(mat.NewVecDense(3, []float64{0, 0, 0}))
+	if math.Abs(centerValue-0.5) > 1e-12 {
+		t.Fatalf("expected center field value 0.5, got %f", centerValue)
+	}
+	gradient := implicit.Gradient(
+		mat.NewVecDense(3, []float64{1, 0, 0}),
+		mat.NewVecDense(3, nil),
+	)
+	wantGX := -4 * math.Exp(-2)
+	if gradient == nil || math.Abs(gradient.AtVec(0)-wantGX) > 1e-12 || math.Abs(gradient.AtVec(1)) > 1e-12 || math.Abs(gradient.AtVec(2)) > 1e-12 {
+		t.Fatalf("unexpected metaballs gradient: %v", gradient)
+	}
+
+	interaction, ok := implicit.IntersectRange(
+		mat.NewVecDense(3, []float64{-2, 0, 0}),
+		mat.NewVecDense(3, []float64{1, 0, 0}),
+		0,
+		4,
+	)
+	if !ok {
+		t.Fatal("expected ray to hit metaball surface")
+	}
+	wantDistance := 2 - math.Sqrt(math.Log(2)/2)
+	if math.Abs(interaction.Distance-wantDistance) > 0.02 {
+		t.Fatalf("expected hit near distance %f, got %f", wantDistance, interaction.Distance)
+	}
+}
+
+func TestParseShapeImplicitEquationGyroidField(t *testing.T) {
+	shapes, err := ParseShape(map[string]interface{}{
+		"shape": "implicit equation",
+		"field": map[string]interface{}{
+			"type":      "gyroid",
+			"frequency": 2.0,
+			"offset":    0.25,
+		},
+		"bounds": map[string]interface{}{
+			"pmin": []interface{}{-2, -2, -2},
+			"pmax": []interface{}{2, 2, 2},
+		},
+		"step": 0.01,
+	})
+	if err != nil {
+		t.Fatalf("parse gyroid implicit equation: %v", err)
+	}
+	implicit, ok := shapes[0].(*shape.ImplicitEquation)
+	if !ok {
+		t.Fatalf("expected *shape.ImplicitEquation, got %T", shapes[0])
+	}
+
+	point := mat.NewVecDense(3, []float64{0.2, -0.3, 0.4})
+	x, y, z := 2.0*point.AtVec(0), 2.0*point.AtVec(1), 2.0*point.AtVec(2)
+	sx, cx := math.Sincos(x)
+	sy, cy := math.Sincos(y)
+	sz, cz := math.Sincos(z)
+	wantValue := sx*cy + sy*cz + sz*cx - 0.25
+	if got := implicit.Function(point); math.Abs(got-wantValue) > 1e-12 {
+		t.Fatalf("expected gyroid value %f, got %f", wantValue, got)
+	}
+
+	gradient := implicit.Gradient(point, mat.NewVecDense(3, nil))
+	wantGradient := []float64{
+		2.0 * (cx*cy - sz*sx),
+		2.0 * (-sx*sy + cy*cz),
+		2.0 * (-sy*sz + cz*cx),
+	}
+	if gradient == nil {
+		t.Fatal("expected gyroid analytic gradient")
+	}
+	for axis, want := range wantGradient {
+		if math.Abs(gradient.AtVec(axis)-want) > 1e-12 {
+			t.Fatalf("unexpected gyroid gradient: got %v, want %v", gradient.RawVector().Data, wantGradient)
+		}
+	}
+}
+
 func TestParseShapeImplicitEquationTransformMapsWorldToLocal(t *testing.T) {
 	shapes, err := ParseShape(map[string]interface{}{
 		"shape": "implicit equation",

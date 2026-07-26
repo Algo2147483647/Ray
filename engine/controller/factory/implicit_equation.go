@@ -17,7 +17,9 @@ type implicitFieldFactory func(map[string]interface{}) (
 )
 
 var implicitFieldRegistry = map[string]implicitFieldFactory{
-	"expr": parseImplicitExprField,
+	"expr":      parseImplicitExprField,
+	"gyroid":    parseImplicitGyroidField,
+	"metaballs": parseImplicitMetaballsField,
 }
 
 func parseImplicitEquation(objDef map[string]interface{}) ([]shape.Shape, error) {

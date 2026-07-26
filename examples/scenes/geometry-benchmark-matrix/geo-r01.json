@@ -644,14 +644,11 @@
               ]
             },
             "material_id": "porcelain-glaze-cyan-blue",
-            "field": {
-              "type": "expr",
-              "expr": "sin(f*x)*cos(f*y) + sin(f*y)*cos(f*z) + sin(f*z)*cos(f*x) - offset",
-              "constants": {
-                "f": 3.3,
-                "offset": 0.08
-              }
-            }
+                "field": {
+                  "type": "gyroid",
+                  "frequency": 3.3,
+                  "offset": 0.08
+                }
           }
         ],
         "1,5": [
@@ -798,14 +795,11 @@
           {
             "id": "geo-blue-crystal-gyroid",
             "shape": "implicit equation",
-            "field": {
-              "type": "expr",
-              "expr": "sin(f*x)*cos(f*y) + sin(f*y)*cos(f*z) + sin(f*z)*cos(f*x) - offset",
-              "constants": {
-                "f": 4.4,
-                "offset": 0.24
-              }
-            },
+                "field": {
+                  "type": "gyroid",
+                  "frequency": 4.4,
+                  "offset": 0.24
+                },
             "center": [
               0,
               0,
@@ -831,14 +825,11 @@
           {
             "id": "geo-red-crystal-gyroid",
             "shape": "implicit equation",
-            "field": {
-              "type": "expr",
-              "expr": "sin(f*x)*cos(f*y) + sin(f*y)*cos(f*z) + sin(f*z)*cos(f*x) - offset",
-              "constants": {
-                "f": 4.4,
-                "offset": -0.24
-              }
-            },
+                "field": {
+                  "type": "gyroid",
+                  "frequency": 4.4,
+                  "offset": -0.24
+                },
             "center": [
               0,
               0,
