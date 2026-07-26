@@ -5,6 +5,7 @@ import (
 	"math"
 	"sync"
 
+	"github.com/Algo2147483647/ray/engine/maths/exprdiff"
 	"github.com/Algo2147483647/ray/engine/model/shape"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"github.com/expr-lang/expr/vm"
@@ -149,7 +150,7 @@ func (c *parametricExprCurve) compileDerivative(derivativeDef map[string]interfa
 
 func (c *parametricExprCurve) compileAutoDerivative(sources [3]string, constants map[string]float64) error {
 	for axis, source := range sources {
-		derivatives, ok := autodiffExpr(source, "t")
+		derivatives, ok := exprdiff.Derivatives(source, "t")
 		if !ok {
 			return nil
 		}

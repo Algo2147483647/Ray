@@ -1,4 +1,4 @@
-package factory
+package exprdiff
 
 import (
 	"fmt"
@@ -8,15 +8,9 @@ import (
 	"github.com/expr-lang/expr/parser"
 )
 
-func autodiffImplicitExpr(source string) (string, string, string, bool) {
-	derivatives, ok := autodiffExpr(source, "x", "y", "z")
-	if !ok {
-		return "", "", "", false
-	}
-	return derivatives[0], derivatives[1], derivatives[2], true
-}
-
-func autodiffExpr(source string, variables ...string) ([]string, bool) {
+// Derivatives returns symbolic derivatives of source with respect to variables.
+// It intentionally supports only the smooth subset of the expression runtime.
+func Derivatives(source string, variables ...string) ([]string, bool) {
 	tree, err := parser.Parse(source)
 	if err != nil || tree == nil || tree.Node == nil {
 		return nil, false

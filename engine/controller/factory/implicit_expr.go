@@ -2,6 +2,7 @@ package factory
 
 import (
 	"fmt"
+	"github.com/Algo2147483647/ray/engine/maths/exprdiff"
 	"math"
 	"sync"
 
@@ -66,6 +67,14 @@ func parseImplicitExprField(
 	}
 
 	return field.evaluate, field.gradient, nil
+}
+
+func autodiffImplicitExpr(source string) (string, string, string, bool) {
+	derivatives, ok := exprdiff.Derivatives(source, "x", "y", "z")
+	if !ok {
+		return "", "", "", false
+	}
+	return derivatives[0], derivatives[1], derivatives[2], true
 }
 
 func parseImplicitExprConstants(fieldDef map[string]interface{}) (map[string]float64, error) {
