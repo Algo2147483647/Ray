@@ -26,8 +26,8 @@ func parseParametricEquation(objDef map[string]interface{}) ([]shape.Shape, erro
 		if err != nil {
 			return nil, err
 		}
-	case "spherical_orbital":
-		function, derivative, err = parseParametricSphericalOrbitalSurface(surfaceDef)
+	case "spherical_harmonic":
+		function, derivative, err = parseParametricSphericalHarmonicSurface(surfaceDef)
 		if err != nil {
 			return nil, err
 		}

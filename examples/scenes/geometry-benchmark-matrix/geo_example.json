@@ -14,8 +14,14 @@
           "id": "geo-example-middle-f-orbital",
           "shape": "parametric equation",
           "surface": {
-            "type": "spherical_orbital",
-            "variant": "middle_f_orbital"
+            "type": "spherical_harmonic",
+            "terms": [
+              {
+                "l": 3,
+                "m": 0,
+                "weight": 1
+              }
+            ]
           },
           "u_range": [
             0,
@@ -34,15 +40,22 @@
           "material_id": "pale-blue-sheen",
           "metadata": {
             "source": "example",
-            "relationship": "Pure middle f orbital using the dedicated spherical_orbital surface. The angular profile is an f_z3-style shell with two axial lobes and a central belt."
+            "relationship": "Configured with the generic spherical_harmonic surface using one l=3, m=0 term for the blue middle f orbital."
           }
         },
         {
           "id": "geo-example-red-f-xyz-eight-lobe-orbital",
           "shape": "parametric equation",
           "surface": {
-            "type": "spherical_orbital",
-            "variant": "f_xyz_eight_lobe"
+            "type": "spherical_harmonic",
+            "terms": [
+              {
+                "l": 3,
+                "m": 2,
+                "basis": "sin",
+                "weight": 1
+              }
+            ]
           },
           "u_range": [
             0,
@@ -61,13 +74,13 @@
           "material_id": "pale-red-sheen",
           "metadata": {
             "source": "example",
-            "relationship": "Red specular f_xyz spherical harmonic orbital. Its real cubic harmonic x*y*z angular term creates eight lobes across the octants."
+            "relationship": "Configured with the generic spherical_harmonic surface using one l=3, m=2 sine-basis term for a red eight-lobe f orbital."
           }
         }
       ],
       "metadata": {
         "source": "example",
-        "relationship": "Grouped blue pure middle f orbital and red reflective eight-lobe f_xyz orbital sharing the same center and scale."
+        "relationship": "Grouped blue and red spherical_harmonic parametric surfaces sharing the same center and scale; all orbital choices are expressed in config."
       }
     }
   ]
