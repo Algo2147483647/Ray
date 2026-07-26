@@ -270,8 +270,9 @@
                 },
                 "material_id": "plastic-blue",
                 "field": {
-                  "type": "expr",
-                  "expr": "pow(abs(x), 2.0/3.0) + pow(abs(y), 2.0/3.0) + pow(abs(z), 2.0/3.0) - 1"
+                  "type": "lp_power_sum",
+                  "power": 0.6666666666666666,
+                  "radius": 1
                 }
               },
               {
@@ -293,8 +294,9 @@
                 },
                 "material_id": "clear-glass",
                 "field": {
-                  "type": "expr",
-                  "expr": "abs(x) + abs(y) + abs(z) - 1"
+                  "type": "lp_power_sum",
+                  "power": 1,
+                  "radius": 1
                 }
               }
             ]

@@ -467,6 +467,7 @@ func adaptImplicitEquation(object map[string]interface{}, ctx groupContext, dime
 	}
 
 	adapted := cloneMap(object)
+	normalizeImplicitFieldAlias(adapted)
 	transform, hasTransform, err := optionalTransform(adapted)
 	if err != nil {
 		return nil, err
@@ -494,6 +495,24 @@ func adaptImplicitEquation(object map[string]interface{}, ctx groupContext, dime
 	delete(adapted, "scale")
 	delete(adapted, "basis")
 	return adapted, nil
+}
+
+func normalizeImplicitFieldAlias(object map[string]interface{}) {
+	rawField, ok := object["field"]
+	if !ok {
+		return
+	}
+	field, ok := rawField.(map[string]interface{})
+	if !ok {
+		return
+	}
+	fieldType, ok := stringField(field, "type")
+	if !ok {
+		return
+	}
+	if strings.EqualFold(fieldType, "lp_norm") {
+		field["type"] = "lp_power_sum"
+	}
 }
 
 func adaptParametricEquation(object map[string]interface{}, ctx groupContext, dimension int) (map[string]interface{}, error) {

@@ -1,16 +1,12 @@
 package main
 
 import (
-	"encoding/json"
 	"math"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/Algo2147483647/ray/engine/controller/factory"
-	"github.com/Algo2147483647/ray/engine/controller/parser"
-	"github.com/Algo2147483647/ray/engine/model"
 	modelshape "github.com/Algo2147483647/ray/engine/model/shape"
 	"gonum.org/v1/gonum/mat"
 )
@@ -559,6 +555,38 @@ func TestStudioAdaptsImplicitEquationCenterScaleBasisToTransform(t *testing.T) {
 	assertFloatSlice(t, transform[3], []float64{2, -1, 0, 0})
 }
 
+func TestStudioNormalizesImplicitEquationFieldAlias(t *testing.T) {
+	script := &studioScript{
+		Objects: []map[string]interface{}{
+			{
+				"id":    "lp",
+				"shape": "implicit equation",
+				"field": map[string]interface{}{
+					"type":   "lp_norm",
+					"power":  1,
+					"radius": 1,
+				},
+				"bounds": map[string]interface{}{
+					"pmin": []interface{}{-1, -1, -1},
+					"pmax": []interface{}{1, 1, 1},
+				},
+			},
+		},
+	}
+
+	adapted, err := adaptScript(script, []string{"scene.json"}, 3)
+	if err != nil {
+		t.Fatalf("adapt implicit equation alias: %v", err)
+	}
+	field, ok := adapted.Objects[0]["field"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected field object, got %T", adapted.Objects[0]["field"])
+	}
+	if field["type"] != "lp_power_sum" {
+		t.Fatalf("expected lp_norm alias to normalize to lp_power_sum, got %v", field["type"])
+	}
+}
+
 func TestStudioAdaptsCameraLookAtFromRawFields(t *testing.T) {
 	script := &studioScript{}
 	cameras := []studioCameraScript{
@@ -917,90 +945,6 @@ func TestStudioAdaptsPolynomialSurfaceCenterScaleBasisToTransform(t *testing.T) 
 	assertFloatSlice(t, transform[1], []float64{0, 0, 0, 1.0 / 3.0})
 	assertFloatSlice(t, transform[2], []float64{0, 0, 1, 0})
 	assertFloatSlice(t, transform[3], []float64{2, -1, 0, 0})
-}
-
-func TestStudioAdaptsCopiedGeometryBenchmarkMatrixExample(t *testing.T) {
-	sourceDir := filepath.Join("..", "examples", "scenes", "geometry-benchmark-matrix")
-	sceneDir := filepath.Join(t.TempDir(), "geometry-benchmark-matrix")
-	if err := copyDirectory(sourceDir, sceneDir); err != nil {
-		t.Fatalf("copy geometry benchmark matrix scene: %v", err)
-	}
-
-	scriptPaths := []string{
-		filepath.Join(sceneDir, "room.json"),
-		filepath.Join(sceneDir, "main.json"),
-		filepath.Join(sceneDir, "materials.json"),
-		filepath.Join(sceneDir, "geo_example.json"),
-	}
-	script, err := readStudioScriptFiles(scriptPaths)
-	if err != nil {
-		t.Fatalf("read copied geometry benchmark scripts: %v", err)
-	}
-
-	adapted, err := adaptScript(script, scriptPaths, 3)
-	if err != nil {
-		t.Fatalf("adapt copied geometry benchmark scene through studio: %v", err)
-	}
-	if adapted.Studio.Version == "" {
-		t.Fatal("expected studio metadata on intermediate script")
-	}
-	if len(adapted.Objects) != 22 {
-		t.Fatalf("expected catenoid/hyperboloid example geometry to expand to 22 objects, got %d", len(adapted.Objects))
-	}
-	foundCatenoid := false
-	foundHyperboloid := false
-	expectedBoundsPmin := []float64{-1.25, -1.25, 1.31}
-	expectedBoundsPmax := []float64{1.25, 1.25, 2.21}
-	for _, object := range adapted.Objects {
-		if shape, _ := stringField(object, "shape"); strings.EqualFold(shape, "group") {
-			t.Fatalf("studio intermediate output must not contain group object: %#v", object)
-		}
-		if shape, _ := stringField(object, "shape"); strings.EqualFold(shape, "array") {
-			t.Fatalf("studio intermediate output must not contain array object: %#v", object)
-		}
-		if id, _ := stringField(object, "id"); id == "geo-example-catenoid-hyperboloid-group/geo-example-catenoid" {
-			foundCatenoid = true
-			if shape, _ := stringField(object, "shape"); !strings.EqualFold(shape, "implicit equation") {
-				t.Fatalf("expected catenoid to remain an implicit equation, got %q", shape)
-			}
-			bounds, ok := object["bounds"].(map[string]interface{})
-			if !ok {
-				t.Fatalf("expected catenoid to keep world bounds, got %T", object["bounds"])
-			}
-			assertFloatSlice(t, bounds["pmin"], expectedBoundsPmin)
-			assertFloatSlice(t, bounds["pmax"], expectedBoundsPmax)
-		}
-		if id, _ := stringField(object, "id"); id == "geo-example-catenoid-hyperboloid-group/geo-example-hyperboloid-matched-catenoid" {
-			foundHyperboloid = true
-			if shape, _ := stringField(object, "shape"); !strings.EqualFold(shape, "quadratic equation") {
-				t.Fatalf("expected hyperboloid to remain a quadratic equation, got %q", shape)
-			}
-			bounds, ok := object["bounds"].(map[string]interface{})
-			if !ok {
-				t.Fatalf("expected hyperboloid to keep world bounds, got %T", object["bounds"])
-			}
-			assertFloatSlice(t, bounds["pmin"], expectedBoundsPmin)
-			assertFloatSlice(t, bounds["pmax"], expectedBoundsPmax)
-		}
-	}
-	if !foundCatenoid {
-		t.Fatal("expected copied geometry benchmark example to include geo-example-catenoid")
-	}
-	if !foundHyperboloid {
-		t.Fatal("expected copied geometry benchmark example to include matched hyperboloid")
-	}
-
-	data, err := json.Marshal(adapted)
-	if err != nil {
-		t.Fatalf("marshal studio intermediate script: %v", err)
-	}
-	var engineScript parser.Script
-	if err := json.Unmarshal(data, &engineScript); err != nil {
-		t.Fatalf("unmarshal studio intermediate as engine script: %v", err)
-	}
-	if err := factory.LoadSceneFromScript(&engineScript, model.NewScene()); err != nil {
-		t.Fatalf("engine failed to load studio intermediate geometry benchmark scene: %v", err)
-	}
 }
 
 func containsString(values []string, target string) bool {

@@ -952,6 +952,68 @@ func TestParseShapeImplicitEquationGyroidField(t *testing.T) {
 	}
 }
 
+func TestParseShapeImplicitEquationLPPowerSumField(t *testing.T) {
+	shapes, err := ParseShape(map[string]interface{}{
+		"shape": "implicit equation",
+		"field": map[string]interface{}{
+			"type":   "lp_power_sum",
+			"power":  2.0 / 3.0,
+			"radius": 1.0,
+		},
+		"bounds": map[string]interface{}{
+			"pmin": []interface{}{-2, -2, -2},
+			"pmax": []interface{}{2, 2, 2},
+		},
+		"step": 0.01,
+	})
+	if err != nil {
+		t.Fatalf("parse lp power sum implicit equation: %v", err)
+	}
+	implicit, ok := shapes[0].(*shape.ImplicitEquation)
+	if !ok {
+		t.Fatalf("expected *shape.ImplicitEquation, got %T", shapes[0])
+	}
+
+	point := mat.NewVecDense(3, []float64{0.125, -0.216, 0.343})
+	wantValue := math.Pow(0.125, 2.0/3.0) + math.Pow(0.216, 2.0/3.0) + math.Pow(0.343, 2.0/3.0) - 1
+	if got := implicit.Function(point); math.Abs(got-wantValue) > 1e-12 {
+		t.Fatalf("expected lp power sum value %f, got %f", wantValue, got)
+	}
+
+	gradient := implicit.Gradient(point, mat.NewVecDense(3, nil))
+	wantGradient := []float64{
+		(2.0 / 3.0) * math.Pow(0.125, -1.0/3.0),
+		-(2.0 / 3.0) * math.Pow(0.216, -1.0/3.0),
+		(2.0 / 3.0) * math.Pow(0.343, -1.0/3.0),
+	}
+	if gradient == nil {
+		t.Fatal("expected lp power sum analytic gradient")
+	}
+	for axis, want := range wantGradient {
+		if math.Abs(gradient.AtVec(axis)-want) > 1e-12 {
+			t.Fatalf("unexpected lp power sum gradient: got %v, want %v", gradient.RawVector().Data, wantGradient)
+		}
+	}
+}
+
+func TestParseShapeImplicitEquationRejectsLPNormAlias(t *testing.T) {
+	_, err := ParseShape(map[string]interface{}{
+		"shape": "implicit equation",
+		"field": map[string]interface{}{
+			"type":   "lp_norm",
+			"power":  1,
+			"radius": 1,
+		},
+		"bounds": map[string]interface{}{
+			"pmin": []interface{}{-1, -1, -1},
+			"pmax": []interface{}{1, 1, 1},
+		},
+	})
+	if err == nil {
+		t.Fatal("expected engine factory to reject studio-only lp_norm alias")
+	}
+}
+
 func TestParseShapeImplicitEquationTransformMapsWorldToLocal(t *testing.T) {
 	shapes, err := ParseShape(map[string]interface{}{
 		"shape": "implicit equation",
