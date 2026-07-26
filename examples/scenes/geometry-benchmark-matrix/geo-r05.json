@@ -74,8 +74,8 @@
                 "samples_v": 96,
                 "bounds_padding": 0.01,
                 "newton_max_iter": 16,
-                "newton_tol": 0.00001,
-                "residual_tol": 0.0005,
+                "newton_tol": 0.000001,
+                "residual_tol": 0.0003,
                 "material_id": "pale-blue-sheen"
               },
               {
@@ -104,8 +104,8 @@
                 "samples_v": 96,
                 "bounds_padding": 0.01,
                 "newton_max_iter": 16,
-                "newton_tol": 0.00001,
-                "residual_tol": 0.0005,
+                "newton_tol": 0.000001,
+                "residual_tol": 0.0003,
                 "material_id": "pale-red-sheen"
               }
             ],
