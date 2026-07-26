@@ -1,73 +1,37 @@
 {
   "objects": [
     {
-      "id": "geo-example-catenoid-hyperboloid-group",
-      "shape": "group",
+      "id": "geo-example-middle-f-orbital",
+      "shape": "parametric equation",
       "center": [
         0,
         0,
         1.76
       ],
-      "scale": 0.5,
-      "bounds": {
-        "center": [
-          0,
-          0,
-          0
-        ],
-        "size": [
-          5,
-          5,
-          1.8
-        ]
+      "scale": 0.82,
+      "surface": {
+        "type": "spherical_orbital",
+        "variant": "middle_f_orbital"
       },
-      "objects": [
-        {
-          "id": "geo-example-catenoid",
-          "shape": "implicit equation",
-          "step": 0.01,
-          "value_tol": 0.000001,
-          "material_id": "rough-gold",
-          "field": {
-            "type": "expr",
-            "expr": "x*x + y*y - a*a*pow(cosh(z/a), 2)",
-            "constants": {
-              "a": 0.55
-            },
-            "gradient": {
-              "x": "2*x",
-              "y": "2*y",
-              "z": "-2*a*cosh(z/a)*sinh(z/a)"
-            }
-          }
-        },
-        {
-          "id": "geo-example-hyperboloid-matched-catenoid",
-          "shape": "quadratic equation",
-          "a": [
-            1,
-            0,
-            0,
-            0,
-            1,
-            0,
-            0,
-            0,
-            -2.28005625465644
-          ],
-          "b": [
-            0,
-            0,
-            0
-          ],
-          "c": -0.3025,
-          "material_id": "silver-fine-wire-mesh",
-          "metadata": {
-            "matched_catenoid_a": 0.55,
-            "matched_opening_z": 0.9
-          }
-        }
-      ]
+      "u_range": [
+        0,
+        3.141592653589793
+      ],
+      "v_range": [
+        0,
+        6.283185307179586
+      ],
+      "samples_u": 72,
+      "samples_v": 144,
+      "bounds_padding": 0.01,
+      "newton_max_iter": 24,
+      "newton_tol": 0.000001,
+      "residual_tol": 0.0001,
+      "material_id": "pale-blue-sheen",
+      "metadata": {
+        "source": "example",
+        "relationship": "Middle f orbital authored as a parametric equation with a dedicated spherical_orbital surface. The angular profile is a clean f_z3-style shell with two axial lobes and a central belt."
+      }
     }
   ]
 }

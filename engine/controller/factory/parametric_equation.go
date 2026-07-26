@@ -5,6 +5,7 @@ import (
 
 	"github.com/Algo2147483647/ray/engine/model/shape"
 	"github.com/Algo2147483647/ray/engine/utils"
+	"gonum.org/v1/gonum/mat"
 )
 
 func parseParametricEquation(objDef map[string]interface{}) ([]shape.Shape, error) {
@@ -25,6 +26,11 @@ func parseParametricEquation(objDef map[string]interface{}) ([]shape.Shape, erro
 		if err != nil {
 			return nil, err
 		}
+	case "spherical_orbital":
+		function, derivative, err = parseParametricSphericalOrbitalSurface(surfaceDef)
+		if err != nil {
+			return nil, err
+		}
 	default:
 		return nil, fmt.Errorf("unsupported parametric surface %q", surfaceType)
 	}
@@ -37,6 +43,10 @@ func parseParametricEquation(objDef map[string]interface{}) ([]shape.Shape, erro
 	if err != nil {
 		return nil, err
 	}
+	function, derivative, err = applyParametricSurfacePlacement(function, derivative, objDef)
+	if err != nil {
+		return nil, err
+	}
 
 	equation := shape.NewParametricEquation(function, uRange, vRange)
 	equation.Derivative = derivative
@@ -44,6 +54,45 @@ func parseParametricEquation(objDef map[string]interface{}) ([]shape.Shape, erro
 		return nil, err
 	}
 	return wrapSingleShapeWithBounds(equation, objDef)
+}
+
+func applyParametricSurfacePlacement(
+	function shape.ParametricFunction,
+	derivative shape.ParametricDerivative,
+	objDef map[string]interface{},
+) (shape.ParametricFunction, shape.ParametricDerivative, error) {
+	center, scale, err := parsePolynomialCenterScale(objDef)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	placedFunction := func(u, v float64) *mat.VecDense {
+		point := function(u, v)
+		if point == nil || point.Len() < 3 {
+			return point
+		}
+		return mat.NewVecDense(3, []float64{
+			center[0] + scale[0]*point.AtVec(0),
+			center[1] + scale[1]*point.AtVec(1),
+			center[2] + scale[2]*point.AtVec(2),
+		})
+	}
+
+	var placedDerivative shape.ParametricDerivative
+	if derivative != nil {
+		placedDerivative = func(u, v float64, du, dv *mat.VecDense) (*mat.VecDense, *mat.VecDense) {
+			du, dv = derivative(u, v, du, dv)
+			if du == nil || dv == nil || du.Len() < 3 || dv.Len() < 3 {
+				return du, dv
+			}
+			for axis := 0; axis < 3; axis++ {
+				du.SetVec(axis, scale[axis]*du.AtVec(axis))
+				dv.SetVec(axis, scale[axis]*dv.AtVec(axis))
+			}
+			return du, dv
+		}
+	}
+	return placedFunction, placedDerivative, nil
 }
 
 func parametricSurfaceDefinition(objDef map[string]interface{}) (map[string]interface{}, string, error) {
