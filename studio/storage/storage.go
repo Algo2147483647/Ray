@@ -13,6 +13,8 @@ import (
 	"github.com/Algo2147483647/ray/studio/schema"
 )
 
+const intermediateStampEnvVar = "RAY_STUDIO_INTERMEDIATE_STAMP"
+
 func WriteIntermediateScript(script *schema.IntermediateScript, source []string) (string, error) {
 	root, err := RepoRoot()
 	if err != nil {
@@ -48,7 +50,11 @@ func intermediateName(source []string) string {
 		_, _ = hash.Write([]byte(path))
 		_, _ = hash.Write([]byte{0})
 	}
-	return fmt.Sprintf("%s.studio.%08x.json", sanitizeFilename(base), hash.Sum32())
+	name := fmt.Sprintf("%s.studio.%08x.json", sanitizeFilename(base), hash.Sum32())
+	if stamp := strings.TrimSpace(os.Getenv(intermediateStampEnvVar)); stamp != "" {
+		return strings.TrimSuffix(name, ".json") + "." + sanitizeFilename(stamp) + ".json"
+	}
+	return name
 }
 
 func RepoRoot() (string, error) {

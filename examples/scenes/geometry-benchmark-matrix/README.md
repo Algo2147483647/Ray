@@ -130,12 +130,12 @@ r6-c7: Catenoid, Hyperboloid
 
 This example runs the geometry benchmark matrix scene through `studio` first, then lets `engine` render the generated intermediate JSON.
 
-The small example renders the same paired generic `spherical_harmonic` relationship used in r5-c2, with a blue $Y_3^0$ surface and a red sine-basis $Y_3^2$ surface sharing one group transform.
+The active small example lives under `example/geo_example.json`. `example/run_example.cmd` renders it with timestamped image, film, temporary, and studio-intermediate outputs.
 
 Run the small example:
 
 ```cmd
-run_example.cmd
+example\run_example.cmd
 ```
 
 Run the full matrix:
@@ -144,4 +144,10 @@ Run the full matrix:
 run.cmd
 ```
 
-Additional engine-compatible flags can be appended to either command.
+Run the full matrix in endless checkpoint mode:
+
+```cmd
+run_endless.cmd
+```
+
+Additional engine-compatible flags can be appended to these commands.

@@ -1,0 +1,164 @@
+{
+  "objects":  [
+    {
+      "id":  "geo-example-r3-c6-cube-tetrahedron",
+      "shape":  "group",
+      "center":  [
+        0,
+        0,
+        1.76
+      ],
+      "scale":  2.5,
+      "objects":  [
+        {
+          "id":  "geo-r3-c6-cube-contains-tetrahedron",
+          "shape":  "group",
+          "center":  [
+            0,
+            0,
+            0
+          ],
+          "scale":  1,
+          "bounds":  {
+            "center":  [
+              0,
+              0,
+              0
+            ],
+            "size":  [
+              0.42,
+              0.42,
+              0.42
+            ]
+          },
+          "objects":  [
+            {
+              "id":  "geo-r3-c6-containing-cube-from-r3-c2",
+              "shape":  "cuboid",
+              "center":  [
+                0,
+                0,
+                0
+              ],
+              "size":  [
+                0.34,
+                0.34,
+                0.34
+              ],
+              "material_id":  "clear-glass"
+            },
+            {
+              "id":  "geo-r3-c6-contained-tetrahedron-face-01-from-r3-c1",
+              "shape":  "triangle",
+              "center":  [
+                0,
+                0,
+                0
+              ],
+              "p1":  [
+                -0.17,
+                0.17,
+                -0.17
+              ],
+              "p2":  [
+                0.17,
+                0.17,
+                0.17
+              ],
+              "p3":  [
+                0.17,
+                -0.17,
+                -0.17
+              ],
+              "material_id":  "pale-red-sheen"
+            },
+            {
+              "id":  "geo-r3-c6-contained-tetrahedron-face-02-from-r3-c1",
+              "shape":  "triangle",
+              "center":  [
+                0,
+                0,
+                0
+              ],
+              "p1":  [
+                -0.17,
+                -0.17,
+                0.17
+              ],
+              "p2":  [
+                0.17,
+                0.17,
+                0.17
+              ],
+              "p3":  [
+                0.17,
+                -0.17,
+                -0.17
+              ],
+              "material_id":  "pale-red-sheen"
+            },
+            {
+              "id":  "geo-r3-c6-contained-tetrahedron-face-03-from-r3-c1",
+              "shape":  "triangle",
+              "center":  [
+                0,
+                0,
+                0
+              ],
+              "p1":  [
+                -0.17,
+                -0.17,
+                0.17
+              ],
+              "p2":  [
+                0.17,
+                0.17,
+                0.17
+              ],
+              "p3":  [
+                -0.17,
+                0.17,
+                -0.17
+              ],
+              "material_id":  "pale-red-sheen"
+            },
+            {
+              "id":  "geo-r3-c6-contained-tetrahedron-face-04-from-r3-c1",
+              "shape":  "triangle",
+              "center":  [
+                0,
+                0,
+                0
+              ],
+              "p1":  [
+                -0.17,
+                -0.17,
+                0.17
+              ],
+              "p2":  [
+                0.17,
+                -0.17,
+                -0.17
+              ],
+              "p3":  [
+                -0.17,
+                0.17,
+                -0.17
+              ],
+              "material_id":  "pale-red-sheen"
+            }
+          ],
+          "metadata":  {
+            "source":  "geo_example.json cube/tetrahedron containment group, adapted to matrix cell 3,6 local coordinates",
+            "relationship":  "The pale-red specular tetrahedron is inscribed in the clear-glass cube; its four vertices align with four alternating cube vertices at coordinate magnitude 0.17."
+          }
+        }
+      ],
+      "metadata":  {
+        "source":  "r3-c6",
+        "geometry":  "Cube, Tetrahedron",
+        "note":  "Matrix cell 3,6 enlarged for example rendering."
+      }
+    }
+  ]
+}
