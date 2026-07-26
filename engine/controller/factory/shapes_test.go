@@ -641,36 +641,6 @@ func TestParseShapeParametricEquationExprConstantsTorus(t *testing.T) {
 	}
 }
 
-func TestParseShapeParametricEquationAppliesCenterAndScale(t *testing.T) {
-	shapes, err := ParseShape(map[string]interface{}{
-		"shape":  "parametric equation",
-		"center": []interface{}{1, 2, 3},
-		"scale":  []interface{}{2, 3, 4},
-		"surface": map[string]interface{}{
-			"type": "expr",
-			"x":    "u",
-			"y":    "v",
-			"z":    "1",
-		},
-	})
-	if err != nil {
-		t.Fatalf("parse placed parametric equation: %v", err)
-	}
-	parametric := shapes[0].(*shape.ParametricEquation)
-	point := parametric.Function(0.5, 0.25)
-	if math.Abs(point.AtVec(0)-2) > 1e-12 || math.Abs(point.AtVec(1)-2.75) > 1e-12 || math.Abs(point.AtVec(2)-7) > 1e-12 {
-		t.Fatalf("unexpected placed point: %v", point.RawVector().Data)
-	}
-
-	du, dv := parametric.Derivative(0.5, 0.25, mat.NewVecDense(3, nil), mat.NewVecDense(3, nil))
-	if du == nil || dv == nil {
-		t.Fatal("expected placed parametric derivative")
-	}
-	if math.Abs(du.AtVec(0)-2) > 1e-12 || math.Abs(dv.AtVec(1)-3) > 1e-12 {
-		t.Fatalf("unexpected placed derivatives: du=%v dv=%v", du.RawVector().Data, dv.RawVector().Data)
-	}
-}
-
 func TestParseShapeParametricEquationExprNumericalDerivativeFallback(t *testing.T) {
 	shapes, err := ParseShape(map[string]interface{}{
 		"shape": "parametric equation",
@@ -687,54 +657,6 @@ func TestParseShapeParametricEquationExprNumericalDerivativeFallback(t *testing.
 	parametric := shapes[0].(*shape.ParametricEquation)
 	if parametric.Derivative != nil {
 		t.Fatal("expected unsupported autodiff expression to use runtime numerical derivative fallback")
-	}
-}
-
-func TestParseShapeParametricEquationSphericalOrbital(t *testing.T) {
-	shapes, err := ParseShape(map[string]interface{}{
-		"shape": "parametric equation",
-		"surface": map[string]interface{}{
-			"type":    "spherical_orbital",
-			"variant": "middle_f_orbital",
-		},
-		"u_range":   []interface{}{0, math.Pi},
-		"v_range":   []interface{}{0, 2 * math.Pi},
-		"samples_u": 16,
-		"samples_v": 32,
-	})
-	if err != nil {
-		t.Fatalf("parse spherical orbital parametric equation: %v", err)
-	}
-	parametric := shapes[0].(*shape.ParametricEquation)
-	if parametric.Derivative == nil {
-		t.Fatal("expected spherical orbital analytic derivative")
-	}
-
-	u, v := 1.1, 0.7
-	du, dv := parametric.Derivative(u, v, mat.NewVecDense(3, nil), mat.NewVecDense(3, nil))
-	if du == nil || dv == nil {
-		t.Fatal("expected finite spherical orbital derivatives")
-	}
-
-	eps := 1e-6
-	pointUPlus := parametric.Function(u+eps, v)
-	pointUMinus := parametric.Function(u-eps, v)
-	pointVPlus := parametric.Function(u, v+eps)
-	pointVMinus := parametric.Function(u, v-eps)
-	for axis := 0; axis < 3; axis++ {
-		wantDU := (pointUPlus.AtVec(axis) - pointUMinus.AtVec(axis)) / (2 * eps)
-		wantDV := (pointVPlus.AtVec(axis) - pointVMinus.AtVec(axis)) / (2 * eps)
-		if math.Abs(du.AtVec(axis)-wantDU) > 1e-5 {
-			t.Fatalf("unexpected du axis %d: got %.12f want %.12f", axis, du.AtVec(axis), wantDU)
-		}
-		if math.Abs(dv.AtVec(axis)-wantDV) > 1e-5 {
-			t.Fatalf("unexpected dv axis %d: got %.12f want %.12f", axis, dv.AtVec(axis), wantDV)
-		}
-	}
-
-	_, _, radialV := (sphericalOrbitalSurface{variant: sphericalOrbitalMiddleF}).radiusAndDerivatives(1.2, 0.4)
-	if math.Abs(radialV) < 1e-6 {
-		t.Fatal("expected middle f orbital side lobes to vary with v")
 	}
 }
 

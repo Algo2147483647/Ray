@@ -1,36 +1,73 @@
 {
   "objects": [
     {
-      "id": "geo-example-middle-f-orbital",
-      "shape": "parametric equation",
+      "id": "geo-example-f-orbital-pair",
+      "shape": "group",
       "center": [
         0,
         0,
         1.76
       ],
       "scale": 0.82,
-      "surface": {
-        "type": "spherical_orbital",
-        "variant": "middle_f_orbital"
-      },
-      "u_range": [
-        0,
-        3.141592653589793
+      "objects": [
+        {
+          "id": "geo-example-middle-f-orbital",
+          "shape": "parametric equation",
+          "surface": {
+            "type": "spherical_orbital",
+            "variant": "middle_f_orbital"
+          },
+          "u_range": [
+            0,
+            3.141592653589793
+          ],
+          "v_range": [
+            0,
+            6.283185307179586
+          ],
+          "samples_u": 72,
+          "samples_v": 144,
+          "bounds_padding": 0.01,
+          "newton_max_iter": 24,
+          "newton_tol": 0.000001,
+          "residual_tol": 0.0001,
+          "material_id": "pale-blue-sheen",
+          "metadata": {
+            "source": "example",
+            "relationship": "Pure middle f orbital using the dedicated spherical_orbital surface. The angular profile is an f_z3-style shell with two axial lobes and a central belt."
+          }
+        },
+        {
+          "id": "geo-example-red-f-xyz-eight-lobe-orbital",
+          "shape": "parametric equation",
+          "surface": {
+            "type": "spherical_orbital",
+            "variant": "f_xyz_eight_lobe"
+          },
+          "u_range": [
+            0,
+            3.141592653589793
+          ],
+          "v_range": [
+            0,
+            6.283185307179586
+          ],
+          "samples_u": 72,
+          "samples_v": 144,
+          "bounds_padding": 0.01,
+          "newton_max_iter": 24,
+          "newton_tol": 0.000001,
+          "residual_tol": 0.0001,
+          "material_id": "pale-red-sheen",
+          "metadata": {
+            "source": "example",
+            "relationship": "Red specular f_xyz spherical harmonic orbital. Its real cubic harmonic x*y*z angular term creates eight lobes across the octants."
+          }
+        }
       ],
-      "v_range": [
-        0,
-        6.283185307179586
-      ],
-      "samples_u": 72,
-      "samples_v": 144,
-      "bounds_padding": 0.01,
-      "newton_max_iter": 24,
-      "newton_tol": 0.000001,
-      "residual_tol": 0.0001,
-      "material_id": "pale-blue-sheen",
       "metadata": {
         "source": "example",
-        "relationship": "Middle f orbital authored as a parametric equation with a dedicated spherical_orbital surface. The angular profile is a clean f_z3-style shell with two axial lobes and a central belt."
+        "relationship": "Grouped blue pure middle f orbital and red reflective eight-lobe f_xyz orbital sharing the same center and scale."
       }
     }
   ]
