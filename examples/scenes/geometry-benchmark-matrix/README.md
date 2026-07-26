@@ -18,7 +18,7 @@ r1-c7: Kummer surface
 
 r2-c1: Ding-Dong surface / bell-shaped self-intersecting cubic
 r2-c2: Sphere
-r2-c3: L4-Superellipsoid, Sphere
+r2-c3: L4-ball, Sphere
 r2-c4: Roman surface
 r2-c5: Tanglecube
 r2-c6: Dupin cyclide
@@ -26,7 +26,7 @@ r2-c7: Torus
 
 r3-c1: Triangular prism
 r3-c2: Sphere
-r3-c3: Astroidal surface, L1 ball
+r3-c3: L2/3-ball, L1-ball
 r3-c4: Regular dodecahedron
 r3-c5: Regular icosahedron
 r3-c6: Cube, Tetrahedron
@@ -74,7 +74,7 @@ r6-c7: Catenoid, Hyperboloid
 | ----- | --------------------- | -------------------- | -------- |
 | r2-c1 | Ding-Dong surface / bell-shaped self-intersecting cubic | Ding-Dong cubic $x^2+y^2+z^3-z^2=0$, a rotationally symmetric self-intersecting surface. | `blue-glass`: specular dielectric, transmittance `[0.55, 0.78, 1]`, eta `1.52`. |
 | r2-c2 | Sphere | Clear-glass sphere $S_R^2$, $R=0.16$, used as a placeholder for this cell. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
-| r2-c3 | Superellipsoid, sphere | `shape: "group"` retained from a legacy example in matrix-cell local placement, combining an $L^4$ superellipsoid and a same-center, same-radius sphere. | `clear-glass`: transparent superellipsoid; `pale-blue-sheen-crystal`: specular dielectric sphere. |
+| r2-c3 | L4-Superellipsoid, Sphere | `shape: "group"` retained from a legacy example in matrix-cell local placement, combining an $L^4$ superellipsoid and a same-center, same-radius sphere. | `clear-glass`: transparent superellipsoid; `pale-blue-sheen-crystal`: specular dielectric sphere. |
 | r2-c4 | Roman surface | Steiner Roman surface $x^2y^2+y^2z^2+z^2x^2-xyz=0$, rotated so its local $[1,1,1]$ threefold face axis points toward the camera, then rolled about the front-back world-$x$ axis so one triangular point faces upward; left unbounded. | `pale-pink-sheen`: pale pink specular reflection, reflectance `[0.96, 0.68, 0.76]`. |
 | r2-c5 | Tanglecube | Quartic superquadric shell $x^4+y^4+z^4-5(x^2+y^2+z^2)+11.8=0$, moved from r2-c2. | `plastic-red`: Lambertian red, albedo `[0.85, 0.05, 0.035]`. |
 | r2-c6 | Dupin cyclide | Equation-form Dupin cyclide from an inverted torus: $\left(1-2dx+C\rho^2\right)^2-4R^2\left((x-d\rho^2)^2+y^2\right)=0$, where $\rho^2=x^2+y^2+z^2$, $C=d^2+R^2-r^2$, $d=1.55$, $R=0.66$, $r=0.22$. | `jade-glass`: specular dielectric, transmittance `[0.2, 0.88, 0.55]`, eta `1.57`. |
@@ -89,14 +89,14 @@ r6-c7: Catenoid, Hyperboloid
 | r3-c3 | Astroidal surface, L1 ball | Nested implicit surfaces: inner astroidal surface $\lvert x\rvert^{2/3}+\lvert y\rvert^{2/3}+\lvert z\rvert^{2/3}=1$ inside an $L^1$ unit ball $\lvert x\rvert+\lvert y\rvert+\lvert z\rvert=1$. | `plastic-blue`: Lambertian blue inner surface; `clear-glass`: transparent dielectric outer shell. |
 | r3-c4 | Regular dodecahedron | Chamfered cube-like closed polyhedron, triangulated into $36$ faces. | `jade-glass`: specular dielectric, transmittance `[0.2, 0.88, 0.55]`, eta `1.57`. |
 | r3-c5 | Regular icosahedron | Regular icosahedron: convex Platonic solid with $V=12$, $E=30$, $F=20$. | `rough-gold`: rough conductor, eta `[0.17, 0.35, 1.5]`, k `[3.1, 2.7, 1.9]`, roughness `0.18`. |
-| r3-c6 | Cube, inscribed tetrahedron | `shape: "group"`: a clear-glass cube $[-0.17,0.17]^3$ containing a tetrahedron whose vertices align with four alternating cube vertices. | `clear-glass` on the cube; `pale-red-sheen` on the tetrahedron. |
+| r3-c6 | Cube, Tetrahedron | `shape: "group"`: a clear-glass cube $[-0.17,0.17]^3$ containing a tetrahedron whose vertices align with four alternating cube vertices. | `clear-glass` on the cube; `pale-red-sheen` on the tetrahedron. |
 | r3-c7 | Small stellated dodecahedron | Dodecahedral stellation: $12$ pentagonal pyramids, triangulated into $60$ faces. | `yellow-glass`: specular dielectric, transmittance `[1, 0.86, 0.24]`, eta `1.5`. |
 
 ## Row 4
 
 | Cell  | Mathematical Geometry | Formula / Definition | Material |
 | ----- | --------------------- | -------------------- | -------- |
-| r4-c1 | Cubic cusp / Whitney-umbrella-like surface | Cubic singular surface $x^2-y^2z-0.09y^2=0$, locally $x^2=y^2(z+0.09)$. | `rough-gold`: rough conductor, eta `[0.17, 0.35, 1.5]`, k `[3.1, 2.7, 1.9]`, roughness `0.18`. |
+| r4-c1 | Whitney-Umbrella surface | Cubic singular surface $x^2-y^2z-0.09y^2=0$, locally $x^2=y^2(z+0.09)$. | `rough-gold`: rough conductor, eta `[0.17, 0.35, 1.5]`, k `[3.1, 2.7, 1.9]`, roughness `0.18`. |
 | r4-c2 | Sphere | Clear-glass sphere $S_R^2$, $R=0.16$, used as a placeholder for this cell. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
 | r4-c3 | Sphere | Clear-glass sphere $S_R^2$, $R=0.16$, used as a placeholder for this cell. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
 | r4-c4 | Surface of revolution by parabola | Quartic cone $z^4=x^2+y^2$, singular at the apex. | `white-card`: diffuse warm white paper/card, albedo `[0.82, 0.82, 0.78]`. |
@@ -110,23 +110,23 @@ r6-c7: Catenoid, Hyperboloid
 | ----- | --------------------- | -------------------- | -------- |
 | r5-c1 | Sphere | Clear-glass sphere $S_R^2$, $R=0.16$, used as a placeholder for this cell. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
 | r5-c2 | Spherical harmonic | `shape: "group"` with two generic `spherical_harmonic` parametric surfaces sharing one matrix-cell transform. The blue surface uses one real spherical harmonic term $Y_3^0$; the red surface uses one sine-basis term $Y_3^2$. Both are rendered radially as $r=\lvert Y_l^m(\theta,\phi)\rvert$. | `pale-blue-sheen` on the $Y_3^0$ surface; `pale-red-sheen` on the $Y_3^2$ sine-basis surface. |
-| r5-c3 | Four-lobe near-separation metaballs | Gaussian implicit blend $\sum_{i=1}^{4}w_i e^{-2.6\lVert p-p_i\rVert^2}-0.52=0$, with two lateral lobes, one upper lobe, and one offset rear lobe arranged near disconnection. | `rough-gold`: rough conductor, eta `[0.17, 0.35, 1.5]`, k `[3.1, 2.7, 1.9]`, roughness `0.18`. |
-| r5-c4 | Trefoil knot curve | Parametric thick curve using the classic trefoil embedding, rotated so the three-lobed projection faces the benchmark camera: $x=-0.16\sin(3t)$, $y=0.105(\sin t+2\sin 2t)$, $z=0.105(\cos t-2\cos 2t)$, $0\le t\le2\pi$. | `pale-pink-jade`: pale pink jade-like specular dielectric, transmittance `[0.96, 0.62, 0.74]`, eta `1.57`. |
+| r5-c3 | Metaballs | Gaussian implicit blend $\sum_{i=1}^{4}w_i e^{-2.6\lVert p-p_i\rVert^2}-0.52=0$, with two lateral lobes, one upper lobe, and one offset rear lobe arranged near disconnection. | `rough-gold`: rough conductor, eta `[0.17, 0.35, 1.5]`, k `[3.1, 2.7, 1.9]`, roughness `0.18`. |
+| r5-c4 | Trefoil knot | Parametric thick curve using the classic trefoil embedding, rotated so the three-lobed projection faces the benchmark camera: $x=-0.16\sin(3t)$, $y=0.105(\sin t+2\sin 2t)$, $z=0.105(\cos t-2\cos 2t)$, $0\le t\le2\pi$. | `pale-pink-jade`: pale pink jade-like specular dielectric, transmittance `[0.96, 0.62, 0.74]`, eta `1.57`. |
 | r5-c5 | Sphere | Clear-glass sphere $S_R^2$, $R=0.16$, used as a placeholder for this cell. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
 | r5-c6 | Szilassi polyhedron | Szilassi graph on a toroidal polyhedron: genus $1$, $V=14$, $E=21$, $F=7$. | `green-glass`: specular dielectric, transmittance `[0.34, 1, 0.52]`, eta `1.5`. |
-| r5-c7 | Diagonal ridged torus | High-frequency ridged torus authored as a non-polynomial implicit field with diagonal angular modulation. The backup copy is retained in `geo-r05-c07-diagonal-ridged-torus-backup.json`. | `pale-pink-sheen`: pale pink specular reflection, reflectance `[0.96, 0.68, 0.76]`. |
+| r5-c7 | Ridged torus | High-frequency ridged torus authored as a non-polynomial implicit field with diagonal angular modulation. The backup copy is retained in `geo-r05-c07-diagonal-ridged-torus-backup.json`. | `pale-pink-sheen`: pale pink specular reflection, reflectance `[0.96, 0.68, 0.76]`. |
 
 ## Row 6
 
 | Cell  | Mathematical Geometry | Formula / Definition | Material |
 | ----- | --------------------- | -------------------- | -------- |
-| r6-c1 | Disk, triangle | `shape: "group"` combines a scaled disk $D_R^2$, $R=0.22$ before group scale, with a filled triangle in the same cell. | `emissive-cyan`: constant cyan emission, color `[0.5, 3.6, 4.8]`; `fabric-teal`: Lambertian teal fabric, albedo `[0.05, 0.42, 0.38]`. |
-| r6-c2 | Cone, cylinder | `shape: "group"` retained as a matrix-cell local legacy example, combining a vertical cone opening reference with a coaxial vertical cylinder. | `rough-gold`: rough conductor on the cone; `ultra-high-dispersion-prism-glass`: transparent Cauchy dielectric on the cylinder. |
+| r6-c1 | Circle, Triangle | `shape: "group"` combines a scaled disk $D_R^2$, $R=0.22$ before group scale, with a filled triangle in the same cell. | `emissive-cyan`: constant cyan emission, color `[0.5, 3.6, 4.8]`; `fabric-teal`: Lambertian teal fabric, albedo `[0.05, 0.42, 0.38]`. |
+| r6-c2 | Cone, Cylinder | `shape: "group"` retained as a matrix-cell local legacy example, combining a vertical cone opening reference with a coaxial vertical cylinder. | `rough-gold`: rough conductor on the cone; `ultra-high-dispersion-prism-glass`: transparent Cauchy dielectric on the cylinder. |
 | r6-c3 | Sphere | Clear-glass sphere $S_R^2$, $R=0.16$, used as a placeholder for this cell. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
-| r6-c4 | Triaxial ellipsoid | Pure ellipsoid with three distinct intrinsic semi-axes $(0.22, 0.14, 0.10)$, authored directly as $20.6612x^2+51.0204y^2+100z^2-1=0$ without non-uniform `scale`. | `blue-glass`: specular dielectric, transmittance `[0.55, 0.78, 1]`, eta `1.52`. |
+| r6-c4 | Ellipsoid | Pure ellipsoid with three distinct intrinsic semi-axes $(0.22, 0.14, 0.10)$, authored directly as $20.6612x^2+51.0204y^2+100z^2-1=0$ without non-uniform `scale`. | `blue-glass`: specular dielectric, transmittance `[0.55, 0.78, 1]`, eta `1.52`. |
 | r6-c5 | Elliptic paraboloid quadric | Elliptic paraboloid $z=11.1111x^2+16.0000y^2-0.18$. | `ceramic-white`: Lambertian ceramic white, albedo `[0.86, 0.84, 0.78]`. |
 | r6-c6 | Hyperbolic paraboloid quadric | Doubly ruled saddle $z=10.9375(x^2-y^2)$. | `brushed-aluminum`: rough conductor, eta `[1.44, 0.93, 0.62]`, k `[7.4, 6.6, 5.3]`, roughness `0.32`. |
-| r6-c7 | Catenoid, matched hyperboloid | `shape: "group"` retained from a legacy example in the matrix cell, then uniformly reduced to `scale: 0.16` with shared local bounds `size [3.2, 3.2, 1.9]`. The group contains a catenoid $x^2+y^2-a^2\cosh^2(z/a)=0$, $a=0.55$, and a matched one-sheet hyperboloid $x^2+y^2-2.013513z^2-0.5184=0$ with thicker waist radius $0.72$ and the same opening size at $z=\pm0.9$. | `rough-gold` on the catenoid; `red-reflective-fine-wire-mesh` on the hyperboloid, with red specular grid lines and matrix-cell-adapted line width/gap. |
+| r6-c7 | Catenoid, Hyperboloid | `shape: "group"` retained from a legacy example in the matrix cell, then uniformly reduced to `scale: 0.16` with shared local bounds `size [3.2, 3.2, 1.9]`. The group contains a catenoid $x^2+y^2-a^2\cosh^2(z/a)=0$, $a=0.55$, and a matched one-sheet hyperboloid $x^2+y^2-2.013513z^2-0.5184=0$ with thicker waist radius $0.72$ and the same opening size at $z=\pm0.9$. | `rough-gold` on the catenoid; `red-reflective-fine-wire-mesh` on the hyperboloid, with red specular grid lines and matrix-cell-adapted line width/gap. |
 
 This example runs the geometry benchmark matrix scene through `studio` first, then lets `engine` render the generated intermediate JSON.
 
