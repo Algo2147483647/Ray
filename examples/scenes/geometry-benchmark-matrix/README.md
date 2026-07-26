@@ -17,15 +17,15 @@ r1-c6: Interlocked double Gyroid
 r1-c7: Kummer surface
 
 r2-c1: Ding-Dong surface / bell-shaped self-intersecting cubic
-r2-c2: Transparent placeholder sphere
-r2-c3: Transparent placeholder sphere
+r2-c2: Placeholder sphere
+r2-c3: Placeholder sphere
 r2-c4: Roman surface
 r2-c5: Tanglecube
 r2-c6: Dupin cyclide
-r2-c7: Tilted torus
+r2-c7: Torus
 
 r3-c1: Triangular prism
-r3-c2: Transparent placeholder sphere
+r3-c2: Placeholder sphere
 r3-c3: Astroidal surface inside transparent L1 crystal
 r3-c4: Regular dodecahedron
 r3-c5: Regular icosahedron
@@ -33,18 +33,18 @@ r3-c6: Cube with inscribed tetrahedron
 r3-c7: Small stellated dodecahedron
 
 r4-c1: Cubic cusp / Whitney-umbrella-like surface
-r4-c2: Transparent placeholder sphere
-r4-c3: Transparent placeholder sphere
+r4-c2: Placeholder sphere
+r4-c3: Placeholder sphere
 r4-c4: Surface of revolution by parabola
-r4-c5: Transparent placeholder sphere
+r4-c5: Placeholder sphere
 r4-c6: Togliatti / Dervish quintic nodal surface
 r4-c7: Anisotropic quartic torus / spindle surface
 
-r5-c1: Transparent placeholder sphere
-r5-c2: Transparent placeholder sphere
+r5-c1: Placeholder sphere
+r5-c2: Paired spherical harmonic f orbitals
 r5-c3: Four-lobe near-separation metaballs
 r5-c4: Trefoil knot curve
-r5-c5: Transparent placeholder sphere
+r5-c5: Placeholder sphere
 r5-c6: Szilassi polyhedron
 r5-c7: Diagonal ridged torus
 
@@ -73,8 +73,8 @@ r6-c7: Catenoid and matched hyperboloid group
 | Cell  | Mathematical Geometry | Formula / Definition | Material |
 | ----- | --------------------- | -------------------- | -------- |
 | r2-c1 | Ding-Dong surface / bell-shaped self-intersecting cubic | Ding-Dong cubic $x^2+y^2+z^3-z^2=0$, a rotationally symmetric self-intersecting surface. | `blue-glass`: specular dielectric, transmittance `[0.55, 0.78, 1]`, eta `1.52`. |
-| r2-c2 | Transparent placeholder sphere | Clear-glass sphere $S_R^2$, $R=0.16$, used as a placeholder for this cell. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
-| r2-c3 | Transparent placeholder sphere | Clear-glass sphere $S_R^2$, $R=0.16$, used as a placeholder for this cell. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
+| r2-c2 | Placeholder sphere | Clear-glass sphere $S_R^2$, $R=0.16$, used as a placeholder for this cell. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
+| r2-c3 | Placeholder sphere | Clear-glass sphere $S_R^2$, $R=0.16$, used as a placeholder for this cell. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
 | r2-c4 | Roman surface | Steiner Roman surface $x^2y^2+y^2z^2+z^2x^2-xyz=0$, rotated so its local $[1,1,1]$ threefold face axis points toward the camera, then rolled about the front-back world-$x$ axis so one triangular point faces upward; left unbounded. | `pale-pink-sheen`: pale pink specular reflection, reflectance `[0.96, 0.68, 0.76]`. |
 | r2-c5 | Tanglecube | Quartic superquadric shell $x^4+y^4+z^4-5(x^2+y^2+z^2)+11.8=0$, moved from r2-c2. | `plastic-red`: Lambertian red, albedo `[0.85, 0.05, 0.035]`. |
 | r2-c6 | Dupin cyclide | Equation-form Dupin cyclide from an inverted torus: $\left(1-2dx+C\rho^2\right)^2-4R^2\left((x-d\rho^2)^2+y^2\right)=0$, where $\rho^2=x^2+y^2+z^2$, $C=d^2+R^2-r^2$, $d=1.55$, $R=0.66$, $r=0.22$. | `jade-glass`: specular dielectric, transmittance `[0.2, 0.88, 0.55]`, eta `1.57`. |
@@ -85,11 +85,11 @@ r6-c7: Catenoid and matched hyperboloid group
 | Cell  | Mathematical Geometry | Formula / Definition | Material |
 | ----- | --------------------- | -------------------- | -------- |
 | r3-c1 | Triangular prism | Closed triangular prism moved from r3-c6: $2$ triangular bases plus $3$ rectangular sides, triangulated into $8$ faces. | `ultra-high-dispersion-prism-glass`: transparent specular dielectric, Cauchy IOR `a=1.33`, `b=0.12`, `c=0.004`. |
-| r3-c2 | Transparent placeholder sphere | Clear-glass sphere $S_R^2$, $R=0.16$, used as a placeholder for this cell. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
+| r3-c2 | Placeholder sphere | Clear-glass sphere $S_R^2$, $R=0.16$, used as a placeholder for this cell. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
 | r3-c3 | Astroidal surface inside transparent L1 crystal | Nested implicit surfaces: inner astroidal surface $\lvert x\rvert^{2/3}+\lvert y\rvert^{2/3}+\lvert z\rvert^{2/3}=1$ inside an $L^1$ unit ball $\lvert x\rvert+\lvert y\rvert+\lvert z\rvert=1$. | `plastic-blue`: Lambertian blue inner surface; `clear-glass`: transparent dielectric outer shell. |
 | r3-c4 | Regular dodecahedron | Chamfered cube-like closed polyhedron, triangulated into $36$ faces. | `jade-glass`: specular dielectric, transmittance `[0.2, 0.88, 0.55]`, eta `1.57`. |
 | r3-c5 | Regular icosahedron | Regular icosahedron: convex Platonic solid with $V=12$, $E=30$, $F=20$. | `rough-gold`: rough conductor, eta `[0.17, 0.35, 1.5]`, k `[3.1, 2.7, 1.9]`, roughness `0.18`. |
-| r3-c6 | Cube with inscribed tetrahedron | `shape: "group"` adapted from `geo_example.json`: a clear-glass cube $[-0.17,0.17]^3$ containing a tetrahedron whose vertices align with four alternating cube vertices. | `clear-glass` on the cube; `pale-red-sheen` on the tetrahedron. |
+| r3-c6 | Cube with inscribed tetrahedron | `shape: "group"`: a clear-glass cube $[-0.17,0.17]^3$ containing a tetrahedron whose vertices align with four alternating cube vertices. | `clear-glass` on the cube; `pale-red-sheen` on the tetrahedron. |
 | r3-c7 | Small stellated dodecahedron | Dodecahedral stellation: $12$ pentagonal pyramids, triangulated into $60$ faces. | `yellow-glass`: specular dielectric, transmittance `[1, 0.86, 0.24]`, eta `1.5`. |
 
 ## Row 4
@@ -97,10 +97,10 @@ r6-c7: Catenoid and matched hyperboloid group
 | Cell  | Mathematical Geometry | Formula / Definition | Material |
 | ----- | --------------------- | -------------------- | -------- |
 | r4-c1 | Cubic cusp / Whitney-umbrella-like surface | Cubic singular surface $x^2-y^2z-0.09y^2=0$, locally $x^2=y^2(z+0.09)$. | `rough-gold`: rough conductor, eta `[0.17, 0.35, 1.5]`, k `[3.1, 2.7, 1.9]`, roughness `0.18`. |
-| r4-c2 | Transparent placeholder sphere | Clear-glass sphere $S_R^2$, $R=0.16$, used as a placeholder for this cell. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
-| r4-c3 | Transparent placeholder sphere | Clear-glass sphere $S_R^2$, $R=0.16$, used as a placeholder for this cell. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
+| r4-c2 | Placeholder sphere | Clear-glass sphere $S_R^2$, $R=0.16$, used as a placeholder for this cell. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
+| r4-c3 | Placeholder sphere | Clear-glass sphere $S_R^2$, $R=0.16$, used as a placeholder for this cell. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
 | r4-c4 | Surface of revolution by parabola | Quartic cone $z^4=x^2+y^2$, singular at the apex. | `white-card`: diffuse warm white paper/card, albedo `[0.82, 0.82, 0.78]`. |
-| r4-c5 | Transparent placeholder sphere | Clear-glass sphere $S_R^2$, $R=0.16$, used as a placeholder for this cell. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
+| r4-c5 | Placeholder sphere | Clear-glass sphere $S_R^2$, $R=0.16$, used as a placeholder for this cell. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
 | r4-c6 | Togliatti / Dervish quintic nodal surface | $D_5$-symmetric Togliatti/Dervish quintic $F_5(x,y,z)=0$, a nodal degree-$5$ surface. | `pale-blue-sheen`: pale blue specular reflection, reflectance `[0.62, 0.78, 0.92]`. |
 | r4-c7 | Anisotropic quartic torus / spindle surface | Anisotropic quartic spindle surface $x^4+4y^4+256z^4+4x^2y^2-368x^2z^2-736y^2z^2+8x^2+16y^2+128z^2+16=0$. | `pure-white-reflection`: pure white specular reflection, reflectance `[1, 1, 1]`. |
 
@@ -108,11 +108,11 @@ r6-c7: Catenoid and matched hyperboloid group
 
 | Cell  | Mathematical Geometry | Formula / Definition | Material |
 | ----- | --------------------- | -------------------- | -------- |
-| r5-c1 | Transparent placeholder sphere | Clear-glass sphere $S_R^2$, $R=0.16$, used as a placeholder for this cell. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
-| r5-c2 | Transparent placeholder sphere | Clear-glass sphere $S_R^2$, $R=0.16$, used as a placeholder for this cell. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
+| r5-c1 | Placeholder sphere | Clear-glass sphere $S_R^2$, $R=0.16$, used as a placeholder for this cell. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
+| r5-c2 | Paired spherical harmonic f orbitals | `shape: "group"` with two generic `spherical_harmonic` parametric surfaces sharing one matrix-cell transform. The blue surface uses one real spherical harmonic term $Y_3^0$; the red surface uses one sine-basis term $Y_3^2$. Both are rendered radially as $r=\lvert Y_l^m(\theta,\phi)\rvert$. | `pale-blue-sheen` on the $Y_3^0$ surface; `pale-red-sheen` on the $Y_3^2$ sine-basis surface. |
 | r5-c3 | Four-lobe near-separation metaballs | Gaussian implicit blend $\sum_{i=1}^{4}w_i e^{-2.6\lVert p-p_i\rVert^2}-0.52=0$, with two lateral lobes, one upper lobe, and one offset rear lobe arranged near disconnection. | `rough-gold`: rough conductor, eta `[0.17, 0.35, 1.5]`, k `[3.1, 2.7, 1.9]`, roughness `0.18`. |
 | r5-c4 | Trefoil knot curve | Parametric thick curve using the classic trefoil embedding, rotated so the three-lobed projection faces the benchmark camera: $x=-0.16\sin(3t)$, $y=0.105(\sin t+2\sin 2t)$, $z=0.105(\cos t-2\cos 2t)$, $0\le t\le2\pi$. | `pale-pink-jade`: pale pink jade-like specular dielectric, transmittance `[0.96, 0.62, 0.74]`, eta `1.57`. |
-| r5-c5 | Transparent placeholder sphere | Clear-glass sphere $S_R^2$, $R=0.16$, used as a placeholder for this cell. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
+| r5-c5 | Placeholder sphere | Clear-glass sphere $S_R^2$, $R=0.16$, used as a placeholder for this cell. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
 | r5-c6 | Szilassi polyhedron | Szilassi graph on a toroidal polyhedron: genus $1$, $V=14$, $E=21$, $F=7$. | `green-glass`: specular dielectric, transmittance `[0.34, 1, 0.52]`, eta `1.5`. |
 | r5-c7 | Diagonal ridged torus | High-frequency ridged torus authored as a non-polynomial implicit field with diagonal angular modulation. The backup copy is retained in `geo-r05-c07-diagonal-ridged-torus-backup.json`. | `pale-pink-sheen`: pale pink specular reflection, reflectance `[0.96, 0.68, 0.76]`. |
 
@@ -130,7 +130,7 @@ r6-c7: Catenoid and matched hyperboloid group
 
 This example runs the geometry benchmark matrix scene through `studio` first, then lets `engine` render the generated intermediate JSON.
 
-The small example renders the same cube-with-inscribed-tetrahedron relationship now used in r3-c6. The tetrahedron vertices align with four alternating cube vertices at coordinate magnitude $0.17$, and the tetrahedron uses the pale red specular mirror material `pale-red-sheen`.
+The small example renders the same paired generic `spherical_harmonic` f-orbital relationship used in r5-c2, with a blue $Y_3^0$ middle f orbital and a red sine-basis $Y_3^2$ eight-lobe f orbital sharing one group transform.
 
 Run the small example:
 
