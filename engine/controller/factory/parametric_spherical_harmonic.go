@@ -16,8 +16,10 @@ type sphericalHarmonicSurface struct {
 type sphericalHarmonicTerm struct {
 	L      int
 	M      int
+	MFloat float64
 	Weight float64
 	Basis  string
+	Norm   float64
 }
 
 func parseParametricSphericalHarmonicSurface(surfaceDef map[string]interface{}) (shape.ParametricFunction, shape.ParametricDerivative, error) {
@@ -29,7 +31,7 @@ func parseParametricSphericalHarmonicSurface(surfaceDef map[string]interface{}) 
 	surface := sphericalHarmonicSurface{
 		terms: terms,
 	}
-	return surface.evaluate, nil, nil
+	return surface.evaluate, surface.derivative, nil
 }
 
 func parseSphericalHarmonicTerms(surfaceDef map[string]interface{}) ([]sphericalHarmonicTerm, error) {
@@ -89,19 +91,17 @@ func parseSphericalHarmonicTerms(surfaceDef map[string]interface{}) ([]spherical
 		terms = append(terms, sphericalHarmonicTerm{
 			L:      l,
 			M:      m,
+			MFloat: float64(m),
 			Weight: weight,
 			Basis:  basis,
+			Norm:   sphericalHarmonicNorm(l, m),
 		})
 	}
 	return terms, nil
 }
 
 func (s sphericalHarmonicSurface) evaluate(u, v float64) *mat.VecDense {
-	psi := 0.0
-	for _, term := range s.terms {
-		psi += term.Weight * realSphericalHarmonic(term.L, term.M, term.Basis, u, v)
-	}
-
+	psi, _, _ := s.valueAndDerivatives(u, v)
 	r := math.Abs(psi)
 	su, cu := math.Sincos(u)
 	sv, cv := math.Sincos(v)
@@ -112,12 +112,84 @@ func (s sphericalHarmonicSurface) evaluate(u, v float64) *mat.VecDense {
 	})
 }
 
+func (s sphericalHarmonicSurface) derivative(u, v float64, du, dv *mat.VecDense) (*mat.VecDense, *mat.VecDense) {
+	if du == nil || du.Len() != 3 {
+		du = mat.NewVecDense(3, nil)
+	} else {
+		du.Zero()
+	}
+	if dv == nil || dv.Len() != 3 {
+		dv = mat.NewVecDense(3, nil)
+	} else {
+		dv.Zero()
+	}
+
+	psi, psiTheta, psiPhi := s.valueAndDerivatives(u, v)
+	r := math.Abs(psi)
+	rTheta := 0.0
+	rPhi := 0.0
+	if psi > 0 {
+		rTheta = psiTheta
+		rPhi = psiPhi
+	} else if psi < 0 {
+		rTheta = -psiTheta
+		rPhi = -psiPhi
+	}
+
+	su, cu := math.Sincos(u)
+	sv, cv := math.Sincos(v)
+	dir := [3]float64{su * cv, su * sv, cu}
+	dirTheta := [3]float64{cu * cv, cu * sv, -su}
+	dirPhi := [3]float64{-su * sv, su * cv, 0}
+	for axis := 0; axis < 3; axis++ {
+		du.SetVec(axis, rTheta*dir[axis]+r*dirTheta[axis])
+		dv.SetVec(axis, rPhi*dir[axis]+r*dirPhi[axis])
+	}
+	return du, dv
+}
+
+func (s sphericalHarmonicSurface) valueAndDerivatives(theta, phi float64) (float64, float64, float64) {
+	psi := 0.0
+	psiTheta := 0.0
+	psiPhi := 0.0
+	for _, term := range s.terms {
+		value, thetaDerivative, phiDerivative := term.valueAndDerivatives(theta, phi)
+		psi += term.Weight * value
+		psiTheta += term.Weight * thetaDerivative
+		psiPhi += term.Weight * phiDerivative
+	}
+	return psi, psiTheta, psiPhi
+}
+
+func (t sphericalHarmonicTerm) valueAndDerivatives(theta, phi float64) (float64, float64, float64) {
+	x := math.Cos(theta)
+	p := associatedLegendre(t.L, t.M, x)
+	pTheta := associatedLegendreThetaDerivative(t.L, t.M, theta, x, p)
+	scale := t.Norm
+	if t.M > 0 {
+		scale *= math.Sqrt2
+	}
+
+	base := scale * p
+	baseTheta := scale * pTheta
+	if t.M == 0 {
+		return base, baseTheta, 0
+	}
+
+	angle := t.MFloat * phi
+	sinAngle, cosAngle := math.Sincos(angle)
+	switch t.Basis {
+	case "sin":
+		return base * sinAngle, baseTheta * sinAngle, base * t.MFloat * cosAngle
+	default:
+		return base * cosAngle, baseTheta * cosAngle, -base * t.MFloat * sinAngle
+	}
+}
+
 func realSphericalHarmonic(l, m int, basis string, theta, phi float64) float64 {
 	x := math.Cos(theta)
 	p := associatedLegendre(l, m, x)
-	logRatio, _ := math.Lgamma(float64(l - m + 1))
-	logDenom, _ := math.Lgamma(float64(l + m + 1))
-	norm := math.Sqrt((float64(2*l+1) / (4 * math.Pi)) * math.Exp(logRatio-logDenom))
+	norm := sphericalHarmonicNorm(l, m)
 	if m == 0 {
 		return norm * p
 	}
@@ -128,6 +200,31 @@ func realSphericalHarmonic(l, m int, basis string, theta, phi float64) float64 {
 	default:
 		return value * math.Cos(float64(m)*phi)
 	}
+}
+
+func sphericalHarmonicNorm(l, m int) float64 {
+	logRatio, _ := math.Lgamma(float64(l - m + 1))
+	logDenom, _ := math.Lgamma(float64(l + m + 1))
+	return math.Sqrt((float64(2*l+1) / (4 * math.Pi)) * math.Exp(logRatio-logDenom))
+}
+
+func associatedLegendreThetaDerivative(l, m int, theta, x, p float64) float64 {
+	sinTheta := math.Sin(theta)
+	if math.Abs(sinTheta) > 1e-8 {
+		prev := associatedLegendre(l-1, m, x)
+		return (float64(l)*x*p - float64(l+m)*prev) / sinTheta
+	}
+	if m != 1 {
+		return 0
+	}
+	derivative := 0.5 * float64(l) * float64(l+1)
+	if x >= 0 {
+		return -derivative
+	}
+	if l%2 == 0 {
+		return -derivative
+	}
+	return derivative
 }
 
 func associatedLegendre(l, m int, x float64) float64 {
