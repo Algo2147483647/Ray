@@ -40,15 +40,79 @@
         ],
         "5,2": [
           {
-            "id": "geo-clear-placeholder-sphere-04",
-            "shape": "sphere",
+            "id": "geo-r05-c02-f-orbital-pair",
+            "shape": "group",
             "center": [
               0,
               0,
               0
             ],
-            "r": 0.16,
-            "material_id": "clear-glass"
+            "scale": 0.30,
+            "objects": [
+              {
+                "id": "geo-r05-c02-middle-f-orbital",
+                "shape": "parametric equation",
+                "surface": {
+                  "type": "spherical_harmonic",
+                  "terms": [
+                    {
+                      "l": 3,
+                      "m": 0,
+                      "weight": 1
+                    }
+                  ]
+                },
+                "u_range": [
+                  0,
+                  3.141592653589793
+                ],
+                "v_range": [
+                  0,
+                  6.283185307179586
+                ],
+                "samples_u": 48,
+                "samples_v": 96,
+                "bounds_padding": 0.01,
+                "newton_max_iter": 16,
+                "newton_tol": 0.00001,
+                "residual_tol": 0.0005,
+                "material_id": "pale-blue-sheen"
+              },
+              {
+                "id": "geo-r05-c02-red-f-eight-lobe-orbital",
+                "shape": "parametric equation",
+                "surface": {
+                  "type": "spherical_harmonic",
+                  "terms": [
+                    {
+                      "l": 3,
+                      "m": 2,
+                      "basis": "sin",
+                      "weight": 1
+                    }
+                  ]
+                },
+                "u_range": [
+                  0,
+                  3.141592653589793
+                ],
+                "v_range": [
+                  0,
+                  6.283185307179586
+                ],
+                "samples_u": 48,
+                "samples_v": 96,
+                "bounds_padding": 0.01,
+                "newton_max_iter": 16,
+                "newton_tol": 0.00001,
+                "residual_tol": 0.0005,
+                "material_id": "pale-red-sheen"
+              }
+            ],
+            "metadata": {
+              "source": "r05-c02",
+              "relationship": "Grouped blue and red spherical_harmonic parametric surfaces sharing one matrix-cell transform."
+            }
           }
         ],
         "5,3": [
