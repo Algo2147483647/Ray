@@ -646,7 +646,7 @@ func TestParseShapeParametricEquationExprNumericalDerivativeFallback(t *testing.
 		"shape": "parametric equation",
 		"surface": map[string]interface{}{
 			"type": "expr",
-			"x":    "abs(u)",
+			"x":    "floor(u) + u",
 			"y":    "v",
 			"z":    "0",
 		},
@@ -1096,7 +1096,7 @@ func TestParseShapeImplicitEquationExprFieldUsesNumericalGradientFallback(t *tes
 		"shape": "implicit equation",
 		"field": map[string]interface{}{
 			"type": "expr",
-			"expr": "abs(x) + y*y + z*z - 1",
+			"expr": "floor(x) + x + y*y + z*z - 2",
 		},
 		"bounds": map[string]interface{}{
 			"pmin": []interface{}{-1.2, -1.2, -1.2},
@@ -1107,12 +1107,12 @@ func TestParseShapeImplicitEquationExprFieldUsesNumericalGradientFallback(t *tes
 		t.Fatalf("parse expr implicit equation: %v", err)
 	}
 	implicit := shapes[0].(*shape.ImplicitEquation)
-	if implicit.Gradient(mat.NewVecDense(3, []float64{1, 0, 0}), mat.NewVecDense(3, nil)) != nil {
+	if implicit.Gradient(mat.NewVecDense(3, []float64{1.5, 0, 0}), mat.NewVecDense(3, nil)) != nil {
 		t.Fatal("expected unsupported autodiff expression to return nil analytic gradient")
 	}
 
 	normal := implicit.GetNormalVector(
-		mat.NewVecDense(3, []float64{1, 0, 0}),
+		mat.NewVecDense(3, []float64{1.5, 0, 0}),
 		mat.NewVecDense(3, nil),
 	)
 	if math.Abs(normal.AtVec(0)-1) > 1e-5 {
@@ -1154,6 +1154,90 @@ func TestParseShapeImplicitEquationExprFieldAutoDiffGradient(t *testing.T) {
 	}
 	if math.Abs(gradient.AtVec(2)-0.25) > 1e-9 {
 		t.Fatalf("expected d/dz = 0.25, got %v", gradient.RawVector().Data)
+	}
+}
+
+func TestParseShapeImplicitEquationExprFieldAutoDiffAtan2Gradient(t *testing.T) {
+	shapes, err := ParseShape(map[string]interface{}{
+		"shape": "implicit equation",
+		"field": map[string]interface{}{
+			"type": "expr",
+			"expr": "atan2(y, x) + atan2(z, sqrt(x*x + y*y) - r)",
+			"constants": map[string]interface{}{
+				"r": 0.5,
+			},
+		},
+		"bounds": map[string]interface{}{
+			"pmin": []interface{}{-5, -5, -5},
+			"pmax": []interface{}{5, 5, 5},
+		},
+	})
+	if err != nil {
+		t.Fatalf("parse atan2 autodiff expr implicit equation: %v", err)
+	}
+	implicit := shapes[0].(*shape.ImplicitEquation)
+
+	x, y, z, r := 2.0, 3.0, 4.0, 0.5
+	rho := math.Sqrt(x*x + y*y)
+	q := rho - r
+	thetaDenom := x*x + y*y
+	phiDenom := z*z + q*q
+	wantGradient := []float64{
+		-y/thetaDenom - z*(x/rho)/phiDenom,
+		x/thetaDenom - z*(y/rho)/phiDenom,
+		q / phiDenom,
+	}
+
+	gradient := implicit.Gradient(
+		mat.NewVecDense(3, []float64{x, y, z}),
+		mat.NewVecDense(3, nil),
+	)
+	if gradient == nil {
+		t.Fatal("expected atan2 autodiff gradient")
+	}
+	for axis, want := range wantGradient {
+		if math.Abs(gradient.AtVec(axis)-want) > 1e-9 {
+			t.Fatalf("unexpected atan2 gradient: got %v, want %v", gradient.RawVector().Data, wantGradient)
+		}
+	}
+}
+
+func TestParseShapeImplicitEquationExprFieldAutoDiffCommonFunctions(t *testing.T) {
+	shapes, err := ParseShape(map[string]interface{}{
+		"shape": "implicit equation",
+		"field": map[string]interface{}{
+			"type": "expr",
+			"expr": "abs(x) + asin(y) + acos(z/2) + atan(x*y) + sinh(z) + cosh(x) + tanh(y) + log10(x+3)",
+		},
+		"bounds": map[string]interface{}{
+			"pmin": []interface{}{-5, -5, -5},
+			"pmax": []interface{}{5, 5, 5},
+		},
+	})
+	if err != nil {
+		t.Fatalf("parse common autodiff expr implicit equation: %v", err)
+	}
+	implicit := shapes[0].(*shape.ImplicitEquation)
+
+	x, y, z := 0.5, 0.25, 0.4
+	atanDenom := 1 + x*x*y*y
+	wantGradient := []float64{
+		1 + y/atanDenom + math.Sinh(x) + 1/((x+3)*math.Log(10)),
+		1/math.Sqrt(1-y*y) + x/atanDenom + 1/math.Pow(math.Cosh(y), 2),
+		-0.5/math.Sqrt(1-math.Pow(z/2, 2)) + math.Cosh(z),
+	}
+
+	gradient := implicit.Gradient(
+		mat.NewVecDense(3, []float64{x, y, z}),
+		mat.NewVecDense(3, nil),
+	)
+	if gradient == nil {
+		t.Fatal("expected common function autodiff gradient")
+	}
+	for axis, want := range wantGradient {
+		if math.Abs(gradient.AtVec(axis)-want) > 1e-9 {
+			t.Fatalf("unexpected common function gradient: got %v, want %v", gradient.RawVector().Data, wantGradient)
+		}
 	}
 }
 

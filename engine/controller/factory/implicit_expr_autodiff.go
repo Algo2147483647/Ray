@@ -112,7 +112,7 @@ func diffCallExprNode(node *ast.CallNode, variable string) (string, bool) {
 
 func diffNamedCallExprNode(name string, args []ast.Node, variable string) (string, bool) {
 	switch name {
-	case "sin", "cos", "tan", "exp", "log", "sqrt":
+	case "abs", "sin", "cos", "tan", "asin", "acos", "atan", "sinh", "cosh", "tanh", "exp", "log", "log10", "sqrt":
 		if len(args) != 1 {
 			return "", false
 		}
@@ -122,16 +122,32 @@ func diffNamedCallExprNode(name string, args []ast.Node, variable string) (strin
 			return "", false
 		}
 		switch name {
+		case "abs":
+			return fmt.Sprintf("sign(%s)*(%s)", arg, dArg), true
 		case "sin":
 			return fmt.Sprintf("cos(%s)*(%s)", arg, dArg), true
 		case "cos":
 			return fmt.Sprintf("-sin(%s)*(%s)", arg, dArg), true
 		case "tan":
 			return fmt.Sprintf("(%s) / pow(cos(%s), 2)", dArg, arg), true
+		case "asin":
+			return fmt.Sprintf("(%s) / sqrt(1 - pow(%s, 2))", dArg, arg), true
+		case "acos":
+			return fmt.Sprintf("-(%s) / sqrt(1 - pow(%s, 2))", dArg, arg), true
+		case "atan":
+			return fmt.Sprintf("(%s) / (1 + pow(%s, 2))", dArg, arg), true
+		case "sinh":
+			return fmt.Sprintf("cosh(%s)*(%s)", arg, dArg), true
+		case "cosh":
+			return fmt.Sprintf("sinh(%s)*(%s)", arg, dArg), true
+		case "tanh":
+			return fmt.Sprintf("(%s) / pow(cosh(%s), 2)", dArg, arg), true
 		case "exp":
 			return fmt.Sprintf("exp(%s)*(%s)", arg, dArg), true
 		case "log":
 			return fmt.Sprintf("(%s) / (%s)", dArg, arg), true
+		case "log10":
+			return fmt.Sprintf("(%s) / ((%s)*log(10))", dArg, arg), true
 		case "sqrt":
 			return fmt.Sprintf("(%s) / (2*sqrt(%s))", dArg, arg), true
 		}
@@ -149,6 +165,21 @@ func diffNamedCallExprNode(name string, args []ast.Node, variable string) (strin
 			return "", false
 		}
 		return fmt.Sprintf("(%s)*pow(%s, %s)*(%s)", formatFloat(exponent), base, formatFloat(exponent-1), dBase), true
+	case "atan2":
+		if len(args) != 2 {
+			return "", false
+		}
+		numerator := args[0].String()
+		denominator := args[1].String()
+		dNumerator, ok := diffExprNode(args[0], variable)
+		if !ok {
+			return "", false
+		}
+		dDenominator, ok := diffExprNode(args[1], variable)
+		if !ok {
+			return "", false
+		}
+		return fmt.Sprintf("((%s)*(%s) - (%s)*(%s)) / (pow(%s, 2) + pow(%s, 2))", denominator, dNumerator, numerator, dDenominator, numerator, denominator), true
 	default:
 		return "", false
 	}
