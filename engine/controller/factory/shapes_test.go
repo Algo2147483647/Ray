@@ -731,6 +731,11 @@ func TestParseShapeParametricEquationSphericalOrbital(t *testing.T) {
 			t.Fatalf("unexpected dv axis %d: got %.12f want %.12f", axis, dv.AtVec(axis), wantDV)
 		}
 	}
+
+	_, _, radialV := (sphericalOrbitalSurface{variant: sphericalOrbitalMiddleF}).radiusAndDerivatives(1.2, 0.4)
+	if math.Abs(radialV) < 1e-6 {
+		t.Fatal("expected middle f orbital side lobes to vary with v")
+	}
 }
 
 func TestParseShapeParametricEquationExprRejectsReservedConstant(t *testing.T) {
