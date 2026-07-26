@@ -24,12 +24,12 @@ r2-c5: Tanglecube
 r2-c6: Dupin cyclide
 r2-c7: Tilted torus
 
-r3-c1: Regular Tetrahedron
-r3-c2: Cube
+r3-c1: Triangular prism
+r3-c2: Transparent placeholder sphere
 r3-c3: Astroidal surface inside transparent L1 crystal
 r3-c4: Regular dodecahedron
 r3-c5: Regular icosahedron
-r3-c6: Triangular prism
+r3-c6: Cube with inscribed tetrahedron
 r3-c7: Small stellated dodecahedron
 
 r4-c1: Cubic cusp / Whitney-umbrella-like surface
@@ -84,12 +84,12 @@ r6-c7: Catenoid and matched hyperboloid group
 
 | Cell  | Mathematical Geometry | Formula / Definition | Material |
 | ----- | --------------------- | -------------------- | -------- |
-| r3-c1 | Regular Tetrahedron | Tetrahedron $\operatorname{conv}(v_1,v_2,v_3,v_4)$, simplex with $V=4$, $E=6$, $F=4$. | `plastic-red`: Lambertian red, albedo `[0.85, 0.05, 0.035]`. |
-| r3-c2 | Cube | Cube $[-0.17,0.17]^3$, side length $0.34$. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
+| r3-c1 | Triangular prism | Closed triangular prism moved from r3-c6: $2$ triangular bases plus $3$ rectangular sides, triangulated into $8$ faces. | `ultra-high-dispersion-prism-glass`: transparent specular dielectric, Cauchy IOR `a=1.33`, `b=0.12`, `c=0.004`. |
+| r3-c2 | Transparent placeholder sphere | Clear-glass sphere $S_R^2$, $R=0.16$, used as a placeholder for this cell. | `clear-glass`: specular dielectric, transmittance `[1, 1, 1]`, eta `1.5`. |
 | r3-c3 | Astroidal surface inside transparent L1 crystal | Nested implicit surfaces: inner astroidal surface $\lvert x\rvert^{2/3}+\lvert y\rvert^{2/3}+\lvert z\rvert^{2/3}=1$ inside an $L^1$ unit ball $\lvert x\rvert+\lvert y\rvert+\lvert z\rvert=1$. | `plastic-blue`: Lambertian blue inner surface; `clear-glass`: transparent dielectric outer shell. |
 | r3-c4 | Regular dodecahedron | Chamfered cube-like closed polyhedron, triangulated into $36$ faces. | `jade-glass`: specular dielectric, transmittance `[0.2, 0.88, 0.55]`, eta `1.57`. |
 | r3-c5 | Regular icosahedron | Regular icosahedron: convex Platonic solid with $V=12$, $E=30$, $F=20$. | `rough-gold`: rough conductor, eta `[0.17, 0.35, 1.5]`, k `[3.1, 2.7, 1.9]`, roughness `0.18`. |
-| r3-c6 | Triangular prism | Closed triangular prism: $2$ triangular bases plus $3$ rectangular sides, triangulated into $8$ faces. | `ultra-high-dispersion-prism-glass`: transparent specular dielectric, Cauchy IOR `a=1.33`, `b=0.12`, `c=0.004`. |
+| r3-c6 | Cube with inscribed tetrahedron | `shape: "group"` adapted from `geo_example.json`: a clear-glass cube $[-0.17,0.17]^3$ containing a tetrahedron whose vertices align with four alternating cube vertices. | `clear-glass` on the cube; `pale-red-sheen` on the tetrahedron. |
 | r3-c7 | Small stellated dodecahedron | Dodecahedral stellation: $12$ pentagonal pyramids, triangulated into $60$ faces. | `yellow-glass`: specular dielectric, transmittance `[1, 0.86, 0.24]`, eta `1.5`. |
 
 ## Row 4
@@ -122,13 +122,15 @@ r6-c7: Catenoid and matched hyperboloid group
 | ----- | --------------------- | -------------------- | -------- |
 | r6-c1 | Grouped finite disk and triangle | `shape: "group"` combines a scaled disk $D_R^2$, $R=0.22$ before group scale, with a filled triangle in the same cell. | `emissive-cyan`: constant cyan emission, color `[0.5, 3.6, 4.8]`; `fabric-teal`: Lambertian teal fabric, albedo `[0.05, 0.42, 0.38]`. |
 | r6-c2 | Example vertical coaxial cone/paraboloid group | `shape: "group"` retained as a matrix-cell local legacy example, combining a vertical finite cone opening reference with a coaxial vertical cylinder. | `rough-gold`: rough conductor on the cone; `ultra-high-dispersion-prism-glass`: transparent Cauchy dielectric on the cylinder. |
-| r6-c3 | Example superellipsoid/amethyst group | `shape: "group"` copied from `geo_example.json` into matrix-cell local placement, combining an $L^4$ superellipsoid and a same-center, same-radius amethyst sphere. | `clear-glass`: transparent superellipsoid; `pale-blue-sheen-crystal`: specular dielectric sphere. |
+| r6-c3 | Example superellipsoid/amethyst group | `shape: "group"` retained from a legacy example in matrix-cell local placement, combining an $L^4$ superellipsoid and a same-center, same-radius amethyst sphere. | `clear-glass`: transparent superellipsoid; `pale-blue-sheen-crystal`: specular dielectric sphere. |
 | r6-c4 | Triaxial ellipsoid | Pure ellipsoid with three distinct intrinsic semi-axes $(0.22, 0.14, 0.10)$, authored directly as $20.6612x^2+51.0204y^2+100z^2-1=0$ without non-uniform `scale`. | `blue-glass`: specular dielectric, transmittance `[0.55, 0.78, 1]`, eta `1.52`. |
 | r6-c5 | Elliptic paraboloid quadric | Elliptic paraboloid $z=11.1111x^2+16.0000y^2-0.18$. | `ceramic-white`: Lambertian ceramic white, albedo `[0.86, 0.84, 0.78]`. |
 | r6-c6 | Hyperbolic paraboloid quadric | Doubly ruled saddle $z=10.9375(x^2-y^2)$. | `brushed-aluminum`: rough conductor, eta `[1.44, 0.93, 0.62]`, k `[7.4, 6.6, 5.3]`, roughness `0.32`. |
-| r6-c7 | Catenoid and matched hyperboloid group | `shape: "group"` copied from `geo_example.json` into the matrix cell, then uniformly reduced to `scale: 0.16` with shared local bounds `size [3.2, 3.2, 1.9]`. The group contains a catenoid $x^2+y^2-a^2\cosh^2(z/a)=0$, $a=0.55$, and a matched one-sheet hyperboloid $x^2+y^2-2.013513z^2-0.5184=0$ with thicker waist radius $0.72$ and the same opening size at $z=\pm0.9$. | `rough-gold` on the catenoid; `red-reflective-fine-wire-mesh` on the hyperboloid, with red specular grid lines and matrix-cell-adapted line width/gap. |
+| r6-c7 | Catenoid and matched hyperboloid group | `shape: "group"` retained from a legacy example in the matrix cell, then uniformly reduced to `scale: 0.16` with shared local bounds `size [3.2, 3.2, 1.9]`. The group contains a catenoid $x^2+y^2-a^2\cosh^2(z/a)=0$, $a=0.55$, and a matched one-sheet hyperboloid $x^2+y^2-2.013513z^2-0.5184=0$ with thicker waist radius $0.72$ and the same opening size at $z=\pm0.9$. | `rough-gold` on the catenoid; `red-reflective-fine-wire-mesh` on the hyperboloid, with red specular grid lines and matrix-cell-adapted line width/gap. |
 
 This example runs the geometry benchmark matrix scene through `studio` first, then lets `engine` render the generated intermediate JSON.
+
+The small example renders the same cube-with-inscribed-tetrahedron relationship now used in r3-c6. The tetrahedron vertices align with four alternating cube vertices at coordinate magnitude $0.17$, and the tetrahedron uses the pale red specular mirror material `pale-red-sheen`.
 
 Run the small example:
 
