@@ -4,6 +4,7 @@ import (
 	"math"
 	"testing"
 
+	"github.com/Algo2147483647/ray/engine/maths"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -105,6 +106,32 @@ func TestCubicEquationNormal(t *testing.T) {
 	)
 	if math.Abs(normal.AtVec(0)-1) > 1e-9 || math.Abs(normal.AtVec(1)) > 1e-9 || math.Abs(normal.AtVec(2)) > 1e-9 {
 		t.Fatalf("unexpected normal: %v", normal.RawVector().Data)
+	}
+}
+
+func TestCubicEquationCalculateStorageCachesNonZeroTerms(t *testing.T) {
+	a := maths.NewTensor[float64]([]int{4, 4, 4})
+	a.Set(3, 0, 0, 0)
+	a.Set(-2, 1, 1, 0)
+	a.Set(5, 2, 3, 0)
+	a.Set(7, 0, 1, 1)
+	cubic := NewCubicEquation(a.Data)
+
+	if len(cubic.Mem.Terms) != 3 {
+		t.Fatalf("expected three cached non-zero terms, got %d", len(cubic.Mem.Terms))
+	}
+	got := map[[3]int]float64{}
+	for _, term := range cubic.Mem.Terms {
+		got[term.Powers] = term.Value
+	}
+	for powers, expected := range map[[3]int]float64{
+		[3]int{0, 0, 0}: 3,
+		[3]int{2, 0, 0}: 5,
+		[3]int{0, 1, 1}: 5,
+	} {
+		if got[powers] != expected {
+			t.Fatalf("expected cached term %v=%g, got %g", powers, expected, got[powers])
+		}
 	}
 }
 
