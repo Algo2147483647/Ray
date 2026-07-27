@@ -882,11 +882,10 @@ func TestStudioAdaptsFourOrderCenterScaleBasisToWorldCoefficients(t *testing.T) 
 	}
 
 	quartic := modelshape.NewFourOrderEquation(mustFloatSlice(t, object["a"]))
-	interaction, ok := quartic.IntersectRange(
+	interaction, ok := quartic.IntersectAffine(
 		mat.NewVecDense(3, []float64{2, 0, -6}),
 		mat.NewVecDense(3, []float64{0, 0, 1}),
-		0,
-		math.MaxFloat64,
+		modelshape.NewIntersectOptions(0, math.MaxFloat64),
 	)
 	if !ok {
 		t.Fatal("expected baked four-order equation to hit")
