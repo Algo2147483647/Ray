@@ -1,163 +1,1445 @@
 {
-  "objects":  [
+  "objects": [
     {
-      "id":  "geo-example-r3-c6-cube-tetrahedron",
-      "shape":  "group",
-      "center":  [
+      "id": "geo-example-dual-dodecahedron-icosahedron",
+      "shape": "group",
+      "center": [
         0,
         0,
-        1.76
+        2.05
       ],
-      "scale":  2.5,
-      "objects":  [
+      "scale": 0.8,
+      "objects": [
         {
-          "id":  "geo-r3-c6-cube-contains-tetrahedron",
-          "shape":  "group",
-          "center":  [
+          "id": "dual-outer-crystal-dodecahedron",
+          "shape": "group",
+          "center": [
             0,
             0,
             0
           ],
-          "scale":  1,
-          "bounds":  {
-            "center":  [
-              0,
-              0,
-              0
-            ],
-            "size":  [
-              0.42,
-              0.42,
-              0.42
-            ]
-          },
-          "objects":  [
+          "objects": [
             {
-              "id":  "geo-r3-c6-containing-cube-from-r3-c2",
-              "shape":  "cuboid",
-              "center":  [
+              "id": "dual-crystal-dodecahedron-face-01",
+              "shape": "triangle",
+              "center": [
                 0,
                 0,
                 0
               ],
-              "size":  [
-                0.34,
-                0.34,
-                0.34
+              "p1": [
+                0.152998,
+                -0.152998,
+                -0.152998
               ],
-              "material_id":  "clear-glass"
+              "p2": [
+                0.094558,
+                -0.247556,
+                0
+              ],
+              "p3": [
+                -0.094558,
+                -0.247556,
+                0
+              ],
+              "material_id": "clear-glass"
             },
             {
-              "id":  "geo-r3-c6-contained-tetrahedron-face-01-from-r3-c1",
-              "shape":  "triangle",
-              "center":  [
+              "id": "dual-crystal-dodecahedron-face-02",
+              "shape": "triangle",
+              "center": [
                 0,
                 0,
                 0
               ],
-              "p1":  [
-                -0.17,
-                0.17,
-                -0.17
+              "p1": [
+                0.152998,
+                -0.152998,
+                -0.152998
               ],
-              "p2":  [
-                0.17,
-                0.17,
-                0.17
+              "p2": [
+                -0.152998,
+                -0.152998,
+                -0.152998
               ],
-              "p3":  [
-                0.17,
-                -0.17,
-                -0.17
+              "p3": [
+                -0.094558,
+                -0.247556,
+                0
               ],
-              "material_id":  "pale-red-sheen"
+              "material_id": "clear-glass"
             },
             {
-              "id":  "geo-r3-c6-contained-tetrahedron-face-02-from-r3-c1",
-              "shape":  "triangle",
-              "center":  [
+              "id": "dual-crystal-dodecahedron-face-03",
+              "shape": "triangle",
+              "center": [
                 0,
                 0,
                 0
               ],
-              "p1":  [
-                -0.17,
-                -0.17,
-                0.17
+              "p1": [
+                0.152998,
+                -0.152998,
+                -0.152998
               ],
-              "p2":  [
-                0.17,
-                0.17,
-                0.17
+              "p2": [
+                -0.152998,
+                -0.152998,
+                -0.152998
               ],
-              "p3":  [
-                0.17,
-                -0.17,
-                -0.17
+              "p3": [
+                0,
+                -0.094558,
+                -0.247556
               ],
-              "material_id":  "pale-red-sheen"
+              "material_id": "clear-glass"
             },
             {
-              "id":  "geo-r3-c6-contained-tetrahedron-face-03-from-r3-c1",
-              "shape":  "triangle",
-              "center":  [
+              "id": "dual-crystal-dodecahedron-face-04",
+              "shape": "triangle",
+              "center": [
                 0,
                 0,
                 0
               ],
-              "p1":  [
-                -0.17,
-                -0.17,
-                0.17
+              "p1": [
+                -0.152998,
+                0.152998,
+                -0.152998
               ],
-              "p2":  [
-                0.17,
-                0.17,
-                0.17
+              "p2": [
+                -0.152998,
+                -0.152998,
+                -0.152998
               ],
-              "p3":  [
-                -0.17,
-                0.17,
-                -0.17
+              "p3": [
+                -0.247556,
+                0,
+                -0.094558
               ],
-              "material_id":  "pale-red-sheen"
+              "material_id": "clear-glass"
             },
             {
-              "id":  "geo-r3-c6-contained-tetrahedron-face-04-from-r3-c1",
-              "shape":  "triangle",
-              "center":  [
+              "id": "dual-crystal-dodecahedron-face-05",
+              "shape": "triangle",
+              "center": [
                 0,
                 0,
                 0
               ],
-              "p1":  [
-                -0.17,
-                -0.17,
-                0.17
+              "p1": [
+                -0.152998,
+                0.152998,
+                -0.152998
               ],
-              "p2":  [
-                0.17,
-                -0.17,
-                -0.17
+              "p2": [
+                -0.152998,
+                -0.152998,
+                -0.152998
               ],
-              "p3":  [
-                -0.17,
-                0.17,
-                -0.17
+              "p3": [
+                0,
+                -0.094558,
+                -0.247556
               ],
-              "material_id":  "pale-red-sheen"
+              "material_id": "clear-glass"
+            },
+            {
+              "id": "dual-crystal-dodecahedron-face-06",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                -0.152998,
+                0.152998,
+                -0.152998
+              ],
+              "p2": [
+                0,
+                0.094558,
+                -0.247556
+              ],
+              "p3": [
+                0,
+                -0.094558,
+                -0.247556
+              ],
+              "material_id": "clear-glass"
+            },
+            {
+              "id": "dual-crystal-dodecahedron-face-07",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                0,
+                0.094558,
+                0.247556
+              ],
+              "p2": [
+                -0.152998,
+                0.152998,
+                0.152998
+              ],
+              "p3": [
+                -0.094558,
+                0.247556,
+                0
+              ],
+              "material_id": "clear-glass"
+            },
+            {
+              "id": "dual-crystal-dodecahedron-face-08",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                0,
+                0.094558,
+                0.247556
+              ],
+              "p2": [
+                0.094558,
+                0.247556,
+                0
+              ],
+              "p3": [
+                0.152998,
+                0.152998,
+                0.152998
+              ],
+              "material_id": "clear-glass"
+            },
+            {
+              "id": "dual-crystal-dodecahedron-face-09",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                0,
+                0.094558,
+                0.247556
+              ],
+              "p2": [
+                0.094558,
+                0.247556,
+                0
+              ],
+              "p3": [
+                -0.094558,
+                0.247556,
+                0
+              ],
+              "material_id": "clear-glass"
+            },
+            {
+              "id": "dual-crystal-dodecahedron-face-10",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                -0.247556,
+                0,
+                0.094558
+              ],
+              "p2": [
+                -0.152998,
+                -0.152998,
+                0.152998
+              ],
+              "p3": [
+                -0.094558,
+                -0.247556,
+                0
+              ],
+              "material_id": "clear-glass"
+            },
+            {
+              "id": "dual-crystal-dodecahedron-face-11",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                -0.247556,
+                0,
+                0.094558
+              ],
+              "p2": [
+                -0.152998,
+                -0.152998,
+                -0.152998
+              ],
+              "p3": [
+                -0.247556,
+                0,
+                -0.094558
+              ],
+              "material_id": "clear-glass"
+            },
+            {
+              "id": "dual-crystal-dodecahedron-face-12",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                -0.247556,
+                0,
+                0.094558
+              ],
+              "p2": [
+                -0.152998,
+                -0.152998,
+                -0.152998
+              ],
+              "p3": [
+                -0.094558,
+                -0.247556,
+                0
+              ],
+              "material_id": "clear-glass"
+            },
+            {
+              "id": "dual-crystal-dodecahedron-face-13",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                -0.247556,
+                0,
+                0.094558
+              ],
+              "p2": [
+                -0.152998,
+                0.152998,
+                -0.152998
+              ],
+              "p3": [
+                -0.247556,
+                0,
+                -0.094558
+              ],
+              "material_id": "clear-glass"
+            },
+            {
+              "id": "dual-crystal-dodecahedron-face-14",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                -0.247556,
+                0,
+                0.094558
+              ],
+              "p2": [
+                -0.152998,
+                0.152998,
+                -0.152998
+              ],
+              "p3": [
+                -0.094558,
+                0.247556,
+                0
+              ],
+              "material_id": "clear-glass"
+            },
+            {
+              "id": "dual-crystal-dodecahedron-face-15",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                -0.247556,
+                0,
+                0.094558
+              ],
+              "p2": [
+                -0.152998,
+                0.152998,
+                0.152998
+              ],
+              "p3": [
+                -0.094558,
+                0.247556,
+                0
+              ],
+              "material_id": "clear-glass"
+            },
+            {
+              "id": "dual-crystal-dodecahedron-face-16",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                -0.247556,
+                0,
+                0.094558
+              ],
+              "p2": [
+                -0.152998,
+                -0.152998,
+                0.152998
+              ],
+              "p3": [
+                0,
+                -0.094558,
+                0.247556
+              ],
+              "material_id": "clear-glass"
+            },
+            {
+              "id": "dual-crystal-dodecahedron-face-17",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                -0.247556,
+                0,
+                0.094558
+              ],
+              "p2": [
+                0,
+                0.094558,
+                0.247556
+              ],
+              "p3": [
+                0,
+                -0.094558,
+                0.247556
+              ],
+              "material_id": "clear-glass"
+            },
+            {
+              "id": "dual-crystal-dodecahedron-face-18",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                -0.247556,
+                0,
+                0.094558
+              ],
+              "p2": [
+                0,
+                0.094558,
+                0.247556
+              ],
+              "p3": [
+                -0.152998,
+                0.152998,
+                0.152998
+              ],
+              "material_id": "clear-glass"
+            },
+            {
+              "id": "dual-crystal-dodecahedron-face-19",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                0.152998,
+                -0.152998,
+                0.152998
+              ],
+              "p2": [
+                -0.152998,
+                -0.152998,
+                0.152998
+              ],
+              "p3": [
+                0,
+                -0.094558,
+                0.247556
+              ],
+              "material_id": "clear-glass"
+            },
+            {
+              "id": "dual-crystal-dodecahedron-face-20",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                0.152998,
+                -0.152998,
+                0.152998
+              ],
+              "p2": [
+                -0.152998,
+                -0.152998,
+                0.152998
+              ],
+              "p3": [
+                -0.094558,
+                -0.247556,
+                0
+              ],
+              "material_id": "clear-glass"
+            },
+            {
+              "id": "dual-crystal-dodecahedron-face-21",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                0.152998,
+                -0.152998,
+                0.152998
+              ],
+              "p2": [
+                0.094558,
+                -0.247556,
+                0
+              ],
+              "p3": [
+                -0.094558,
+                -0.247556,
+                0
+              ],
+              "material_id": "clear-glass"
+            },
+            {
+              "id": "dual-crystal-dodecahedron-face-22",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                0.152998,
+                -0.152998,
+                0.152998
+              ],
+              "p2": [
+                0.152998,
+                -0.152998,
+                -0.152998
+              ],
+              "p3": [
+                0.247556,
+                0,
+                -0.094558
+              ],
+              "material_id": "clear-glass"
+            },
+            {
+              "id": "dual-crystal-dodecahedron-face-23",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                0.152998,
+                -0.152998,
+                0.152998
+              ],
+              "p2": [
+                0.152998,
+                -0.152998,
+                -0.152998
+              ],
+              "p3": [
+                0.094558,
+                -0.247556,
+                0
+              ],
+              "material_id": "clear-glass"
+            },
+            {
+              "id": "dual-crystal-dodecahedron-face-24",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                0.152998,
+                -0.152998,
+                0.152998
+              ],
+              "p2": [
+                0.247556,
+                0,
+                0.094558
+              ],
+              "p3": [
+                0.247556,
+                0,
+                -0.094558
+              ],
+              "material_id": "clear-glass"
+            },
+            {
+              "id": "dual-crystal-dodecahedron-face-25",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                0.152998,
+                -0.152998,
+                0.152998
+              ],
+              "p2": [
+                0.247556,
+                0,
+                0.094558
+              ],
+              "p3": [
+                0.152998,
+                0.152998,
+                0.152998
+              ],
+              "material_id": "clear-glass"
+            },
+            {
+              "id": "dual-crystal-dodecahedron-face-26",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                0.152998,
+                -0.152998,
+                0.152998
+              ],
+              "p2": [
+                0,
+                0.094558,
+                0.247556
+              ],
+              "p3": [
+                0.152998,
+                0.152998,
+                0.152998
+              ],
+              "material_id": "clear-glass"
+            },
+            {
+              "id": "dual-crystal-dodecahedron-face-27",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                0.152998,
+                -0.152998,
+                0.152998
+              ],
+              "p2": [
+                0,
+                0.094558,
+                0.247556
+              ],
+              "p3": [
+                0,
+                -0.094558,
+                0.247556
+              ],
+              "material_id": "clear-glass"
+            },
+            {
+              "id": "dual-crystal-dodecahedron-face-28",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                0.152998,
+                0.152998,
+                -0.152998
+              ],
+              "p2": [
+                0.152998,
+                -0.152998,
+                -0.152998
+              ],
+              "p3": [
+                0.247556,
+                0,
+                -0.094558
+              ],
+              "material_id": "clear-glass"
+            },
+            {
+              "id": "dual-crystal-dodecahedron-face-29",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                0.152998,
+                0.152998,
+                -0.152998
+              ],
+              "p2": [
+                0,
+                0.094558,
+                -0.247556
+              ],
+              "p3": [
+                0,
+                -0.094558,
+                -0.247556
+              ],
+              "material_id": "clear-glass"
+            },
+            {
+              "id": "dual-crystal-dodecahedron-face-30",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                0.152998,
+                0.152998,
+                -0.152998
+              ],
+              "p2": [
+                0.152998,
+                -0.152998,
+                -0.152998
+              ],
+              "p3": [
+                0,
+                -0.094558,
+                -0.247556
+              ],
+              "material_id": "clear-glass"
+            },
+            {
+              "id": "dual-crystal-dodecahedron-face-31",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                0.152998,
+                0.152998,
+                -0.152998
+              ],
+              "p2": [
+                0.247556,
+                0,
+                0.094558
+              ],
+              "p3": [
+                0.247556,
+                0,
+                -0.094558
+              ],
+              "material_id": "clear-glass"
+            },
+            {
+              "id": "dual-crystal-dodecahedron-face-32",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                0.152998,
+                0.152998,
+                -0.152998
+              ],
+              "p2": [
+                0.247556,
+                0,
+                0.094558
+              ],
+              "p3": [
+                0.152998,
+                0.152998,
+                0.152998
+              ],
+              "material_id": "clear-glass"
+            },
+            {
+              "id": "dual-crystal-dodecahedron-face-33",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                0.152998,
+                0.152998,
+                -0.152998
+              ],
+              "p2": [
+                0.094558,
+                0.247556,
+                0
+              ],
+              "p3": [
+                0.152998,
+                0.152998,
+                0.152998
+              ],
+              "material_id": "clear-glass"
+            },
+            {
+              "id": "dual-crystal-dodecahedron-face-34",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                0.152998,
+                0.152998,
+                -0.152998
+              ],
+              "p2": [
+                -0.152998,
+                0.152998,
+                -0.152998
+              ],
+              "p3": [
+                -0.094558,
+                0.247556,
+                0
+              ],
+              "material_id": "clear-glass"
+            },
+            {
+              "id": "dual-crystal-dodecahedron-face-35",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                0.152998,
+                0.152998,
+                -0.152998
+              ],
+              "p2": [
+                -0.152998,
+                0.152998,
+                -0.152998
+              ],
+              "p3": [
+                0,
+                0.094558,
+                -0.247556
+              ],
+              "material_id": "clear-glass"
+            },
+            {
+              "id": "dual-crystal-dodecahedron-face-36",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                0.152998,
+                0.152998,
+                -0.152998
+              ],
+              "p2": [
+                0.094558,
+                0.247556,
+                0
+              ],
+              "p3": [
+                -0.094558,
+                0.247556,
+                0
+              ],
+              "material_id": "clear-glass"
             }
           ],
-          "metadata":  {
-            "source":  "geo_example.json cube/tetrahedron containment group, adapted to matrix cell 3,6 local coordinates",
-            "relationship":  "The pale-red specular tetrahedron is inscribed in the clear-glass cube; its four vertices align with four alternating cube vertices at coordinate magnitude 0.17."
-          }
+          "scale": 5.45
+        },
+        {
+          "id": "dual-inner-jade-icosahedron",
+          "shape": "group",
+          "center": [
+            0,
+            0,
+            0
+          ],
+          "objects": [
+            {
+              "id": "dual-jade-icosahedron-face-01",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                0,
+                0.216916,
+                0.134061
+              ],
+              "p2": [
+                0.134061,
+                0,
+                0.216916
+              ],
+              "p3": [
+                0.216916,
+                0.134061,
+                0
+              ],
+              "material_id": "jade-glass"
+            },
+            {
+              "id": "dual-jade-icosahedron-face-02",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                0.216916,
+                -0.134061,
+                0
+              ],
+              "p2": [
+                0.134061,
+                0,
+                -0.216916
+              ],
+              "p3": [
+                0.216916,
+                0.134061,
+                0
+              ],
+              "material_id": "jade-glass"
+            },
+            {
+              "id": "dual-jade-icosahedron-face-03",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                0.216916,
+                -0.134061,
+                0
+              ],
+              "p2": [
+                0.134061,
+                0,
+                0.216916
+              ],
+              "p3": [
+                0.216916,
+                0.134061,
+                0
+              ],
+              "material_id": "jade-glass"
+            },
+            {
+              "id": "dual-jade-icosahedron-face-04",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                0.216916,
+                -0.134061,
+                0
+              ],
+              "p2": [
+                0,
+                -0.216916,
+                0.134061
+              ],
+              "p3": [
+                0.134061,
+                0,
+                0.216916
+              ],
+              "material_id": "jade-glass"
+            },
+            {
+              "id": "dual-jade-icosahedron-face-05",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                0,
+                0.216916,
+                -0.134061
+              ],
+              "p2": [
+                0.134061,
+                0,
+                -0.216916
+              ],
+              "p3": [
+                0.216916,
+                0.134061,
+                0
+              ],
+              "material_id": "jade-glass"
+            },
+            {
+              "id": "dual-jade-icosahedron-face-06",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                0,
+                0.216916,
+                -0.134061
+              ],
+              "p2": [
+                0,
+                0.216916,
+                0.134061
+              ],
+              "p3": [
+                -0.216916,
+                0.134061,
+                0
+              ],
+              "material_id": "jade-glass"
+            },
+            {
+              "id": "dual-jade-icosahedron-face-07",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                0,
+                0.216916,
+                -0.134061
+              ],
+              "p2": [
+                0,
+                0.216916,
+                0.134061
+              ],
+              "p3": [
+                0.216916,
+                0.134061,
+                0
+              ],
+              "material_id": "jade-glass"
+            },
+            {
+              "id": "dual-jade-icosahedron-face-08",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                -0.134061,
+                0,
+                0.216916
+              ],
+              "p2": [
+                0,
+                -0.216916,
+                0.134061
+              ],
+              "p3": [
+                0.134061,
+                0,
+                0.216916
+              ],
+              "material_id": "jade-glass"
+            },
+            {
+              "id": "dual-jade-icosahedron-face-09",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                -0.134061,
+                0,
+                0.216916
+              ],
+              "p2": [
+                0,
+                0.216916,
+                0.134061
+              ],
+              "p3": [
+                -0.216916,
+                0.134061,
+                0
+              ],
+              "material_id": "jade-glass"
+            },
+            {
+              "id": "dual-jade-icosahedron-face-10",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                -0.134061,
+                0,
+                0.216916
+              ],
+              "p2": [
+                0,
+                0.216916,
+                0.134061
+              ],
+              "p3": [
+                0.134061,
+                0,
+                0.216916
+              ],
+              "material_id": "jade-glass"
+            },
+            {
+              "id": "dual-jade-icosahedron-face-11",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                -0.134061,
+                0,
+                0.216916
+              ],
+              "p2": [
+                -0.216916,
+                -0.134061,
+                0
+              ],
+              "p3": [
+                0,
+                -0.216916,
+                0.134061
+              ],
+              "material_id": "jade-glass"
+            },
+            {
+              "id": "dual-jade-icosahedron-face-12",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                -0.134061,
+                0,
+                0.216916
+              ],
+              "p2": [
+                -0.216916,
+                -0.134061,
+                0
+              ],
+              "p3": [
+                -0.216916,
+                0.134061,
+                0
+              ],
+              "material_id": "jade-glass"
+            },
+            {
+              "id": "dual-jade-icosahedron-face-13",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                0,
+                -0.216916,
+                -0.134061
+              ],
+              "p2": [
+                -0.216916,
+                -0.134061,
+                0
+              ],
+              "p3": [
+                0,
+                -0.216916,
+                0.134061
+              ],
+              "material_id": "jade-glass"
+            },
+            {
+              "id": "dual-jade-icosahedron-face-14",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                0,
+                -0.216916,
+                -0.134061
+              ],
+              "p2": [
+                0.216916,
+                -0.134061,
+                0
+              ],
+              "p3": [
+                0,
+                -0.216916,
+                0.134061
+              ],
+              "material_id": "jade-glass"
+            },
+            {
+              "id": "dual-jade-icosahedron-face-15",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                0,
+                -0.216916,
+                -0.134061
+              ],
+              "p2": [
+                0.216916,
+                -0.134061,
+                0
+              ],
+              "p3": [
+                0.134061,
+                0,
+                -0.216916
+              ],
+              "material_id": "jade-glass"
+            },
+            {
+              "id": "dual-jade-icosahedron-face-16",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                -0.134061,
+                0,
+                -0.216916
+              ],
+              "p2": [
+                0,
+                0.216916,
+                -0.134061
+              ],
+              "p3": [
+                -0.216916,
+                0.134061,
+                0
+              ],
+              "material_id": "jade-glass"
+            },
+            {
+              "id": "dual-jade-icosahedron-face-17",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                -0.134061,
+                0,
+                -0.216916
+              ],
+              "p2": [
+                -0.216916,
+                -0.134061,
+                0
+              ],
+              "p3": [
+                -0.216916,
+                0.134061,
+                0
+              ],
+              "material_id": "jade-glass"
+            },
+            {
+              "id": "dual-jade-icosahedron-face-18",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                -0.134061,
+                0,
+                -0.216916
+              ],
+              "p2": [
+                0,
+                0.216916,
+                -0.134061
+              ],
+              "p3": [
+                0.134061,
+                0,
+                -0.216916
+              ],
+              "material_id": "jade-glass"
+            },
+            {
+              "id": "dual-jade-icosahedron-face-19",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                -0.134061,
+                0,
+                -0.216916
+              ],
+              "p2": [
+                0,
+                -0.216916,
+                -0.134061
+              ],
+              "p3": [
+                -0.216916,
+                -0.134061,
+                0
+              ],
+              "material_id": "jade-glass"
+            },
+            {
+              "id": "dual-jade-icosahedron-face-20",
+              "shape": "triangle",
+              "center": [
+                0,
+                0,
+                0
+              ],
+              "p1": [
+                -0.134061,
+                0,
+                -0.216916
+              ],
+              "p2": [
+                0,
+                -0.216916,
+                -0.134061
+              ],
+              "p3": [
+                0.134061,
+                0,
+                -0.216916
+              ],
+              "material_id": "jade-glass"
+            }
+          ],
+          "scale": 3.45
         }
       ],
-      "metadata":  {
-        "source":  "r3-c6",
-        "geometry":  "Cube, Tetrahedron",
-        "note":  "Matrix cell 3,6 enlarged for example rendering."
+      "metadata": {
+        "source": "Dual Platonic solids visualization",
+        "geometry": "Regular dodecahedron and regular icosahedron",
+        "duality": "The 12 vertices of the inner icosahedron point toward the centers of the 12 pentagonal faces of the outer dodecahedron; V/E/F swap from 20/30/12 to 12/30/20.",
+        "appearance": "Transparent crystal dodecahedron surrounding a green jade icosahedron."
       }
     }
   ]
