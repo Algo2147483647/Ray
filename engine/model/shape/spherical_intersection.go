@@ -13,32 +13,12 @@ const (
 	sphericalValueTol         = 1e-7
 )
 
-// SphericalSurfaceCandidateProvider intersects a shape with an S^3 geodesic.
-// Distance and ArcLength are both the traveled spherical arc in radians.
-type SphericalSurfaceCandidateProvider interface {
-	IntersectSphericalCandidate(rayStart, rayDir *mat.VecDense, sMin, sMax float64) (SurfaceCandidate, bool)
-}
-
-func (b *BoundedShape) IntersectSphericalCandidate(rayStart, rayDir *mat.VecDense, sMin, sMax float64) (SurfaceCandidate, bool) {
-	if b == nil || b.Shape == nil {
-		return SurfaceCandidate{}, false
+func (s *Sphere) intersectGreatCircle(rayStart, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !options.validFor(PathGreatCircle) {
+		return SurfaceInteraction{}, false
 	}
-	provider, ok := b.Shape.(SphericalSurfaceCandidateProvider)
-	if !ok {
-		return SurfaceCandidate{}, false
-	}
-	candidate, ok := provider.IntersectSphericalCandidate(rayStart, rayDir, sMin, sMax)
-	if !ok || b.Bounds == nil || candidate.Point == nil {
-		return candidate, ok
-	}
-	if !b.Bounds.containsPoint(candidate.Point, -1) {
-		return SurfaceCandidate{}, false
-	}
-	return candidate, true
-}
-
-func (s *Sphere) IntersectSphericalCandidate(rayStart, rayDir *mat.VecDense, sMin, sMax float64) (SurfaceCandidate, bool) {
-	return sphericalScalarCandidate(rayStart, rayDir, sMin, sMax, func(point *mat.VecDense) float64 {
+	sMin, sMax := options.Range.Min, options.Range.Max
+	return intersectSphericalScalar(rayStart, rayDir, sMin, sMax, func(point *mat.VecDense) float64 {
 		offset := mat.NewVecDense(point.Len(), nil)
 		offset.SubVec(point, s.center)
 		return mat.Dot(offset, offset) - s.R*s.R
@@ -47,24 +27,32 @@ func (s *Sphere) IntersectSphericalCandidate(rayStart, rayDir *mat.VecDense, sMi
 	})
 }
 
-func (p *Plane) IntersectSphericalCandidate(rayStart, rayDir *mat.VecDense, sMin, sMax float64) (SurfaceCandidate, bool) {
-	if p == nil || p.A == nil || rayStart.Len() != rayDir.Len() || p.A.Len() != rayStart.Len() {
-		return SurfaceCandidate{}, false
+func (p *Plane) intersectGreatCircle(rayStart, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !options.validFor(PathGreatCircle) {
+		return SurfaceInteraction{}, false
 	}
-	return sphericalScalarCandidate(rayStart, rayDir, sMin, sMax, func(point *mat.VecDense) float64 {
+	if p == nil || p.A == nil || rayStart.Len() != rayDir.Len() || p.A.Len() != rayStart.Len() {
+		return SurfaceInteraction{}, false
+	}
+	sMin, sMax := options.Range.Min, options.Range.Max
+	return intersectSphericalScalar(rayStart, rayDir, sMin, sMax, func(point *mat.VecDense) float64 {
 		return mat.Dot(p.A, point) + p.B
 	}, func(point *mat.VecDense) *mat.VecDense {
 		return p.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
 	})
 }
 
-func (c *Circle) IntersectSphericalCandidate(rayStart, rayDir *mat.VecDense, sMin, sMax float64) (SurfaceCandidate, bool) {
-	if c == nil || c.Center == nil || c.Normal == nil || rayStart.Len() != rayDir.Len() {
-		return SurfaceCandidate{}, false
+func (c *Circle) intersectGreatCircle(rayStart, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !options.validFor(PathGreatCircle) {
+		return SurfaceInteraction{}, false
 	}
+	if c == nil || c.Center == nil || c.Normal == nil || rayStart.Len() != rayDir.Len() {
+		return SurfaceInteraction{}, false
+	}
+	sMin, sMax := options.Range.Min, options.Range.Max
 	v, ok := sphericalUnitTangent(rayStart, rayDir)
 	if !ok {
-		return SurfaceCandidate{}, false
+		return SurfaceInteraction{}, false
 	}
 
 	a := mat.Dot(c.Normal, rayStart)
@@ -80,12 +68,12 @@ func (c *Circle) IntersectSphericalCandidate(rayStart, rayDir *mat.VecDense, sMi
 		}
 	}
 	if math.IsInf(best, 1) {
-		return SurfaceCandidate{}, false
+		return SurfaceInteraction{}, false
 	}
 
 	point := sphericalPointAtUnit(rayStart, v, best)
 	normal := c.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
-	return SurfaceCandidate{
+	return SurfaceInteraction{
 		Distance:        best,
 		ArcLength:       best,
 		Point:           point,
@@ -95,16 +83,20 @@ func (c *Circle) IntersectSphericalCandidate(rayStart, rayDir *mat.VecDense, sMi
 	}, true
 }
 
-func (q *QuadraticEquation) IntersectSphericalCandidate(rayStart, rayDir *mat.VecDense, sMin, sMax float64) (SurfaceCandidate, bool) {
+func (q *QuadraticEquation) intersectGreatCircle(rayStart, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !options.validFor(PathGreatCircle) {
+		return SurfaceInteraction{}, false
+	}
 	n := rayStart.Len()
 	if q == nil || q.A == nil || q.B == nil || rayDir.Len() != n || q.B.Len() != n {
-		return SurfaceCandidate{}, false
+		return SurfaceInteraction{}, false
 	}
 	ar, ac := q.A.Dims()
 	if ar != n || ac != n {
-		return SurfaceCandidate{}, false
+		return SurfaceInteraction{}, false
 	}
-	return sphericalScalarCandidate(rayStart, rayDir, sMin, sMax, func(point *mat.VecDense) float64 {
+	sMin, sMax := options.Range.Min, options.Range.Max
+	return intersectSphericalScalar(rayStart, rayDir, sMin, sMax, func(point *mat.VecDense) float64 {
 		ap := mat.NewVecDense(n, nil)
 		ap.MulVec(q.A, point)
 		return mat.Dot(point, ap) + mat.Dot(q.B, point) + q.C
@@ -113,44 +105,56 @@ func (q *QuadraticEquation) IntersectSphericalCandidate(rayStart, rayDir *mat.Ve
 	})
 }
 
-func (p *PolynomialSurface) IntersectSphericalCandidate(rayStart, rayDir *mat.VecDense, sMin, sMax float64) (SurfaceCandidate, bool) {
-	if p == nil || p.Coefficients == nil || rayStart.Len() != rayDir.Len() || p.InputDim > rayStart.Len() {
-		return SurfaceCandidate{}, false
+func (p *PolynomialSurface) intersectGreatCircle(rayStart, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !options.validFor(PathGreatCircle) {
+		return SurfaceInteraction{}, false
 	}
-	candidate, ok := sphericalScalarCandidate(rayStart, rayDir, sMin, sMax, func(point *mat.VecDense) float64 {
+	if p == nil || p.Coefficients == nil || rayStart.Len() != rayDir.Len() || p.InputDim > rayStart.Len() {
+		return SurfaceInteraction{}, false
+	}
+	sMin, sMax := options.Range.Min, options.Range.Max
+	interaction, ok := intersectSphericalScalar(rayStart, rayDir, sMin, sMax, func(point *mat.VecDense) float64 {
 		local := p.localPoint(point)
 		return p.Evaluate(local[:p.InputDim])
 	}, func(point *mat.VecDense) *mat.VecDense {
 		return p.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
 	})
-	return candidate, ok
+	return interaction, ok
 }
 
-func (f *ImplicitEquation) IntersectSphericalCandidate(rayStart, rayDir *mat.VecDense, sMin, sMax float64) (SurfaceCandidate, bool) {
-	if f == nil || f.Function == nil || rayStart.Len() != rayDir.Len() {
-		return SurfaceCandidate{}, false
+func (f *ImplicitEquation) intersectGreatCircle(rayStart, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !options.validFor(PathGreatCircle) {
+		return SurfaceInteraction{}, false
 	}
-	candidate, ok := sphericalScalarCandidate(rayStart, rayDir, sMin, sMax, f.Function, func(point *mat.VecDense) *mat.VecDense {
+	if f == nil || f.Function == nil || rayStart.Len() != rayDir.Len() {
+		return SurfaceInteraction{}, false
+	}
+	sMin, sMax := options.Range.Min, options.Range.Max
+	interaction, ok := intersectSphericalScalar(rayStart, rayDir, sMin, sMax, f.Function, func(point *mat.VecDense) *mat.VecDense {
 		return f.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
 	})
-	if !ok || !f.hasValidRange() || candidate.Point == nil {
-		return candidate, ok
+	if !ok || !f.hasValidRange() || interaction.Point == nil {
+		return interaction, ok
 	}
 	bounds := NewCuboid(f.Range[0], f.Range[1])
-	if !bounds.containsPoint(candidate.Point, -1) {
-		return SurfaceCandidate{}, false
+	if !bounds.containsPoint(interaction.Point, -1) {
+		return SurfaceInteraction{}, false
 	}
-	return candidate, true
+	return interaction, true
 }
 
-func (c *Cuboid) IntersectSphericalCandidate(rayStart, rayDir *mat.VecDense, sMin, sMax float64) (SurfaceCandidate, bool) {
-	if c == nil || c.Pmin == nil || c.Pmax == nil || rayStart.Len() != rayDir.Len() {
-		return SurfaceCandidate{}, false
+func (c *Cuboid) intersectGreatCircle(rayStart, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !options.validFor(PathGreatCircle) {
+		return SurfaceInteraction{}, false
 	}
+	if c == nil || c.Pmin == nil || c.Pmax == nil || rayStart.Len() != rayDir.Len() {
+		return SurfaceInteraction{}, false
+	}
+	sMin, sMax := options.Range.Min, options.Range.Max
 
 	v, ok := sphericalUnitTangent(rayStart, rayDir)
 	if !ok {
-		return SurfaceCandidate{}, false
+		return SurfaceInteraction{}, false
 	}
 
 	best := math.Inf(1)
@@ -169,11 +173,11 @@ func (c *Cuboid) IntersectSphericalCandidate(rayStart, rayDir *mat.VecDense, sMi
 	}
 
 	if math.IsInf(best, 1) {
-		return SurfaceCandidate{}, false
+		return SurfaceInteraction{}, false
 	}
 	point := sphericalPointAtUnit(rayStart, v, best)
 	normal := c.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
-	return SurfaceCandidate{
+	return SurfaceInteraction{
 		Distance:        best,
 		ArcLength:       best,
 		Point:           point,
@@ -183,25 +187,25 @@ func (c *Cuboid) IntersectSphericalCandidate(rayStart, rayDir *mat.VecDense, sMi
 	}, true
 }
 
-func sphericalScalarCandidate(
+func intersectSphericalScalar(
 	rayStart, rayDir *mat.VecDense,
 	sMin, sMax float64,
 	evaluate func(*mat.VecDense) float64,
 	normalAt func(*mat.VecDense) *mat.VecDense,
-) (SurfaceCandidate, bool) {
+) (SurfaceInteraction, bool) {
 	v, ok := sphericalUnitTangent(rayStart, rayDir)
 	if !ok || sMax < sMin {
-		return SurfaceCandidate{}, false
+		return SurfaceInteraction{}, false
 	}
 
 	best, ok := findFirstSphericalRoot(rayStart, v, sMin, sMax, evaluate)
 	if !ok {
-		return SurfaceCandidate{}, false
+		return SurfaceInteraction{}, false
 	}
 
 	point := sphericalPointAtUnit(rayStart, v, best)
 	normal := normalAt(point)
-	return SurfaceCandidate{
+	return SurfaceInteraction{
 		Distance:        best,
 		ArcLength:       best,
 		Point:           point,

@@ -24,19 +24,18 @@ type SurfaceHit struct {
 
 // GetIntersection finds the intersection between a ray and an object.
 func (t *ObjectTree) GetIntersection(raySt, rayDir *mat.VecDense, node *ObjectNode) (float64, *Object) {
-	candidate, obj, ok := t.getSurfaceCandidate(raySt, rayDir, node, utils.EPS, math.MaxFloat64)
+	interaction, obj, ok := t.getClosestInteraction(raySt, rayDir, node, shape.NewIntersectOptions(utils.EPS, math.MaxFloat64))
 	if !ok {
 		return math.MaxFloat64, nil
 	}
-	return candidate.Distance, obj
+	return interaction.Distance, obj
 }
 
 func (t *ObjectTree) GetSurfaceInteraction(raySt, rayDir *mat.VecDense, node *ObjectNode, tMin, tMax float64) (shape.SurfaceInteraction, *Object, bool) {
-	candidate, obj, ok := t.getSurfaceCandidate(raySt, rayDir, node, tMin, tMax)
+	interaction, obj, ok := t.getClosestInteraction(raySt, rayDir, node, shape.NewIntersectOptions(tMin, tMax))
 	if !ok {
 		return shape.SurfaceInteraction{}, nil, false
 	}
-	interaction := shape.SurfaceInteractionFromCandidate(raySt, rayDir, candidate)
 	if interaction.GeometricNormal == nil && obj != nil {
 		interaction.GeometricNormal = obj.Shape.GetNormalVector(interaction.Point, mat.NewVecDense(interaction.Point.Len(), nil))
 		interaction.ShadingNormal = interaction.GeometricNormal
@@ -44,29 +43,29 @@ func (t *ObjectTree) GetSurfaceInteraction(raySt, rayDir *mat.VecDense, node *Ob
 	return interaction, obj, true
 }
 
-func (t *ObjectTree) getSurfaceCandidate(raySt, rayDir *mat.VecDense, node *ObjectNode, tMin, tMax float64) (shape.SurfaceCandidate, *Object, bool) {
-	if _, ok := nodeOverlapNear(raySt, rayDir, node, tMin, tMax); !ok {
-		return shape.SurfaceCandidate{}, nil, false
+func (t *ObjectTree) getClosestInteraction(raySt, rayDir *mat.VecDense, node *ObjectNode, options shape.IntersectOptions) (shape.SurfaceInteraction, *Object, bool) {
+	if _, ok := nodeOverlapNear(raySt, rayDir, node, options); !ok {
+		return shape.SurfaceInteraction{}, nil, false
 	}
-	return t.getSurfaceCandidateInOverlappedNode(raySt, rayDir, node, tMin, tMax)
+	return t.getClosestInteractionInOverlappedNode(raySt, rayDir, node, options)
 }
 
-func (t *ObjectTree) getSurfaceCandidateInOverlappedNode(raySt, rayDir *mat.VecDense, node *ObjectNode, tMin, tMax float64) (shape.SurfaceCandidate, *Object, bool) {
+func (t *ObjectTree) getClosestInteractionInOverlappedNode(raySt, rayDir *mat.VecDense, node *ObjectNode, options shape.IntersectOptions) (shape.SurfaceInteraction, *Object, bool) {
 	if node.Obj != nil {
-		candidate, ok := surfaceCandidate(raySt, rayDir, node.Obj.Shape, tMin, tMax)
+		interaction, ok := node.Obj.Shape.Intersect(raySt, rayDir, options)
 		if !ok {
-			return shape.SurfaceCandidate{}, nil, false
+			return shape.SurfaceInteraction{}, nil, false
 		}
-		candidate.PrimitiveID = node.PrimitiveID
-		return candidate, node.Obj, true
+		interaction.PrimitiveID = node.PrimitiveID
+		return interaction, node.Obj, true
 	}
 
 	left := node.Children[0]
 	right := node.Children[1]
-	leftNear, leftOK := nodeOverlapNear(raySt, rayDir, left, tMin, tMax)
-	rightNear, rightOK := nodeOverlapNear(raySt, rayDir, right, tMin, tMax)
+	leftNear, leftOK := nodeOverlapNear(raySt, rayDir, left, options)
+	rightNear, rightOK := nodeOverlapNear(raySt, rayDir, right, options)
 	if !leftOK && !rightOK {
-		return shape.SurfaceCandidate{}, nil, false
+		return shape.SurfaceInteraction{}, nil, false
 	}
 	if rightOK && (!leftOK || rightNear < leftNear) {
 		left, right = right, left
@@ -75,59 +74,39 @@ func (t *ObjectTree) getSurfaceCandidateInOverlappedNode(raySt, rayDir *mat.VecD
 	}
 
 	var (
-		bestCandidate shape.SurfaceCandidate
-		bestObj       *Object
-		bestOK        bool
+		bestInteraction shape.SurfaceInteraction
+		bestObj         *Object
+		bestOK          bool
 	)
-	if leftOK && leftNear <= tMax {
-		candidate, obj, ok := t.getSurfaceCandidateInOverlappedNode(raySt, rayDir, left, tMin, tMax)
+	if leftOK && leftNear <= options.Range.Max {
+		interaction, obj, ok := t.getClosestInteractionInOverlappedNode(raySt, rayDir, left, options)
 		if ok {
-			bestCandidate = candidate
+			bestInteraction = interaction
 			bestObj = obj
 			bestOK = true
-			tMax = candidate.Distance
+			options.Range.Max = interaction.Distance
 		}
 	}
-	if rightOK && rightNear <= tMax {
-		candidate, obj, ok := t.getSurfaceCandidateInOverlappedNode(raySt, rayDir, right, tMin, tMax)
-		if ok && (!bestOK || candidate.Distance < bestCandidate.Distance) {
-			bestCandidate = candidate
+	if rightOK && rightNear <= options.Range.Max {
+		interaction, obj, ok := t.getClosestInteractionInOverlappedNode(raySt, rayDir, right, options)
+		if ok && (!bestOK || interaction.Distance < bestInteraction.Distance) {
+			bestInteraction = interaction
 			bestObj = obj
 			bestOK = true
 		}
 	}
-	return bestCandidate, bestObj, bestOK
+	return bestInteraction, bestObj, bestOK
 }
 
-func nodeOverlapNear(raySt, rayDir *mat.VecDense, node *ObjectNode, tMin, tMax float64) (float64, bool) {
+func nodeOverlapNear(raySt, rayDir *mat.VecDense, node *ObjectNode, options shape.IntersectOptions) (float64, bool) {
 	if node == nil {
 		return 0, false
 	}
 	if node.BoundBox == nil {
-		return tMin, true
+		return options.Range.Min, true
 	}
-	return node.BoundBox.OverlapRangeNear(raySt, rayDir, tMin, tMax)
-}
-
-func surfaceCandidate(raySt, rayDir *mat.VecDense, s shape.Shape, tMin, tMax float64) (shape.SurfaceCandidate, bool) {
-	if provider, ok := s.(shape.SurfaceCandidateProvider); ok {
-		return provider.IntersectCandidate(raySt, rayDir, tMin, tMax)
-	}
-
-	interaction, ok := s.IntersectRange(raySt, rayDir, tMin, tMax)
-	if !ok {
-		return shape.SurfaceCandidate{}, false
-	}
-	return shape.SurfaceCandidate{
-		Distance:        interaction.Distance,
-		Point:           interaction.Point,
-		GeometricNormal: interaction.GeometricNormal,
-		ShadingNormal:   interaction.ShadingNormal,
-		UV:              interaction.UV,
-		DPDU:            interaction.DPDU,
-		DPDV:            interaction.DPDV,
-		PrimitiveID:     interaction.PrimitiveID,
-	}, true
+	clipped, ok := node.BoundBox.Clip(raySt, rayDir, options)
+	return clipped.Min, ok
 }
 
 func (t *ObjectTree) GetSurfaceHit(raySt, rayDir *mat.VecDense) (*SurfaceHit, bool) {
@@ -135,11 +114,10 @@ func (t *ObjectTree) GetSurfaceHit(raySt, rayDir *mat.VecDense) (*SurfaceHit, bo
 }
 
 func (t *ObjectTree) GetSurfaceHitRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (*SurfaceHit, bool) {
-	candidate, obj, ok := t.getSurfaceCandidate(raySt, rayDir, t.Root, tMin, tMax)
+	interaction, obj, ok := t.getClosestInteraction(raySt, rayDir, t.Root, shape.NewIntersectOptions(tMin, tMax))
 	if !ok || obj == nil {
 		return nil, false
 	}
-	interaction := shape.SurfaceInteractionFromCandidate(raySt, rayDir, candidate)
 	return newSurfaceHitFromInteraction(interaction, obj, rayDir), true
 }
 
@@ -155,15 +133,10 @@ func (t *ObjectTree) GetSphericalSurfaceHit(raySt, rayDir *mat.VecDense, sMin, s
 		if obj == nil || obj.Shape == nil {
 			continue
 		}
-		provider, ok := obj.Shape.(shape.SphericalSurfaceCandidateProvider)
+		interaction, ok := obj.Shape.Intersect(raySt, rayDir, shape.NewGreatCircleIntersectOptions(sMin, sMax))
 		if !ok {
 			continue
 		}
-		candidate, ok := provider.IntersectSphericalCandidate(raySt, rayDir, sMin, sMax)
-		if !ok {
-			continue
-		}
-		interaction := shape.SurfaceInteractionFromCandidate(raySt, rayDir, candidate)
 		arcLen := interaction.ArcLength
 		if arcLen <= 0 {
 			arcLen = interaction.Distance

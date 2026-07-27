@@ -7,34 +7,32 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-func TestSphereIntersectCandidate3DReturnsNearestDistance(t *testing.T) {
+func TestSphereIntersectReturnsNearestCompleteInteraction(t *testing.T) {
 	sphere := NewSphere(mat.NewVecDense(3, []float64{0, 0, 0}), 1)
 
-	candidate, ok := sphere.IntersectCandidate(
+	interaction, ok := sphere.Intersect(
 		mat.NewVecDense(3, []float64{0, 0, -3}),
 		mat.NewVecDense(3, []float64{0, 0, 1}),
-		1e-6,
-		math.MaxFloat64,
+		NewIntersectOptions(1e-6, math.MaxFloat64),
 	)
 	if !ok {
-		t.Fatal("expected sphere candidate")
+		t.Fatal("expected sphere interaction")
 	}
-	if math.Abs(candidate.Distance-2) > 1e-9 {
-		t.Fatalf("expected nearest distance 2, got %f", candidate.Distance)
+	if math.Abs(interaction.Distance-2) > 1e-9 {
+		t.Fatalf("expected nearest distance 2, got %f", interaction.Distance)
 	}
-	if candidate.Point != nil || candidate.GeometricNormal != nil {
-		t.Fatal("expected candidate to avoid constructing point and normal")
+	if interaction.Point == nil || interaction.GeometricNormal == nil {
+		t.Fatal("expected complete interaction")
 	}
 }
 
-func TestSphereIntersectRangeStillReturnsCompleteInteraction(t *testing.T) {
+func TestSphereIntersectReturnsCompleteInteraction(t *testing.T) {
 	sphere := NewSphere(mat.NewVecDense(3, []float64{0, 0, 0}), 1)
 
-	interaction, ok := sphere.IntersectRange(
+	interaction, ok := sphere.Intersect(
 		mat.NewVecDense(3, []float64{0, 0, -3}),
 		mat.NewVecDense(3, []float64{0, 0, 1}),
-		1e-6,
-		math.MaxFloat64,
+		NewIntersectOptions(1e-6, math.MaxFloat64),
 	)
 	if !ok {
 		t.Fatal("expected sphere hit")
@@ -47,14 +45,13 @@ func TestSphereIntersectRangeStillReturnsCompleteInteraction(t *testing.T) {
 	}
 }
 
-func TestHypersphereIntersectRange4D(t *testing.T) {
+func TestHypersphereIntersect4D(t *testing.T) {
 	sphere := NewSphere(mat.NewVecDense(4, []float64{0, 0, 0, 0}), 1)
 
-	interaction, ok := sphere.IntersectRange(
+	interaction, ok := sphere.Intersect(
 		mat.NewVecDense(4, []float64{-3, 0, 0, 0}),
 		mat.NewVecDense(4, []float64{1, 0, 0, 0}),
-		1e-6,
-		math.MaxFloat64,
+		NewIntersectOptions(1e-6, math.MaxFloat64),
 	)
 
 	if !ok {

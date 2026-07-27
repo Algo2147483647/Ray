@@ -244,11 +244,10 @@ func TestParseShapeCubicEquationSparseFlatCoefficients(t *testing.T) {
 		t.Fatalf("expected *shape.CubicEquation, got %T", shapes[0])
 	}
 
-	interaction, ok := cubic.IntersectRange(
+	interaction, ok := cubic.Intersect(
 		mat.NewVecDense(3, []float64{0, 0, 0}),
 		mat.NewVecDense(3, []float64{1, 0, 0}),
-		0,
-		math.MaxFloat64,
+		shape.NewIntersectOptions(0, math.MaxFloat64),
 	)
 	if !ok {
 		t.Fatal("expected sparse cubic to hit")
@@ -277,11 +276,10 @@ func TestParseShapeFourOrderEquationSparseCoordinateCoefficients(t *testing.T) {
 		t.Fatalf("expected *shape.FourOrderEquation, got %T", shapes[0])
 	}
 
-	interaction, ok := quartic.IntersectRange(
+	interaction, ok := quartic.Intersect(
 		mat.NewVecDense(3, []float64{0, 0, 0}),
 		mat.NewVecDense(3, []float64{1, 0, 0}),
-		0,
-		math.MaxFloat64,
+		shape.NewIntersectOptions(0, math.MaxFloat64),
 	)
 	if !ok {
 		t.Fatal("expected sparse four-order equation to hit")
@@ -314,11 +312,10 @@ func TestParseShapeFourOrderEquationIgnoresAuthoringTransform(t *testing.T) {
 		t.Fatalf("expected *shape.FourOrderEquation, got %T", shapes[0])
 	}
 
-	interaction, ok := quartic.IntersectRange(
+	interaction, ok := quartic.Intersect(
 		mat.NewVecDense(3, []float64{0, 0, 0}),
 		mat.NewVecDense(3, []float64{1, 0, 0}),
-		0,
-		math.MaxFloat64,
+		shape.NewIntersectOptions(0, math.MaxFloat64),
 	)
 	if !ok {
 		t.Fatal("expected canonical four-order equation to hit")
@@ -373,11 +370,10 @@ func TestParseShapeCubicEquationUsesBakedCoefficientsDirectly(t *testing.T) {
 		t.Fatalf("expected *shape.CubicEquation, got %T", shapes[0])
 	}
 
-	interaction, ok := cubic.IntersectRange(
+	interaction, ok := cubic.Intersect(
 		mat.NewVecDense(3, []float64{0, 0, 0}),
 		mat.NewVecDense(3, []float64{1, 0, 0}),
-		0,
-		math.MaxFloat64,
+		shape.NewIntersectOptions(0, math.MaxFloat64),
 	)
 	if !ok {
 		t.Fatal("expected cubic to hit")
@@ -561,11 +557,10 @@ func TestParseShapeParametricEquationExprPlane(t *testing.T) {
 		t.Fatalf("expected *shape.ParametricEquation, got %T", shapes[0])
 	}
 
-	interaction, ok := parametric.IntersectRange(
+	interaction, ok := parametric.Intersect(
 		mat.NewVecDense(3, []float64{0.25, -0.5, -2}),
 		mat.NewVecDense(3, []float64{0, 0, 1}),
-		1e-6,
-		math.MaxFloat64,
+		shape.NewIntersectOptions(1e-6, math.MaxFloat64),
 	)
 	if !ok {
 		t.Fatal("expected parametric expr plane hit")
@@ -627,11 +622,10 @@ func TestParseShapeParametricEquationExprConstantsTorus(t *testing.T) {
 		t.Fatalf("parse parametric expr torus: %v", err)
 	}
 	parametric := shapes[0].(*shape.ParametricEquation)
-	interaction, ok := parametric.IntersectRange(
+	interaction, ok := parametric.Intersect(
 		mat.NewVecDense(3, []float64{0, -3, 0}),
 		mat.NewVecDense(3, []float64{0, 1, 0}),
-		1e-6,
-		math.MaxFloat64,
+		shape.NewIntersectOptions(1e-6, math.MaxFloat64),
 	)
 	if !ok {
 		t.Fatal("expected parametric expr torus hit")
@@ -707,11 +701,10 @@ func TestParseShapeParametricCurveExpr(t *testing.T) {
 		t.Fatalf("expected *shape.ParametricCurve, got %T", shapes[0])
 	}
 
-	interaction, ok := curve.IntersectRange(
+	interaction, ok := curve.Intersect(
 		mat.NewVecDense(3, []float64{-1, 0, 0}),
 		mat.NewVecDense(3, []float64{1, 0, 0}),
-		1e-6,
-		math.MaxFloat64,
+		shape.NewIntersectOptions(1e-6, math.MaxFloat64),
 	)
 	if !ok {
 		t.Fatal("expected parametric expr curve hit")
@@ -831,11 +824,10 @@ func TestParseShapeImplicitEquationExprField(t *testing.T) {
 		t.Fatalf("expected *shape.ImplicitEquation, got %T", shapes[0])
 	}
 
-	interaction, ok := implicit.IntersectRange(
+	interaction, ok := implicit.Intersect(
 		mat.NewVecDense(3, []float64{0, 0, -1.2}),
 		mat.NewVecDense(3, []float64{0, 0, 1}),
-		0,
-		3,
+		shape.NewIntersectOptions(0, 3),
 	)
 	if !ok {
 		t.Fatal("expected ray to hit expr sphere")
@@ -889,11 +881,10 @@ func TestParseShapeImplicitEquationMetaballsField(t *testing.T) {
 		t.Fatalf("unexpected metaballs gradient: %v", gradient)
 	}
 
-	interaction, ok := implicit.IntersectRange(
+	interaction, ok := implicit.Intersect(
 		mat.NewVecDense(3, []float64{-2, 0, 0}),
 		mat.NewVecDense(3, []float64{1, 0, 0}),
-		0,
-		4,
+		shape.NewIntersectOptions(0, 4),
 	)
 	if !ok {
 		t.Fatal("expected ray to hit metaball surface")
@@ -1043,11 +1034,10 @@ func TestParseShapeImplicitEquationTransformMapsWorldToLocal(t *testing.T) {
 	}
 	implicit := shapes[0].(*shape.ImplicitEquation)
 
-	interaction, ok := implicit.IntersectRange(
+	interaction, ok := implicit.Intersect(
 		mat.NewVecDense(3, []float64{1, -1, 0}),
 		mat.NewVecDense(3, []float64{0, 1, 0}),
-		0,
-		3,
+		shape.NewIntersectOptions(0, 3),
 	)
 	if !ok {
 		t.Fatal("expected transformed implicit plane to hit")

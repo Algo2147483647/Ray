@@ -15,13 +15,14 @@ func TestFiniteCylinderIntersectHitsSide(t *testing.T) {
 		4,
 	)
 
-	distance := cylinder.Intersect(
+	interaction, ok := cylinder.Intersect(
 		mat.NewVecDense(3, []float64{2, 0, 0}),
 		mat.NewVecDense(3, []float64{-1, 0, 0}),
+		NewIntersectOptions(1e-6, math.MaxFloat64),
 	)
 
-	if math.Abs(distance-1) > 1e-9 {
-		t.Fatalf("unexpected side hit distance: got %f want 1", distance)
+	if !ok || math.Abs(interaction.Distance-1) > 1e-9 {
+		t.Fatalf("unexpected side hit: ok=%v distance=%f want 1", ok, interaction.Distance)
 	}
 }
 
@@ -33,13 +34,14 @@ func TestFiniteCylinderIntersectHitsCap(t *testing.T) {
 		4,
 	)
 
-	distance := cylinder.Intersect(
+	interaction, ok := cylinder.Intersect(
 		mat.NewVecDense(3, []float64{0.5, 0, 4}),
 		mat.NewVecDense(3, []float64{0, 0, -1}),
+		NewIntersectOptions(1e-6, math.MaxFloat64),
 	)
 
-	if math.Abs(distance-2) > 1e-9 {
-		t.Fatalf("unexpected cap hit distance: got %f want 2", distance)
+	if !ok || math.Abs(interaction.Distance-2) > 1e-9 {
+		t.Fatalf("unexpected cap hit: ok=%v distance=%f want 2", ok, interaction.Distance)
 	}
 }
 
@@ -51,13 +53,14 @@ func TestFiniteCylinderIntersectRejectsBeyondHeight(t *testing.T) {
 		4,
 	)
 
-	distance := cylinder.Intersect(
+	_, ok := cylinder.Intersect(
 		mat.NewVecDense(3, []float64{2, 0, 3}),
 		mat.NewVecDense(3, []float64{-1, 0, 0}),
+		NewIntersectOptions(1e-6, math.MaxFloat64),
 	)
 
-	if distance != math.MaxFloat64 {
-		t.Fatalf("expected miss beyond cylinder height, got %f", distance)
+	if ok {
+		t.Fatal("expected miss beyond cylinder height")
 	}
 }
 

@@ -24,15 +24,14 @@ func (c *Cuboid) Name() string {
 	return "Cuboid"
 }
 
-func (c *Cuboid) Intersect(raySt, rayDir *mat.VecDense) float64 {
-	interaction, ok := c.IntersectRange(raySt, rayDir, utils.EPS, math.MaxFloat64)
-	if !ok {
-		return math.MaxFloat64
+func (c *Cuboid) Intersect(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+	if options.Path == PathGreatCircle {
+		return c.intersectGreatCircle(raySt, rayDir, options)
 	}
-	return interaction.Distance
-}
-
-func (c *Cuboid) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
+	if !options.validFor(PathAffine) {
+		return SurfaceInteraction{}, false
+	}
+	tMin, tMax := options.Range.Min, options.Range.Max
 	t0, t1, ok := c.intersectionInterval(raySt, rayDir)
 	if !ok || t1 < tMin || t0 > tMax {
 		return SurfaceInteraction{}, false
@@ -51,20 +50,16 @@ func (c *Cuboid) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64)
 	return newSurfaceInteractionAt(point, distance, normal), true
 }
 
-func (c *Cuboid) OverlapsRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) bool {
-	_, ok := c.OverlapRangeNear(raySt, rayDir, tMin, tMax)
-	return ok
-}
-
-func (c *Cuboid) OverlapRangeNear(raySt, rayDir *mat.VecDense, tMin, tMax float64) (float64, bool) {
-	t0, _, ok := c.OverlapRange(raySt, rayDir, tMin, tMax)
-	return t0, ok
-}
-
-func (c *Cuboid) OverlapRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (float64, float64, bool) {
+// Clip intersects an affine ray with the cuboid and returns the portion of
+// options.Range that lies inside it.
+func (c *Cuboid) Clip(raySt, rayDir *mat.VecDense, options IntersectOptions) (Interval, bool) {
+	if !options.validFor(PathAffine) {
+		return Interval{}, false
+	}
+	tMin, tMax := options.Range.Min, options.Range.Max
 	t0, t1, ok := c.intersectionInterval(raySt, rayDir)
 	if !ok || t1 < tMin || t0 > tMax {
-		return 0, 0, false
+		return Interval{}, false
 	}
 	if t0 < tMin {
 		t0 = tMin
@@ -72,7 +67,7 @@ func (c *Cuboid) OverlapRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (
 	if t1 > tMax {
 		t1 = tMax
 	}
-	return t0, t1, true
+	return Interval{Min: t0, Max: t1}, true
 }
 
 func (c *Cuboid) intersectionInterval(raySt, rayDir *mat.VecDense) (float64, float64, bool) {

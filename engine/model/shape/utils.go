@@ -17,20 +17,47 @@ type SurfaceInteraction struct {
 	PrimitiveID     int
 }
 
-type SurfaceCandidate struct {
-	Distance        float64
-	ArcLength       float64
-	Point           *mat.VecDense
-	GeometricNormal *mat.VecDense
-	ShadingNormal   *mat.VecDense
-	UV              [2]float64
-	DPDU            *mat.VecDense
-	DPDV            *mat.VecDense
-	PrimitiveID     int
+// Interval is the closed parameter range accepted by an intersection query.
+type Interval struct {
+	Min float64
+	Max float64
 }
 
-type SurfaceCandidateProvider interface {
-	IntersectCandidate(rayStart, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceCandidate, bool)
+func (i Interval) Valid() bool {
+	return !math.IsNaN(i.Min) && !math.IsNaN(i.Max) && i.Min <= i.Max
+}
+
+// IntersectionPath describes how rayStart and rayDir parameterize the path.
+type IntersectionPath uint8
+
+const (
+	// PathAffine evaluates rayStart + t*rayDir.
+	PathAffine IntersectionPath = iota
+	// PathGreatCircle evaluates the unit-sphere geodesic starting at rayStart
+	// with rayDir as its initial tangent.
+	PathGreatCircle
+)
+
+// IntersectOptions contains all non-ray inputs shared by shape intersections.
+// Its zero Path value is affine; callers should supply Range explicitly.
+type IntersectOptions struct {
+	Range Interval
+	Path  IntersectionPath
+}
+
+func NewIntersectOptions(tMin, tMax float64) IntersectOptions {
+	return IntersectOptions{Range: Interval{Min: tMin, Max: tMax}}
+}
+
+func NewGreatCircleIntersectOptions(sMin, sMax float64) IntersectOptions {
+	return IntersectOptions{
+		Range: Interval{Min: sMin, Max: sMax},
+		Path:  PathGreatCircle,
+	}
+}
+
+func (o IntersectOptions) validFor(path IntersectionPath) bool {
+	return o.Path == path && o.Range.Valid()
 }
 
 func distanceInRange(distance, tMin, tMax float64) bool {
@@ -63,24 +90,6 @@ func vecDenseXYZ(v *mat.VecDense) [3]float64 {
 func newSurfaceInteraction(rayStart, rayDir *mat.VecDense, distance float64, normal *mat.VecDense) SurfaceInteraction {
 	point := pointAt(rayStart, rayDir, distance)
 	return newSurfaceInteractionAt(point, distance, normal)
-}
-
-func SurfaceInteractionFromCandidate(rayStart, rayDir *mat.VecDense, candidate SurfaceCandidate) SurfaceInteraction {
-	point := candidate.Point
-	if point == nil {
-		point = pointAt(rayStart, rayDir, candidate.Distance)
-	}
-	return SurfaceInteraction{
-		Distance:        candidate.Distance,
-		ArcLength:       candidate.ArcLength,
-		Point:           point,
-		GeometricNormal: candidate.GeometricNormal,
-		ShadingNormal:   candidate.ShadingNormal,
-		UV:              candidate.UV,
-		DPDU:            candidate.DPDU,
-		DPDV:            candidate.DPDV,
-		PrimitiveID:     candidate.PrimitiveID,
-	}
 }
 
 func newSurfaceInteractionAt(point *mat.VecDense, distance float64, normal *mat.VecDense) SurfaceInteraction {

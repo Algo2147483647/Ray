@@ -188,72 +188,26 @@ func (p *ParametricEquation) Name() string {
 	return "Parametric Equation"
 }
 
-func (p *ParametricEquation) Intersect(raySt, rayDir *mat.VecDense) float64 {
-	interaction, ok := p.IntersectRange(raySt, rayDir, utils.EPS, math.MaxFloat64)
-	if !ok {
-		return math.MaxFloat64
-	}
-	return interaction.Distance
-}
-
-func (p *ParametricEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
-	candidate, ok := p.IntersectCandidate(raySt, rayDir, tMin, tMax)
-	if !ok {
+func (p *ParametricEquation) Intersect(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !options.validFor(PathAffine) {
 		return SurfaceInteraction{}, false
 	}
-	return SurfaceInteractionFromCandidate(raySt, rayDir, candidate), true
-}
-
-func (p *ParametricEquation) IntersectCandidate(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceCandidate, bool) {
+	tMin, tMax := options.Range.Min, options.Range.Max
 	if p == nil || raySt == nil || rayDir == nil || raySt.Len() != rayDir.Len() || raySt.Len() < 3 || tMax < tMin {
-		return SurfaceCandidate{}, false
+		return SurfaceInteraction{}, false
 	}
 	if err := p.ensureAcceleration(); err != nil {
-		return SurfaceCandidate{}, false
+		return SurfaceInteraction{}, false
 	}
 	if p.patchBVH == nil {
-		return SurfaceCandidate{}, false
+		return SurfaceInteraction{}, false
 	}
 
 	best, found := p.intersectPatchBVH(raySt, rayDir, p.patchBVH, tMin, tMax, parametricHit{T: math.MaxFloat64}, false)
 	if !found {
-		return SurfaceCandidate{}, false
+		return SurfaceInteraction{}, false
 	}
-	interaction := p.interactionAt(best)
-	return SurfaceCandidate{
-		Distance:        interaction.Distance,
-		ArcLength:       interaction.ArcLength,
-		Point:           interaction.Point,
-		GeometricNormal: interaction.GeometricNormal,
-		ShadingNormal:   interaction.ShadingNormal,
-		UV:              interaction.UV,
-		DPDU:            interaction.DPDU,
-		DPDV:            interaction.DPDV,
-		PrimitiveID:     interaction.PrimitiveID,
-	}, true
-}
-
-func (p *ParametricEquation) IntersectPure(raySt, rayDir *mat.VecDense, u0, v0, tol float64, maxIter int) float64 {
-	if p == nil {
-		return math.Inf(1)
-	}
-	oldTol, oldMaxIter := p.NewtonTol, p.NewtonMaxIter
-	if tol > 0 {
-		p.NewtonTol = tol
-	}
-	if maxIter > 0 {
-		p.NewtonMaxIter = maxIter
-	}
-	defer func() {
-		p.NewtonTol = oldTol
-		p.NewtonMaxIter = oldMaxIter
-	}()
-
-	hit, ok := p.refineIntersection(raySt, rayDir, parametricSeed{T: utils.EPS, U: u0, V: v0}, utils.EPS, math.MaxFloat64)
-	if !ok {
-		return math.Inf(1)
-	}
-	return hit.T
+	return p.interactionAt(best), true
 }
 
 func (p *ParametricEquation) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {
@@ -295,10 +249,11 @@ func (p *ParametricEquation) intersectPatchBVH(
 	if node == nil || node.Bounds == nil {
 		return best, found
 	}
-	near, _, ok := node.Bounds.OverlapRange(raySt, rayDir, tMin, minFloat(tMax, best.T))
+	clipped, ok := node.Bounds.Clip(raySt, rayDir, NewIntersectOptions(tMin, minFloat(tMax, best.T)))
 	if !ok {
 		return best, found
 	}
+	near := clipped.Min
 	if node.Patch != nil {
 		seed := parametricSeed{
 			T:       maxFloat(near, tMin),
@@ -739,7 +694,8 @@ func nodeChildNear(raySt, rayDir *mat.VecDense, node *parametricPatchBVHNode, tM
 	if node == nil || node.Bounds == nil {
 		return 0, false
 	}
-	return node.Bounds.OverlapRangeNear(raySt, rayDir, tMin, tMax)
+	clipped, ok := node.Bounds.Clip(raySt, rayDir, NewIntersectOptions(tMin, tMax))
+	return clipped.Min, ok
 }
 
 func finiteVec(v *mat.VecDense, dim int) bool {

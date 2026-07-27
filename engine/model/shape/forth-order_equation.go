@@ -2,7 +2,6 @@ package shape
 
 import (
 	"github.com/Algo2147483647/ray/engine/maths"
-	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 	"math"
 )
@@ -43,15 +42,10 @@ func (p *FourOrderEquation) Name() string {
 	return "Four-Order Equation"
 }
 
-func (p *FourOrderEquation) Intersect(raySt, rayDir *mat.VecDense) float64 {
-	interaction, ok := p.IntersectRange(raySt, rayDir, utils.EPS, math.MaxFloat64)
-	if !ok {
-		return math.MaxFloat64
+func (p *FourOrderEquation) Intersect(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !options.validFor(PathAffine) {
+		return SurfaceInteraction{}, false
 	}
-	return interaction.Distance
-}
-
-func (p *FourOrderEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
 	var (
 		coeffs [5]float64       // Coefficients from the fourth-degree term to the constant term.
 		stx    = raySt.AtVec(0) // Get ray origin and direction components.
@@ -92,7 +86,7 @@ func (p *FourOrderEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tM
 
 	res := math.MaxFloat64 // Find the smallest positive real root.
 	for _, root := range roots {
-		if distanceInRange(root, tMin, tMax) && root < res {
+		if distanceInRange(root, options.Range.Min, options.Range.Max) && root < res {
 			res = root
 		}
 	}

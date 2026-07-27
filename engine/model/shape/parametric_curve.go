@@ -116,39 +116,15 @@ func (c *ParametricCurve) Name() string {
 	return "Parametric Curve"
 }
 
-func (c *ParametricCurve) Intersect(raySt, rayDir *mat.VecDense) float64 {
-	interaction, ok := c.IntersectRange(raySt, rayDir, utils.EPS, math.MaxFloat64)
-	if !ok {
-		return math.MaxFloat64
+func (c *ParametricCurve) Intersect(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !options.validFor(PathAffine) {
+		return SurfaceInteraction{}, false
 	}
-	return interaction.Distance
-}
-
-func (c *ParametricCurve) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
-	candidate, ok := c.IntersectCandidate(raySt, rayDir, tMin, tMax)
+	hit, ok := c.intersect(raySt, rayDir, options.Range.Min, options.Range.Max)
 	if !ok {
 		return SurfaceInteraction{}, false
 	}
-	return SurfaceInteractionFromCandidate(raySt, rayDir, candidate), true
-}
-
-func (c *ParametricCurve) IntersectCandidate(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceCandidate, bool) {
-	hit, ok := c.intersect(raySt, rayDir, tMin, tMax)
-	if !ok {
-		return SurfaceCandidate{}, false
-	}
-	interaction := c.interactionAt(raySt, rayDir, hit)
-	return SurfaceCandidate{
-		Distance:        interaction.Distance,
-		ArcLength:       interaction.ArcLength,
-		Point:           interaction.Point,
-		GeometricNormal: interaction.GeometricNormal,
-		ShadingNormal:   interaction.ShadingNormal,
-		UV:              interaction.UV,
-		DPDU:            interaction.DPDU,
-		DPDV:            interaction.DPDV,
-		PrimitiveID:     interaction.PrimitiveID,
-	}, true
+	return c.interactionAt(raySt, rayDir, hit), true
 }
 
 func (c *ParametricCurve) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {
@@ -285,10 +261,11 @@ func (c *ParametricCurve) intersectSegmentBVH(
 	if node == nil || node.Bounds == nil {
 		return best, found
 	}
-	near, _, ok := node.Bounds.OverlapRange(raySt, rayDir, tMin, minFloat(tMax, best.Distance))
+	clipped, ok := node.Bounds.Clip(raySt, rayDir, NewIntersectOptions(tMin, minFloat(tMax, best.Distance)))
 	if !ok {
 		return best, found
 	}
+	near := clipped.Min
 	if node.Segment != nil {
 		if !node.Segment.overlapsCapsule(raySt, rayDir, tMin, minFloat(tMax, best.Distance)) {
 			return best, found
@@ -620,7 +597,8 @@ func curveNodeChildNear(raySt, rayDir *mat.VecDense, node *parametricCurveBVHNod
 	if node == nil || node.Bounds == nil {
 		return 0, false
 	}
-	return node.Bounds.OverlapRangeNear(raySt, rayDir, tMin, tMax)
+	clipped, ok := node.Bounds.Clip(raySt, rayDir, NewIntersectOptions(tMin, tMax))
+	return clipped.Min, ok
 }
 
 func (s *parametricCurveSegment) overlapsCapsule(raySt, rayDir *mat.VecDense, tMin, tMax float64) bool {

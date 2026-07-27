@@ -1,10 +1,6 @@
 package shape
 
-import (
-	"github.com/Algo2147483647/ray/engine/utils"
-	"gonum.org/v1/gonum/mat"
-	"math"
-)
+import "gonum.org/v1/gonum/mat"
 
 type BoundedShape struct {
 	BaseShape
@@ -23,20 +19,23 @@ func (b *BoundedShape) Name() string {
 	return "Bounded " + b.Shape.Name()
 }
 
-func (b *BoundedShape) Intersect(raySt, rayDir *mat.VecDense) float64 {
-	interaction, ok := b.IntersectRange(raySt, rayDir, utils.EPS, math.MaxFloat64)
-	if !ok {
-		return math.MaxFloat64
+func (b *BoundedShape) Intersect(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+	if b == nil || b.Shape == nil || b.Bounds == nil || !options.Range.Valid() {
+		return SurfaceInteraction{}, false
 	}
-	return interaction.Distance
-}
-
-func (b *BoundedShape) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
-	t0, t1, ok := b.Bounds.OverlapRange(raySt, rayDir, tMin, tMax)
+	if options.Path == PathGreatCircle {
+		interaction, ok := b.Shape.Intersect(raySt, rayDir, options)
+		if !ok || interaction.Point == nil || !b.Bounds.containsPoint(interaction.Point, -1) {
+			return SurfaceInteraction{}, false
+		}
+		return interaction, true
+	}
+	clipped, ok := b.Bounds.Clip(raySt, rayDir, options)
 	if !ok {
 		return SurfaceInteraction{}, false
 	}
-	return b.Shape.IntersectRange(raySt, rayDir, t0, t1)
+	options.Range = clipped
+	return b.Shape.Intersect(raySt, rayDir, options)
 }
 
 func (b *BoundedShape) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {

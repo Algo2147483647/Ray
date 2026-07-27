@@ -17,22 +17,20 @@ func (p *Plane) Name() string {
 	return "Plane"
 }
 
-func (p *Plane) Intersect(raySt, rayDir *mat.VecDense) float64 {
-	interaction, ok := p.IntersectRange(raySt, rayDir, utils.EPS, math.MaxFloat64)
-	if !ok {
-		return math.MaxFloat64
+func (p *Plane) Intersect(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+	if options.Path == PathGreatCircle {
+		return p.intersectGreatCircle(raySt, rayDir, options)
 	}
-	return interaction.Distance
-}
-
-func (p *Plane) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
+	if !options.validFor(PathAffine) {
+		return SurfaceInteraction{}, false
+	}
 	t := mat.Dot(p.A, rayDir)
 	if math.Abs(t) < utils.EPS {
 		return SurfaceInteraction{}, false
 	}
 
 	d := -(mat.Dot(p.A, raySt) + p.B) / t
-	if !distanceInRange(d, tMin, tMax) {
+	if !distanceInRange(d, options.Range.Min, options.Range.Max) {
 		return SurfaceInteraction{}, false
 	}
 

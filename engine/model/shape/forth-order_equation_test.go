@@ -76,11 +76,10 @@ func TestFourOrderEquationIntersectsQuarticWithShiftedRoots(t *testing.T) {
 		[4]int{0, 0, 0, 0}: 80,
 	}))
 
-	interaction, ok := quartic.IntersectRange(
+	interaction, ok := quartic.Intersect(
 		mat.NewVecDense(3, []float64{0, 0, 0}),
 		mat.NewVecDense(3, []float64{1, 0, 0}),
-		0,
-		math.MaxFloat64,
+		NewIntersectOptions(0, math.MaxFloat64),
 	)
 	if !ok {
 		t.Fatal("expected ray to hit (x - 3)^4 - 1 = 0")

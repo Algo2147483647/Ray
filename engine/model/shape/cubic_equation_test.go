@@ -13,11 +13,10 @@ func TestCubicEquationIntersectsSimpleCubic(t *testing.T) {
 		[3]int{0, 0, 0}: -1,
 	}))
 
-	interaction, ok := cubic.IntersectRange(
+	interaction, ok := cubic.Intersect(
 		mat.NewVecDense(3, []float64{0, 0, 0}),
 		mat.NewVecDense(3, []float64{1, 0, 0}),
-		0,
-		math.MaxFloat64,
+		NewIntersectOptions(0, math.MaxFloat64),
 	)
 	if !ok {
 		t.Fatal("expected ray to hit x^3 - 1 = 0")
@@ -33,11 +32,10 @@ func TestCubicEquationIntersectsDegenerateQuadratic(t *testing.T) {
 		[3]int{0, 0, 0}: -1,
 	}))
 
-	interaction, ok := cubic.IntersectRange(
+	interaction, ok := cubic.Intersect(
 		mat.NewVecDense(3, []float64{0, 0, 0}),
 		mat.NewVecDense(3, []float64{1, 0, 0}),
-		0,
-		math.MaxFloat64,
+		NewIntersectOptions(0, math.MaxFloat64),
 	)
 	if !ok {
 		t.Fatal("expected degenerate quadratic to hit")
@@ -55,11 +53,10 @@ func TestCubicEquationChoosesClosestOfThreeRealRoots(t *testing.T) {
 		[3]int{0, 0, 0}: -6,
 	}))
 
-	interaction, ok := cubic.IntersectRange(
+	interaction, ok := cubic.Intersect(
 		mat.NewVecDense(3, []float64{0, 0, 0}),
 		mat.NewVecDense(3, []float64{1, 0, 0}),
-		0,
-		math.MaxFloat64,
+		NewIntersectOptions(0, math.MaxFloat64),
 	)
 	if !ok {
 		t.Fatal("expected ray to hit one of three roots")
@@ -81,11 +78,10 @@ func TestBoundedCubicEquationCanChooseLaterRootInsideBounds(t *testing.T) {
 		mat.NewVecDense(3, []float64{2.5, 1, 1}),
 	))
 
-	interaction, ok := bounded.IntersectRange(
+	interaction, ok := bounded.Intersect(
 		mat.NewVecDense(3, []float64{0, 0, 0}),
 		mat.NewVecDense(3, []float64{1, 0, 0}),
-		0,
-		math.MaxFloat64,
+		NewIntersectOptions(0, math.MaxFloat64),
 	)
 	if !ok {
 		t.Fatal("expected bounded cubic to hit the root inside bounds")

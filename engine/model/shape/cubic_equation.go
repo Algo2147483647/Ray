@@ -2,7 +2,6 @@ package shape
 
 import (
 	"github.com/Algo2147483647/ray/engine/maths"
-	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 	"math"
 )
@@ -22,15 +21,10 @@ func (p *CubicEquation) Name() string {
 	return "Cubic Equation"
 }
 
-func (p *CubicEquation) Intersect(raySt, rayDir *mat.VecDense) float64 {
-	interaction, ok := p.IntersectRange(raySt, rayDir, utils.EPS, math.MaxFloat64)
-	if !ok {
-		return math.MaxFloat64
+func (p *CubicEquation) Intersect(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !options.validFor(PathAffine) {
+		return SurfaceInteraction{}, false
 	}
-	return interaction.Distance
-}
-
-func (p *CubicEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
 	var (
 		coeffs = []float64{0, 0, 0, 0}
 		stx    = raySt.AtVec(0)
@@ -88,7 +82,7 @@ func (p *CubicEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax f
 
 	res := math.MaxFloat64
 	for _, root := range roots {
-		if distanceInRange(root, tMin, tMax) && root < res {
+		if distanceInRange(root, options.Range.Min, options.Range.Max) && root < res {
 			res = root
 		}
 	}

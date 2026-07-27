@@ -14,13 +14,14 @@ func TestCircleIntersectHitsDisk(t *testing.T) {
 		2,
 	)
 
-	distance := circle.Intersect(
+	interaction, ok := circle.Intersect(
 		mat.NewVecDense(3, []float64{0.5, 0.5, 3}),
 		mat.NewVecDense(3, []float64{0, 0, -1}),
+		NewIntersectOptions(1e-6, math.MaxFloat64),
 	)
 
-	if math.Abs(distance-3) > 1e-9 {
-		t.Fatalf("unexpected hit distance: got %f want 3", distance)
+	if !ok || math.Abs(interaction.Distance-3) > 1e-9 {
+		t.Fatalf("unexpected hit: ok=%v distance=%f want 3", ok, interaction.Distance)
 	}
 }
 
@@ -31,13 +32,14 @@ func TestCircleIntersectRejectsOutsideDisk(t *testing.T) {
 		2,
 	)
 
-	distance := circle.Intersect(
+	_, ok := circle.Intersect(
 		mat.NewVecDense(3, []float64{3, 0, 3}),
 		mat.NewVecDense(3, []float64{0, 0, -1}),
+		NewIntersectOptions(1e-6, math.MaxFloat64),
 	)
 
-	if distance != math.MaxFloat64 {
-		t.Fatalf("expected miss, got distance %f", distance)
+	if ok {
+		t.Fatal("expected miss")
 	}
 }
 

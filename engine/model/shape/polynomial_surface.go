@@ -5,7 +5,6 @@ import (
 	"math"
 
 	"github.com/Algo2147483647/ray/engine/maths"
-	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -53,15 +52,13 @@ func (p *PolynomialSurface) Name() string {
 	return "Polynomial Surface"
 }
 
-func (p *PolynomialSurface) Intersect(raySt, rayDir *mat.VecDense) float64 {
-	interaction, ok := p.IntersectRange(raySt, rayDir, utils.EPS, math.MaxFloat64)
-	if !ok {
-		return math.MaxFloat64
+func (p *PolynomialSurface) Intersect(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+	if options.Path == PathGreatCircle {
+		return p.intersectGreatCircle(raySt, rayDir, options)
 	}
-	return interaction.Distance
-}
-
-func (p *PolynomialSurface) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
+	if !options.validFor(PathAffine) {
+		return SurfaceInteraction{}, false
+	}
 	if p == nil || raySt == nil || rayDir == nil || raySt.Len() < 3 || rayDir.Len() < 3 {
 		return SurfaceInteraction{}, false
 	}
@@ -78,7 +75,7 @@ func (p *PolynomialSurface) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tM
 
 	bestT := math.MaxFloat64
 	for _, root := range roots {
-		if distanceInRange(root, tMin, tMax) && root < bestT {
+		if distanceInRange(root, options.Range.Min, options.Range.Max) && root < bestT {
 			bestT = root
 		}
 	}

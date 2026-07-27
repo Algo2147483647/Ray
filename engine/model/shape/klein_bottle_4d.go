@@ -359,7 +359,11 @@ func (k *KleinBottle4D) UVAtPoint(p *mat.VecDense) (u, v float64) {
 	return cp.uUV, cp.vUV
 }
 
-func (k *KleinBottle4D) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
+func (k *KleinBottle4D) Intersect(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !options.validFor(PathAffine) {
+		return SurfaceInteraction{}, false
+	}
+	tMin, tMax := options.Range.Min, options.Range.Max
 	if raySt == nil || rayDir == nil || raySt.Len() != 4 || rayDir.Len() != 4 {
 		return SurfaceInteraction{}, false
 	}
@@ -542,14 +546,6 @@ func (k *KleinBottle4D) BuildBoundingBox() (pmin, pmax *mat.VecDense) {
 	}
 
 	return
-}
-
-func (k *KleinBottle4D) Intersect(raySt, rayDir *mat.VecDense) float64 {
-	si, ok := k.IntersectRange(raySt, rayDir, utils.EPS, math.MaxFloat64)
-	if !ok {
-		return math.MaxFloat64
-	}
-	return si.Distance
 }
 
 func dot4(a, b [4]float64) float64 {

@@ -54,15 +54,14 @@ func (f *ImplicitEquation) Name() string {
 	return "Implicit Equation"
 }
 
-func (f *ImplicitEquation) Intersect(raySt, rayDir *mat.VecDense) float64 {
-	interaction, ok := f.IntersectRange(raySt, rayDir, utils.EPS, math.MaxFloat64)
-	if !ok {
-		return math.MaxFloat64
+func (f *ImplicitEquation) Intersect(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+	if options.Path == PathGreatCircle {
+		return f.intersectGreatCircle(raySt, rayDir, options)
 	}
-	return interaction.Distance
-}
-
-func (f *ImplicitEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
+	if !options.validFor(PathAffine) {
+		return SurfaceInteraction{}, false
+	}
+	tMin, tMax := options.Range.Min, options.Range.Max
 	if f == nil || f.Function == nil || raySt == nil || rayDir == nil {
 		return SurfaceInteraction{}, false
 	}
@@ -71,11 +70,11 @@ func (f *ImplicitEquation) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMa
 	}
 
 	if f.hasValidRange() {
-		var ok bool
-		tMin, tMax, ok = NewCuboid(f.Range[0], f.Range[1]).OverlapRange(raySt, rayDir, tMin, tMax)
+		clipped, ok := NewCuboid(f.Range[0], f.Range[1]).Clip(raySt, rayDir, options)
 		if !ok {
 			return SurfaceInteraction{}, false
 		}
+		tMin, tMax = clipped.Min, clipped.Max
 	}
 
 	scanEnd := tMax

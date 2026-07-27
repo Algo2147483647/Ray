@@ -38,7 +38,7 @@ func TestKleinBottle4DWrapsUVAcrossSeam(t *testing.T) {
 	}
 }
 
-func TestKleinBottle4DIntersectRangeHitsTubeBoundary(t *testing.T) {
+func TestKleinBottle4DIntersectHitsTubeBoundary(t *testing.T) {
 	k := NewKleinBottle4D(mat.NewVecDense(4, []float64{0, 0, 0, 0}), 1.5, 0.5, 0.06)
 	k.marchEps = 1e-8
 	k.minStep = 1e-8
@@ -46,7 +46,7 @@ func TestKleinBottle4DIntersectRangeHitsTubeBoundary(t *testing.T) {
 	start := mat.NewVecDense(4, []float64{2 + k.Thickness + 0.25, 0, 0, 0})
 	dir := mat.NewVecDense(4, []float64{-1, 0, 0, 0})
 
-	interaction, ok := k.IntersectRange(start, dir, 0, 1)
+	interaction, ok := k.Intersect(start, dir, NewIntersectOptions(0, 1))
 	if !ok {
 		t.Fatal("expected ray to hit Klein bottle tube")
 	}
@@ -67,23 +67,21 @@ func TestKleinBottle4DIntersectRangeHitsTubeBoundary(t *testing.T) {
 	}
 }
 
-func TestKleinBottle4DIntersectRangeRejectsWrongDimensionAndBoxMiss(t *testing.T) {
+func TestKleinBottle4DIntersectRejectsWrongDimensionAndBoxMiss(t *testing.T) {
 	k := NewKleinBottle4D(mat.NewVecDense(4, []float64{0, 0, 0, 0}), 1.5, 0.5, 0.06)
 
-	if _, ok := k.IntersectRange(
+	if _, ok := k.Intersect(
 		mat.NewVecDense(3, []float64{0, 0, 0}),
 		mat.NewVecDense(3, []float64{1, 0, 0}),
-		0,
-		1,
+		NewIntersectOptions(0, 1),
 	); ok {
 		t.Fatal("expected wrong-dimension ray to miss")
 	}
 
-	if _, ok := k.IntersectRange(
+	if _, ok := k.Intersect(
 		mat.NewVecDense(4, []float64{0, 0, 0, 10}),
 		mat.NewVecDense(4, []float64{1, 0, 0, 0}),
-		0,
-		10,
+		NewIntersectOptions(0, 10),
 	); ok {
 		t.Fatal("expected ray outside bounding box to miss")
 	}

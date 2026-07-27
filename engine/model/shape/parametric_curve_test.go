@@ -24,11 +24,10 @@ func TestParametricCurveStraightTubeHit(t *testing.T) {
 	}
 	curve.Samples = 64
 
-	interaction, ok := curve.IntersectRange(
+	interaction, ok := curve.Intersect(
 		mat.NewVecDense(3, []float64{-1, 0, 0}),
 		mat.NewVecDense(3, []float64{1, 0, 0}),
-		1e-6,
-		math.MaxFloat64,
+		NewIntersectOptions(1e-6, math.MaxFloat64),
 	)
 
 	if !ok {
@@ -60,11 +59,10 @@ func TestParametricCurveEndpointCapHit(t *testing.T) {
 	)
 	curve.Samples = 64
 
-	interaction, ok := curve.IntersectRange(
+	interaction, ok := curve.Intersect(
 		mat.NewVecDense(3, []float64{-1, -0.2, 0}),
 		mat.NewVecDense(3, []float64{1, 0, 0}),
-		1e-6,
-		math.MaxFloat64,
+		NewIntersectOptions(1e-6, math.MaxFloat64),
 	)
 
 	if !ok {
@@ -87,11 +85,10 @@ func TestParametricCurveMiss(t *testing.T) {
 		[2]float64{-1, 1},
 	)
 
-	if _, ok := curve.IntersectRange(
+	if _, ok := curve.Intersect(
 		mat.NewVecDense(3, []float64{-1, 0, 0.5}),
 		mat.NewVecDense(3, []float64{1, 0, 0}),
-		1e-6,
-		math.MaxFloat64,
+		NewIntersectOptions(1e-6, math.MaxFloat64),
 	); ok {
 		t.Fatal("expected ray to miss thin curve")
 	}
@@ -122,11 +119,10 @@ func TestParametricCurveMissUsesSegmentBVHCoarseCulling(t *testing.T) {
 
 	for i := 0; i < 200; i++ {
 		y := -0.9 + float64(i)*1.8/199
-		_, _ = curve.IntersectRange(
+		_, _ = curve.Intersect(
 			mat.NewVecDense(3, []float64{-1, y, 0.55}),
 			mat.NewVecDense(3, []float64{1, 0, 0}),
-			1e-6,
-			3,
+			NewIntersectOptions(1e-6, 3),
 		)
 	}
 

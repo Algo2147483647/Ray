@@ -9,8 +9,7 @@ import (
 // Shape represents the interface for geometric shapes.
 type Shape interface {
 	Name() string
-	Intersect(rayStart, rayDir *mat.VecDense) float64
-	IntersectRange(rayStart, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool)
+	Intersect(rayStart, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool)
 	GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense
 	BuildBoundingBox() (pmin, pmax *mat.VecDense)
 }
@@ -20,14 +19,6 @@ type BaseShape struct{}
 
 func (bs *BaseShape) Name() string {
 	return "Base Shape"
-}
-
-func (bs *BaseShape) Intersect(rayStart, rayDir *mat.VecDense) float64 {
-	return math.MaxFloat64
-}
-
-func (bs *BaseShape) IntersectRange(rayStart, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
-	return SurfaceInteraction{}, false
 }
 
 func (bs *BaseShape) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {

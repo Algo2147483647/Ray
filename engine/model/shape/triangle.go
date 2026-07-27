@@ -50,25 +50,12 @@ func (f *Triangle) Name() string {
 	return "Triangle"
 }
 
-func (f *Triangle) Intersect(raySt, rayDir *mat.VecDense) float64 {
-	interaction, ok := f.IntersectRange(raySt, rayDir, utils.EPS, math.MaxFloat64)
-	if !ok {
-		return math.MaxFloat64
-	}
-	return interaction.Distance
-}
-
-func (f *Triangle) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
-	candidate, ok := f.IntersectCandidate(raySt, rayDir, tMin, tMax)
-	if !ok {
+func (f *Triangle) Intersect(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !options.validFor(PathAffine) {
 		return SurfaceInteraction{}, false
 	}
-	return SurfaceInteractionFromCandidate(raySt, rayDir, candidate), true
-}
-
-func (f *Triangle) IntersectCandidate(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceCandidate, bool) {
 	if raySt.Len() == 3 && rayDir.Len() == 3 {
-		return f.intersectCandidate3D(raySt, rayDir, tMin, tMax)
+		return f.intersect3D(raySt, rayDir, options.Range)
 	}
 
 	t := mat.NewVecDense(raySt.Len(), nil)
@@ -84,36 +71,28 @@ func (f *Triangle) IntersectCandidate(raySt, rayDir *mat.VecDense, tMin, tMax fl
 		a = -a
 	}
 	if a < utils.EPS {
-		return SurfaceCandidate{}, false
+		return SurfaceInteraction{}, false
 	}
 
 	maths.Cross(q, t, f.Mem.Edge1)
 	u := mat.Dot(t, p) / a
 	v := mat.Dot(rayDir, q) / a
 	if u < 0 || u > 1 {
-		return SurfaceCandidate{}, false
+		return SurfaceInteraction{}, false
 	}
 	if v < 0 || u+v > 1 {
-		return SurfaceCandidate{}, false
+		return SurfaceInteraction{}, false
 	}
 
 	distance := mat.Dot(f.Mem.Edge2, q) / a
-	if !distanceInRange(distance, tMin, tMax) {
-		return SurfaceCandidate{}, false
+	if !distanceInRange(distance, options.Range.Min, options.Range.Max) {
+		return SurfaceInteraction{}, false
 	}
 
-	return SurfaceCandidate{
-		Distance:        distance,
-		GeometricNormal: f.Mem.Normal,
-		ShadingNormal:   f.Mem.Normal,
-		UV:              [2]float64{u, v},
-		DPDU:            f.Mem.Edge1,
-		DPDV:            f.Mem.Edge2,
-		PrimitiveID:     -1,
-	}, true
+	return f.interactionAt(raySt, rayDir, distance, u, v), true
 }
 
-func (f *Triangle) intersectCandidate3D(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceCandidate, bool) {
+func (f *Triangle) intersect3D(raySt, rayDir *mat.VecDense, interval Interval) (SurfaceInteraction, bool) {
 	ox, oy, oz := raySt.AtVec(0), raySt.AtVec(1), raySt.AtVec(2)
 	dx, dy, dz := rayDir.AtVec(0), rayDir.AtVec(1), rayDir.AtVec(2)
 
@@ -126,7 +105,7 @@ func (f *Triangle) intersectCandidate3D(raySt, rayDir *mat.VecDense, tMin, tMax 
 	pz := dx*e2y - dy*e2x
 	det := e1x*px + e1y*py + e1z*pz
 	if math.Abs(det) < utils.EPS {
-		return SurfaceCandidate{}, false
+		return SurfaceInteraction{}, false
 	}
 
 	invDet := 1 / det
@@ -135,7 +114,7 @@ func (f *Triangle) intersectCandidate3D(raySt, rayDir *mat.VecDense, tMin, tMax 
 	tz := oz - p1z
 	u := (tx*px + ty*py + tz*pz) * invDet
 	if u < 0 || u > 1 {
-		return SurfaceCandidate{}, false
+		return SurfaceInteraction{}, false
 	}
 
 	qx := ty*e1z - tz*e1y
@@ -143,23 +122,23 @@ func (f *Triangle) intersectCandidate3D(raySt, rayDir *mat.VecDense, tMin, tMax 
 	qz := tx*e1y - ty*e1x
 	v := (dx*qx + dy*qy + dz*qz) * invDet
 	if v < 0 || u+v > 1 {
-		return SurfaceCandidate{}, false
+		return SurfaceInteraction{}, false
 	}
 
 	distance := (e2x*qx + e2y*qy + e2z*qz) * invDet
-	if !distanceInRange(distance, tMin, tMax) {
-		return SurfaceCandidate{}, false
+	if !distanceInRange(distance, interval.Min, interval.Max) {
+		return SurfaceInteraction{}, false
 	}
 
-	return SurfaceCandidate{
-		Distance:        distance,
-		GeometricNormal: f.Mem.Normal,
-		ShadingNormal:   f.Mem.Normal,
-		UV:              [2]float64{u, v},
-		DPDU:            f.Mem.Edge1,
-		DPDV:            f.Mem.Edge2,
-		PrimitiveID:     -1,
-	}, true
+	return f.interactionAt(raySt, rayDir, distance, u, v), true
+}
+
+func (f *Triangle) interactionAt(raySt, rayDir *mat.VecDense, distance, u, v float64) SurfaceInteraction {
+	interaction := newSurfaceInteraction(raySt, rayDir, distance, f.Mem.Normal)
+	interaction.UV = [2]float64{u, v}
+	interaction.DPDU = f.Mem.Edge1
+	interaction.DPDV = f.Mem.Edge2
+	return interaction
 }
 
 func (f *Triangle) GetNormalVector(_, res *mat.VecDense) *mat.VecDense {

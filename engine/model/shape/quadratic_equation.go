@@ -2,7 +2,6 @@ package shape
 
 import (
 	"github.com/Algo2147483647/ray/engine/maths"
-	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 	"math"
 )
@@ -27,18 +26,16 @@ func (p *QuadraticEquation) Name() string {
 	return "Quadratic Equation"
 }
 
-func (p *QuadraticEquation) Intersect(raySt, rayDir *mat.VecDense) float64 {
-	interaction, ok := p.IntersectRange(raySt, rayDir, utils.EPS, math.MaxFloat64)
-	if !ok {
-		return math.MaxFloat64
-	}
-	return interaction.Distance
-}
-
-func (p *QuadraticEquation) IntersectRange(
+func (p *QuadraticEquation) Intersect(
 	raySt, rayDir *mat.VecDense,
-	tMin, tMax float64,
+	options IntersectOptions,
 ) (SurfaceInteraction, bool) {
+	if options.Path == PathGreatCircle {
+		return p.intersectGreatCircle(raySt, rayDir, options)
+	}
+	if !options.validFor(PathAffine) {
+		return SurfaceInteraction{}, false
+	}
 	n := raySt.Len()
 	if rayDir.Len() != n || p.B.Len() != n {
 		return SurfaceInteraction{}, false
@@ -67,7 +64,7 @@ func (p *QuadraticEquation) IntersectRange(
 	bestT := math.Inf(1)
 
 	for _, root := range roots {
-		if distanceInRange(root, tMin, tMax) && root < bestT {
+		if distanceInRange(root, options.Range.Min, options.Range.Max) && root < bestT {
 			bestT = root
 		}
 	}

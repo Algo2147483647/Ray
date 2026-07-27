@@ -7,17 +7,16 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-func TestCuboidIntersectRangeParallelAxisDoesNotDivideByZero(t *testing.T) {
+func TestCuboidIntersectParallelAxisDoesNotDivideByZero(t *testing.T) {
 	cuboid := NewCuboid(
 		mat.NewVecDense(3, []float64{0, 0, 0}),
 		mat.NewVecDense(3, []float64{1, 1, 1}),
 	)
 
-	interaction, ok := cuboid.IntersectRange(
+	interaction, ok := cuboid.Intersect(
 		mat.NewVecDense(3, []float64{0.5, 0.5, -1}),
 		mat.NewVecDense(3, []float64{0, 0, 1}),
-		1e-6,
-		math.MaxFloat64,
+		NewIntersectOptions(1e-6, math.MaxFloat64),
 	)
 	if !ok {
 		t.Fatal("expected ray parallel to x/y axes to hit cuboid")
@@ -47,17 +46,16 @@ func TestCuboidNormalUsesPminAndPmaxDirection(t *testing.T) {
 	}
 }
 
-func TestHypercuboidIntersectRange4D(t *testing.T) {
+func TestHypercuboidIntersect4D(t *testing.T) {
 	cuboid := NewCuboid(
 		mat.NewVecDense(4, []float64{-1, -1, -1, -1}),
 		mat.NewVecDense(4, []float64{1, 1, 1, 1}),
 	)
 
-	interaction, ok := cuboid.IntersectRange(
+	interaction, ok := cuboid.Intersect(
 		mat.NewVecDense(4, []float64{-3, 0, 0, 0}),
 		mat.NewVecDense(4, []float64{1, 0, 0, 0}),
-		1e-6,
-		math.MaxFloat64,
+		NewIntersectOptions(1e-6, math.MaxFloat64),
 	)
 
 	if !ok {

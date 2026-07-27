@@ -31,15 +31,11 @@ func (c *FiniteCylinder) Name() string {
 	return "Finite Cylinder"
 }
 
-func (c *FiniteCylinder) Intersect(raySt, rayDir *mat.VecDense) float64 {
-	interaction, ok := c.IntersectRange(raySt, rayDir, utils.EPS, math.MaxFloat64)
-	if !ok {
-		return math.MaxFloat64
+func (c *FiniteCylinder) Intersect(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !options.validFor(PathAffine) {
+		return SurfaceInteraction{}, false
 	}
-	return interaction.Distance
-}
-
-func (c *FiniteCylinder) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
+	tMin, tMax := options.Range.Min, options.Range.Max
 	best := c.intersectSide(raySt, rayDir, tMin, tMax)
 	best = math.Min(best, c.intersectCap(raySt, rayDir, 0.5*c.Height, tMin, tMax))
 	best = math.Min(best, c.intersectCap(raySt, rayDir, -0.5*c.Height, tMin, tMax))

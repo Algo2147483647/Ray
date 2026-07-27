@@ -29,15 +29,13 @@ func (c *Circle) Name() string {
 	return "Circle"
 }
 
-func (c *Circle) Intersect(raySt, rayDir *mat.VecDense) float64 {
-	interaction, ok := c.IntersectRange(raySt, rayDir, utils.EPS, math.MaxFloat64)
-	if !ok {
-		return math.MaxFloat64
+func (c *Circle) Intersect(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+	if options.Path == PathGreatCircle {
+		return c.intersectGreatCircle(raySt, rayDir, options)
 	}
-	return interaction.Distance
-}
-
-func (c *Circle) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (SurfaceInteraction, bool) {
+	if !options.validFor(PathAffine) {
+		return SurfaceInteraction{}, false
+	}
 	denominator := mat.Dot(c.Normal, rayDir)
 	if math.Abs(denominator) < utils.EPS {
 		return SurfaceInteraction{}, false
@@ -46,7 +44,7 @@ func (c *Circle) IntersectRange(raySt, rayDir *mat.VecDense, tMin, tMax float64)
 	toCenter := mat.NewVecDense(raySt.Len(), nil)
 	toCenter.SubVec(c.Center, raySt)
 	distance := mat.Dot(c.Normal, toCenter) / denominator
-	if !distanceInRange(distance, tMin, tMax) {
+	if !distanceInRange(distance, options.Range.Min, options.Range.Max) {
 		return SurfaceInteraction{}, false
 	}
 
