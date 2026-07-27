@@ -72,7 +72,7 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level in
 		return
 	}
 
-	if g.Name() == "spherical" {
+	if g.Kind() == geometry.SphericalKind {
 		if newO, newD, wrapped := g.WrapBeyond(ray.Origin, ray.Direction, arcLen); wrapped {
 			hit.Point = newO
 			ray.Direction.CopyVec(newD)
@@ -121,8 +121,8 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level in
 }
 
 func surfaceHitInGeometry(objTree *object.ObjectTree, ray *optics.Ray, g geometry.Geometry) (*object.SurfaceHit, bool) {
-	if g.Name() == "spherical" {
-		return objTree.GetSphericalSurfaceHit(ray.Origin, ray.Direction, utils.EPS, math.Pi)
+	if g.Kind() == geometry.SphericalKind {
+		return objTree.GetGeodesicSurfaceHit(ray.Origin, ray.Direction, g, utils.EPS, math.Pi)
 	}
 	embeddedOrigin, embeddedDirection, tMax := g.EmbeddedRay(ray.Origin, ray.Direction)
 	if tMax <= 0 {

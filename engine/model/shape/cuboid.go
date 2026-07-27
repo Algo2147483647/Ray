@@ -24,11 +24,8 @@ func (c *Cuboid) Name() string {
 	return "Cuboid"
 }
 
-func (c *Cuboid) Intersect(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
-	if options.Path == PathGreatCircle {
-		return c.intersectGreatCircle(raySt, rayDir, options)
-	}
-	if !options.validFor(PathAffine) {
+func (c *Cuboid) IntersectAffine(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !options.valid() {
 		return SurfaceInteraction{}, false
 	}
 	tMin, tMax := options.Range.Min, options.Range.Max
@@ -45,15 +42,15 @@ func (c *Cuboid) Intersect(raySt, rayDir *mat.VecDense, options IntersectOptions
 		return SurfaceInteraction{}, false
 	}
 
-	point := pointAt(raySt, rayDir, distance)
+	point := affinePointAt(raySt, rayDir, distance)
 	normal := c.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
 	return newSurfaceInteractionAt(point, distance, normal), true
 }
 
 // Clip intersects an affine ray with the cuboid and returns the portion of
 // options.Range that lies inside it.
-func (c *Cuboid) Clip(raySt, rayDir *mat.VecDense, options IntersectOptions) (Interval, bool) {
-	if !options.validFor(PathAffine) {
+func (c *Cuboid) ClipAffine(raySt, rayDir *mat.VecDense, options IntersectOptions) (Interval, bool) {
+	if !options.valid() {
 		return Interval{}, false
 	}
 	tMin, tMax := options.Range.Min, options.Range.Max

@@ -116,8 +116,8 @@ func (c *ParametricCurve) Name() string {
 	return "Parametric Curve"
 }
 
-func (c *ParametricCurve) Intersect(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
-	if !options.validFor(PathAffine) {
+func (c *ParametricCurve) IntersectAffine(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !options.valid() {
 		return SurfaceInteraction{}, false
 	}
 	hit, ok := c.intersect(raySt, rayDir, options.Range.Min, options.Range.Max)
@@ -261,7 +261,7 @@ func (c *ParametricCurve) intersectSegmentBVH(
 	if node == nil || node.Bounds == nil {
 		return best, found
 	}
-	clipped, ok := node.Bounds.Clip(raySt, rayDir, NewIntersectOptions(tMin, minFloat(tMax, best.Distance)))
+	clipped, ok := node.Bounds.ClipAffine(raySt, rayDir, NewIntersectOptions(tMin, minFloat(tMax, best.Distance)))
 	if !ok {
 		return best, found
 	}
@@ -393,7 +393,7 @@ func (c *ParametricCurve) raySphereDistanceAt(raySt, rayDir *mat.VecDense, curve
 }
 
 func (c *ParametricCurve) interactionAt(raySt, rayDir *mat.VecDense, hit parametricCurveHit) SurfaceInteraction {
-	point := pointAt(raySt, rayDir, hit.Distance)
+	point := affinePointAt(raySt, rayDir, hit.Distance)
 	center := c.Function(hit.T)
 	normal := mat.NewVecDense(point.Len(), nil)
 	if center != nil {
@@ -597,7 +597,7 @@ func curveNodeChildNear(raySt, rayDir *mat.VecDense, node *parametricCurveBVHNod
 	if node == nil || node.Bounds == nil {
 		return 0, false
 	}
-	clipped, ok := node.Bounds.Clip(raySt, rayDir, NewIntersectOptions(tMin, tMax))
+	clipped, ok := node.Bounds.ClipAffine(raySt, rayDir, NewIntersectOptions(tMin, tMax))
 	return clipped.Min, ok
 }
 
@@ -656,12 +656,12 @@ func constrainedRaySegmentDistanceSquared(raySt, rayDir, a, b *mat.VecDense, tMi
 	}
 
 	if isFinite(tMin) {
-		point := pointAt(raySt, rayDir, tMin)
+		point := affinePointAt(raySt, rayDir, tMin)
 		segmentU := clampFloat(pointSegmentProjection(point, a, b, ee), 0, 1)
 		addCandidate(tMin, segmentU)
 	}
 	if isFinite(tMax) && tMax < math.MaxFloat64/4 {
-		point := pointAt(raySt, rayDir, tMax)
+		point := affinePointAt(raySt, rayDir, tMax)
 		segmentU := clampFloat(pointSegmentProjection(point, a, b, ee), 0, 1)
 		addCandidate(tMax, segmentU)
 	}

@@ -111,6 +111,8 @@ func TestSphericalExpAndWrapFollowGreatCircle(t *testing.T) {
 
 	q := g.Exp(p, dir, math.Pi/2, mat.NewVecDense(4, nil))
 	assertVecApprox(t, q, []float64{0, 1, 0, 0}, 1e-9)
+	tangent := g.GeodesicDirection(p, dir, math.Pi/2, mat.NewVecDense(4, nil))
+	assertVecApprox(t, tangent, []float64{-1, 0, 0, 0}, 1e-9)
 
 	newP, newD, ok := g.WrapBeyond(p, dir, math.Pi)
 	if !ok {

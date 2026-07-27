@@ -15,7 +15,7 @@ func TestBoundedShapeFindsLaterRootInsideBounds(t *testing.T) {
 	)
 	bounded := NewBoundedShape(sphere, bounds)
 
-	interaction, ok := bounded.Intersect(
+	interaction, ok := bounded.IntersectAffine(
 		mat.NewVecDense(3, []float64{-2, 0, 0}),
 		mat.NewVecDense(3, []float64{1, 0, 0}),
 		NewIntersectOptions(0, math.MaxFloat64),
@@ -36,7 +36,7 @@ func TestBoundedShapeRejectsHitOutsideBounds(t *testing.T) {
 	)
 	bounded := NewBoundedShape(sphere, bounds)
 
-	_, ok := bounded.Intersect(
+	_, ok := bounded.IntersectAffine(
 		mat.NewVecDense(3, []float64{-2, 0, 0}),
 		mat.NewVecDense(3, []float64{1, 0, 0}),
 		NewIntersectOptions(0, math.MaxFloat64),

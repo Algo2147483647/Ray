@@ -26,14 +26,11 @@ func (p *QuadraticEquation) Name() string {
 	return "Quadratic Equation"
 }
 
-func (p *QuadraticEquation) Intersect(
+func (p *QuadraticEquation) IntersectAffine(
 	raySt, rayDir *mat.VecDense,
 	options IntersectOptions,
 ) (SurfaceInteraction, bool) {
-	if options.Path == PathGreatCircle {
-		return p.intersectGreatCircle(raySt, rayDir, options)
-	}
-	if !options.validFor(PathAffine) {
+	if !options.valid() {
 		return SurfaceInteraction{}, false
 	}
 	n := raySt.Len()
@@ -73,7 +70,7 @@ func (p *QuadraticEquation) Intersect(
 		return SurfaceInteraction{}, false
 	}
 
-	point := pointAt(raySt, rayDir, bestT)
+	point := affinePointAt(raySt, rayDir, bestT)
 	normal := p.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
 
 	return newSurfaceInteractionAt(point, bestT, normal), true

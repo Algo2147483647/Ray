@@ -3,6 +3,7 @@ package shape
 import (
 	"math"
 
+	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 )
@@ -13,8 +14,8 @@ const (
 	sphericalValueTol         = 1e-7
 )
 
-func (s *Sphere) intersectGreatCircle(rayStart, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
-	if !options.validFor(PathGreatCircle) {
+func (s *Sphere) IntersectGeodesic(rayStart, rayDir *mat.VecDense, g geometry.Geometry, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !supportsSphericalGeodesic(g, options) {
 		return SurfaceInteraction{}, false
 	}
 	sMin, sMax := options.Range.Min, options.Range.Max
@@ -27,8 +28,8 @@ func (s *Sphere) intersectGreatCircle(rayStart, rayDir *mat.VecDense, options In
 	})
 }
 
-func (p *Plane) intersectGreatCircle(rayStart, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
-	if !options.validFor(PathGreatCircle) {
+func (p *Plane) IntersectGeodesic(rayStart, rayDir *mat.VecDense, g geometry.Geometry, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !supportsSphericalGeodesic(g, options) {
 		return SurfaceInteraction{}, false
 	}
 	if p == nil || p.A == nil || rayStart.Len() != rayDir.Len() || p.A.Len() != rayStart.Len() {
@@ -42,8 +43,8 @@ func (p *Plane) intersectGreatCircle(rayStart, rayDir *mat.VecDense, options Int
 	})
 }
 
-func (c *Circle) intersectGreatCircle(rayStart, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
-	if !options.validFor(PathGreatCircle) {
+func (c *Circle) IntersectGeodesic(rayStart, rayDir *mat.VecDense, g geometry.Geometry, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !supportsSphericalGeodesic(g, options) {
 		return SurfaceInteraction{}, false
 	}
 	if c == nil || c.Center == nil || c.Normal == nil || rayStart.Len() != rayDir.Len() {
@@ -83,8 +84,8 @@ func (c *Circle) intersectGreatCircle(rayStart, rayDir *mat.VecDense, options In
 	}, true
 }
 
-func (q *QuadraticEquation) intersectGreatCircle(rayStart, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
-	if !options.validFor(PathGreatCircle) {
+func (q *QuadraticEquation) IntersectGeodesic(rayStart, rayDir *mat.VecDense, g geometry.Geometry, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !supportsSphericalGeodesic(g, options) {
 		return SurfaceInteraction{}, false
 	}
 	n := rayStart.Len()
@@ -105,8 +106,8 @@ func (q *QuadraticEquation) intersectGreatCircle(rayStart, rayDir *mat.VecDense,
 	})
 }
 
-func (p *PolynomialSurface) intersectGreatCircle(rayStart, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
-	if !options.validFor(PathGreatCircle) {
+func (p *PolynomialSurface) IntersectGeodesic(rayStart, rayDir *mat.VecDense, g geometry.Geometry, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !supportsSphericalGeodesic(g, options) {
 		return SurfaceInteraction{}, false
 	}
 	if p == nil || p.Coefficients == nil || rayStart.Len() != rayDir.Len() || p.InputDim > rayStart.Len() {
@@ -122,8 +123,8 @@ func (p *PolynomialSurface) intersectGreatCircle(rayStart, rayDir *mat.VecDense,
 	return interaction, ok
 }
 
-func (f *ImplicitEquation) intersectGreatCircle(rayStart, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
-	if !options.validFor(PathGreatCircle) {
+func (f *ImplicitEquation) IntersectGeodesic(rayStart, rayDir *mat.VecDense, g geometry.Geometry, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !supportsSphericalGeodesic(g, options) {
 		return SurfaceInteraction{}, false
 	}
 	if f == nil || f.Function == nil || rayStart.Len() != rayDir.Len() {
@@ -143,8 +144,8 @@ func (f *ImplicitEquation) intersectGreatCircle(rayStart, rayDir *mat.VecDense, 
 	return interaction, true
 }
 
-func (c *Cuboid) intersectGreatCircle(rayStart, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
-	if !options.validFor(PathGreatCircle) {
+func (c *Cuboid) IntersectGeodesic(rayStart, rayDir *mat.VecDense, g geometry.Geometry, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !supportsSphericalGeodesic(g, options) {
 		return SurfaceInteraction{}, false
 	}
 	if c == nil || c.Pmin == nil || c.Pmax == nil || rayStart.Len() != rayDir.Len() {
@@ -213,6 +214,10 @@ func intersectSphericalScalar(
 		ShadingNormal:   normal,
 		PrimitiveID:     -1,
 	}, true
+}
+
+func supportsSphericalGeodesic(g geometry.Geometry, options IntersectOptions) bool {
+	return g != nil && g.Kind() == geometry.SphericalKind && options.valid()
 }
 
 func findFirstSphericalRoot(

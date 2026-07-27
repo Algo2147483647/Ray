@@ -22,11 +22,8 @@ func (s *Sphere) Name() string {
 	return "Sphere"
 }
 
-func (s *Sphere) Intersect(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
-	if options.Path == PathGreatCircle {
-		return s.intersectGreatCircle(raySt, rayDir, options)
-	}
-	if !options.validFor(PathAffine) {
+func (s *Sphere) IntersectAffine(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !options.valid() {
 		return SurfaceInteraction{}, false
 	}
 	distance, ok := s.intersectAffine(raySt, rayDir, options.Range)

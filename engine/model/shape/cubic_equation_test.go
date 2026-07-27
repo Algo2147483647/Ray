@@ -13,7 +13,7 @@ func TestCubicEquationIntersectsSimpleCubic(t *testing.T) {
 		[3]int{0, 0, 0}: -1,
 	}))
 
-	interaction, ok := cubic.Intersect(
+	interaction, ok := cubic.IntersectAffine(
 		mat.NewVecDense(3, []float64{0, 0, 0}),
 		mat.NewVecDense(3, []float64{1, 0, 0}),
 		NewIntersectOptions(0, math.MaxFloat64),
@@ -32,7 +32,7 @@ func TestCubicEquationIntersectsDegenerateQuadratic(t *testing.T) {
 		[3]int{0, 0, 0}: -1,
 	}))
 
-	interaction, ok := cubic.Intersect(
+	interaction, ok := cubic.IntersectAffine(
 		mat.NewVecDense(3, []float64{0, 0, 0}),
 		mat.NewVecDense(3, []float64{1, 0, 0}),
 		NewIntersectOptions(0, math.MaxFloat64),
@@ -53,7 +53,7 @@ func TestCubicEquationChoosesClosestOfThreeRealRoots(t *testing.T) {
 		[3]int{0, 0, 0}: -6,
 	}))
 
-	interaction, ok := cubic.Intersect(
+	interaction, ok := cubic.IntersectAffine(
 		mat.NewVecDense(3, []float64{0, 0, 0}),
 		mat.NewVecDense(3, []float64{1, 0, 0}),
 		NewIntersectOptions(0, math.MaxFloat64),
@@ -78,7 +78,7 @@ func TestBoundedCubicEquationCanChooseLaterRootInsideBounds(t *testing.T) {
 		mat.NewVecDense(3, []float64{2.5, 1, 1}),
 	))
 
-	interaction, ok := bounded.Intersect(
+	interaction, ok := bounded.IntersectAffine(
 		mat.NewVecDense(3, []float64{0, 0, 0}),
 		mat.NewVecDense(3, []float64{1, 0, 0}),
 		NewIntersectOptions(0, math.MaxFloat64),

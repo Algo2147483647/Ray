@@ -76,7 +76,7 @@ func TestFourOrderEquationIntersectsQuarticWithShiftedRoots(t *testing.T) {
 		[4]int{0, 0, 0, 0}: 80,
 	}))
 
-	interaction, ok := quartic.Intersect(
+	interaction, ok := quartic.IntersectAffine(
 		mat.NewVecDense(3, []float64{0, 0, 0}),
 		mat.NewVecDense(3, []float64{1, 0, 0}),
 		NewIntersectOptions(0, math.MaxFloat64),

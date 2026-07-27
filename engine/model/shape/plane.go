@@ -17,11 +17,8 @@ func (p *Plane) Name() string {
 	return "Plane"
 }
 
-func (p *Plane) Intersect(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
-	if options.Path == PathGreatCircle {
-		return p.intersectGreatCircle(raySt, rayDir, options)
-	}
-	if !options.validFor(PathAffine) {
+func (p *Plane) IntersectAffine(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !options.valid() {
 		return SurfaceInteraction{}, false
 	}
 	t := mat.Dot(p.A, rayDir)

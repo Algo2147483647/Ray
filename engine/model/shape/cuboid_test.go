@@ -13,7 +13,7 @@ func TestCuboidIntersectParallelAxisDoesNotDivideByZero(t *testing.T) {
 		mat.NewVecDense(3, []float64{1, 1, 1}),
 	)
 
-	interaction, ok := cuboid.Intersect(
+	interaction, ok := cuboid.IntersectAffine(
 		mat.NewVecDense(3, []float64{0.5, 0.5, -1}),
 		mat.NewVecDense(3, []float64{0, 0, 1}),
 		NewIntersectOptions(1e-6, math.MaxFloat64),
@@ -52,7 +52,7 @@ func TestHypercuboidIntersect4D(t *testing.T) {
 		mat.NewVecDense(4, []float64{1, 1, 1, 1}),
 	)
 
-	interaction, ok := cuboid.Intersect(
+	interaction, ok := cuboid.IntersectAffine(
 		mat.NewVecDense(4, []float64{-3, 0, 0, 0}),
 		mat.NewVecDense(4, []float64{1, 0, 0, 0}),
 		NewIntersectOptions(1e-6, math.MaxFloat64),

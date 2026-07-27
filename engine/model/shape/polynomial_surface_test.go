@@ -20,7 +20,7 @@ func TestPolynomialSurfaceSphereIntersection(t *testing.T) {
 	}
 
 	surface := NewPolynomialSurface(3, coefficients)
-	interaction, ok := surface.Intersect(
+	interaction, ok := surface.IntersectAffine(
 		mat.NewVecDense(3, []float64{0, 0, -3}),
 		mat.NewVecDense(3, []float64{0, 0, 1}),
 		NewIntersectOptions(0, 10),
@@ -56,7 +56,7 @@ func TestPolynomialSurfaceParaboloid(t *testing.T) {
 		t.Fatalf("expected gradient [4 6 -1], got %v", gradient)
 	}
 
-	interaction, ok := surface.Intersect(
+	interaction, ok := surface.IntersectAffine(
 		mat.NewVecDense(3, []float64{1, 1, 5}),
 		mat.NewVecDense(3, []float64{0, 0, -1}),
 		NewIntersectOptions(0, 10),
@@ -97,7 +97,7 @@ func TestPolynomialSurfaceTransformRotatesImplicitSurface(t *testing.T) {
 		-normal.AtVec(2),
 	})
 
-	interaction, ok := surface.Intersect(start, dir, NewIntersectOptions(0, 10))
+	interaction, ok := surface.IntersectAffine(start, dir, NewIntersectOptions(0, 10))
 	if !ok {
 		t.Fatal("expected ray to hit rotated polynomial plane")
 	}
@@ -180,7 +180,7 @@ func TestPolynomialSurfaceTaubinHeartRayPolynomialMatchesEvaluation(t *testing.T
 func TestPolynomialSurfaceTaubinHeartIntersection(t *testing.T) {
 	surface := newTaubinHeartSurface(t)
 
-	interaction, ok := surface.Intersect(
+	interaction, ok := surface.IntersectAffine(
 		mat.NewVecDense(3, []float64{0, -3, 0}),
 		mat.NewVecDense(3, []float64{0, 1, 0}),
 		NewIntersectOptions(0, 10),
@@ -192,7 +192,7 @@ func TestPolynomialSurfaceTaubinHeartIntersection(t *testing.T) {
 		t.Fatalf("expected first center hit distance 7/3, got %.12f", interaction.Distance)
 	}
 
-	_, ok = surface.Intersect(
+	_, ok = surface.IntersectAffine(
 		mat.NewVecDense(3, []float64{1.4, -3, 0}),
 		mat.NewVecDense(3, []float64{0, 1, 0}),
 		NewIntersectOptions(0, 10),

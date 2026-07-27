@@ -188,8 +188,8 @@ func (p *ParametricEquation) Name() string {
 	return "Parametric Equation"
 }
 
-func (p *ParametricEquation) Intersect(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
-	if !options.validFor(PathAffine) {
+func (p *ParametricEquation) IntersectAffine(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !options.valid() {
 		return SurfaceInteraction{}, false
 	}
 	tMin, tMax := options.Range.Min, options.Range.Max
@@ -249,7 +249,7 @@ func (p *ParametricEquation) intersectPatchBVH(
 	if node == nil || node.Bounds == nil {
 		return best, found
 	}
-	clipped, ok := node.Bounds.Clip(raySt, rayDir, NewIntersectOptions(tMin, minFloat(tMax, best.T)))
+	clipped, ok := node.Bounds.ClipAffine(raySt, rayDir, NewIntersectOptions(tMin, minFloat(tMax, best.T)))
 	if !ok {
 		return best, found
 	}
@@ -694,7 +694,7 @@ func nodeChildNear(raySt, rayDir *mat.VecDense, node *parametricPatchBVHNode, tM
 	if node == nil || node.Bounds == nil {
 		return 0, false
 	}
-	clipped, ok := node.Bounds.Clip(raySt, rayDir, NewIntersectOptions(tMin, tMax))
+	clipped, ok := node.Bounds.ClipAffine(raySt, rayDir, NewIntersectOptions(tMin, tMax))
 	return clipped.Min, ok
 }
 

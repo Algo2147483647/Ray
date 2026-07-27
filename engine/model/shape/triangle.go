@@ -50,8 +50,8 @@ func (f *Triangle) Name() string {
 	return "Triangle"
 }
 
-func (f *Triangle) Intersect(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
-	if !options.validFor(PathAffine) {
+func (f *Triangle) IntersectAffine(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !options.valid() {
 		return SurfaceInteraction{}, false
 	}
 	if raySt.Len() == 3 && rayDir.Len() == 3 {

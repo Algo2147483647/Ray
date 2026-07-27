@@ -21,6 +21,7 @@ var kleinSingleton Geometry = klein{}
 func Klein() Geometry { return kleinSingleton }
 
 func (klein) Name() string   { return "klein" }
+func (klein) Kind() Kind     { return KleinKind }
 func (klein) Dimension() int { return 3 }
 
 func (klein) ProjectTangent(_, v, out *mat.VecDense) *mat.VecDense {
@@ -141,6 +142,11 @@ func (klein) Exp(p, v *mat.VecDense, s float64, out *mat.VecDense) *mat.VecDense
 	t := 0.5 * (lo + hi)
 	out.CopyVec(p)
 	out.AddScaledVec(out, t, dir)
+	return out
+}
+
+func (klein) GeodesicDirection(_, v *mat.VecDense, _ float64, out *mat.VecDense) *mat.VecDense {
+	out.CopyVec(v)
 	return out
 }
 

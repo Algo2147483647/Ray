@@ -2,6 +2,7 @@ package object
 
 import (
 	"github.com/Algo2147483647/ray/engine/maths"
+	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"github.com/Algo2147483647/ray/engine/model/shape"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
@@ -52,7 +53,7 @@ func (t *ObjectTree) getClosestInteraction(raySt, rayDir *mat.VecDense, node *Ob
 
 func (t *ObjectTree) getClosestInteractionInOverlappedNode(raySt, rayDir *mat.VecDense, node *ObjectNode, options shape.IntersectOptions) (shape.SurfaceInteraction, *Object, bool) {
 	if node.Obj != nil {
-		interaction, ok := node.Obj.Shape.Intersect(raySt, rayDir, options)
+		interaction, ok := node.Obj.Shape.IntersectAffine(raySt, rayDir, options)
 		if !ok {
 			return shape.SurfaceInteraction{}, nil, false
 		}
@@ -105,7 +106,7 @@ func nodeOverlapNear(raySt, rayDir *mat.VecDense, node *ObjectNode, options shap
 	if node.BoundBox == nil {
 		return options.Range.Min, true
 	}
-	clipped, ok := node.BoundBox.Clip(raySt, rayDir, options)
+	clipped, ok := node.BoundBox.ClipAffine(raySt, rayDir, options)
 	return clipped.Min, ok
 }
 
@@ -121,7 +122,14 @@ func (t *ObjectTree) GetSurfaceHitRange(raySt, rayDir *mat.VecDense, tMin, tMax 
 	return newSurfaceHitFromInteraction(interaction, obj, rayDir), true
 }
 
-func (t *ObjectTree) GetSphericalSurfaceHit(raySt, rayDir *mat.VecDense, sMin, sMax float64) (*SurfaceHit, bool) {
+func (t *ObjectTree) GetGeodesicSurfaceHit(
+	raySt, rayDir *mat.VecDense,
+	g geometry.Geometry,
+	paramMin, paramMax float64,
+) (*SurfaceHit, bool) {
+	if g == nil {
+		return nil, false
+	}
 	var (
 		bestInteraction shape.SurfaceInteraction
 		bestObj         *Object
@@ -133,7 +141,12 @@ func (t *ObjectTree) GetSphericalSurfaceHit(raySt, rayDir *mat.VecDense, sMin, s
 		if obj == nil || obj.Shape == nil {
 			continue
 		}
-		interaction, ok := obj.Shape.Intersect(raySt, rayDir, shape.NewGreatCircleIntersectOptions(sMin, sMax))
+		interaction, ok := obj.Shape.IntersectGeodesic(
+			raySt,
+			rayDir,
+			g,
+			shape.NewIntersectOptions(paramMin, paramMax),
+		)
 		if !ok {
 			continue
 		}
@@ -142,7 +155,8 @@ func (t *ObjectTree) GetSphericalSurfaceHit(raySt, rayDir *mat.VecDense, sMin, s
 			arcLen = interaction.Distance
 		}
 		if !bestOK || arcLen < bestInteraction.ArcLength {
-			direction := sphericalDirectionAt(raySt, rayDir, arcLen)
+			direction := mat.NewVecDense(rayDir.Len(), nil)
+			g.GeodesicDirection(raySt, rayDir, arcLen, direction)
 			bestInteraction = interaction
 			bestInteraction.Distance = arcLen
 			bestInteraction.ArcLength = arcLen
@@ -186,21 +200,4 @@ func newSurfaceHitFromInteraction(interaction shape.SurfaceInteraction, obj *Obj
 		FrontFace:       frontFace,
 		Object:          obj,
 	}
-}
-
-func sphericalDirectionAt(raySt, rayDir *mat.VecDense, arcLen float64) *mat.VecDense {
-	v := mat.NewVecDense(rayDir.Len(), nil)
-	v.CopyVec(rayDir)
-	v.AddScaledVec(v, -mat.Dot(v, raySt), raySt)
-	n := mat.Norm(v, 2)
-	if n == 0 {
-		return v
-	}
-	v.ScaleVec(1/n, v)
-
-	direction := mat.NewVecDense(rayDir.Len(), nil)
-	direction.CopyVec(raySt)
-	direction.ScaleVec(-math.Sin(arcLen), direction)
-	direction.AddScaledVec(direction, math.Cos(arcLen), v)
-	return maths.Normalize(direction)
 }

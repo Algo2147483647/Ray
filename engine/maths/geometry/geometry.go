@@ -12,8 +12,19 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
+// Kind is a stable, type-safe identifier for a supported geometry model.
+type Kind uint8
+
+const (
+	EuclideanKind Kind = iota
+	KleinKind
+	SphericalKind
+)
+
 // Geometry describes the metric model rays propagate in.
 type Geometry interface {
+	Kind() Kind
+
 	// Name is a stable identifier ("euclidean", "klein", "spherical").
 	Name() string
 
@@ -36,6 +47,10 @@ type Geometry interface {
 
 	// Exp evaluates gamma(t) = Exp_p(t*v), writing into out. out may alias p.
 	Exp(p, v *mat.VecDense, t float64, out *mat.VecDense) *mat.VecDense
+
+	// GeodesicDirection evaluates the forward tangent direction at gamma(t),
+	// writing into out. Its magnitude is not part of the contract.
+	GeodesicDirection(p, v *mat.VecDense, t float64, out *mat.VecDense) *mat.VecDense
 
 	// EmbeddedRay returns the (origin, direction) to hand to BVH/Shape
 	// intersection, plus the natural maximum embedded t after which the ray

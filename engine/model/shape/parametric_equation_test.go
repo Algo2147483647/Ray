@@ -23,7 +23,7 @@ func TestParametricPlanePatchHitReturnsInteractionData(t *testing.T) {
 	plane.SamplesU = 8
 	plane.SamplesV = 8
 
-	interaction, ok := plane.Intersect(
+	interaction, ok := plane.IntersectAffine(
 		mat.NewVecDense(3, []float64{0.25, -0.5, -2}),
 		mat.NewVecDense(3, []float64{0, 0, 1}),
 		NewIntersectOptions(1e-6, math.MaxFloat64),
@@ -63,7 +63,7 @@ func TestParametricPlanePatchRejectsOutsideParameterRange(t *testing.T) {
 		return du, dv
 	}
 
-	if _, ok := plane.Intersect(
+	if _, ok := plane.IntersectAffine(
 		mat.NewVecDense(3, []float64{2, 0, -2}),
 		mat.NewVecDense(3, []float64{0, 0, 1}),
 		NewIntersectOptions(1e-6, math.MaxFloat64),
@@ -100,7 +100,7 @@ func TestParametricTorusReturnsNearestHit(t *testing.T) {
 	torus.SamplesU = 48
 	torus.SamplesV = 24
 
-	interaction, ok := torus.Intersect(
+	interaction, ok := torus.IntersectAffine(
 		mat.NewVecDense(3, []float64{0, -3, 0}),
 		mat.NewVecDense(3, []float64{0, 1, 0}),
 		NewIntersectOptions(1e-6, math.MaxFloat64),

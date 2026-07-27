@@ -24,7 +24,7 @@ func TestParametricCurveStraightTubeHit(t *testing.T) {
 	}
 	curve.Samples = 64
 
-	interaction, ok := curve.Intersect(
+	interaction, ok := curve.IntersectAffine(
 		mat.NewVecDense(3, []float64{-1, 0, 0}),
 		mat.NewVecDense(3, []float64{1, 0, 0}),
 		NewIntersectOptions(1e-6, math.MaxFloat64),
@@ -59,7 +59,7 @@ func TestParametricCurveEndpointCapHit(t *testing.T) {
 	)
 	curve.Samples = 64
 
-	interaction, ok := curve.Intersect(
+	interaction, ok := curve.IntersectAffine(
 		mat.NewVecDense(3, []float64{-1, -0.2, 0}),
 		mat.NewVecDense(3, []float64{1, 0, 0}),
 		NewIntersectOptions(1e-6, math.MaxFloat64),
@@ -85,7 +85,7 @@ func TestParametricCurveMiss(t *testing.T) {
 		[2]float64{-1, 1},
 	)
 
-	if _, ok := curve.Intersect(
+	if _, ok := curve.IntersectAffine(
 		mat.NewVecDense(3, []float64{-1, 0, 0.5}),
 		mat.NewVecDense(3, []float64{1, 0, 0}),
 		NewIntersectOptions(1e-6, math.MaxFloat64),
@@ -119,7 +119,7 @@ func TestParametricCurveMissUsesSegmentBVHCoarseCulling(t *testing.T) {
 
 	for i := 0; i < 200; i++ {
 		y := -0.9 + float64(i)*1.8/199
-		_, _ = curve.Intersect(
+		_, _ = curve.IntersectAffine(
 			mat.NewVecDense(3, []float64{-1, y, 0.55}),
 			mat.NewVecDense(3, []float64{1, 0, 0}),
 			NewIntersectOptions(1e-6, 3),

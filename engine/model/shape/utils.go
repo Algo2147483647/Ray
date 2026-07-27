@@ -27,37 +27,19 @@ func (i Interval) Valid() bool {
 	return !math.IsNaN(i.Min) && !math.IsNaN(i.Max) && i.Min <= i.Max
 }
 
-// IntersectionPath describes how rayStart and rayDir parameterize the path.
-type IntersectionPath uint8
-
-const (
-	// PathAffine evaluates rayStart + t*rayDir.
-	PathAffine IntersectionPath = iota
-	// PathGreatCircle evaluates the unit-sphere geodesic starting at rayStart
-	// with rayDir as its initial tangent.
-	PathGreatCircle
-)
-
-// IntersectOptions contains all non-ray inputs shared by shape intersections.
-// Its zero Path value is affine; callers should supply Range explicitly.
+// IntersectOptions contains parameter-domain constraints shared by Euclidean
+// and geodesic intersection queries. Geometry selection is deliberately kept
+// out of this value and handled by the caller.
 type IntersectOptions struct {
 	Range Interval
-	Path  IntersectionPath
 }
 
 func NewIntersectOptions(tMin, tMax float64) IntersectOptions {
 	return IntersectOptions{Range: Interval{Min: tMin, Max: tMax}}
 }
 
-func NewGreatCircleIntersectOptions(sMin, sMax float64) IntersectOptions {
-	return IntersectOptions{
-		Range: Interval{Min: sMin, Max: sMax},
-		Path:  PathGreatCircle,
-	}
-}
-
-func (o IntersectOptions) validFor(path IntersectionPath) bool {
-	return o.Path == path && o.Range.Valid()
+func (o IntersectOptions) valid() bool {
+	return o.Range.Valid()
 }
 
 func distanceInRange(distance, tMin, tMax float64) bool {
@@ -77,7 +59,7 @@ func closestDistance(root1, root2, tMin, tMax float64) float64 {
 	}
 }
 
-func pointAt(rayStart, rayDir *mat.VecDense, distance float64) *mat.VecDense {
+func affinePointAt(rayStart, rayDir *mat.VecDense, distance float64) *mat.VecDense {
 	point := mat.NewVecDense(rayStart.Len(), nil)
 	point.AddScaledVec(rayStart, distance, rayDir)
 	return point
@@ -88,7 +70,7 @@ func vecDenseXYZ(v *mat.VecDense) [3]float64 {
 }
 
 func newSurfaceInteraction(rayStart, rayDir *mat.VecDense, distance float64, normal *mat.VecDense) SurfaceInteraction {
-	point := pointAt(rayStart, rayDir, distance)
+	point := affinePointAt(rayStart, rayDir, distance)
 	return newSurfaceInteractionAt(point, distance, normal)
 }
 

@@ -31,8 +31,8 @@ func (c *FiniteCylinder) Name() string {
 	return "Finite Cylinder"
 }
 
-func (c *FiniteCylinder) Intersect(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
-	if !options.validFor(PathAffine) {
+func (c *FiniteCylinder) IntersectAffine(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !options.valid() {
 		return SurfaceInteraction{}, false
 	}
 	tMin, tMax := options.Range.Min, options.Range.Max
@@ -43,7 +43,7 @@ func (c *FiniteCylinder) Intersect(raySt, rayDir *mat.VecDense, options Intersec
 		return SurfaceInteraction{}, false
 	}
 
-	point := pointAt(raySt, rayDir, best)
+	point := affinePointAt(raySt, rayDir, best)
 	normal := c.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
 	return newSurfaceInteractionAt(point, best, normal), true
 }

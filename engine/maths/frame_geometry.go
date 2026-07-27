@@ -16,7 +16,7 @@ import (
 // 3-dimensional tangent subspace embedded in R^4.
 func NewFrameFromNormalInGeometry(g geometry.Geometry, p, n *mat.VecDense) (Frame, bool) {
 	g = geometry.Get(g)
-	if g.Name() != "spherical" {
+	if g.Kind() != geometry.SphericalKind {
 		return NewFrameFromNormal(n)
 	}
 

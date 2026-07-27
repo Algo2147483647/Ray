@@ -14,7 +14,7 @@ func TestCircleIntersectHitsDisk(t *testing.T) {
 		2,
 	)
 
-	interaction, ok := circle.Intersect(
+	interaction, ok := circle.IntersectAffine(
 		mat.NewVecDense(3, []float64{0.5, 0.5, 3}),
 		mat.NewVecDense(3, []float64{0, 0, -1}),
 		NewIntersectOptions(1e-6, math.MaxFloat64),
@@ -32,7 +32,7 @@ func TestCircleIntersectRejectsOutsideDisk(t *testing.T) {
 		2,
 	)
 
-	_, ok := circle.Intersect(
+	_, ok := circle.IntersectAffine(
 		mat.NewVecDense(3, []float64{3, 0, 3}),
 		mat.NewVecDense(3, []float64{0, 0, -1}),
 		NewIntersectOptions(1e-6, math.MaxFloat64),

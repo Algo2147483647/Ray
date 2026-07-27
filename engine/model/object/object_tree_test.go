@@ -4,6 +4,7 @@ import (
 	"math"
 	"testing"
 
+	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"github.com/Algo2147483647/ray/engine/model/shape"
 	"gonum.org/v1/gonum/mat"
 )
@@ -162,7 +163,7 @@ func TestSphericalSurfaceHitUsesGreatCirclePoint(t *testing.T) {
 
 	start := mat.NewVecDense(4, []float64{1, 0, 0, 0})
 	dir := mat.NewVecDense(4, []float64{0, 1, 0, 0})
-	hit, ok := tree.GetSphericalSurfaceHit(start, dir, 1e-6, math.Pi)
+	hit, ok := tree.GetGeodesicSurfaceHit(start, dir, geometry.Spherical(), 1e-6, math.Pi)
 	if !ok {
 		t.Fatal("expected spherical geodesic hit")
 	}
@@ -185,9 +186,10 @@ func TestSphericalSurfaceHitStopsAtAntipode(t *testing.T) {
 	tree.AddObject(&Object{Shape: shape.NewSphere(mat.NewVecDense(4, []float64{0, -1, 0, 0}), 0.05)})
 	tree.Build()
 
-	_, ok := tree.GetSphericalSurfaceHit(
+	_, ok := tree.GetGeodesicSurfaceHit(
 		mat.NewVecDense(4, []float64{1, 0, 0, 0}),
 		mat.NewVecDense(4, []float64{0, 1, 0, 0}),
+		geometry.Spherical(),
 		1e-6,
 		math.Pi,
 	)

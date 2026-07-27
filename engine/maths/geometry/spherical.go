@@ -22,6 +22,7 @@ var sphericalSingleton Geometry = spherical{}
 func Spherical() Geometry { return sphericalSingleton }
 
 func (spherical) Name() string   { return "spherical" }
+func (spherical) Kind() Kind     { return SphericalKind }
 func (spherical) Dimension() int { return 4 }
 
 // ProjectTangent computes v - <v, p> p.
@@ -79,6 +80,21 @@ func (spherical) Exp(p, v *mat.VecDense, s float64, out *mat.VecDense) *mat.VecD
 	out.CopyVec(p)
 	out.ScaleVec(cs, out)
 	out.AddScaledVec(out, sn/vn, v)
+	return out
+}
+
+func (spherical) GeodesicDirection(p, v *mat.VecDense, s float64, out *mat.VecDense) *mat.VecDense {
+	tangent := mat.NewVecDense(v.Len(), nil)
+	spherical{}.ProjectTangent(p, v, tangent)
+	n := mat.Norm(tangent, 2)
+	if n == 0 {
+		out.Zero()
+		return out
+	}
+
+	out.CopyVec(p)
+	out.ScaleVec(-math.Sin(s), out)
+	out.AddScaledVec(out, math.Cos(s)/n, tangent)
 	return out
 }
 

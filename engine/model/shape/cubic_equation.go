@@ -21,8 +21,8 @@ func (p *CubicEquation) Name() string {
 	return "Cubic Equation"
 }
 
-func (p *CubicEquation) Intersect(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
-	if !options.validFor(PathAffine) {
+func (p *CubicEquation) IntersectAffine(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !options.valid() {
 		return SurfaceInteraction{}, false
 	}
 	var (
@@ -90,7 +90,7 @@ func (p *CubicEquation) Intersect(raySt, rayDir *mat.VecDense, options Intersect
 		return SurfaceInteraction{}, false
 	}
 
-	point := pointAt(raySt, rayDir, res)
+	point := affinePointAt(raySt, rayDir, res)
 	normal := p.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
 	return newSurfaceInteractionAt(point, res, normal), true
 }

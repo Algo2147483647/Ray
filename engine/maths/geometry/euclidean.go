@@ -14,6 +14,7 @@ var euclideanSingleton Geometry = euclidean{}
 func Euclidean() Geometry { return euclideanSingleton }
 
 func (euclidean) Name() string   { return "euclidean" }
+func (euclidean) Kind() Kind     { return EuclideanKind }
 func (euclidean) Dimension() int { return 3 }
 
 func (euclidean) ProjectTangent(_, v, out *mat.VecDense) *mat.VecDense {
@@ -37,6 +38,11 @@ func (euclidean) ArcLengthFromEmbedT(_, dir *mat.VecDense, tEuclid float64) floa
 func (euclidean) Exp(p, v *mat.VecDense, t float64, out *mat.VecDense) *mat.VecDense {
 	out.CopyVec(p)
 	out.AddScaledVec(out, t, v)
+	return out
+}
+
+func (euclidean) GeodesicDirection(_, v *mat.VecDense, _ float64, out *mat.VecDense) *mat.VecDense {
+	out.CopyVec(v)
 	return out
 }
 

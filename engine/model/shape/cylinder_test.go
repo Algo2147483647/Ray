@@ -15,7 +15,7 @@ func TestFiniteCylinderIntersectHitsSide(t *testing.T) {
 		4,
 	)
 
-	interaction, ok := cylinder.Intersect(
+	interaction, ok := cylinder.IntersectAffine(
 		mat.NewVecDense(3, []float64{2, 0, 0}),
 		mat.NewVecDense(3, []float64{-1, 0, 0}),
 		NewIntersectOptions(1e-6, math.MaxFloat64),
@@ -34,7 +34,7 @@ func TestFiniteCylinderIntersectHitsCap(t *testing.T) {
 		4,
 	)
 
-	interaction, ok := cylinder.Intersect(
+	interaction, ok := cylinder.IntersectAffine(
 		mat.NewVecDense(3, []float64{0.5, 0, 4}),
 		mat.NewVecDense(3, []float64{0, 0, -1}),
 		NewIntersectOptions(1e-6, math.MaxFloat64),
@@ -53,7 +53,7 @@ func TestFiniteCylinderIntersectRejectsBeyondHeight(t *testing.T) {
 		4,
 	)
 
-	_, ok := cylinder.Intersect(
+	_, ok := cylinder.IntersectAffine(
 		mat.NewVecDense(3, []float64{2, 0, 3}),
 		mat.NewVecDense(3, []float64{-1, 0, 0}),
 		NewIntersectOptions(1e-6, math.MaxFloat64),

@@ -29,11 +29,8 @@ func (c *Circle) Name() string {
 	return "Circle"
 }
 
-func (c *Circle) Intersect(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
-	if options.Path == PathGreatCircle {
-		return c.intersectGreatCircle(raySt, rayDir, options)
-	}
-	if !options.validFor(PathAffine) {
+func (c *Circle) IntersectAffine(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !options.valid() {
 		return SurfaceInteraction{}, false
 	}
 	denominator := mat.Dot(c.Normal, rayDir)

@@ -359,8 +359,8 @@ func (k *KleinBottle4D) UVAtPoint(p *mat.VecDense) (u, v float64) {
 	return cp.uUV, cp.vUV
 }
 
-func (k *KleinBottle4D) Intersect(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
-	if !options.validFor(PathAffine) {
+func (k *KleinBottle4D) IntersectAffine(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !options.valid() {
 		return SurfaceInteraction{}, false
 	}
 	tMin, tMax := options.Range.Min, options.Range.Max

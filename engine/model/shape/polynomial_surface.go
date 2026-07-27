@@ -52,11 +52,8 @@ func (p *PolynomialSurface) Name() string {
 	return "Polynomial Surface"
 }
 
-func (p *PolynomialSurface) Intersect(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
-	if options.Path == PathGreatCircle {
-		return p.intersectGreatCircle(raySt, rayDir, options)
-	}
-	if !options.validFor(PathAffine) {
+func (p *PolynomialSurface) IntersectAffine(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !options.valid() {
 		return SurfaceInteraction{}, false
 	}
 	if p == nil || raySt == nil || rayDir == nil || raySt.Len() < 3 || rayDir.Len() < 3 {
@@ -83,7 +80,7 @@ func (p *PolynomialSurface) Intersect(raySt, rayDir *mat.VecDense, options Inter
 		return SurfaceInteraction{}, false
 	}
 
-	point := pointAt(raySt, rayDir, bestT)
+	point := affinePointAt(raySt, rayDir, bestT)
 	normal := p.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
 	return newSurfaceInteractionAt(point, bestT, normal), true
 }

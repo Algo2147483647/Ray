@@ -42,8 +42,8 @@ func (p *FourOrderEquation) Name() string {
 	return "Four-Order Equation"
 }
 
-func (p *FourOrderEquation) Intersect(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
-	if !options.validFor(PathAffine) {
+func (p *FourOrderEquation) IntersectAffine(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !options.valid() {
 		return SurfaceInteraction{}, false
 	}
 	var (
@@ -94,7 +94,7 @@ func (p *FourOrderEquation) Intersect(raySt, rayDir *mat.VecDense, options Inter
 		return SurfaceInteraction{}, false
 	}
 
-	point := pointAt(raySt, rayDir, res)
+	point := affinePointAt(raySt, rayDir, res)
 	normal := p.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
 	return newSurfaceInteractionAt(point, res, normal), true
 }

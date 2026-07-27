@@ -10,7 +10,7 @@ import (
 func TestSphereIntersectReturnsNearestCompleteInteraction(t *testing.T) {
 	sphere := NewSphere(mat.NewVecDense(3, []float64{0, 0, 0}), 1)
 
-	interaction, ok := sphere.Intersect(
+	interaction, ok := sphere.IntersectAffine(
 		mat.NewVecDense(3, []float64{0, 0, -3}),
 		mat.NewVecDense(3, []float64{0, 0, 1}),
 		NewIntersectOptions(1e-6, math.MaxFloat64),
@@ -29,7 +29,7 @@ func TestSphereIntersectReturnsNearestCompleteInteraction(t *testing.T) {
 func TestSphereIntersectReturnsCompleteInteraction(t *testing.T) {
 	sphere := NewSphere(mat.NewVecDense(3, []float64{0, 0, 0}), 1)
 
-	interaction, ok := sphere.Intersect(
+	interaction, ok := sphere.IntersectAffine(
 		mat.NewVecDense(3, []float64{0, 0, -3}),
 		mat.NewVecDense(3, []float64{0, 0, 1}),
 		NewIntersectOptions(1e-6, math.MaxFloat64),
@@ -48,7 +48,7 @@ func TestSphereIntersectReturnsCompleteInteraction(t *testing.T) {
 func TestHypersphereIntersect4D(t *testing.T) {
 	sphere := NewSphere(mat.NewVecDense(4, []float64{0, 0, 0, 0}), 1)
 
-	interaction, ok := sphere.Intersect(
+	interaction, ok := sphere.IntersectAffine(
 		mat.NewVecDense(4, []float64{-3, 0, 0, 0}),
 		mat.NewVecDense(4, []float64{1, 0, 0, 0}),
 		NewIntersectOptions(1e-6, math.MaxFloat64),

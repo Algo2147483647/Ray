@@ -14,7 +14,7 @@ func TestTriangleIntersectRejectsNearAndBehindHits(t *testing.T) {
 		mat.NewVecDense(3, []float64{0, 1, 0}),
 	)
 
-	_, ok := triangle.Intersect(
+	_, ok := triangle.IntersectAffine(
 		mat.NewVecDense(3, []float64{0.25, 0.25, 1e-8}),
 		mat.NewVecDense(3, []float64{0, 0, -1}),
 		NewIntersectOptions(1e-6, math.MaxFloat64),
@@ -23,7 +23,7 @@ func TestTriangleIntersectRejectsNearAndBehindHits(t *testing.T) {
 		t.Fatal("expected near-zero hit to be rejected by tMin")
 	}
 
-	_, ok = triangle.Intersect(
+	_, ok = triangle.IntersectAffine(
 		mat.NewVecDense(3, []float64{0.25, 0.25, 1}),
 		mat.NewVecDense(3, []float64{0, 0, 1}),
 		NewIntersectOptions(1e-6, math.MaxFloat64),
@@ -40,7 +40,7 @@ func TestTriangleSurfaceInteractionCarriesUVAndDerivatives(t *testing.T) {
 		mat.NewVecDense(3, []float64{0, 1, 0}),
 	)
 
-	interaction, ok := triangle.Intersect(
+	interaction, ok := triangle.IntersectAffine(
 		mat.NewVecDense(3, []float64{0.25, 0.5, 1}),
 		mat.NewVecDense(3, []float64{0, 0, -1}),
 		NewIntersectOptions(1e-6, math.MaxFloat64),

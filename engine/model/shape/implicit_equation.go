@@ -54,11 +54,8 @@ func (f *ImplicitEquation) Name() string {
 	return "Implicit Equation"
 }
 
-func (f *ImplicitEquation) Intersect(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
-	if options.Path == PathGreatCircle {
-		return f.intersectGreatCircle(raySt, rayDir, options)
-	}
-	if !options.validFor(PathAffine) {
+func (f *ImplicitEquation) IntersectAffine(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !options.valid() {
 		return SurfaceInteraction{}, false
 	}
 	tMin, tMax := options.Range.Min, options.Range.Max
@@ -70,7 +67,7 @@ func (f *ImplicitEquation) Intersect(raySt, rayDir *mat.VecDense, options Inters
 	}
 
 	if f.hasValidRange() {
-		clipped, ok := NewCuboid(f.Range[0], f.Range[1]).Clip(raySt, rayDir, options)
+		clipped, ok := NewCuboid(f.Range[0], f.Range[1]).ClipAffine(raySt, rayDir, options)
 		if !ok {
 			return SurfaceInteraction{}, false
 		}
@@ -165,12 +162,12 @@ func (f *ImplicitEquation) BuildBoundingBox() (pmin, pmax *mat.VecDense) {
 }
 
 func (f *ImplicitEquation) evaluateRay(raySt, rayDir *mat.VecDense, t float64) float64 {
-	point := pointAt(raySt, rayDir, t)
+	point := affinePointAt(raySt, rayDir, t)
 	return f.evaluateWorld(point)
 }
 
 func (f *ImplicitEquation) interactionAt(raySt, rayDir *mat.VecDense, distance float64) SurfaceInteraction {
-	point := pointAt(raySt, rayDir, distance)
+	point := affinePointAt(raySt, rayDir, distance)
 	normal := f.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
 	return newSurfaceInteractionAt(point, distance, normal)
 }

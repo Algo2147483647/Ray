@@ -4,16 +4,18 @@ import (
 	"math"
 	"testing"
 
+	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"gonum.org/v1/gonum/mat"
 )
 
 func TestSphereIntersectGreatCircle(t *testing.T) {
 	sphere := NewSphere(mat.NewVecDense(4, []float64{0, 1, 0, 0}), 0.1)
 
-	interaction, ok := sphere.Intersect(
+	interaction, ok := sphere.IntersectGeodesic(
 		mat.NewVecDense(4, []float64{1, 0, 0, 0}),
 		mat.NewVecDense(4, []float64{0, 1, 0, 0}),
-		NewGreatCircleIntersectOptions(1e-6, math.Pi),
+		geometry.Spherical(),
+		NewIntersectOptions(1e-6, math.Pi),
 	)
 	if !ok {
 		t.Fatal("expected S^3 sphere hit")
@@ -29,10 +31,11 @@ func TestSphereIntersectGreatCircle(t *testing.T) {
 func TestPlaneIntersectGreatCircle(t *testing.T) {
 	plane := &Plane{A: mat.NewVecDense(4, []float64{0, 1, 0, 0}), B: -0.5}
 
-	interaction, ok := plane.Intersect(
+	interaction, ok := plane.IntersectGeodesic(
 		mat.NewVecDense(4, []float64{1, 0, 0, 0}),
 		mat.NewVecDense(4, []float64{0, 1, 0, 0}),
-		NewGreatCircleIntersectOptions(1e-6, math.Pi),
+		geometry.Spherical(),
+		NewIntersectOptions(1e-6, math.Pi),
 	)
 	if !ok {
 		t.Fatal("expected S^3 plane hit")
@@ -51,10 +54,11 @@ func TestCuboidIntersectGreatCircle(t *testing.T) {
 		mat.NewVecDense(4, []float64{1.0, 0.6, 0.2, 0.2}),
 	)
 
-	interaction, ok := cuboid.Intersect(
+	interaction, ok := cuboid.IntersectGeodesic(
 		mat.NewVecDense(4, []float64{1, 0, 0, 0}),
 		mat.NewVecDense(4, []float64{0, 1, 0, 0}),
-		NewGreatCircleIntersectOptions(1e-6, math.Pi),
+		geometry.Spherical(),
+		NewIntersectOptions(1e-6, math.Pi),
 	)
 	if !ok {
 		t.Fatal("expected S^3 cuboid hit")
