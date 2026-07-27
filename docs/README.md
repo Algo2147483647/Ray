@@ -19,11 +19,12 @@ This directory documents the mathematical, physical, and code-architecture ideas
 - [`current-renderer-architecture.md`](current-renderer-architecture.md): current package boundaries for optics, materials, media, ray tracing, spectrum modes, and color-space types.
 - [`medium-and-caustics-modernization-plan.md`](medium-and-caustics-modernization-plan.md): staged plan for nested dielectric media, explicit medium boundaries, homogeneous absorption, participating-media scattering, and caustic-capable prism validation.
 - [`multidimensional-rendering.md`](multidimensional-rendering.md): implemented N-dimensional camera/film support, 4D hypercube and hypersphere scenes, and the geometric interpretation of exterior and interior hypercube experiments.
+- [`non-euclidean-coordinate-system.md`](non-euclidean-coordinate-system.md): H³/Klein and S³ coordinate contracts, metric-aware ray transport and shading, intrinsic authoring formulas, and the hyperbolic observatory rendering demonstration.
 - [`ray-tracing-map.json`](ray-tracing-map.json): exported architecture/map data used by external diagramming or note tools.
 
 ## Knowledge Map
 
-The project combines five layers of knowledge:
+The project combines six layers of knowledge:
 
 1. **Linear algebra**
    Vector addition, scalar multiplication, normalization, dot products, cross products, and tensor-like storage are used throughout the renderer.
@@ -39,6 +40,9 @@ The project combines five layers of knowledge:
 
 5. **Higher-dimensional measurement**
    N-dimensional cameras and tensor films allow 4D scenes to be sampled through 2D or 3D observation domains. The current showcase uses this to inspect the eight cubic cells of a hypercube and the four-cell incidence structure at a hypercube vertex.
+
+6. **Non-euclidean geometry**
+   The geometry abstraction supports H³ in the Beltrami-Klein model and S³ as a unit hypersphere. Geodesic distance, tangent-space inner products, intrinsic normals, metric-orthonormal shading frames, and arc-length-aware transport allow diffuse and specular materials to operate consistently away from the euclidean origin. The H³ observatory demonstrates five `{4,3,5}` cells around one edge, equal intrinsic balls approaching the ideal boundary, and a triangle with positive angle defect.
 
 ## Primary Code Entry Points
 
@@ -61,5 +65,6 @@ If you want to understand the project from first principles, read:
 4. `rendering-flow-cameras-and-scenes.md`
 5. `material-system-design.md`
 6. `multidimensional-rendering.md`
+7. `non-euclidean-coordinate-system.md`
 
 If you want to extend the renderer, start from `rendering-flow-cameras-and-scenes.md`, then jump to the subsystem-specific document.

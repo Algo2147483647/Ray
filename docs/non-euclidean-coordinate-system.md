@@ -141,9 +141,9 @@ g_p(u, v) = (u·v)/(1 − |p|²) + (p·u)(p·v)/(1 − |p|²)²
 
 Used for: BSDF cosines, frame normalization, ray-direction renormalization
 after a bounce. At the origin this collapses to the euclidean dot
-product (which is why frames at the origin are exact and frames far
-from the origin pick up an `O(|p|²)` error if the engine takes a
-shortcut — see Section 8).
+product. Away from the origin the engine consistently uses `g_p` for
+normal conversion, frame construction, world/local projection, and ray
+direction normalization.
 
 ### 3.3 Geodesic parameterization
 
@@ -511,6 +511,8 @@ shows the **metric tensor itself** by isolating it: same intrinsic
 size, two chart representations, and the disagreement is *exactly* the
 metric distortion `g_p` of §3.2.
 
+## 8. Metric Closure and Remaining Limitations
+
 This section records the remaining limitations and the metric-closure work
 that has already been completed.
 
@@ -568,7 +570,62 @@ counterparts are the obvious analogues with `cos`/`sin` replacing
 
 ---
 
-## 9. Quick Reference: When You Add a New H³ Scene
+## 9. Rendering Demonstration: Hyperbolic Observatory
+
+The generated observatory scene combines three independent witnesses of H³
+geometry with metric-correct surface transport:
+
+1. **Five cells around one edge.** Five congruent `{4,3,5}` cubes meet around
+   the same totally-geodesic edge. Each dihedral angle is `2π/5 = 72°`, so the
+   five sectors close exactly. Four euclidean right-angle cubes would already
+   fill `360°`; this five-cell incidence is therefore not an ordinary
+   perspective effect.
+2. **Equal intrinsic balls near infinity.** Six H³ balls have intrinsic radius
+   `0.105` and consecutive center distance `0.55`. Their surfaces are emitted
+   as quadrics using the H³ ball equation, not as translated euclidean
+   spheres. They become rapidly smaller in the Klein chart as their centers
+   approach `|p| = 1`.
+3. **Angle defect.** Three geodesic chords form a triangle with intrinsic
+   angles `35.278°`, `35.278°`, and `70.557°`. The sum is `141.114°`, below the
+   euclidean value of `180°`.
+
+The artistic scene treats the five-cell orbit as an architectural light
+framework. A dark Lambertian stage and diffuse ceramic elements provide soft
+surface response; alternating ideal mirrors and a central mirror ball reflect
+the emissive geodesic structure. Because normals are raised with the inverse
+Klein metric and frames are orthonormal under `g_p`, these diffuse cosines and
+mirror directions are evaluated in the intrinsic tangent space.
+
+![Hyperbolic observatory](assets/hyperbolic-showcase-art.png)
+
+The focused validation renders isolate each invariant:
+
+| Five cells around one edge | Equal H³ balls | Angle-defect triangle |
+|---|---|---|
+| ![Five hyperbolic cells](assets/hyperbolic-showcase-edge.png) | ![Equal hyperbolic balls](assets/hyperbolic-showcase-metric.png) | ![Hyperbolic triangle](assets/hyperbolic-showcase-triangle.png) |
+
+Source assets:
+
+- Generator: `examples/scenes/non-euclidean/hyperbolic_showcase.py`
+- Combined mathematical scene: `hyperbolic_showcase.json`
+- Artistic scene: `hyperbolic_showcase_art.json`
+- Focused scenes: `hyperbolic_showcase_edge.json`,
+  `hyperbolic_showcase_metric.json`, and
+  `hyperbolic_showcase_triangle.json`
+
+Running the generator validates orbit closure, the `72°` dihedral angle,
+equal arc-length spacing, triangle angle defect, and the Klein safety margin
+before writing any JSON:
+
+```bash
+python examples/scenes/non-euclidean/hyperbolic_showcase.py
+go -C studio run . \
+  --script ../examples/scenes/non-euclidean/hyperbolic_showcase_art.json
+```
+
+---
+
+## 10. Quick Reference: When You Add a New H³ Scene
 
 1. Write down the **intrinsic specification** at Layer 3 (distances,
    angles, adjacency, symmetry group). Don't draw Klein coordinates yet.
@@ -590,7 +647,7 @@ counterparts are the obvious analogues with `cos`/`sin` replacing
 
 ---
 
-## 10. Source Files Cross-Reference
+## 11. Source Files Cross-Reference
 
 | Layer / role | File |
 |---|---|
@@ -602,13 +659,11 @@ counterparts are the obvious analogues with `cos`/`sin` replacing
 | Integrator choke points | `engine/ray_tracing/trace_ray.go` (lines 33, 53, 100, 154) |
 | Geometry-aware frame | `engine/maths/frame_geometry.go` |
 | JSON schema (`geometry`, `media`) | `engine/controller/parser/schema.go` |
-| Honeycomb generator | `scene-editor/tools/gen_hyperbolic_honeycomb.py` |
-| Plan A scene | `examples/scenes/hyperbolic_triangle.json` |
-| Plan C scene (generated) | `examples/scenes/hyperbolic_honeycomb.json` |
-| Plan C generator | `scene-editor/tools/gen_hyperbolic_honeycomb.py` |
-| Plan D scene (generated) | `examples/scenes/hyperbolic_ball_compare.json` |
-| Plan D generator | `scene-editor/tools/gen_hyperbolic_ball_compare.py` |
-| Original gallery scene | `examples/scenes/hyperbolic_gallery.json` |
+| Showcase generator | `examples/scenes/non-euclidean/hyperbolic_showcase.py` |
+| Artistic combined scene | `examples/scenes/non-euclidean/hyperbolic_showcase_art.json` |
+| Focused invariant scenes | `examples/scenes/non-euclidean/hyperbolic_showcase_{edge,metric,triangle}.json` |
+| Earlier honeycomb generator | `examples/scenes/non-euclidean/hyperbolic honeycomb.py` |
+| Earlier honeycomb scene | `examples/scenes/non-euclidean/hyperbolic.json` |
 | Validation chessboard | `examples/scenes/non-euclidean/hyperbolic_chessboard.json` |
 | Validation S³ scene | `examples/scenes/non-euclidean/spherical_hopf.json` |
 | Design spec | `.agents/spec.md` |

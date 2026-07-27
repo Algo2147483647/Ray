@@ -217,6 +217,38 @@ def emission_material(material_id, color):
     }
 
 
+def lambert_material(material_id, color):
+    return {
+        "id": material_id,
+        "surface": {
+            "type": "lambert",
+            "albedo": list(color),
+        },
+    }
+
+
+def mirror_material(material_id, color):
+    return {
+        "id": material_id,
+        "surface": {
+            "type": "specular_reflection",
+            "reflectance": list(color),
+        },
+    }
+
+
+def rough_conductor_material(material_id, eta, extinction, roughness):
+    return {
+        "id": material_id,
+        "surface": {
+            "type": "rough_conductor",
+            "eta": list(eta),
+            "k": list(extinction),
+            "roughness": roughness,
+        },
+    }
+
+
 def cylinder_object(object_id, material_id, start, end, radius):
     axis = sub(end, start)
     return {
@@ -462,6 +494,112 @@ def specialized_scene(scene, feature, camera_index, object_prefixes):
     return result
 
 
+def artistic_scene(scene):
+    result = copy.deepcopy(scene)
+    result["_comment"] = (
+        "Artistic H^3 observatory combining all three witnesses in one view. "
+        "The five-cell orbit forms the architectural canopy, equal H^3 balls "
+        "alternate diffuse porcelain and ideal mirrors, and the angle-defect "
+        "triangle glows above a dark diffuse stage. Warm and cool hyperbolic "
+        "area lights, plus a central mirror ball, connect the exhibits through "
+        "metric-correct Klein reflection."
+    )
+    result["render"].update({
+        "camera_index": 0,
+        "samples": 128,
+        "width": 640,
+        "height": 640,
+        "output_image": "../outputs/hyperbolic_showcase_art.png",
+        "output_film": "../outputs/hyperbolic_showcase_art.bin",
+        "exposure": 1.15,
+        "tone_mapping": "aces",
+    })
+    result["cameras"] = [{
+        "id": "h3-observatory",
+        "type": "hyperbolic",
+        "position": [0.0, -0.82, 0.10],
+        "look_at": [0.08, 0.18, -0.12],
+        "up": [0.0, 0.0, 1.0],
+        "field_of_view": 82,
+        "aspect_ratio": 1.0,
+    }]
+
+    result["materials"] = [
+        emission_material("cell_glow_0", (2.2, 0.48, 0.20)),
+        emission_material("cell_glow_1", (2.3, 1.05, 0.24)),
+        emission_material("cell_glow_2", (0.16, 1.25, 1.75)),
+        emission_material("cell_glow_3", (1.40, 0.30, 1.85)),
+        emission_material("cell_glow_4", (0.18, 1.55, 0.62)),
+        lambert_material("cell_diffuse", (0.52, 0.30, 0.18)),
+        rough_conductor_material("cell_metal", (0.32, 0.48, 0.90), (3.0, 2.4, 2.0), 0.20),
+        emission_material("shared_edge", (5.2, 3.8, 1.4)),
+        lambert_material("metric_porcelain", (0.62, 0.76, 0.86)),
+        mirror_material("metric_mirror", (0.94, 0.98, 1.0)),
+        emission_material("metric_axis", (0.08, 0.55, 1.8)),
+        emission_material("vertex_marker", (3.8, 2.5, 0.65)),
+        emission_material("triangle_0", (4.5, 0.28, 0.16)),
+        emission_material("triangle_1", (0.16, 3.8, 0.65)),
+        emission_material("triangle_2", (0.18, 0.9, 4.6)),
+        lambert_material("stage", (0.025, 0.032, 0.048)),
+        mirror_material("central_mirror", (0.96, 0.98, 1.0)),
+        emission_material("warm_moon", (8.0, 4.2, 1.8)),
+        emission_material("cool_moon", (1.4, 3.8, 8.0)),
+        emission_material("rear_softbox", (10.0, 8.8, 7.2)),
+    ]
+
+    for obj in result["objects"]:
+        object_id = obj["id"]
+        if object_id.startswith("orbit_cell_"):
+            parts = object_id.split("_")
+            cell_index = int(parts[2])
+            if "_edge_" in object_id:
+                obj["material_id"] = f"cell_glow_{cell_index}"
+                obj["r"] *= 0.70
+            elif object_id.endswith("_center"):
+                obj["material_id"] = "cell_diffuse" if cell_index % 2 == 0 else "cell_metal"
+        if object_id.startswith("equal_h3_ball_"):
+            index = int(object_id.rsplit("_", 1)[1])
+            obj["material_id"] = "metric_porcelain" if index % 2 == 0 else "metric_mirror"
+
+    result["objects"].extend([
+        {
+            "id": "dark_diffuse_stage",
+            "material_id": "stage",
+            "shape": "circle",
+            "center": [0.0, 0.02, -0.555],
+            "normal": [0.0, 0.0, 1.0],
+            "r": 0.76,
+        },
+        ball_object(
+            "central_h3_mirror",
+            "central_mirror",
+            (0.05, 0.08, -0.12),
+            0.15,
+        ),
+        ball_object(
+            "warm_h3_moon",
+            "warm_moon",
+            (-0.68, -0.34, 0.43),
+            0.13,
+        ),
+        ball_object(
+            "cool_h3_moon",
+            "cool_moon",
+            (0.66, -0.30, 0.40),
+            0.12,
+        ),
+        {
+            "id": "rear_invisible_softbox",
+            "material_id": "rear_softbox",
+            "shape": "circle",
+            "center": [0.0, -0.88, 0.05],
+            "normal": [0.0, 1.0, 0.0],
+            "r": 0.28,
+        },
+    ])
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -497,6 +635,7 @@ def main():
             camera_index=2,
             object_prefixes=("angle_defect_",),
         ),
+        "art": artistic_scene(scene),
     }
     for suffix, focused in focused_scenes.items():
         focused_path = output_path.with_name(f"{output_path.stem}_{suffix}{output_path.suffix}")

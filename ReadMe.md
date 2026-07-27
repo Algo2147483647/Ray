@@ -20,6 +20,34 @@ The rendered matrix demonstrates coherent shading and clean silhouettes across s
 
 ![material-benchmark-matrix.png](docs%2Fassets%2Fmaterial-benchmark-matrix.png)
 
+### Non-Euclidean hyperbolic-space rendering
+
+The hyperbolic observatory is rendered in three-dimensional hyperbolic space
+(`H³`) using the Beltrami–Klein model. Its composition combines three
+independent geometric witnesses in one scene:
+
+- Five congruent `{4,3,5}` cells meet around one geodesic edge. Their
+  `72°` dihedral angles close to `360°`, an incidence pattern that euclidean
+  right-angle cubes cannot reproduce.
+- Six true `H³` balls have the same intrinsic radius (`0.105`) and equal
+  center spacing (`0.55`). Their apparent shrinkage toward the ideal boundary
+  `|p| = 1` visualizes Klein-coordinate distortion rather than a perspective
+  camera effect.
+- A geodesic triangle has intrinsic angles `35.278°`, `35.278°`, and
+  `70.557°`; its `141.114°` angle sum exposes the negative curvature directly.
+
+The artistic version uses a dark diffuse stage, ceramic Lambertian surfaces,
+alternating ideal mirrors, a central mirror ball, and warm/cool area lighting.
+Normals, shading frames, diffuse cosines, and mirror directions are all
+evaluated with the local Klein metric, so the material response remains
+intrinsic away from the coordinate origin.
+
+![Hyperbolic observatory](docs%2Fassets%2Fhyperbolic-showcase-art.png)
+
+See the
+[non-euclidean coordinate-system documentation](docs/non-euclidean-coordinate-system.md)
+for the metric formulas, scene construction, validation invariants, generator,
+and reproduction command.
 
 ### High-dimensional space rendering
 
