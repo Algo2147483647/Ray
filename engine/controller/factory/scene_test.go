@@ -2,11 +2,13 @@ package factory
 
 import (
 	"math"
+	"strings"
 	"testing"
 
 	"github.com/Algo2147483647/ray/engine/controller/parser"
 	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"github.com/Algo2147483647/ray/engine/model"
+	"github.com/Algo2147483647/ray/engine/model/camera"
 )
 
 func TestLoadSceneFromScriptParsesGeometry(t *testing.T) {
@@ -64,5 +66,51 @@ func TestLoadSceneFromScriptResetsGeometryOnReuse(t *testing.T) {
 	}
 	if scene.MaxArc != 0 {
 		t.Fatalf("expected reused scene max arc reset to 0, got %f", scene.MaxArc)
+	}
+}
+
+func TestLoadSceneFromScriptRejectsGeometryDimensionMismatch(t *testing.T) {
+	scene := model.NewScene()
+	script := &parser.Script{
+		Render:   parser.RenderScript{Dimension: 4},
+		Geometry: &parser.GeometryScript{Type: "klein"},
+	}
+
+	err := LoadSceneFromScript(script, scene)
+	if err == nil || !strings.Contains(err.Error(), "requires render dimension 3") {
+		t.Fatalf("expected Klein dimension error, got %v", err)
+	}
+}
+
+func TestLoadSceneFromScriptRejectsKleinCameraMismatch(t *testing.T) {
+	scene := model.NewScene()
+	script := &parser.Script{
+		Render:   parser.RenderScript{Dimension: 3},
+		Geometry: &parser.GeometryScript{Type: "klein"},
+		Cameras: []parser.CameraScript{{
+			Type:         camera.CameraType3D,
+			Position:     []float64{0, 0, 0},
+			Direction:    []float64{1, 0, 0},
+			Up:           []float64{0, 0, 1},
+			FieldOfViews: []float64{60, 60},
+		}},
+	}
+
+	err := LoadSceneFromScript(script, scene)
+	if err == nil || !strings.Contains(err.Error(), "must use type \"hyperbolic\"") {
+		t.Fatalf("expected Klein camera error, got %v", err)
+	}
+}
+
+func TestLoadSceneFromScriptRejectsNegativeMaxArc(t *testing.T) {
+	scene := model.NewScene()
+	script := &parser.Script{
+		Render:   parser.RenderScript{Dimension: 3},
+		Geometry: &parser.GeometryScript{Type: "klein", MaxArc: -1},
+	}
+
+	err := LoadSceneFromScript(script, scene)
+	if err == nil || !strings.Contains(err.Error(), "max_arc") {
+		t.Fatalf("expected max_arc error, got %v", err)
 	}
 }

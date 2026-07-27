@@ -151,6 +151,34 @@ func TestSurfaceHitRangeHonorsTMax(t *testing.T) {
 	}
 }
 
+func TestKleinSurfaceHitUsesIntrinsicMetricNormal(t *testing.T) {
+	tree := &ObjectTree{}
+	tree.AddObject(&Object{Shape: &shape.Plane{
+		A: mat.NewVecDense(3, []float64{1, 2, 0}),
+		B: -1,
+	}})
+	tree.Build()
+
+	g := geometry.Klein()
+	hit, ok := tree.GetSurfaceHitRangeInGeometry(
+		mat.NewVecDense(3, []float64{0, 0, 0}),
+		mat.NewVecDense(3, []float64{0.4, 0.3, 0}),
+		g,
+		1e-6,
+		2,
+	)
+	if !ok {
+		t.Fatal("expected Klein plane hit")
+	}
+	tangent := mat.NewVecDense(3, []float64{2, -1, 0})
+	if got := g.InnerProduct(hit.Point, hit.GeometricNormal, tangent); math.Abs(got) > 1e-10 {
+		t.Fatalf("intrinsic normal is not metric-orthogonal to plane: %g", got)
+	}
+	if got := g.InnerProduct(hit.Point, hit.GeometricNormal, hit.GeometricNormal); math.Abs(got-1) > 1e-10 {
+		t.Fatalf("intrinsic normal length squared=%g want 1", got)
+	}
+}
+
 func TestSphericalSurfaceHitUsesGreatCirclePoint(t *testing.T) {
 	const (
 		centerArc = math.Pi / 3

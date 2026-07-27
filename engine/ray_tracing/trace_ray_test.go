@@ -195,6 +195,56 @@ func TestSurfaceHitInGeometryHonorsKleinBoundary(t *testing.T) {
 	}
 }
 
+func TestKleinSurfaceInteractionNormalizesIncidentDirectionAndReflectsMetricAngle(t *testing.T) {
+	g := geometry.Klein()
+	obj := &object.Object{
+		Shape: &shape.Plane{
+			A: mat.NewVecDense(3, []float64{1, 2, 0}),
+			B: -1,
+		},
+		Material: &material.Material{
+			Surface: bsdf.NewSingle(bxdf.NewSpecularReflection(renderray.NewSpectrum(1, 1, 1))),
+		},
+	}
+	tree := &object.ObjectTree{}
+	tree.AddObject(obj)
+	tree.Build()
+
+	ray := &renderray.Ray{
+		Origin:    mat.NewVecDense(3, []float64{0, 0, 0}),
+		Direction: mat.NewVecDense(3, []float64{0.8, 0.6, 0}),
+		Geometry:  g,
+	}
+	hit, ok := surfaceHitInGeometry(tree, ray, g)
+	if !ok {
+		t.Fatal("expected Klein plane hit")
+	}
+
+	handler := NewHandler()
+	si, ok := handler.prepareSurfaceInteraction(medium.NewRegistry(), ray, hit)
+	if !ok {
+		t.Fatal("expected Klein surface interaction")
+	}
+	if got := g.InnerProduct(ray.Origin, ray.Direction, ray.Direction); math.Abs(got-1) > 1e-10 {
+		t.Fatalf("incident direction Klein length squared=%g want 1", got)
+	}
+
+	sample, ok := sampleSurface(obj, si.Context, si.WoLocal)
+	if !ok {
+		t.Fatal("expected specular reflection sample")
+	}
+	reflected := si.Frame.LocalToWorld(sample.Wi)
+	if !normalizeDirectionInGeometry(g, ray.Origin, reflected) {
+		t.Fatal("expected reflected direction to normalize")
+	}
+
+	inCos := math.Abs(g.InnerProduct(ray.Origin, ray.Direction, si.Frame.Normal))
+	outCos := math.Abs(g.InnerProduct(ray.Origin, reflected, si.Frame.Normal))
+	if math.Abs(inCos-outCos) > 1e-10 {
+		t.Fatalf("metric reflection angle mismatch: incoming=%g outgoing=%g", inCos, outCos)
+	}
+}
+
 func TestApplyMediumAbsorptionUsesBeerLambertRGB(t *testing.T) {
 	registry := medium.NewRegistry()
 	waterID, err := registry.RegisterHomogeneousWithCoefficients(

@@ -61,6 +61,25 @@ func TestKleinInnerProductUsesMetricTensor(t *testing.T) {
 	}
 }
 
+func TestKleinIntrinsicNormalIsMetricDualOfAmbientGradient(t *testing.T) {
+	g := Klein()
+	p := mat.NewVecDense(3, []float64{0.6, 0.2, 0.1})
+	gradient := mat.NewVecDense(3, []float64{1, 2, -0.5})
+	normal := g.IntrinsicNormal(p, gradient, mat.NewVecDense(3, nil))
+	tangents := []*mat.VecDense{
+		mat.NewVecDense(3, []float64{2, -1, 0}),
+		mat.NewVecDense(3, []float64{0.5, 0, 1}),
+	}
+
+	for index, tangent := range tangents {
+		got := g.InnerProduct(p, normal, tangent)
+		want := mat.Dot(gradient, tangent)
+		if math.Abs(got-want) > 1e-12 {
+			t.Fatalf("tangent %d: metric duality got %.15f want %.15f", index, got, want)
+		}
+	}
+}
+
 func TestKleinExpRoundTrip(t *testing.T) {
 	g := Klein()
 	p := mat.NewVecDense(3, []float64{0.1, 0.2, -0.1})

@@ -40,6 +40,10 @@ func (spherical) InnerProduct(_, u, v *mat.VecDense) float64 {
 	return mat.Dot(u, v)
 }
 
+func (spherical) IntrinsicNormal(p, ambientGradient, out *mat.VecDense) *mat.VecDense {
+	return spherical{}.ProjectTangent(p, ambientGradient, out)
+}
+
 // ArcLengthFromEmbedT is retained for compatibility with callers that still
 // pass a tangent-line parameter. It projects p+t*d back to S^3 before
 // measuring the angle, so it is only valid in that local projected chart and

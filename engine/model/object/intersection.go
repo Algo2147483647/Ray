@@ -1,7 +1,6 @@
 package object
 
 import (
-	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"github.com/Algo2147483647/ray/engine/model/shape"
 	"github.com/Algo2147483647/ray/engine/utils"
@@ -115,11 +114,19 @@ func (t *ObjectTree) GetSurfaceHit(raySt, rayDir *mat.VecDense) (*SurfaceHit, bo
 }
 
 func (t *ObjectTree) GetSurfaceHitRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (*SurfaceHit, bool) {
+	return t.GetSurfaceHitRangeInGeometry(raySt, rayDir, geometry.Euclidean(), tMin, tMax)
+}
+
+func (t *ObjectTree) GetSurfaceHitRangeInGeometry(
+	raySt, rayDir *mat.VecDense,
+	g geometry.Geometry,
+	tMin, tMax float64,
+) (*SurfaceHit, bool) {
 	interaction, obj, ok := t.getClosestInteraction(raySt, rayDir, t.Root, shape.NewIntersectOptions(tMin, tMax))
 	if !ok || obj == nil {
 		return nil, false
 	}
-	return newSurfaceHitFromInteraction(interaction, obj, rayDir), true
+	return newSurfaceHitFromInteraction(interaction, obj, rayDir, g), true
 }
 
 func (t *ObjectTree) GetGeodesicSurfaceHit(
@@ -169,18 +176,25 @@ func (t *ObjectTree) GetGeodesicSurfaceHit(
 	if !bestOK {
 		return nil, false
 	}
-	return newSurfaceHitFromInteraction(bestInteraction, bestObj, bestDirection), true
+	return newSurfaceHitFromInteraction(bestInteraction, bestObj, bestDirection, g), true
 }
 
-func newSurfaceHitFromInteraction(interaction shape.SurfaceInteraction, obj *Object, frontFaceDir *mat.VecDense) *SurfaceHit {
-	geometricNormal := interaction.GeometricNormal
-	if geometricNormal == nil {
-		geometricNormal = obj.Shape.GetNormalVector(interaction.Point, mat.NewVecDense(interaction.Point.Len(), nil))
+func newSurfaceHitFromInteraction(
+	interaction shape.SurfaceInteraction,
+	obj *Object,
+	frontFaceDir *mat.VecDense,
+	g geometry.Geometry,
+) *SurfaceHit {
+	g = geometry.Get(g)
+	ambientGradient := interaction.GeometricNormal
+	if ambientGradient == nil {
+		ambientGradient = obj.Shape.GetNormalVector(interaction.Point, mat.NewVecDense(interaction.Point.Len(), nil))
 	}
-	geometricNormal = mat.VecDenseCopyOf(geometricNormal)
-	maths.Normalize(geometricNormal)
+	geometricNormal := mat.NewVecDense(ambientGradient.Len(), nil)
+	g.IntrinsicNormal(interaction.Point, ambientGradient, geometricNormal)
+	normalizeGeometryVector(g, interaction.Point, geometricNormal)
 
-	frontFace := mat.Dot(geometricNormal, frontFaceDir) < 0
+	frontFace := g.InnerProduct(interaction.Point, geometricNormal, frontFaceDir) < 0
 	shadingNormal := geometricNormal
 	if !frontFace {
 		shadingNormal = mat.VecDenseCopyOf(geometricNormal)
@@ -200,4 +214,13 @@ func newSurfaceHitFromInteraction(interaction shape.SurfaceInteraction, obj *Obj
 		FrontFace:       frontFace,
 		Object:          obj,
 	}
+}
+
+func normalizeGeometryVector(g geometry.Geometry, p, v *mat.VecDense) bool {
+	n2 := g.InnerProduct(p, v, v)
+	if n2 <= 0 || math.IsNaN(n2) || math.IsInf(n2, 0) {
+		return false
+	}
+	v.ScaleVec(1/math.Sqrt(n2), v)
+	return true
 }

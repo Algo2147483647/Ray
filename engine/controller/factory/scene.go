@@ -9,6 +9,7 @@ import (
 	"github.com/Algo2147483647/ray/engine/controller/parser"
 	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"github.com/Algo2147483647/ray/engine/model"
+	modelcamera "github.com/Algo2147483647/ray/engine/model/camera"
 	"github.com/Algo2147483647/ray/engine/model/object"
 	"github.com/Algo2147483647/ray/engine/utils"
 )
@@ -39,6 +40,9 @@ func LoadSceneFromScript(script *parser.Script, scene *model.Scene) error {
 			return fmt.Errorf("unsupported geometry type %q", script.Geometry.Type)
 		}
 		scene.MaxArc = script.Geometry.MaxArc
+		if scene.MaxArc < 0 || math.IsNaN(scene.MaxArc) || math.IsInf(scene.MaxArc, 0) {
+			return fmt.Errorf("geometry max_arc must be finite and >= 0, got %v", scene.MaxArc)
+		}
 		if scene.MaxArc == 0 && scene.Geometry == geometry.Spherical() {
 			scene.MaxArc = 2 * math.Pi
 		}
@@ -50,6 +54,14 @@ func LoadSceneFromScript(script *parser.Script, scene *model.Scene) error {
 	}
 	if dimension < 2 {
 		return fmt.Errorf("render dimension must be >= 2, got %d", dimension)
+	}
+	if scene.Geometry != nil && dimension != scene.Geometry.Dimension() {
+		return fmt.Errorf(
+			"geometry %q requires render dimension %d, got %d",
+			scene.Geometry.Name(),
+			scene.Geometry.Dimension(),
+			dimension,
+		)
 	}
 	utils.SetDimension(dimension)
 
@@ -112,6 +124,8 @@ func LoadSceneFromScript(script *parser.Script, scene *model.Scene) error {
 	cameras, err := ParseCameras(script)
 	if err != nil {
 		parseErrors = append(parseErrors, err)
+	} else if err := validateCamerasForGeometry(scene.Geometry, cameras); err != nil {
+		parseErrors = append(parseErrors, err)
 	}
 
 	if len(parseErrors) > 0 {
@@ -119,5 +133,26 @@ func LoadSceneFromScript(script *parser.Script, scene *model.Scene) error {
 	}
 	scene.Cameras = append(scene.Cameras, cameras...)
 	scene.ObjectTree.Build()
+	return nil
+}
+
+func validateCamerasForGeometry(g geometry.Geometry, cameras []modelcamera.Camera) error {
+	for index, cam := range cameras {
+		switch geometry.Get(g).Kind() {
+		case geometry.EuclideanKind:
+			switch cam.(type) {
+			case *modelcamera.HyperbolicCamera, *modelcamera.SphericalCamera:
+				return fmt.Errorf("camera[%d] is non-euclidean but scene geometry is euclidean", index)
+			}
+		case geometry.KleinKind:
+			if _, ok := cam.(*modelcamera.HyperbolicCamera); !ok {
+				return fmt.Errorf("camera[%d] must use type %q for Klein geometry, got %T", index, modelcamera.CameraTypeHyperbolic, cam)
+			}
+		case geometry.SphericalKind:
+			if _, ok := cam.(*modelcamera.SphericalCamera); !ok {
+				return fmt.Errorf("camera[%d] must use type %q for spherical geometry, got %T", index, modelcamera.CameraTypeSpherical, cam)
+			}
+		}
+	}
 	return nil
 }

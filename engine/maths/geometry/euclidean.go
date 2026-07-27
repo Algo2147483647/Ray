@@ -28,6 +28,13 @@ func (euclidean) InnerProduct(_, u, v *mat.VecDense) float64 {
 	return mat.Dot(u, v)
 }
 
+func (euclidean) IntrinsicNormal(_, ambientGradient, out *mat.VecDense) *mat.VecDense {
+	if out != ambientGradient {
+		out.CopyVec(ambientGradient)
+	}
+	return out
+}
+
 func (euclidean) ArcLengthFromEmbedT(_, dir *mat.VecDense, tEuclid float64) float64 {
 	if math.IsNaN(tEuclid) || math.IsInf(tEuclid, 0) || tEuclid < 0 {
 		return 0

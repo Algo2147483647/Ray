@@ -39,6 +39,11 @@ type Geometry interface {
 	// InnerProduct returns <u, v>_p under the metric of M at p.
 	InnerProduct(p, u, v *mat.VecDense) float64
 
+	// IntrinsicNormal raises an ambient surface-gradient covector into the
+	// corresponding tangent-space normal vector under the metric at p.
+	// The result is not normalized. out may alias ambientGradient.
+	IntrinsicNormal(p, ambientGradient, out *mat.VecDense) *mat.VecDense
+
 	// ArcLengthFromEmbedT translates the Euclidean ray parameter t (as
 	// returned by Shape.IntersectAffine on the embedded ray (p, dir)) into the
 	// geodesic arc length traveled in M. Implementations must clamp pathological

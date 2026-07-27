@@ -3,48 +3,48 @@ package maths
 import (
 	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"gonum.org/v1/gonum/mat"
+	"math"
 )
 
-// NewFrameFromNormalInGeometry builds an orthonormal frame at point p
-// whose normal direction is the geometry-projected version of n.
-//
-// For Euclidean/Klein this delegates to NewFrameFromNormal: the existing
-// Gram-Schmidt in R^d already produces the right basis.
-//
-// For Spherical we first project both the normal and every candidate
-// tangent direction into T_p S^3, so the resulting frame lives in the
-// 3-dimensional tangent subspace embedded in R^4.
+// NewFrameFromNormalInGeometry builds a metric-orthonormal surface frame at p.
+// n must be an intrinsic tangent-space normal vector (an ambient gradient
+// should first be converted with Geometry.IntrinsicNormal).
 func NewFrameFromNormalInGeometry(g geometry.Geometry, p, n *mat.VecDense) (Frame, bool) {
 	g = geometry.Get(g)
-	if g.Kind() != geometry.SphericalKind {
-		return NewFrameFromNormal(n)
-	}
-
-	// Project the normal into T_p, then orthonormalize.
-	projected := mat.NewVecDense(n.Len(), nil)
-	g.ProjectTangent(p, n, projected)
-	if mat.Norm(projected, 2) <= 1e-12 {
+	if p == nil || n == nil || p.Len() != n.Len() || n.Len() < 2 {
 		return Frame{}, false
 	}
-	Normalize(projected)
+
+	projected := mat.NewVecDense(n.Len(), nil)
+	g.ProjectTangent(p, n, projected)
+	if !normalizeVectorInGeometry(g, p, projected) {
+		return Frame{}, false
+	}
 
 	dim := n.Len()
-	tangents := make([]*mat.VecDense, 0, dim-2)
-	for axis := 0; axis < dim && len(tangents) < dim-2; axis++ {
+	tangentCount := dim - 1
+	if g.Kind() == geometry.SphericalKind {
+		tangentCount--
+	}
+	if tangentCount < 1 {
+		return Frame{}, false
+	}
+
+	tangents := make([]*mat.VecDense, 0, tangentCount)
+	for axis := 0; axis < dim && len(tangents) < tangentCount; axis++ {
 		candidate := mat.NewVecDense(dim, nil)
 		candidate.SetVec(axis, 1)
-		// Remove components along p (radial) and along the normal.
-		candidate.AddScaledVec(candidate, -mat.Dot(candidate, p), p)
-		candidate.AddScaledVec(candidate, -mat.Dot(candidate, projected), projected)
+		g.ProjectTangent(p, candidate, candidate)
+		subtractGeometryProjection(g, p, candidate, projected)
 		for _, t := range tangents {
-			candidate.AddScaledVec(candidate, -mat.Dot(candidate, t), t)
+			subtractGeometryProjection(g, p, candidate, t)
 		}
-		if mat.Norm(candidate, 2) <= 1e-12 {
+		if !normalizeVectorInGeometry(g, p, candidate) {
 			continue
 		}
-		tangents = append(tangents, Normalize(candidate))
+		tangents = append(tangents, candidate)
 	}
-	if len(tangents) != dim-2 {
+	if len(tangents) != tangentCount {
 		return Frame{}, false
 	}
 
@@ -57,9 +57,29 @@ func NewFrameFromNormalInGeometry(g geometry.Geometry, p, n *mat.VecDense) (Fram
 	}
 
 	return Frame{
+		Geometry:  g,
+		Point:     mat.VecDenseCopyOf(p),
 		Tangent:   tangent,
 		Bitangent: bitangent,
 		Normal:    projected,
 		Tangents:  tangents,
 	}, true
+}
+
+func subtractGeometryProjection(g geometry.Geometry, p, v, basis *mat.VecDense) {
+	denominator := g.InnerProduct(p, basis, basis)
+	if denominator <= 0 {
+		return
+	}
+	scale := g.InnerProduct(p, v, basis) / denominator
+	v.AddScaledVec(v, -scale, basis)
+}
+
+func normalizeVectorInGeometry(g geometry.Geometry, p, v *mat.VecDense) bool {
+	n2 := g.InnerProduct(p, v, v)
+	if n2 <= 1e-24 || math.IsNaN(n2) || math.IsInf(n2, 0) {
+		return false
+	}
+	v.ScaleVec(1/math.Sqrt(n2), v)
+	return true
 }

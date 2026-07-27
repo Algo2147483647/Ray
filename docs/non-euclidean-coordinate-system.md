@@ -303,7 +303,8 @@ frame, ok := maths.NewFrameFromNormalInGeometry(ray.G(), hit.Point, hit.ShadingN
 
 The geometry-aware frame builder ensures the shading basis is orthonormal
 under the Klein metric (Section 3.2), not the euclidean dot product.
-See Section 8 for a known limitation.
+Before frame construction, the shape's ambient gradient is raised with
+the inverse Klein metric to obtain the intrinsic surface-normal vector.
 
 ### 5.3 Direction reprojection after a bounce
 
@@ -510,20 +511,16 @@ shows the **metric tensor itself** by isolating it: same intrinsic
 size, two chart representations, and the disagreement is *exactly* the
 metric distortion `g_p` of §3.2.
 
-This section is the honest list of where the implementation is not yet
-end-to-end faithful to the metric.
+This section records the remaining limitations and the metric-closure work
+that has already been completed.
 
 ### 8.1 Frame orthogonalization (`maths/frame_geometry.go`)
 
-The geometry-aware frame builder for Klein currently delegates to the
-euclidean Cross2 path. This is **exact at the origin** and accumulates
-an `O(|p|²)` angular error away from it. The error is invisible for
-Lambert / specular reflectors (cosθ-only sensitivity) but would bias
-microfacet anisotropy or measured BRDFs near the Klein boundary.
-
-To fix: do Gram-Schmidt under `g_p` (§3.2) instead of euclidean dot
-product when constructing the basis. The `Geometry.InnerProduct` hook
-is already there; it just isn't called from the frame builder yet.
+Klein surface gradients are converted into intrinsic normal vectors with
+`G_p^-1 df`, normalized under `g_p`, and used to build the shading frame.
+Frame Gram-Schmidt and world-to-local projection both use
+`Geometry.InnerProduct`. Consequently Lambert, specular, transmission, and
+microfacet sampling all operate in a metric-orthonormal local frame.
 
 ### 8.2 Shape semantics
 

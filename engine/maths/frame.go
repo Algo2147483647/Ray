@@ -1,10 +1,13 @@
 package maths
 
 import (
+	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"gonum.org/v1/gonum/mat"
 )
 
 type Frame struct {
+	Geometry  geometry.Geometry
+	Point     *mat.VecDense
 	Tangent   *mat.VecDense
 	Bitangent *mat.VecDense
 	Normal    *mat.VecDense
@@ -37,6 +40,8 @@ func NewFrameFromNormal(normal *mat.VecDense) (Frame, bool) {
 	}
 
 	return Frame{
+		Geometry:  geometry.Euclidean(),
+		Point:     mat.NewVecDense(normal.Len(), nil),
 		Tangent:   tangent,
 		Bitangent: bitangent,
 		Normal:    n,
@@ -47,9 +52,9 @@ func NewFrameFromNormal(normal *mat.VecDense) (Frame, bool) {
 func (f Frame) WorldToLocal(v *mat.VecDense) Direction {
 	components := make([]float64, len(f.Tangents)+1)
 	for i, tangent := range f.Tangents {
-		components[i] = mat.Dot(v, tangent)
+		components[i] = f.innerProduct(v, tangent)
 	}
-	components[len(components)-1] = mat.Dot(v, f.Normal)
+	components[len(components)-1] = f.innerProduct(v, f.Normal)
 	return NewDirectionFromComponents(components)
 }
 
@@ -69,6 +74,13 @@ func (f Frame) LocalToWorldInto(res *mat.VecDense, v Direction) {
 		res.AddScaledVec(res, v.Component(i), tangent)
 	}
 	res.AddScaledVec(res, v.Component(len(f.Tangents)), f.Normal)
+}
+
+func (f Frame) innerProduct(u, v *mat.VecDense) float64 {
+	if f.Geometry == nil || f.Point == nil {
+		return mat.Dot(u, v)
+	}
+	return f.Geometry.InnerProduct(f.Point, u, v)
 }
 
 func orthonormalTangents(normal *mat.VecDense) []*mat.VecDense {

@@ -128,7 +128,7 @@ func surfaceHitInGeometry(objTree *object.ObjectTree, ray *optics.Ray, g geometr
 	if tMax <= 0 {
 		return nil, false
 	}
-	return objTree.GetSurfaceHitRange(embeddedOrigin, embeddedDirection, utils.EPS, tMax)
+	return objTree.GetSurfaceHitRangeInGeometry(embeddedOrigin, embeddedDirection, g, utils.EPS, tMax)
 }
 
 func (h *Handler) terminateBeforeBounce(ray *optics.Ray, level int64) bool {
@@ -152,6 +152,13 @@ func (h *Handler) prepareSurfaceInteraction(
 ) (SurfaceInteraction, bool) {
 	// Move the ray origin to the hit point for the next bounce.
 	ray.Origin.CopyVec(hit.Point)
+	// A Klein geodesic is an affine chord, so its embedded direction stays
+	// constant while its metric norm changes with position. Re-normalize at
+	// the hit before converting the incident direction into the local BSDF
+	// frame. This is a no-op in direction for Euclidean and Spherical rays.
+	if !normalizeDirectionInGeometry(ray.G(), ray.Origin, ray.Direction) {
+		return SurfaceInteraction{}, false
+	}
 
 	obj := hit.Object
 	if obj == nil || obj.Material == nil {

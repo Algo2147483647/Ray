@@ -48,6 +48,28 @@ func (klein) InnerProduct(p, u, v *mat.VecDense) float64 {
 	return uv/w + (pu*pv)/(w*w)
 }
 
+// IntrinsicNormal applies the inverse Klein metric to an ambient gradient:
+//
+//	G_p^-1 df = (1-|p|^2) (I - p p^T) df.
+//
+// The leading scalar is retained for the exact musical isomorphism even
+// though callers normally normalize the resulting direction.
+func (klein) IntrinsicNormal(p, ambientGradient, out *mat.VecDense) *mat.VecDense {
+	pp := mat.Dot(p, p)
+	w := 1 - pp
+	if w <= 0 || math.IsNaN(w) || math.IsInf(w, 0) {
+		out.Zero()
+		return out
+	}
+	pg := mat.Dot(p, ambientGradient)
+	if out != ambientGradient {
+		out.CopyVec(ambientGradient)
+	}
+	out.AddScaledVec(out, -pg, p)
+	out.ScaleVec(w, out)
+	return out
+}
+
 // hyperbolicDistance returns d_H(p, q) using the closed form
 //
 //	cosh d_H = (1 - p·q) / sqrt((1-|p|²)(1-|q|²))
