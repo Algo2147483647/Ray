@@ -69,7 +69,7 @@ func vecDenseXYZ(v *mat.VecDense) [3]float64 {
 	return [3]float64{v.AtVec(0), v.AtVec(1), v.AtVec(2)}
 }
 
-func newSurfaceInteraction(rayStart, rayDir *mat.VecDense, distance float64, normal *mat.VecDense) SurfaceInteraction {
+func newAffineSurfaceInteraction(rayStart, rayDir *mat.VecDense, distance float64, normal *mat.VecDense) SurfaceInteraction {
 	point := affinePointAt(rayStart, rayDir, distance)
 	return newSurfaceInteractionAt(point, distance, normal)
 }

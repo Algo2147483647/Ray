@@ -53,7 +53,7 @@ func (c *Circle) IntersectAffine(raySt, rayDir *mat.VecDense, options IntersectO
 		return SurfaceInteraction{}, false
 	}
 
-	return newSurfaceInteraction(raySt, rayDir, distance, c.Normal), true
+	return newAffineSurfaceInteraction(raySt, rayDir, distance, c.Normal), true
 }
 
 func (c *Circle) GetNormalVector(_, res *mat.VecDense) *mat.VecDense {

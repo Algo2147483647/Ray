@@ -134,7 +134,7 @@ func (f *Triangle) intersect3D(raySt, rayDir *mat.VecDense, interval Interval) (
 }
 
 func (f *Triangle) interactionAt(raySt, rayDir *mat.VecDense, distance, u, v float64) SurfaceInteraction {
-	interaction := newSurfaceInteraction(raySt, rayDir, distance, f.Mem.Normal)
+	interaction := newAffineSurfaceInteraction(raySt, rayDir, distance, f.Mem.Normal)
 	interaction.UV = [2]float64{u, v}
 	interaction.DPDU = f.Mem.Edge1
 	interaction.DPDV = f.Mem.Edge2

@@ -30,7 +30,7 @@ func (s *Sphere) IntersectAffine(raySt, rayDir *mat.VecDense, options IntersectO
 	if !ok {
 		return SurfaceInteraction{}, false
 	}
-	interaction := newSurfaceInteraction(raySt, rayDir, distance, nil)
+	interaction := newAffineSurfaceInteraction(raySt, rayDir, distance, nil)
 	interaction.GeometricNormal = s.GetNormalVector(interaction.Point, mat.NewVecDense(interaction.Point.Len(), nil))
 	interaction.ShadingNormal = interaction.GeometricNormal
 	return interaction, true

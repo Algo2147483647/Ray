@@ -40,7 +40,7 @@ type Geometry interface {
 	InnerProduct(p, u, v *mat.VecDense) float64
 
 	// ArcLengthFromEmbedT translates the Euclidean ray parameter t (as
-	// returned by Shape.Intersect on the embedded ray (p, dir)) into the
+	// returned by Shape.IntersectAffine on the embedded ray (p, dir)) into the
 	// geodesic arc length traveled in M. Implementations must clamp pathological
 	// inputs (NaN, Inf, negative) to a safe finite value.
 	ArcLengthFromEmbedT(p, dir *mat.VecDense, tEuclid float64) float64

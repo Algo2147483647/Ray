@@ -47,8 +47,8 @@ func (c *Cuboid) IntersectAffine(raySt, rayDir *mat.VecDense, options IntersectO
 	return newSurfaceInteractionAt(point, distance, normal), true
 }
 
-// Clip intersects an affine ray with the cuboid and returns the portion of
-// options.Range that lies inside it.
+// ClipAffine intersects an affine ray with the cuboid and returns the portion
+// of options.Range that lies inside it.
 func (c *Cuboid) ClipAffine(raySt, rayDir *mat.VecDense, options IntersectOptions) (Interval, bool) {
 	if !options.valid() {
 		return Interval{}, false

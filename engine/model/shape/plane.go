@@ -32,7 +32,7 @@ func (p *Plane) IntersectAffine(raySt, rayDir *mat.VecDense, options IntersectOp
 	}
 
 	normal := p.GetNormalVector(nil, mat.NewVecDense(p.A.Len(), nil))
-	return newSurfaceInteraction(raySt, rayDir, d, normal), true
+	return newAffineSurfaceInteraction(raySt, rayDir, d, normal), true
 }
 
 func (p *Plane) GetNormalVector(_, res *mat.VecDense) *mat.VecDense {

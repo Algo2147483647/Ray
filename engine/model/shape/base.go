@@ -7,16 +7,12 @@ import (
 	"math"
 )
 
-// Shape exposes the default Euclidean affine-ray intersection and a separate
-// geometry-aware geodesic intersection. Callers choose the appropriate entry.
+// Shape exposes distinct affine-ray and geometry-aware geodesic intersection
+// contracts. Callers choose the representation appropriate to the geometry.
 type Shape interface {
 	Name() string
 	IntersectAffine(rayStart, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool)
-	IntersectGeodesic(
-		rayStart, rayDir *mat.VecDense,
-		g geometry.Geometry,
-		options IntersectOptions,
-	) (SurfaceInteraction, bool)
+	IntersectGeodesic(rayStart, rayDir *mat.VecDense, g geometry.Geometry, options IntersectOptions) (SurfaceInteraction, bool)
 	GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense
 	BuildBoundingBox() (pmin, pmax *mat.VecDense)
 }
@@ -26,6 +22,13 @@ type BaseShape struct{}
 
 func (bs *BaseShape) Name() string {
 	return "Base Shape"
+}
+
+func (bs *BaseShape) IntersectAffine(
+	_, _ *mat.VecDense,
+	_ IntersectOptions,
+) (SurfaceInteraction, bool) {
+	return SurfaceInteraction{}, false
 }
 
 func (bs *BaseShape) IntersectGeodesic(
