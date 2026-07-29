@@ -14,6 +14,7 @@ type StudioScript struct {
 }
 
 type StudioRenderScript struct {
+	Integrator        string              `json:"integrator"`
 	Dimension         int                 `json:"dimension"`
 	Samples           int64               `json:"samples"`
 	ThreadNum         int                 `json:"thread_num"`

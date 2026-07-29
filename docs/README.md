@@ -53,6 +53,7 @@ The project combines six layers of knowledge:
 - Material system: `engine/model/material/`
 - Shapes and BVH acceleration: `engine/model/shape/`, `engine/model/object/`
 - Integrator and render loop: `engine/ray_tracing/`
+- Bidirectional path tracing design and current capability boundary: [`bidirectional-path-tracing.md`](bidirectional-path-tracing.md)
 - Shared numeric/parsing helpers: `engine/utils/`
 
 ## Reading Guide

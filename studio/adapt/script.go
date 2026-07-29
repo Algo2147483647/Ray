@@ -38,6 +38,9 @@ func AdaptScript(script *studioScript, source []string, dimension int) (*interme
 
 func renderToMap(render studioRenderScript) map[string]interface{} {
 	result := map[string]interface{}{}
+	if render.Integrator != "" {
+		result["integrator"] = render.Integrator
+	}
 	if render.Dimension > 0 {
 		result["dimension"] = render.Dimension
 	}

@@ -201,6 +201,7 @@ func (h *Handler) Render() *Handler {
 	start := time.Now()
 
 	renderHandler := ray_tracing.NewHandler()
+	renderHandler.Integrator = ray_tracing.Integrator(h.Config.Integrator)
 	renderHandler.ThreadNum = h.Config.ThreadNum
 	renderHandler.SpectrumMode = renderSpectrumMode(h.Config.SpectrumMode)
 	renderHandler.WavelengthSamples = h.Config.WavelengthSamples

@@ -23,6 +23,7 @@ const (
 type RenderOverrides struct {
 	ScriptPath        string
 	ScriptPaths       []string
+	Integrator        string
 	Dimension         int
 	CameraIndex       int
 	ThreadNum         int
@@ -41,6 +42,7 @@ type RenderOverrides struct {
 
 type RenderConfig struct {
 	ScriptPath        string
+	Integrator        string
 	Dimension         int
 	CameraIndex       int
 	ThreadNum         int
@@ -67,6 +69,7 @@ func ParseRenderOverrides(args []string) (RenderOverrides, error) {
 	flagSet := flag.NewFlagSet("ray", flag.ContinueOnError)
 	flagSet.SetOutput(io.Discard)
 	flagSet.Var(&scriptPaths, "script", "path to a canonical scene script")
+	flagSet.StringVar(&overrides.Integrator, "integrator", "", "light transport integrator: path, bdpt")
 	flagSet.Var(&pixelWindowFlags, "pixel-window", "pixel render window, for example 100:150,600:650; repeat for multiple windows")
 	flagSet.IntVar(&overrides.Dimension, "dimension", 0, "scene dimension")
 	flagSet.IntVar(&overrides.CameraIndex, "camera-index", -1, "camera index to render")
@@ -145,6 +148,7 @@ func ParseRenderOverrides(args []string) (RenderOverrides, error) {
 func ResolveRenderConfig(script *parser.Script, overrides RenderOverrides) RenderConfig {
 	config := RenderConfig{
 		ScriptPath:        overrides.ScriptPath,
+		Integrator:        "path",
 		Dimension:         3,
 		CameraIndex:       0,
 		ThreadNum:         runtime.NumCPU(),
@@ -159,6 +163,9 @@ func ResolveRenderConfig(script *parser.Script, overrides RenderOverrides) Rende
 	}
 
 	if script != nil {
+		if script.Render.Integrator != "" {
+			config.Integrator = script.Render.Integrator
+		}
 		if script.Render.Dimension > 0 {
 			config.Dimension = script.Render.Dimension
 		}
@@ -207,6 +214,9 @@ func ResolveRenderConfig(script *parser.Script, overrides RenderOverrides) Rende
 
 	if overrides.CameraIndex >= 0 {
 		config.CameraIndex = overrides.CameraIndex
+	}
+	if overrides.Integrator != "" {
+		config.Integrator = overrides.Integrator
 	}
 	if overrides.Dimension > 0 {
 		config.Dimension = overrides.Dimension
@@ -276,6 +286,9 @@ func ResolveRenderConfigs(script *parser.Script, overrides RenderOverrides) []Re
 }
 
 func applyRenderScriptToConfig(config RenderConfig, render parser.RenderScript) RenderConfig {
+	if render.Integrator != "" {
+		config.Integrator = render.Integrator
+	}
 	if render.Dimension > 0 {
 		config.Dimension = render.Dimension
 	}
@@ -327,6 +340,9 @@ func applyRenderScriptToConfig(config RenderConfig, render parser.RenderScript) 
 }
 
 func applyRenderOverridesToConfig(config RenderConfig, overrides RenderOverrides) RenderConfig {
+	if overrides.Integrator != "" {
+		config.Integrator = overrides.Integrator
+	}
 	if overrides.CameraIndex >= 0 {
 		config.CameraIndex = overrides.CameraIndex
 	}

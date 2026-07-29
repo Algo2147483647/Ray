@@ -174,21 +174,21 @@ def hyperbolic_angle(vertex, left, right):
     return math.acos(max(-1.0, min(1.0, cosine)))
 
 
-def equally_spaced_chord_points(count, spacing, start_x, y, z):
-    boundary_x = math.sqrt(1.0 - y * y - z * z)
-    points = [(start_x, y, z)]
+def equally_spaced_vertical_chord_points(count, spacing, x, y, start_z):
+    boundary_z = math.sqrt(1.0 - x * x - y * y)
+    points = [(x, y, start_z)]
     for _ in range(count - 1):
         previous = points[-1]
-        low = previous[0]
-        high = boundary_x * (1.0 - 1e-10)
+        low = previous[2]
+        high = boundary_z * (1.0 - 1e-10)
         for _ in range(80):
             middle = 0.5 * (low + high)
-            candidate = (middle, y, z)
+            candidate = (x, y, middle)
             if hyperbolic_distance(previous, candidate) < spacing:
                 low = middle
             else:
                 high = middle
-        points.append((0.5 * (low + high), y, z))
+        points.append((x, y, 0.5 * (low + high)))
     return points
 
 
@@ -454,12 +454,13 @@ def blue_room_wall_triangle(cells, camera_position):
 
 def build_scene(width, height, samples):
     cells = five_cells_around_edge()
-    ladder = equally_spaced_chord_points(
+    ladder_spacing = 0.18
+    ladder = equally_spaced_vertical_chord_points(
         count=6,
-        spacing=0.55,
-        start_x=-0.42,
-        y=-0.26,
-        z=-0.26,
+        spacing=ladder_spacing,
+        x=0.68,
+        y=-0.08,
+        start_z=-0.29,
     )
     triangle = [
         (-0.62, 0.00, -0.48),
@@ -568,7 +569,7 @@ def build_scene(width, height, samples):
         raise ValueError("showcase point crossed the Klein safety margin")
     if abs(dihedral_angle - 2.0 * math.pi / 5.0) > 1e-12:
         raise ValueError("cube dihedral angle is not 2*pi/5")
-    if max(abs(distance - 0.55) for distance in ladder_distances) > 1e-10:
+    if max(abs(distance - ladder_spacing) for distance in ladder_distances) > 1e-10:
         raise ValueError("metric ladder spacing drifted")
     if sum(triangle_angles) >= math.pi:
         raise ValueError("triangle has no hyperbolic angle defect")
@@ -576,10 +577,10 @@ def build_scene(width, height, samples):
     return {
         "_comment": (
             "H^3/Klein showcase. Top: five congruent {4,3,5} cubes meet around "
-            "one white geodesic edge. Middle: six equal-radius H^3 balls are "
-            "equally spaced by arc length 0.55 along one chord, while their "
-            "Klein coordinate size collapses near the ideal boundary. Bottom: "
-            "an RGB geodesic triangle has intrinsic angle sum below 180 degrees."
+            "one white geodesic edge. Six equal-radius H^3 balls form a vertical "
+            "connector inside the yellow room, equally spaced by arc length 0.18 "
+            "along one chord. An RGB geodesic triangle has intrinsic angle sum "
+            "below 180 degrees."
         ),
         "_validation": {
             "cell_count_around_edge": 5,
@@ -702,8 +703,7 @@ def artistic_scene(scene):
         lambert_material("cell_diffuse_4", (0.42, 0.56, 0.92)),
         mirror_material("cell_center_mirror", (1.0, 1.0, 1.0)),
         emission_material("cell_ceiling_light", (8.0, 8.0, 8.0)),
-        lambert_material("metric_porcelain", (0.62, 0.76, 0.86)),
-        mirror_material("metric_mirror", (0.94, 0.98, 1.0)),
+        lambert_material("metric_porcelain", (0.16, 0.48, 0.92)),
         emission_material("metric_axis", (0.08, 0.55, 1.8)),
         emission_material("vertex_marker", (3.8, 2.5, 0.65)),
         emission_material("triangle_0", (4.5, 0.28, 0.16)),
@@ -754,8 +754,7 @@ def artistic_scene(scene):
             obj.clear()
             obj.update(moved)
         if object_id.startswith("equal_h3_ball_"):
-            index = int(object_id.rsplit("_", 1)[1])
-            obj["material_id"] = "metric_porcelain" if index % 2 == 0 else "metric_mirror"
+            obj["material_id"] = "metric_porcelain"
 
     result["objects"].extend(horizontal_cell_face_objects(cells))
     result["objects"].extend([

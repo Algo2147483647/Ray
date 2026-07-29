@@ -413,6 +413,9 @@ func appendUniqueStudioCameras(dst *[]schema.StudioCameraScript, src []schema.St
 
 func mergeStudioRenderScript(base, override schema.StudioRenderScript) schema.StudioRenderScript {
 	result := base
+	if override.Integrator != "" {
+		result.Integrator = override.Integrator
+	}
 	if override.Dimension > 0 {
 		result.Dimension = override.Dimension
 	}

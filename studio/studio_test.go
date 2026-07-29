@@ -632,6 +632,19 @@ func TestStudioDoesNotEmitResumeFilmToIntermediateScript(t *testing.T) {
 	}
 }
 
+func TestStudioEmitsIntegratorToIntermediateScript(t *testing.T) {
+	script := &studioScript{
+		Render: studioRenderScript{Integrator: "bdpt"},
+	}
+	adapted, err := adaptScript(script, []string{"scene.json"}, 3)
+	if err != nil {
+		t.Fatalf("adapt script: %v", err)
+	}
+	if adapted.Render["integrator"] != "bdpt" {
+		t.Fatalf("expected bdpt integrator in intermediate script, got %v", adapted.Render["integrator"])
+	}
+}
+
 func TestStudioEmitsPixelWindowsToIntermediateScript(t *testing.T) {
 	script := &studioScript{
 		Render: studioRenderScript{

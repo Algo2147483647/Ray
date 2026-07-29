@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/Algo2147483647/ray/engine/controller/parser"
+	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"github.com/Algo2147483647/ray/engine/model/camera"
 	"gonum.org/v1/gonum/mat"
 )
@@ -40,6 +41,22 @@ func TestParseRenderOverridesRejectsRepeatedScripts(t *testing.T) {
 	})
 	if err == nil {
 		t.Fatal("expected repeated engine scripts to fail")
+	}
+}
+
+func TestParseRenderOverridesAcceptsBDPT(t *testing.T) {
+	overrides, err := ParseRenderOverrides([]string{"--integrator", "bdpt"})
+	if err != nil {
+		t.Fatalf("parse bdpt integrator: %v", err)
+	}
+	if overrides.Integrator != "bdpt" {
+		t.Fatalf("integrator = %q, want bdpt", overrides.Integrator)
+	}
+}
+
+func TestParseRenderOverridesRejectsUnknownIntegrator(t *testing.T) {
+	if _, err := ParseRenderOverrides([]string{"--integrator", "magic"}); err == nil {
+		t.Fatal("expected unknown integrator to fail")
 	}
 }
 
@@ -218,6 +235,19 @@ func TestConfigureRenderConfigRejectsOutOfBoundsPixelWindow(t *testing.T) {
 
 	if h.err == nil {
 		t.Fatal("expected out-of-bounds pixel window to fail")
+	}
+}
+
+func TestConfigureRenderConfigRejectsBDPTInCurvedGeometry(t *testing.T) {
+	h := NewHandler()
+	h.Scene.Geometry = geometry.Klein()
+	h.ConfigureRenderConfig(RenderConfig{
+		Integrator:  "bdpt",
+		Dimension:   3,
+		CameraIndex: 0,
+	})
+	if h.err == nil {
+		t.Fatal("expected curved-space BDPT to fail during configuration")
 	}
 }
 
