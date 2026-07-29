@@ -32,7 +32,12 @@ func (h *Handler) TracePixel(
 
 	case optics.SpectrumModeRGB:
 		for s := int64(0); s < samples; s++ {
-			color = color.Add(h.TraceRGB(renderCamera, objTree, ray, index...))
+			if h.Integrator == IntegratorBDPT {
+				spectrum := h.traceBidirectionalSample(renderCamera, objTree, 0, 0, index...)
+				color = color.Add(spectrum.RGB)
+			} else {
+				color = color.Add(h.TraceRGB(renderCamera, objTree, ray, index...))
+			}
 		}
 
 		color = color.MulScalar(1.0 / float64(samples))
@@ -134,6 +139,20 @@ func (h *Handler) TraceSpectralSample(
 	renderCamera.GenerateRay(ray, index...)
 
 	sample := wavelengthSampler.Sample(u)
+	if h.Integrator == IntegratorBDPT {
+		spectrum := h.traceBidirectionalSample(
+			renderCamera,
+			objTree,
+			sample.LambdaNM,
+			sample.PDF,
+			index...,
+		)
+		value := spectrum.Sample(0)
+		return rendercamera.SpectralSample{
+			WavelengthNM: sample.LambdaNM,
+			Value:        optics.SpectralSampleRadiance(value, sample.PDF),
+		}
+	}
 	ray.SetSpectralSample(sample)
 
 	h.TraceRay(objTree, ray, 0)
