@@ -129,6 +129,9 @@ func ParseRenderOverrides(args []string) (RenderOverrides, error) {
 	if overrides.Gamma < 0 {
 		return RenderOverrides{}, fmt.Errorf("gamma must be >= 0")
 	}
+	if overrides.Integrator != "" && !isSupportedIntegrator(overrides.Integrator) {
+		return RenderOverrides{}, fmt.Errorf("unsupported integrator %q", overrides.Integrator)
+	}
 	if overrides.ToneMapping != "" && !isSupportedToneMapping(overrides.ToneMapping) {
 		return RenderOverrides{}, fmt.Errorf("unsupported tone-mapping %q", overrides.ToneMapping)
 	}
@@ -143,6 +146,15 @@ func ParseRenderOverrides(args []string) (RenderOverrides, error) {
 	}
 
 	return overrides, nil
+}
+
+func isSupportedIntegrator(value string) bool {
+	switch value {
+	case "path", "bdpt":
+		return true
+	default:
+		return false
+	}
 }
 
 func ResolveRenderConfig(script *parser.Script, overrides RenderOverrides) RenderConfig {

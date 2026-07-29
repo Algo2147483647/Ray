@@ -34,7 +34,13 @@ func (h *Handler) TracePixel(
 		for s := int64(0); s < samples; s++ {
 			if h.Integrator == IntegratorBDPT {
 				spectrum := h.traceBidirectionalSample(renderCamera, objTree, 0, 0, index...)
-				color = color.Add(spectrum.RGB)
+				r, g, b := rendercamera.LinearSRGBToFilmColorSpace(
+					spectrum.RGB[0],
+					spectrum.RGB[1],
+					spectrum.RGB[2],
+					h.FilmColorSpace,
+				)
+				color = color.Add(optics.Color3{r, g, b})
 			} else {
 				color = color.Add(h.TraceRGB(renderCamera, objTree, ray, index...))
 			}

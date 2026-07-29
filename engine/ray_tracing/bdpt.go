@@ -43,21 +43,21 @@ type areaLight struct {
 	Area    float64
 }
 
-// traceBidirectionalSample builds a camera subpath and an independently
-// sampled light subpath, then connects every non-delta pair. The adjacent
-// strategies are combined with a power heuristic in area measure.
+// traceBidirectionalSample builds camera and light subpaths, connects every
+// continuous surface pair, and combines all enabled t>=2 strategies for each
+// complete path with one global power-heuristic denominator.
 //
-// The implementation is deliberately enabled only for Euclidean 3D scenes:
-// surface-area measures and the 1/r^2 geometry term are not interchangeable
-// with their curved-space counterparts.
+// Delta, non-reciprocal, participating-media, and non-Euclidean scenes fall
+// back to the path integrator until their reverse densities and measures are
+// represented explicitly.
 func (h *Handler) traceBidirectionalSample(
 	renderCamera camera.Camera,
 	objTree *object.ObjectTree,
 	wavelengthNM, wavelengthPDF float64,
 	index ...int,
 ) optics.Spectrum {
-	if geometry.Get(h.SceneGeometry).Kind() != geometry.EuclideanKind {
-		return optics.Spectrum{}
+	if !bdptSupportsScene(h.SceneGeometry, objTree) {
+		return h.tracePathSampleSpectrum(renderCamera, objTree, wavelengthNM, wavelengthPDF, index...)
 	}
 
 	lights, totalArea := collectAreaLights(objTree)
@@ -71,18 +71,45 @@ func (h *Handler) traceBidirectionalSample(
 
 	for li := range lightPath {
 		for ci := range cameraPath {
-			// A path with two surface endpoints and the camera must still obey
-			// the configured maximum number of scattering vertices.
 			if int64(li+ci+1) > h.MaxRayLevel {
 				continue
 			}
-			contribution, ok := h.connectBDPTVertices(objTree, lightPath, cameraPath, li, ci)
+			weight := bdptMISWeight(lightPath, cameraPath, li, ci)
+			if weight <= 0 {
+				continue
+			}
+			contribution, ok := h.connectBDPTVertices(objTree, &lightPath[li], &cameraPath[ci])
 			if ok {
-				result = result.Add(contribution)
+				result = result.Add(contribution.MulScalar(weight))
 			}
 		}
 	}
 	return result
+}
+
+func bdptSupportsScene(sceneGeometry geometry.Geometry, tree *object.ObjectTree) bool {
+	if geometry.Get(sceneGeometry).Kind() != geometry.EuclideanKind {
+		return false
+	}
+	if tree == nil {
+		return true
+	}
+	for _, obj := range tree.Objects {
+		if obj == nil {
+			continue
+		}
+		if obj.MediumBoundary.Active() {
+			return false
+		}
+		if obj.Material != nil && obj.Material.HasSurface() &&
+			obj.Material.Surface.DeltaFlags() != bxdf.DeltaNone {
+			return false
+		}
+		if obj.Material != nil && obj.Material.Metadata.NonReciprocal {
+			return false
+		}
+	}
+	return true
 }
 
 func (h *Handler) tracePathSampleSpectrum(
@@ -189,13 +216,6 @@ func (h *Handler) buildCameraSubpath(
 			path = append(path, vertex)
 			break
 		}
-		survival := bdptSurvivalProbability(beta, depth+1, h.RussianRouletteDepth)
-		if survival <= 0 || rand.Float64() >= survival {
-			path = append(path, vertex)
-			break
-		}
-		beta = beta.DivScalar(survival)
-		vertex.SampledPDF *= survival
 		path = append(path, vertex)
 		if sample.Flags&bxdf.TransmissionEvent != 0 {
 			applyMediumTransmission(getMediumRegistry(tree), ray, si.Context, si.Object.MediumBoundary, sample)
@@ -208,11 +228,10 @@ func (h *Handler) buildCameraSubpath(
 	return path, emitted
 }
 
-func (h *Handler) buildLightSubpath(
-	tree *object.ObjectTree,
+func (h *Handler) sampleLightEndpoint(
 	lights []areaLight,
 	totalArea, wavelengthNM, wavelengthPDF float64,
-) []bdptVertex {
+) (bdptVertex, bool) {
 	target := rand.Float64() * totalArea
 	selected := lights[len(lights)-1]
 	for _, light := range lights {
@@ -224,12 +243,12 @@ func (h *Handler) buildLightSubpath(
 	}
 	ss, ok := selected.Sampler.SampleSurface(maths.Sample2D{U: rand.Float64(), V: rand.Float64()})
 	if !ok {
-		return nil
+		return bdptVertex{}, false
 	}
 	selectionPDF := selected.Area / totalArea
 	pdfLightArea := selectionPDF * ss.PDFArea
 	if pdfLightArea <= 0 || math.IsNaN(pdfLightArea) || math.IsInf(pdfLightArea, 0) {
-		return nil
+		return bdptVertex{}, false
 	}
 	ctx := bxdf.ShadingContext{
 		TransportMode: bxdf.TransportImportance, SpectrumMode: h.SpectrumMode,
@@ -242,11 +261,32 @@ func (h *Handler) buildLightSubpath(
 		ctx.WavelengthsNM = []float64{wavelengthNM}
 	}
 
-	normal := mat.VecDenseCopyOf(ss.Normal)
-	if rand.Float64() < 0.5 {
-		normal.ScaleVec(-1, normal)
+	frame, ok := maths.NewFrameFromNormal(ss.Normal)
+	if !ok {
+		return bdptVertex{}, false
 	}
-	frame, ok := maths.NewFrameFromNormal(normal)
+	return bdptVertex{
+		Point: ss.Point, GeometricNormal: ss.Normal, Frame: frame,
+		Context: ctx, Object: selected.Object, Beta: unitSpectrum(wavelengthNM).MulScalar(1 / pdfLightArea),
+		PDFFwdArea: pdfLightArea, LightEndpoint: true,
+	}, true
+}
+
+func (h *Handler) buildLightSubpath(
+	tree *object.ObjectTree,
+	lights []areaLight,
+	totalArea, wavelengthNM, wavelengthPDF float64,
+) []bdptVertex {
+	root, ok := h.sampleLightEndpoint(lights, totalArea, wavelengthNM, wavelengthPDF)
+	if !ok {
+		return nil
+	}
+
+	emissionNormal := mat.VecDenseCopyOf(root.GeometricNormal)
+	if rand.Float64() < 0.5 {
+		emissionNormal.ScaleVec(-1, emissionNormal)
+	}
+	emissionFrame, ok := maths.NewFrameFromNormal(emissionNormal)
 	if !ok {
 		return nil
 	}
@@ -255,19 +295,22 @@ func (h *Handler) buildLightSubpath(
 	if pdfDirection <= 0 {
 		return nil
 	}
-	worldDirection := frame.LocalToWorld(localDirection)
-	emitted := selected.Object.Material.Emission.Emit(ctx, localDirection)
-	beta := emitted.MulScalar(maths.AbsCosTheta(localDirection) / (pdfLightArea * pdfDirection))
-
-	root := bdptVertex{
-		Point: ss.Point, GeometricNormal: ss.Normal, Frame: frame,
-		Context: ctx, Object: selected.Object, Beta: unitSpectrum(wavelengthNM).MulScalar(1 / pdfLightArea),
-		PDFFwdArea: pdfLightArea, SampledPDF: pdfDirection, LightEndpoint: true,
-	}
+	worldDirection := emissionFrame.LocalToWorld(localDirection)
+	emitted := root.Object.Material.Emission.Emit(root.Context, localDirection)
+	beta := emitted.MulScalar(
+		maths.AbsCosTheta(localDirection) / (root.PDFFwdArea * pdfDirection),
+	)
+	root.Frame = emissionFrame
+	root.SampledPDF = pdfDirection
 	path := []bdptVertex{root}
-	ray := &optics.Ray{Origin: mat.VecDenseCopyOf(ss.Point), Direction: worldDirection, Geometry: h.SceneGeometry}
+
+	ray := &optics.Ray{
+		Origin:    mat.VecDenseCopyOf(root.Point),
+		Direction: mat.VecDenseCopyOf(worldDirection),
+		Geometry:  h.SceneGeometry,
+	}
 	ray.Init()
-	ray.Origin.CopyVec(ss.Point)
+	ray.Origin.CopyVec(root.Point)
 	ray.Direction.CopyVec(worldDirection)
 	setBDPTWavelength(ray, wavelengthNM, wavelengthPDF)
 	pendingPDF := pdfDirection
@@ -280,7 +323,8 @@ func (h *Handler) buildLightSubpath(
 			break
 		}
 		distance2 := squaredDistance(origin, hit.Point)
-		pdfArea := pendingPDF * absDot(hit.GeometricNormal, negated(direction)) / math.Max(distance2, utils.EPS)
+		pdfArea := pendingPDF * absDot(hit.GeometricNormal, negated(direction)) /
+			math.Max(distance2, utils.EPS)
 		si, ok := h.prepareSurfaceInteraction(getMediumRegistry(tree), ray, hit)
 		if !ok {
 			break
@@ -307,17 +351,7 @@ func (h *Handler) buildLightSubpath(
 			path = append(path, vertex)
 			break
 		}
-		survival := bdptSurvivalProbability(beta, depth+1, h.RussianRouletteDepth)
-		if survival <= 0 || rand.Float64() >= survival {
-			path = append(path, vertex)
-			break
-		}
-		beta = beta.DivScalar(survival)
-		vertex.SampledPDF *= survival
 		path = append(path, vertex)
-		if sample.Flags&bxdf.TransmissionEvent != 0 {
-			applyMediumTransmission(getMediumRegistry(tree), ray, si.Context, si.Object.MediumBoundary, sample)
-		}
 		si.Frame.LocalToWorldInto(ray.Direction, sample.Wi)
 		ray.Origin.CopyVec(hit.Point)
 		pendingPDF = vertex.SampledPDF
@@ -327,10 +361,8 @@ func (h *Handler) buildLightSubpath(
 
 func (h *Handler) connectBDPTVertices(
 	tree *object.ObjectTree,
-	lightPath, cameraPath []bdptVertex,
-	li, ci int,
+	lv, cv *bdptVertex,
 ) (optics.Spectrum, bool) {
-	lv, cv := &lightPath[li], &cameraPath[ci]
 	if cv.Object == nil || cv.Object.Material == nil || !cv.Object.Material.HasSurface() {
 		return optics.Spectrum{}, false
 	}
@@ -375,38 +407,156 @@ func (h *Handler) connectBDPTVertices(
 		lightFactor = lv.Beta.Mul(fLight)
 	}
 
-	weight := adjacentPowerMIS(lv, cv, li, ci, toCamera, toLight, cosLight, cosCamera, distance2)
-	contribution := lightFactor.Mul(cv.Beta).Mul(fCamera).MulScalar(geometryTerm * weight)
+	contribution := lightFactor.Mul(cv.Beta).Mul(fCamera).MulScalar(geometryTerm)
 	return contribution, validSpectrum(contribution)
 }
 
-func adjacentPowerMIS(
-	lv, cv *bdptVertex,
-	li, ci int,
-	toCamera, toLight *mat.VecDense,
-	cosLight, cosCamera, distance2 float64,
-) float64 {
-	sum := 1.0
-	if cv.Object.Material.HasSurface() && lv.PDFFwdArea > 0 {
-		pdf := cv.Object.Material.Surface.PDF(cv.Context, cv.Frame.WorldToLocal(toLight), cv.WoLocal)
-		pdfArea := pdf * cosLight / distance2
-		ratio := pdfArea / lv.PDFFwdArea
-		sum += ratio * ratio
+func bdptMISWeight(lightPath, cameraPath []bdptVertex, li, ci int) float64 {
+	path := make([]bdptVertex, 0, li+ci+2)
+	path = append(path, lightPath[:li+1]...)
+	for i := ci; i >= 0; i-- {
+		path = append(path, cameraPath[i])
 	}
-	// t=1 (light tracing splatted directly to this pixel) is not implemented,
-	// so it must not participate in MIS at the first camera vertex.
-	if ci > 0 && cv.PDFFwdArea > 0 {
-		var pdf float64
-		if lv.LightEndpoint {
-			pdf = 0.5 * cosLight / math.Pi
-		} else if lv.Object.Material.HasSurface() {
-			pdf = lv.Object.Material.Surface.PDF(lv.Context, lv.Frame.WorldToLocal(toCamera), lv.WoLocal)
+	currentStrategy := li + 1
+	logPDFs := bdptStrategyLogPDFs(path)
+	if currentStrategy <= 0 || currentStrategy >= len(path) ||
+		math.IsInf(logPDFs[currentStrategy-1], -1) {
+		return 0
+	}
+	weights := bdptPowerHeuristicWeights(logPDFs)
+	if len(weights) != len(logPDFs) {
+		return 0
+	}
+	return weights[currentStrategy-1]
+}
+
+func bdptPowerHeuristicWeights(logPDFs []float64) []float64 {
+	weights := make([]float64, len(logPDFs))
+	maxLogTerm := math.Inf(-1)
+	for _, logPDF := range logPDFs {
+		if !math.IsInf(logPDF, -1) {
+			maxLogTerm = math.Max(maxLogTerm, 2*logPDF)
 		}
-		pdfArea := pdf * cosCamera / distance2
-		ratio := pdfArea / cv.PDFFwdArea
-		sum += ratio * ratio
 	}
-	return 1 / sum
+	if math.IsInf(maxLogTerm, -1) {
+		return weights
+	}
+	denominator := 0.0
+	for _, logPDF := range logPDFs {
+		if !math.IsInf(logPDF, -1) {
+			denominator += math.Exp(2*logPDF - maxLogTerm)
+		}
+	}
+	if denominator <= 0 || math.IsNaN(denominator) || math.IsInf(denominator, 0) {
+		return weights
+	}
+	for i, logPDF := range logPDFs {
+		if !math.IsInf(logPDF, -1) {
+			weights[i] = math.Exp(2*logPDF-maxLogTerm) / denominator
+		}
+	}
+	return weights
+}
+
+// bdptStrategyLogPDFs returns the path density for every enabled split s in
+// [1,len(path)-1]. The camera endpoint is fixed to the current pixel, so t=1
+// and s=0 strategies are intentionally outside this strategy family.
+func bdptStrategyLogPDFs(path []bdptVertex) []float64 {
+	if len(path) < 2 {
+		return nil
+	}
+	result := make([]float64, len(path)-1)
+	for strategy := 1; strategy < len(path); strategy++ {
+		result[strategy-1] = bdptStrategyLogPDF(path, strategy)
+	}
+	return result
+}
+
+func bdptStrategyLogPDF(path []bdptVertex, strategy int) float64 {
+	if strategy <= 0 || strategy >= len(path) ||
+		path[0].PDFFwdArea <= 0 || !isFinitePDF(path[0].PDFFwdArea) {
+		return math.Inf(-1)
+	}
+	logPDF := math.Log(path[0].PDFFwdArea)
+
+	for source := 0; source < strategy-1; source++ {
+		pdfArea := bdptEdgeAreaPDF(path, source, source+1, source-1, bxdf.TransportImportance)
+		if pdfArea <= 0 || !isFinitePDF(pdfArea) {
+			return math.Inf(-1)
+		}
+		logPDF += math.Log(pdfArea)
+	}
+	for source := len(path) - 1; source > strategy; source-- {
+		pdfArea := bdptEdgeAreaPDF(path, source, source-1, source+1, bxdf.TransportRadiance)
+		if pdfArea <= 0 || !isFinitePDF(pdfArea) {
+			return math.Inf(-1)
+		}
+		logPDF += math.Log(pdfArea)
+	}
+	return logPDF
+}
+
+func bdptEdgeAreaPDF(
+	path []bdptVertex,
+	sourceIndex, destinationIndex, previousIndex int,
+	mode bxdf.TransportMode,
+) float64 {
+	source := &path[sourceIndex]
+	destination := &path[destinationIndex]
+	toDestination := directionBetween(source.Point, destination.Point)
+	if toDestination == nil {
+		return 0
+	}
+
+	var pdfDirection float64
+	if source.LightEndpoint {
+		pdfDirection = 0.5 * absDot(source.GeometricNormal, toDestination) / math.Pi
+	} else {
+		if source.Object == nil || source.Object.Material == nil ||
+			!source.Object.Material.HasSurface() {
+			return 0
+		}
+		wi := source.Frame.WorldToLocal(toDestination)
+		wo := source.WoLocal
+		if previousIndex >= 0 && previousIndex < len(path) {
+			toPrevious := directionBetween(source.Point, path[previousIndex].Point)
+			if toPrevious == nil {
+				return 0
+			}
+			wo = source.Frame.WorldToLocal(toPrevious)
+		}
+		ctx := source.Context
+		ctx.TransportMode = mode
+		pdfDirection = source.Object.Material.Surface.PDF(ctx, wi, wo)
+	}
+	if pdfDirection <= 0 || !isFinitePDF(pdfDirection) {
+		return 0
+	}
+
+	distance2 := squaredDistance(source.Point, destination.Point)
+	if distance2 <= utils.EPS*utils.EPS {
+		return 0
+	}
+	toSource := negated(toDestination)
+	return pdfDirection * absDot(destination.GeometricNormal, toSource) / distance2
+}
+
+func directionBetween(from, to *mat.VecDense) *mat.VecDense {
+	if from == nil || to == nil || from.Len() != to.Len() {
+		return nil
+	}
+	result := mat.NewVecDense(from.Len(), nil)
+	result.SubVec(to, from)
+	length := mat.Norm(result, 2)
+	if length <= utils.EPS || math.IsNaN(length) || math.IsInf(length, 0) {
+		return nil
+	}
+	result.ScaleVec(1/length, result)
+	return result
+}
+
+func isFinitePDF(value float64) bool {
+	return !math.IsNaN(value) && !math.IsInf(value, 0)
 }
 
 func visibleSegment(tree *object.ObjectTree, from, to, direction *mat.VecDense, distance float64) bool {
