@@ -2,6 +2,7 @@ package shape
 
 import (
 	"github.com/Algo2147483647/ray/engine/maths"
+	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 	"math"
@@ -126,6 +127,27 @@ func (f *ImplicitEquation) IntersectAffine(raySt, rayDir *mat.VecDense, options 
 	}
 
 	return SurfaceInteraction{}, false
+}
+
+func (f *ImplicitEquation) IntersectGeodesic(rayStart, rayDir *mat.VecDense, g geometry.Geometry, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !supportsSphericalGeodesic(g, options) {
+		return SurfaceInteraction{}, false
+	}
+	if f == nil || f.Function == nil || rayStart.Len() != rayDir.Len() {
+		return SurfaceInteraction{}, false
+	}
+	sMin, sMax := options.Range.Min, options.Range.Max
+	interaction, ok := intersectSphericalScalar(rayStart, rayDir, sMin, sMax, f.Function, func(point *mat.VecDense) *mat.VecDense {
+		return f.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
+	})
+	if !ok || !f.hasValidRange() || interaction.Point == nil {
+		return interaction, ok
+	}
+	bounds := NewCuboid(f.Range[0], f.Range[1])
+	if !bounds.containsPoint(interaction.Point, -1) {
+		return SurfaceInteraction{}, false
+	}
+	return interaction, true
 }
 
 func (f *ImplicitEquation) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {

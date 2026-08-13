@@ -2,6 +2,7 @@ package shape
 
 import (
 	"github.com/Algo2147483647/ray/engine/maths"
+	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"gonum.org/v1/gonum/mat"
 	"math"
 )
@@ -74,6 +75,28 @@ func (p *QuadraticEquation) IntersectAffine(
 	normal := p.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
 
 	return newSurfaceInteractionAt(point, bestT, normal), true
+}
+
+func (p *QuadraticEquation) IntersectGeodesic(rayStart, rayDir *mat.VecDense, g geometry.Geometry, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !supportsSphericalGeodesic(g, options) {
+		return SurfaceInteraction{}, false
+	}
+	n := rayStart.Len()
+	if p == nil || p.A == nil || p.B == nil || rayDir.Len() != n || p.B.Len() != n {
+		return SurfaceInteraction{}, false
+	}
+	ar, ac := p.A.Dims()
+	if ar != n || ac != n {
+		return SurfaceInteraction{}, false
+	}
+	sMin, sMax := options.Range.Min, options.Range.Max
+	return intersectSphericalScalar(rayStart, rayDir, sMin, sMax, func(point *mat.VecDense) float64 {
+		ap := mat.NewVecDense(n, nil)
+		ap.MulVec(p.A, point)
+		return mat.Dot(point, ap) + mat.Dot(p.B, point) + p.C
+	}, func(point *mat.VecDense) *mat.VecDense {
+		return p.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
+	})
 }
 
 func (p *QuadraticEquation) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {

@@ -1,6 +1,7 @@
 package shape
 
 import (
+	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
@@ -15,6 +16,21 @@ type Shape interface {
 	IntersectGeodesic(rayStart, rayDir *mat.VecDense, g geometry.Geometry, options IntersectOptions) (SurfaceInteraction, bool)
 	GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense
 	BuildBoundingBox() (pmin, pmax *mat.VecDense)
+}
+
+// SurfaceSample is a point sampled with respect to surface area.
+type SurfaceSample struct {
+	Point   *mat.VecDense
+	Normal  *mat.VecDense
+	UV      [2]float64
+	PDFArea float64
+}
+
+// SurfaceSampler is implemented by finite shapes that can be used as area
+// lights. Infinite and implicit shapes intentionally do not satisfy it.
+type SurfaceSampler interface {
+	SampleSurface(u maths.Sample2D) (SurfaceSample, bool)
+	SurfaceArea() float64
 }
 
 // BaseShape provides the basic shape implementation.

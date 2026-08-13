@@ -173,3 +173,27 @@ func (f *Triangle) BuildBoundingBox() (pmin, pmax *mat.VecDense) {
 
 	return
 }
+
+func (f *Triangle) SurfaceArea() float64 {
+	if f == nil || f.P1 == nil || f.P1.Len() != 3 {
+		return 0
+	}
+	cross := maths.Cross2(f.Mem.Edge1, f.Mem.Edge2)
+	return 0.5 * mat.Norm(cross, 2)
+}
+
+func (f *Triangle) SampleSurface(u maths.Sample2D) (SurfaceSample, bool) {
+	area := f.SurfaceArea()
+	if area <= 0 {
+		return SurfaceSample{}, false
+	}
+	su := math.Sqrt(clampUnit(u.U))
+	b1 := 1 - su
+	b2 := clampUnit(u.V) * su
+	point := mat.NewVecDense(3, nil)
+	point.AddScaledVec(point, b1, f.Mem.Edge1)
+	point.AddScaledVec(point, b2, f.Mem.Edge2)
+	point.AddVec(point, f.P1)
+	normal := mat.VecDenseCopyOf(f.Mem.Normal)
+	return SurfaceSample{Point: point, Normal: normal, UV: [2]float64{b1, b2}, PDFArea: 1 / area}, true
+}

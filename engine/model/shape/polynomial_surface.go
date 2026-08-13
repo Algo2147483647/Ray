@@ -5,6 +5,7 @@ import (
 	"math"
 
 	"github.com/Algo2147483647/ray/engine/maths"
+	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -83,6 +84,22 @@ func (p *PolynomialSurface) IntersectAffine(raySt, rayDir *mat.VecDense, options
 	point := affinePointAt(raySt, rayDir, bestT)
 	normal := p.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
 	return newSurfaceInteractionAt(point, bestT, normal), true
+}
+
+func (p *PolynomialSurface) IntersectGeodesic(rayStart, rayDir *mat.VecDense, g geometry.Geometry, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !supportsSphericalGeodesic(g, options) {
+		return SurfaceInteraction{}, false
+	}
+	if p == nil || p.Coefficients == nil || rayStart.Len() != rayDir.Len() || p.InputDim > rayStart.Len() {
+		return SurfaceInteraction{}, false
+	}
+	sMin, sMax := options.Range.Min, options.Range.Max
+	return intersectSphericalScalar(rayStart, rayDir, sMin, sMax, func(point *mat.VecDense) float64 {
+		local := p.localPoint(point)
+		return p.Evaluate(local[:p.InputDim])
+	}, func(point *mat.VecDense) *mat.VecDense {
+		return p.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
+	})
 }
 
 func (p *PolynomialSurface) Evaluate(input []float64) float64 {

@@ -2,6 +2,7 @@ package shape
 
 import (
 	"github.com/Algo2147483647/ray/engine/maths"
+	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"gonum.org/v1/gonum/mat"
 	"math"
 )
@@ -34,6 +35,20 @@ func (s *Sphere) IntersectAffine(raySt, rayDir *mat.VecDense, options IntersectO
 	interaction.GeometricNormal = s.GetNormalVector(interaction.Point, mat.NewVecDense(interaction.Point.Len(), nil))
 	interaction.ShadingNormal = interaction.GeometricNormal
 	return interaction, true
+}
+
+func (s *Sphere) IntersectGeodesic(rayStart, rayDir *mat.VecDense, g geometry.Geometry, options IntersectOptions) (SurfaceInteraction, bool) {
+	if !supportsSphericalGeodesic(g, options) {
+		return SurfaceInteraction{}, false
+	}
+	sMin, sMax := options.Range.Min, options.Range.Max
+	return intersectSphericalScalar(rayStart, rayDir, sMin, sMax, func(point *mat.VecDense) float64 {
+		offset := mat.NewVecDense(point.Len(), nil)
+		offset.SubVec(point, s.center)
+		return mat.Dot(offset, offset) - s.R*s.R
+	}, func(point *mat.VecDense) *mat.VecDense {
+		return s.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
+	})
 }
 
 func (s *Sphere) intersectAffine(raySt, rayDir *mat.VecDense, interval Interval) (float64, bool) {
@@ -104,4 +119,25 @@ func (s *Sphere) BuildBoundingBox() (pmin, pmax *mat.VecDense) {
 	pmax.AddVec(s.center, offset)
 	pmin.SubVec(s.center, offset)
 	return
+}
+
+func (s *Sphere) SurfaceArea() float64 {
+	if s == nil || s.center == nil || s.center.Len() != 3 || s.R <= 0 {
+		return 0
+	}
+	return 4 * math.Pi * s.R * s.R
+}
+
+func (s *Sphere) SampleSurface(u maths.Sample2D) (SurfaceSample, bool) {
+	area := s.SurfaceArea()
+	if area <= 0 {
+		return SurfaceSample{}, false
+	}
+	z := 1 - 2*clampUnit(u.U)
+	r := math.Sqrt(math.Max(0, 1-z*z))
+	phi := 2 * math.Pi * clampUnit(u.V)
+	normal := mat.NewVecDense(3, []float64{r * math.Cos(phi), r * math.Sin(phi), z})
+	point := mat.NewVecDense(3, nil)
+	point.AddScaledVec(s.center, s.R, normal)
+	return SurfaceSample{Point: point, Normal: normal, UV: [2]float64{u.U, u.V}, PDFArea: 1 / area}, true
 }
