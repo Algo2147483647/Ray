@@ -38,12 +38,6 @@ go.work.sum
 *.swo
 *.swn
 
-# Frontend workspace outputs
-apps/scene-editor/node_modules/
-apps/scene-editor/dist/
-apps/scene-editor/.npm-cache/
-apps/scene-editor/*shot*.png
-
 # Logs and temporary files
 *.log
 *.tmp
