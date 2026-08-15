@@ -110,10 +110,18 @@ func (h *Handler) projectLightVertex(
 		return optics.Spectrum{}, camera.FilmProjection{}, false
 	}
 	factor := projection.Jacobian * cosCamera
+	transmittance := evaluateSegmentTransmittance(
+		getMediumRegistry(tree),
+		vertex.MediumStack.Current(),
+		projection.Distance,
+		vertex.Context,
+	)
 
 	if vertex.LightEndpoint {
 		wo := vertex.Frame.WorldToLocal(projection.ToCamera)
-		value := vertex.Object.Material.Emission.Emit(vertex.Context, wo).Mul(vertex.Beta).MulScalar(factor)
+		value := transmittance.ApplyToSpectrum(
+			vertex.Object.Material.Emission.Emit(vertex.Context, wo).Mul(vertex.Beta),
+		).MulScalar(factor)
 		return value, projection, validSpectrum(value)
 	}
 	if !vertex.Object.Material.HasSurface() || vertex.SampledDelta ||
@@ -126,6 +134,6 @@ func (h *Handler) projectLightVertex(
 	if f.IsZero() {
 		return optics.Spectrum{}, camera.FilmProjection{}, false
 	}
-	value := vertex.Beta.Mul(f).MulScalar(factor)
+	value := transmittance.ApplyToSpectrum(vertex.Beta.Mul(f)).MulScalar(factor)
 	return value, projection, validSpectrum(value)
 }

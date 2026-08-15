@@ -8,6 +8,7 @@ import (
 	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"github.com/Algo2147483647/ray/engine/model/camera"
 	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
+	"github.com/Algo2147483647/ray/engine/model/material/medium"
 	"github.com/Algo2147483647/ray/engine/model/object"
 	"github.com/Algo2147483647/ray/engine/model/optics"
 	"github.com/Algo2147483647/ray/engine/model/shape"
@@ -27,6 +28,7 @@ type bdptVertex struct {
 	SampledPDF      float64
 	SampledDelta    bool
 	LightEndpoint   bool
+	MediumStack     medium.Stack
 }
 
 type areaLight struct {
@@ -173,6 +175,19 @@ func (h *Handler) buildCameraSubpath(
 		if !ok {
 			break
 		}
+		segmentLength := hit.ArcLength
+		if segmentLength <= 0 {
+			segmentLength = ray.G().ArcLengthFromEmbedT(ray.Origin, ray.Direction, hit.Distance)
+		}
+		beta = evaluateSegmentTransmittance(
+			getMediumRegistry(tree),
+			ray.MediumStack.Current(),
+			segmentLength,
+			h.newShadingContext(ray),
+		).ApplyToSpectrum(beta)
+		if !validSpectrum(beta) {
+			break
+		}
 		distance2 := squaredDistance(origin, hit.Point)
 		pdfArea := pendingPDF * absDot(hit.GeometricNormal, negated(direction)) / math.Max(distance2, utils.EPS)
 
@@ -183,7 +198,7 @@ func (h *Handler) buildCameraSubpath(
 		vertex := bdptVertex{
 			Point: hit.Point, GeometricNormal: hit.GeometricNormal, Frame: si.Frame,
 			WoLocal: si.WoLocal, Context: si.Context, Object: si.Object,
-			Beta: beta, PDFFwdArea: pdfArea,
+			Beta: beta, PDFFwdArea: pdfArea, MediumStack: ray.MediumStack.Clone(),
 		}
 
 		if si.Object.Material.HasEmission() && (depth == 0 || previousDelta || !isSampleableAreaLight(si.Object)) {
@@ -261,6 +276,7 @@ func (h *Handler) sampleLightEndpoint(
 		Point: ss.Point, GeometricNormal: ss.Normal, Frame: frame,
 		Context: ctx, Object: selected.Object, Beta: unitSpectrum(wavelengthNM).MulScalar(1 / pdfLightArea),
 		PDFFwdArea: pdfLightArea, LightEndpoint: true,
+		MediumStack: medium.NewStack(medium.MediumAir),
 	}, true
 }
 
@@ -314,6 +330,20 @@ func (h *Handler) buildLightSubpath(
 		if !ok {
 			break
 		}
+		segmentLength := hit.ArcLength
+		if segmentLength <= 0 {
+			segmentLength = ray.G().ArcLengthFromEmbedT(ray.Origin, ray.Direction, hit.Distance)
+		}
+		media := getMediumRegistry(tree)
+		beta = evaluateSegmentTransmittance(
+			media,
+			ray.MediumStack.Current(),
+			segmentLength,
+			h.newShadingContext(ray),
+		).ApplyToSpectrum(beta)
+		if !validSpectrum(beta) {
+			break
+		}
 		distance2 := squaredDistance(origin, hit.Point)
 		pdfArea := pendingPDF * absDot(hit.GeometricNormal, negated(direction)) /
 			math.Max(distance2, utils.EPS)
@@ -325,7 +355,7 @@ func (h *Handler) buildLightSubpath(
 		vertex := bdptVertex{
 			Point: hit.Point, GeometricNormal: hit.GeometricNormal, Frame: si.Frame,
 			WoLocal: si.WoLocal, Context: si.Context, Object: si.Object,
-			Beta: beta, PDFFwdArea: pdfArea,
+			Beta: beta, PDFFwdArea: pdfArea, MediumStack: ray.MediumStack.Clone(),
 		}
 		if !si.Object.Material.HasSurface() {
 			path = append(path, vertex)
@@ -402,7 +432,15 @@ func (h *Handler) connectBDPTVertices(
 		lightFactor = lv.Beta.Mul(fLight)
 	}
 
-	contribution := lightFactor.Mul(cv.Beta).Mul(fCamera).MulScalar(geometryTerm)
+	transmittance := evaluateSegmentTransmittance(
+		getMediumRegistry(tree),
+		lv.MediumStack.Current(),
+		distance,
+		lv.Context,
+	)
+	contribution := transmittance.ApplyToSpectrum(
+		lightFactor.Mul(cv.Beta).Mul(fCamera),
+	).MulScalar(geometryTerm)
 	return contribution, validSpectrum(contribution)
 }
 

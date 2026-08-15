@@ -203,7 +203,7 @@ func (h *Handler) prepareSurfaceInteraction(
 }
 
 func getMediumRegistry(objTree *object.ObjectTree) *medium.Registry {
-	if objTree.Media != nil {
+	if objTree != nil && objTree.Media != nil {
 		return objTree.Media
 	}
 	return medium.NewRegistry()
