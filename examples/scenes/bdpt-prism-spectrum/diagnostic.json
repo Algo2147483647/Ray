@@ -1,0 +1,28 @@
+{
+  "_comment": "Single-source wall-projection camera and default verification quality.",
+  "cameras": [
+    {
+      "id": "prism-diagnostic-camera",
+      "position": [-2.55, 0.03, 1],
+      "look_at": [-4, 0.03, 1],
+      "up": [0, 0, 1],
+      "field_of_view": 64,
+      "field_of_views": [64, 48],
+      "aspect_ratio": 1.5
+    }
+  ],
+  "render": {
+    "dimension": 3,
+    "samples": 512,
+    "thread_num": 0,
+    "width": 120,
+    "height": 80,
+    "camera_index": 0,
+    "exposure": 1.18,
+    "tone_mapping": "aces",
+    "gamma": 2.2,
+    "spectrum_mode": "sampled",
+    "wavelength_samples": 4,
+    "color_space": "linear_srgb"
+  }
+}

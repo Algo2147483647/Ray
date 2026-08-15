@@ -1,0 +1,453 @@
+{
+  "_comment": "Shared Newton-prism experiment and darkroom geometry. Compose it with prism-absorbing.json plus beauty.json for the artwork, or with a prism variant plus diagnostic JSON for verification.",
+  "geometry": {
+    "type": "euclidean"
+  },
+  "materials": [
+    {
+      "id": "white-source",
+      "emission": {
+        "type": "constant",
+        "radiance": {
+          "type": "blackbody",
+          "temperature": 6500,
+          "scale": 1200
+        }
+      }
+    },
+    {
+      "id": "dispersive-prism",
+      "surface": {
+        "type": "specular_dielectric",
+        "reflectance": {
+          "type": "constant",
+          "value": 1
+        },
+        "transmittance": {
+          "type": "constant",
+          "value": 0.98
+        },
+        "eta_outside": 1,
+        "ior": {
+          "type": "cauchy",
+          "a": 1.35,
+          "b": 0.025,
+          "c": 0
+        }
+      }
+    },
+    {
+      "id": "aperture-black",
+      "surface": {
+        "type": "lambert",
+        "albedo": {
+          "type": "constant",
+          "value": 0
+        }
+      }
+    },
+    {
+      "id": "white-screen",
+      "surface": {
+        "type": "lambert",
+        "albedo": {
+          "type": "constant",
+          "value": 0.92
+        }
+      }
+    },
+    {
+      "id": "apparatus-dark",
+      "surface": {
+        "type": "lambert",
+        "albedo": {
+          "type": "constant",
+          "value": 0.16
+        }
+      }
+    },
+    {
+      "id": "darkroom-blue",
+      "surface": {
+        "type": "lambert",
+        "albedo": {
+          "type": "rgb",
+          "value": [0.006, 0.012, 0.03]
+        }
+      }
+    },
+    {
+      "id": "aged-oak",
+      "surface": {
+        "type": "lambert",
+        "albedo": {
+          "type": "rgb",
+          "value": [0.24, 0.085, 0.025]
+        }
+      }
+    },
+    {
+      "id": "aged-brass",
+      "surface": {
+        "type": "rough_conductor",
+        "eta": [0.32, 0.58, 1.18],
+        "k": [3.05, 2.45, 1.72],
+        "roughness": 0.3
+      }
+    },
+    {
+      "id": "paper-label",
+      "surface": {
+        "type": "lambert",
+        "albedo": {
+          "type": "rgb",
+          "value": [0.48, 0.29, 0.12]
+        }
+      }
+    },
+    {
+      "id": "glass-edge-highlight",
+      "surface": {
+        "type": "lambert",
+        "albedo": {
+          "type": "rgb",
+          "value": [0.055, 0.19, 0.28]
+        }
+      }
+    }
+  ],
+  "objects": [
+    {
+      "id": "spectral-slit-0",
+      "shape": "triangle",
+      "p1": [1.85, -0.2, 0.3],
+      "p2": [1.85, -0.2, 1.7],
+      "p3": [1.85, -0.1, 1.7],
+      "material_id": "white-source"
+    },
+    {
+      "id": "spectral-slit-1",
+      "shape": "triangle",
+      "p1": [1.85, -0.2, 0.3],
+      "p2": [1.85, -0.1, 1.7],
+      "p3": [1.85, -0.1, 0.3],
+      "material_id": "white-source"
+    },
+    {
+      "id": "aperture-lower",
+      "shape": "cuboid",
+      "pmin": [0.18, -0.45, 0.3],
+      "pmax": [0.22, 0.145, 1.7],
+      "material_id": "aperture-black"
+    },
+    {
+      "id": "aperture-upper",
+      "shape": "cuboid",
+      "pmin": [0.18, 0.22, 0.3],
+      "pmax": [0.22, 0.45, 1.7],
+      "material_id": "aperture-black"
+    },
+
+    {
+      "id": "projection-screen",
+      "shape": "cuboid",
+      "pmin": [-4.02, -0.75, 0.1],
+      "pmax": [-4, 0.75, 1.9],
+      "material_id": "white-screen"
+    },
+    {
+      "id": "source-frame-left",
+      "shape": "cuboid",
+      "pmin": [1.86, -0.55, 0.25],
+      "pmax": [1.9, -0.2, 1.75],
+      "material_id": "aged-brass"
+    },
+    {
+      "id": "source-frame-right",
+      "shape": "cuboid",
+      "pmin": [1.86, -0.1, 0.25],
+      "pmax": [1.9, 0.25, 1.75],
+      "material_id": "aged-brass"
+    },
+    {
+      "id": "source-frame-bottom",
+      "shape": "cuboid",
+      "pmin": [1.86, -0.55, 0.21],
+      "pmax": [1.9, 0.25, 0.25],
+      "material_id": "aged-brass"
+    },
+    {
+      "id": "source-frame-top",
+      "shape": "cuboid",
+      "pmin": [1.86, -0.55, 1.75],
+      "pmax": [1.9, 0.25, 1.79],
+      "material_id": "aged-brass"
+    },
+    {
+      "id": "screen-frame-left",
+      "shape": "cylinder",
+      "center": [-3.99, -0.76, 1],
+      "axis": [0, 0, 1],
+      "r": 0.018,
+      "height": 1.84,
+      "material_id": "aged-brass"
+    },
+    {
+      "id": "screen-frame-right",
+      "shape": "cylinder",
+      "center": [-3.99, 0.76, 1],
+      "axis": [0, 0, 1],
+      "r": 0.018,
+      "height": 1.84,
+      "material_id": "aged-brass"
+    },
+    {
+      "id": "screen-frame-bottom",
+      "shape": "cylinder",
+      "center": [-3.99, 0, 0.08],
+      "axis": [0, 1, 0],
+      "r": 0.018,
+      "height": 1.52,
+      "material_id": "aged-brass"
+    },
+    {
+      "id": "screen-frame-top",
+      "shape": "cylinder",
+      "center": [-3.99, 0, 1.92],
+      "axis": [0, 1, 0],
+      "r": 0.018,
+      "height": 1.52,
+      "material_id": "aged-brass"
+    },
+    {
+      "id": "darkroom-floor",
+      "shape": "cuboid",
+      "pmin": [-4.45, -6, -0.12],
+      "pmax": [2.35, 1.7, 0],
+      "material_id": "aged-oak"
+    },
+    {
+      "id": "darkroom-back-wall",
+      "shape": "cuboid",
+      "pmin": [-4.5, 1.62, 0],
+      "pmax": [2.4, 1.68, 3.1],
+      "material_id": "darkroom-blue"
+    },
+    {
+      "id": "optical-bench-top",
+      "shape": "cuboid",
+      "pmin": [-1.15, -0.82, 0.04],
+      "pmax": [2.2, 0.82, 0.14],
+      "material_id": "aged-oak"
+    },
+    {
+      "id": "optical-rail-near",
+      "shape": "cylinder",
+      "center": [0.52, -0.69, 0.18],
+      "axis": [1, 0, 0],
+      "r": 0.026,
+      "height": 3.25,
+      "material_id": "aged-brass"
+    },
+    {
+      "id": "optical-rail-far",
+      "shape": "cylinder",
+      "center": [0.52, 0.69, 0.18],
+      "axis": [1, 0, 0],
+      "r": 0.026,
+      "height": 3.25,
+      "material_id": "aged-brass"
+    },
+    {
+      "id": "prism-plinth",
+      "shape": "cuboid",
+      "pmin": [-0.64, -0.67, 0.14],
+      "pmax": [-0.02, 0.67, 0.235],
+      "material_id": "aged-brass"
+    },
+    {
+      "id": "prism-clamp-near",
+      "shape": "cylinder",
+      "center": [-0.42, -0.64, 0.66],
+      "axis": [0, 0, 1],
+      "r": 0.024,
+      "height": 0.94,
+      "material_id": "aged-brass"
+    },
+    {
+      "id": "prism-clamp-far",
+      "shape": "cylinder",
+      "center": [-0.42, 0.64, 0.66],
+      "axis": [0, 0, 1],
+      "r": 0.024,
+      "height": 0.94,
+      "material_id": "aged-brass"
+    },
+    {
+      "id": "prism-rim-top-entry",
+      "shape": "cylinder",
+      "center": [-0.5, 0, 1.758],
+      "axis": [0, 1, 0],
+      "r": 0.015,
+      "height": 1.1,
+      "material_id": "glass-edge-highlight"
+    },
+    {
+      "id": "prism-rim-top-upper",
+      "shape": "cylinder",
+      "center": [-0.325, 0.275, 1.758],
+      "axis": [0.35, -0.55, 0],
+      "r": 0.015,
+      "height": 0.652,
+      "material_id": "glass-edge-highlight"
+    },
+    {
+      "id": "prism-rim-top-lower",
+      "shape": "cylinder",
+      "center": [-0.325, -0.275, 1.758],
+      "axis": [0.35, 0.55, 0],
+      "r": 0.015,
+      "height": 0.652,
+      "material_id": "glass-edge-highlight"
+    },
+    {
+      "id": "prism-rim-bottom-entry",
+      "shape": "cylinder",
+      "center": [-0.5, 0, 0.242],
+      "axis": [0, 1, 0],
+      "r": 0.015,
+      "height": 1.1,
+      "material_id": "glass-edge-highlight"
+    },
+    {
+      "id": "prism-rim-bottom-upper",
+      "shape": "cylinder",
+      "center": [-0.325, 0.275, 0.242],
+      "axis": [0.35, -0.55, 0],
+      "r": 0.015,
+      "height": 0.652,
+      "material_id": "glass-edge-highlight"
+    },
+    {
+      "id": "prism-rim-bottom-lower",
+      "shape": "cylinder",
+      "center": [-0.325, -0.275, 0.242],
+      "axis": [0.35, 0.55, 0],
+      "r": 0.015,
+      "height": 0.652,
+      "material_id": "glass-edge-highlight"
+    },
+    {
+      "id": "prism-rim-vertical-entry-near",
+      "shape": "cylinder",
+      "center": [-0.5, -0.55, 1],
+      "axis": [0, 0, 1],
+      "r": 0.007,
+      "height": 1.5,
+      "material_id": "glass-edge-highlight"
+    },
+    {
+      "id": "prism-rim-vertical-entry-far",
+      "shape": "cylinder",
+      "center": [-0.5, 0.55, 1],
+      "axis": [0, 0, 1],
+      "r": 0.007,
+      "height": 1.5,
+      "material_id": "glass-edge-highlight"
+    },
+    {
+      "id": "prism-rim-vertical-apex",
+      "shape": "cylinder",
+      "center": [-0.15, 0, 1],
+      "axis": [0, 0, 1],
+      "r": 0.007,
+      "height": 1.5,
+      "material_id": "glass-edge-highlight"
+    },
+    {
+      "id": "aperture-brass-bottom",
+      "shape": "cuboid",
+      "pmin": [0.15, -0.5, 0.245],
+      "pmax": [0.25, 0.5, 0.295],
+      "material_id": "aged-brass"
+    },
+    {
+      "id": "aperture-brass-top",
+      "shape": "cuboid",
+      "pmin": [0.15, -0.5, 1.705],
+      "pmax": [0.25, 0.5, 1.755],
+      "material_id": "aged-brass"
+    },
+    {
+      "id": "aperture-brass-near-post",
+      "shape": "cylinder",
+      "center": [0.2, -0.49, 1],
+      "axis": [0, 0, 1],
+      "r": 0.016,
+      "height": 1.5,
+      "material_id": "aged-brass"
+    },
+    {
+      "id": "aperture-brass-far-post",
+      "shape": "cylinder",
+      "center": [0.2, 0.49, 1],
+      "axis": [0, 0, 1],
+      "r": 0.016,
+      "height": 1.5,
+      "material_id": "aged-brass"
+    },
+    {
+      "id": "source-housing-back",
+      "shape": "cuboid",
+      "pmin": [1.91, -0.58, 0.18],
+      "pmax": [2.18, 0.28, 1.82],
+      "material_id": "darkroom-blue"
+    },
+    {
+      "id": "source-housing-cap",
+      "shape": "cuboid",
+      "pmin": [1.84, -0.6, 1.79],
+      "pmax": [2.2, 0.3, 1.86],
+      "material_id": "aged-brass"
+    },
+    {
+      "id": "source-housing-foot",
+      "shape": "cuboid",
+      "pmin": [1.72, -0.67, 0.14],
+      "pmax": [2.25, 0.37, 0.22],
+      "material_id": "aged-brass"
+    },
+    {
+      "id": "screen-stand-post",
+      "shape": "cylinder",
+      "center": [-4.08, 0, 0.52],
+      "axis": [0, 0, 1],
+      "r": 0.035,
+      "height": 0.95,
+      "material_id": "aged-brass"
+    },
+    {
+      "id": "screen-stand-foot",
+      "shape": "cuboid",
+      "pmin": [-4.28, -0.38, 0.015],
+      "pmax": [-3.88, 0.38, 0.075],
+      "material_id": "aged-brass"
+    },
+    {
+      "id": "newton-note-card",
+      "shape": "cuboid",
+      "pmin": [-1.02, -1.02, 0.005],
+      "pmax": [-0.28, -0.86, 0.018],
+      "material_id": "paper-label"
+    },
+    {
+      "id": "practical-lamp-rod",
+      "shape": "cylinder",
+      "center": [0.62, -1.2, 2.79],
+      "axis": [0, 0, 1],
+      "r": 0.012,
+      "height": 0.58,
+      "material_id": "aged-brass"
+    }
+  ]
+}

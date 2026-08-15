@@ -1,0 +1,88 @@
+{
+  "_comment": "Lossless control prism used by verify.cmd.",
+  "media": {
+    "prism_glass": {
+      "type": "homogeneous",
+      "ior": {
+        "type": "cauchy",
+        "a": 1.35,
+        "b": 0.025,
+        "c": 0
+      }
+    }
+  },
+  "objects": [
+    {
+      "id": "prism-bottom",
+      "shape": "triangle",
+      "p1": [-0.5, -0.55, 0.25],
+      "p2": [-0.5, 0.55, 0.25],
+      "p3": [-0.15, 0, 0.25],
+      "material_id": "dispersive-prism",
+      "medium_boundary": {"outside": "air", "inside": "prism_glass", "priority": 10, "thin": false}
+    },
+    {
+      "id": "prism-top",
+      "shape": "triangle",
+      "p1": [-0.5, -0.55, 1.75],
+      "p2": [-0.15, 0, 1.75],
+      "p3": [-0.5, 0.55, 1.75],
+      "material_id": "dispersive-prism",
+      "medium_boundary": {"outside": "air", "inside": "prism_glass", "priority": 10, "thin": false}
+    },
+    {
+      "id": "prism-entry-0",
+      "shape": "triangle",
+      "p1": [-0.5, -0.55, 0.25],
+      "p2": [-0.5, -0.55, 1.75],
+      "p3": [-0.5, 0.55, 1.75],
+      "material_id": "dispersive-prism",
+      "medium_boundary": {"outside": "air", "inside": "prism_glass", "priority": 10, "thin": false}
+    },
+    {
+      "id": "prism-entry-1",
+      "shape": "triangle",
+      "p1": [-0.5, -0.55, 0.25],
+      "p2": [-0.5, 0.55, 1.75],
+      "p3": [-0.5, 0.55, 0.25],
+      "material_id": "dispersive-prism",
+      "medium_boundary": {"outside": "air", "inside": "prism_glass", "priority": 10, "thin": false}
+    },
+    {
+      "id": "prism-upper-slope-0",
+      "shape": "triangle",
+      "p1": [-0.5, 0.55, 0.25],
+      "p2": [-0.5, 0.55, 1.75],
+      "p3": [-0.15, 0, 1.75],
+      "material_id": "dispersive-prism",
+      "medium_boundary": {"outside": "air", "inside": "prism_glass", "priority": 10, "thin": false}
+    },
+    {
+      "id": "prism-upper-slope-1",
+      "shape": "triangle",
+      "p1": [-0.5, 0.55, 0.25],
+      "p2": [-0.15, 0, 1.75],
+      "p3": [-0.15, 0, 0.25],
+      "material_id": "dispersive-prism",
+      "medium_boundary": {"outside": "air", "inside": "prism_glass", "priority": 10, "thin": false}
+    },
+    {
+      "id": "prism-lower-slope-0",
+      "shape": "triangle",
+      "p1": [-0.15, 0, 0.25],
+      "p2": [-0.15, 0, 1.75],
+      "p3": [-0.5, -0.55, 1.75],
+      "material_id": "dispersive-prism",
+      "medium_boundary": {"outside": "air", "inside": "prism_glass", "priority": 10, "thin": false}
+    },
+    {
+      "id": "prism-lower-slope-1",
+      "shape": "triangle",
+      "p1": [-0.15, 0, 0.25],
+      "p2": [-0.5, -0.55, 1.75],
+      "p3": [-0.5, -0.55, 0.25],
+      "material_id": "dispersive-prism",
+      "medium_boundary": {"outside": "air", "inside": "prism_glass", "priority": 10, "thin": false}
+    }
+  ]
+}

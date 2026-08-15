@@ -1,0 +1,66 @@
+{
+  "_comment": "Art lighting, camera, and output settings for the cinematic darkroom render.",
+  "materials": [
+    {
+      "id": "art-warm-key",
+      "emission": {
+        "type": "constant",
+        "radiance": {"type": "blackbody", "temperature": 2350, "scale": 32}
+      }
+    },
+    {
+      "id": "art-warm-practical",
+      "emission": {
+        "type": "constant",
+        "radiance": {"type": "blackbody", "temperature": 2200, "scale": 180}
+      }
+    }
+  ],
+  "objects": [
+    {
+      "id": "art-fill-key",
+      "shape": "sphere",
+      "center": [3.4, -4, 3.2],
+      "r": 0.24,
+      "material_id": "art-warm-key"
+    },
+    {
+      "id": "art-fill-practical-bulb",
+      "shape": "sphere",
+      "center": [0.62, -1.2, 2.48],
+      "r": 0.035,
+      "material_id": "art-warm-practical"
+    }
+  ],
+  "cameras": [
+    {
+      "id": "prism-lab-camera",
+      "position": [3.35, -5.65, 2.72],
+      "look_at": [-0.75, 0.05, 0.94],
+      "up": [0, 0, 1],
+      "field_of_view": 34,
+      "aspect_ratio": 2
+    }
+  ],
+  "render": {
+    "dimension": 3,
+    "samples": 2048,
+    "thread_num": 0,
+    "width": 320,
+    "height": 160,
+    "camera_index": 0,
+    "exposure": 1.18,
+    "tone_mapping": "aces",
+    "gamma": 2.2,
+    "spectrum_mode": "sampled",
+    "wavelength_samples": 4,
+    "color_space": "linear_srgb"
+  },
+  "renders": [
+    {
+      "integrator": "light_tracing",
+      "output_image": "../outputs/newton-prism-wall.png",
+      "output_film": "../outputs/newton-prism-wall.bin"
+    }
+  ]
+}

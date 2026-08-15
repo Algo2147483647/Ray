@@ -1,0 +1,53 @@
+{
+  "_comment": "Presentation render of the complete epsilon-tube boundary of KleinBottle4D. The orthographic film axes are x0, x2, x3 while rays travel along +x1. For R=1.35, r=0.62 and thickness=0.075, the exact conservative half-extents are (2.04575, 0.69575, 0.69575). FOV half-extents tan(FOV/2) are approximately (2.194, 0.781, 0.781), leaving 7-12% framing margin on every visible axis. Resolution 96x36x36 follows the physical extent ratio so the browser volume viewer preserves proportions. UV emission exposes the u/2 Klein twist without lighting noise.",
+  "materials": [
+    {
+      "id": "klein-showcase-uv",
+      "emission": {
+        "type": "uv_klein",
+        "saturation": 0.96,
+        "lightness": 0.6,
+        "v_stripes": 2,
+        "intensity": 1.15
+      }
+    }
+  ],
+  "objects": [
+    {
+      "id": "klein-bottle-4d-showcase",
+      "shape": "klein_bottle",
+      "center": [0, 0, 0, 0],
+      "r_major": 1.35,
+      "r_minor": 0.62,
+      "thickness": 0.075,
+      "material_id": "klein-showcase-uv"
+    }
+  ],
+  "cameras": [
+    {
+      "id": "complete-x0-x2-x3-volume",
+      "type": "n_dim",
+      "position": [0, -5, 0, 0],
+      "coordinates": [
+        [0, 1, 0, 0],
+        [1, 0, 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, 0, 1]
+      ],
+      "widths": [96, 36, 36],
+      "field_of_views": [131, 76, 76],
+      "ortho": true
+    }
+  ],
+  "render": {
+    "dimension": 4,
+    "samples": 128,
+    "thread_num": 16,
+    "spectrum_mode": "rgb",
+    "working_space": "linear_srgb",
+    "exposure": 1,
+    "tone_mapping": "aces",
+    "gamma": 2.2,
+    "output_film": "../outputs/klein-bottle-4d-showcase-96x36x36-128spp.bin"
+  }
+}

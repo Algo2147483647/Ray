@@ -1,0 +1,9 @@
+{
+  "renders": [
+    {
+      "integrator": "light_tracing",
+      "output_image": "../outputs/prism-spectrum-verify/absorbing.png",
+      "output_film": "../outputs/prism-spectrum-verify/absorbing.bin"
+    }
+  ]
+}
