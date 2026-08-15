@@ -92,7 +92,7 @@ func NewSceneIntegrator(kind IntegratorKind, handler *Handler) (SceneIntegrator,
 	case IntegratorBDPT:
 		return &configuredSceneIntegrator{
 			handler: handler,
-			driver:  &pixelDriver{kernel: bdptKernel{}},
+			driver:  &splatDriver{kernel: &bdptKernel{}},
 		}, nil
 	case IntegratorLightTracing:
 		return &configuredSceneIntegrator{

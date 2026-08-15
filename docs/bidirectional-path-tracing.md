@@ -11,21 +11,22 @@ BDPT 同时从相机和发光面生成子路径，并连接两条子路径上的
 - 支持 Euclidean 3D、RGB、hero wavelength 和 sampled wavelength。
 - 支持 sphere、triangle、circle、cuboid 及其普通 bounded wrapper 作为有限面积光源。
 - 生成相机和光源子路径，连接所有深度允许的连续表面端点。
-- 对同一完整路径枚举全部已启用的 `s>=1,t>=2` 策略，并以统一 power-heuristic 分母归一化。
-- 路径密度和 MIS 在 log domain 计算，避免长路径概率乘积下溢。
-- 没有可采样面积光、使用非 Euclidean 几何、介质边界、delta 或非互易 BSDF 时，自动退回原路径追踪。
-- BDPT 子路径当前关闭 Russian roulette；完整反向 RR 密度加入前，仅由最大深度截断。
+- 对同一连续完整路径枚举全部已启用的 `s>=1,t>=2` 策略，并用相邻策略 PDF 比值的 ratio walk 计算 power MIS。
+- 场景能力和功率加权面积光分布在渲染开始时准备一次，不再逐样本扫描对象树。
+- 相机与光源子路径都按 `russian_roulette_depth` 执行 RR，并在存活后补偿吞吐量。
+- delta 表面和 homogeneous `sigma_a` 介质边界不再触发整场回退；`light → delta 链 → diffuse → camera` 由独立 `t=1` film splat 估计。
+- 没有可采样面积光、使用非 Euclidean 几何或非互易 BSDF 时，自动退回原路径追踪，并输出一次明确诊断。
 
 当前阶段有意不宣称覆盖以下能力：
 
 - 曲率空间中的 BDPT。Klein / spherical 场景需要测地距离、Jacobian 和曲空间可见性，不能套用 Euclidean `1/r²`。
-- 参与介质中的双向连接。当前 BDPT 顶点只表示表面，介质吸收/散射仍应使用 `path`。
-- `t=1` 的 light tracing film splat 和参与同一 MIS 的通用 `s=0` 相机命中发光策略。
-- delta/折射事件的离散策略密度及其 eta 修正。
+- 参与介质散射顶点。homogeneous `sigma_a` 已通过段透射率进入吞吐量和连接，`sigma_s`/phase-function 顶点仍未实现。
+- 与连续策略共同 MIS 的通用 `t=1`、`s=0` 和 camera endpoint importance；当前 delta 焦散 `t=1` 是独立估计器。
+- delta/折射事件的正反离散策略密度及其 eta 修正；因此含 delta 的 `t>=2` 连续连接会被跳过。
 - 任意隐式/参数曲面的精确面积采样、环境光和点光源端点。
 - 非互易 BSDF 的反向 PDF 和 shading-normal Jacobian 修正。
 
-这些限制均是显式能力边界；不满足条件时应保持 `path`，而不是静默使用错误的几何项。
+这些限制均是显式能力边界；真正不支持的场景会带原因诊断地回退 `path`，不会静默使用错误的几何项。
 
 ## 2. 数学模型
 
@@ -72,14 +73,13 @@ SampleSurface(u maths.Sample2D) (SurfaceSample, bool)
 SurfaceArea() float64
 ```
 
-`SurfaceSample.PDFArea` 明确声明采样密度相对于面积测度。光源先按面积选对象，再在对象表面均匀采样，因此联合密度简化为：
+`SurfaceSample.PDFArea` 明确声明采样密度相对于面积测度。当前以 `Area × 估算发光功率` 为光源选择权重，再按各 shape 的面积 PDF 采样表面，因此联合密度为：
 
 ```text
-p(light, x) = Area(light)/Area(total) × 1/Area(light)
-            = 1/Area(total)
+p(light, x) = Weight(light)/Weight(total) × pA(x | light)
 ```
 
-后续可将对象选择升级为“面积 × 估算功率”的 alias table。升级后必须同时保存选择 PDF，不能继续假设 `1/Area(total)`。
+当前使用线性 CDF；当光源数较多时可进一步升级为保存同一选择 PDF 的 alias table。
 
 ### 3.2 路径顶点
 
@@ -104,11 +104,11 @@ p(light, x) = Area(light)/Area(total) × 1/Area(light)
 3. 在到达顶点前记录 `Beta` 和面积 PDF。
 4. 使用 radiance transport mode 采样 BSDF。
 5. 更新 `β *= f |cosθ| / pω`。
-6. 当前按配置最大深度终止；暂不执行 Russian roulette。
+6. 到达配置深度后执行 Russian roulette；存活路径将吞吐量除以存活概率。
 
 光源子路径：
 
-1. 按面积选择可采样发光对象。
+1. 按 `面积 × 估算发光功率` 选择可采样发光对象。
 2. 均匀采样表面点。
 3. 保存联合面积 PDF：
 
@@ -127,14 +127,13 @@ p(light, x) = Area(light)/Area(total) × 1/Area(light)
 
 ### 3.4 连接和遮挡
 
-连接只发生在具有有限 BSDF 值的端点。当前能力门禁会让包含 delta、介质边界或非互易 BSDF 的场景整场回退 `path`。连接射线使用 `[EPS, distance-EPS]`，避免把两个端点自身误判为遮挡物。
+连接只发生在具有有限 BSDF 值的端点。非互易 BSDF 仍会整场回退；delta 可在子路径中采样，但含 delta 的连续 `t>=2` MIS 连接会跳过，焦散改由独立 `t=1` splat 进入胶片。连接射线使用 `[EPS, distance-EPS]`，避免把两个端点自身误判为遮挡物；连接段同时评估当前 homogeneous medium 的透射率。
 
-当前实现为每个 `(s,t)` 建立连接，并为该完整路径重新评估所有启用策略密度。路径深度较小时实现清晰可靠；优化前最坏复杂度高于标准 ratio walk。后续应增加：
+当前仍为每个 `(s,t)` 建立连接，但 MIS 使用相邻策略密度比的 ratio walk，不再为每个连接重新枚举并遍历全部策略。连接为 `O(depth²)`，每个连接的权重为 `O(depth)`；原先接近 `O(depth⁴)` 的热点降为 `O(depth³)`。后续可继续增加：
 
 - 最大连接深度；
 - 路径顶点预分配；
 - visibility batch；
-- 光源分布缓存；
 - 可选的连接候选裁剪。
 
 ### 3.5 MIS
@@ -155,7 +154,7 @@ w_s = p_s² / Σ_k p_k²
 
 此前的相邻策略局部归一化已经移除。对三个或更多策略分别与邻居归一化，不能保证同一完整路径的权重和为 `1`。
 
-当前直接重算策略密度；生产级优化的下一步是改为 Veach ratio walk：
+当前已使用不组装完整路径的 ratio walk。要达到完整 Veach BDPT，下一步仍需：
 
 1. 顶点同时保存 `pdfFwd`、`pdfRev` 和 endpoint 类型。
 2. 连接前临时计算连接边两侧 reverse PDF。
@@ -167,7 +166,7 @@ w_s = p_s² / Σ_k p_k²
 
 RGB 模式下 `Beta` 是 RGB spectrum；hero/sampled 模式下它是单通道 sampled spectrum。波长由积分器在相机样本层选择，同一个 BDPT 样本的相机/光源子路径共享波长，避免把不同波长的两条路径错误连接。
 
-介质支持必须增加 `MediumVertex`：
+参与介质散射支持仍必须增加 `MediumVertex`：
 
 - 采样自由飞行距离；
 - 保存 phase function、正反 PDF 和 transmittance；
@@ -247,17 +246,21 @@ go -C engine run . --script ../examples/scenes/scene.json --integrator bdpt
 
 - 相机/光源双子路径；
 - 全部 `s>=1,t>=2` 连续表面连接；
-- log-domain 全策略 power MIS；
+- ratio-walk power MIS；
 - 同路径策略权重和测试；
-- delta、介质边界和非互易场景安全回退。
+- 每次渲染缓存能力分析和功率加权光源分布；
+- 相机/光源子路径 Russian roulette；
+- homogeneous `sigma_a` 段透射率；
+- delta 链之后的独立 `t=1` caustic splat；
+- 非互易和非 Euclidean 场景带原因诊断地安全回退。
 
 ### M2.1：Veach 完整 BDPT
 
-- Camera endpoint importance 与 `t=1` film splat；
-- 通用 `s=0` 与离散策略；
-- `pdfFwd/pdfRev` ratio-walk MIS；
+- Camera endpoint importance 与纳入统一 MIS 的通用 `t=1` film splat；
+- 通用 `s=0` 与正反离散策略；
+- 显式 `pdfFwd/pdfRev`、RR 和离散测度；
 - delta/折射 eta/非互易校验；
-- 光源功率 alias table。
+- 多光源 alias table。
 
 ### M3：介质与曲空间
 
@@ -267,11 +270,11 @@ go -C engine run . --script ../examples/scenes/scene.json --integrator bdpt
 
 ### M4：性能
 
-- 每场景缓存 LightDistribution；
 - arena/pool 化 path vertex；
 - 批量 shadow rays；
 - 连接深度与策略开关；
-- benchmark：samples/s、有效连接率、shadow-ray 命中率、每策略方差。
+- 多光源 alias table；
+- 扩展 benchmark：samples/s、有效连接率、shadow-ray 命中率、每策略方差。
 
 ## 8. 完成标准
 
@@ -290,17 +293,19 @@ go -C engine run . --script ../examples/scenes/scene.json --integrator bdpt
 
 ### 9.1 结论
 
-当前实现应定义为“欧氏 3D 连续表面 BDPT”，而不是完整的 Veach BDPT。
+当前实现应定义为“欧氏 3D 连续表面 BDPT + 独立 delta-caustic `t=1` 估计器”，而不是完整的 Veach BDPT。
 
 在以下限制同时成立时，它对最大深度以内的路径积分基本无偏：
 
 - 场景是三维 Euclidean 空间；
 - 光源是有限、可按面积采样的双面面积光；
-- 路径只包含 Lambert、rough conductor 等连续、互易的反射 BSDF；
-- 不包含 delta、折射、介质、非互易散射或曲空间连接；
+- 连续 MIS 路径只包含 Lambert、rough conductor 等连续、互易的反射 BSDF；
+- delta 链仅由独立 `t=1` 路径族覆盖，不参与连续多策略 MIS；
+- homogeneous 介质只包含可由段透射率表达的吸收，不包含参与散射顶点；
+- 不包含非互易散射或曲空间连接；
 - 将 `MaxRayLevel` 视为积分目标的一部分。
 
-若目标是无限深度的完整渲染方程，则固定最大深度仍会产生截断偏差。对 delta、介质、非互易或非 Euclidean 场景，当前 `bdpt` 配置会整体退回单向 path tracing，因此输出可能仍然有效，但不能作为 BDPT 能力或 BDPT 焦散质量的证据。
+Russian roulette 消除了仅因 RR 提前终止造成的偏差，但 `MaxRayLevel` 仍定义了有限的最大路径长度。非互易或非 Euclidean 场景会带原因诊断地整体退回单向 path tracing；普通 delta 表面和 homogeneous 吸收边界不会再触发回退。
 
 ### 9.2 成立的公式
 
@@ -336,23 +341,22 @@ w_s = p_s² / Σ_k p_k²
 
 因此在受支持策略族中 `Σ_s w_s = 1`。每个策略的估计量为 `F/p_s`，所有策略期望之和为该有限路径域上的路径积分。
 
-光源先按面积选择对象、再在对象表面均匀采样。若每个表面采样器确实返回 `1/Area(light)`，联合密度为
+光源按面积与估算发光功率的乘积选择，再使用对象返回的面积 PDF。联合密度为
 
 ```text
-p(light,x) = Area(light)/Area(total) × 1/Area(light)
-           = 1/Area(total)
+p(light,x) = Weight(light)/Weight(total) × pA(x|light)
 ```
 
-这在数学上无偏，但没有利用发光功率，会使面积很小而功率很高的光源产生较大方差。
+该联合密度同时进入根顶点吞吐量，因此仍保持无偏；功率加权可降低多灯场景的方差。
 
 ### 9.3 不能扩展宣称无偏的部分
 
-1. **固定深度截断。** 相机和光源子路径当前不执行 Russian roulette，只由 `MaxRayLevel` 截断。它对截断积分无偏，但不对无限路径空间严格无偏。
-2. **策略族不完整。** 当前没有通用 `s=0`、`t=1` film splat、camera endpoint importance 和 delta 离散策略。对当前连续面积光支持域，这主要损失方差效率；对完整 BDPT 能力则属于缺失项。
-3. **折射和介质未进入 BDPT。** 缺少 eta 修正、正反向离散/连续 PDF、medium vertex、phase function 和连接段 transmittance。
+1. **仍有最大深度截断。** 相机和光源子路径已执行 Russian roulette，但仍受 `MaxRayLevel` 硬上限约束；因此目标仍是有限最大长度的路径空间。
+2. **策略族不完整。** 当前没有通用 `s=0`、与其他策略统一 MIS 的 `t=1`、camera endpoint importance 和 delta 离散策略。现有 `t=1` 只负责光源侧已采样 delta 链后的 caustic splat。
+3. **参与介质散射未进入 BDPT。** homogeneous `sigma_a` 已通过 segment transmittance 支持，但仍缺少 medium vertex、phase function；折射链还缺少用于完整双向 MIS 的 eta 与正反离散 PDF。
 4. **三维假设未被类型契约完全表达。** 光源方向采样使用 3D cosine hemisphere，端点 PDF 使用 `|cos|/(2π)`，连接使用 `1/r²`。能力门禁目前只检查 Euclidean geometry；若将来 N 维 Euclidean shape 实现 `SurfaceSampler`，这些公式不能直接复用。
 5. **发光模型隐含双面 Lambertian 方向分布。** 当前 emitter 的 `Emit` 都不依赖方向，因此与实现一致；若增加单面或方向性 emitter，必须同时增加方向分布、PDF 和能力声明。
-6. **全场景回退影响可观察性。** 任意一个对象含介质边界、delta 或非互易 BSDF 时，整个场景静默退回 path tracing。运行结果不应被标记为“BDPT 已覆盖该传输类型”。
+6. **delta 覆盖仍是专用路径族。** delta 不再导致全场回退，但当前只保证光源侧 delta 链到漫反射顶点的 `t=1` 焦散估计。其他 delta 连接拓扑不能宣称由完整 BDPT MIS 覆盖。
 
 ### 9.4 当前验证的解释
 
@@ -361,7 +365,11 @@ p(light,x) = Area(light)/Area(total) × 1/Area(light)
 - 面积光能够连接到相机子路径；
 - 基础连接贡献有限、非负且符合一个简单解析值；
 - 全局 MIS 权重形成单位分割；
-- 不支持的传输类型触发能力门禁。
+- delta 与 homogeneous 吸收不会触发能力门禁；
+- delta 路径不进入连续 MIS，且能生成 `t=1` caustic splat；
+- 多光源选择权重包含估算功率；
+- RR 深度配置生效；
+- 不支持的非 Euclidean 传输触发能力门禁。
 
 这些测试能够发现公式和策略归一化的局部回归，但尚不能证明统计无偏。还需要：
 
@@ -372,15 +380,15 @@ p(light,x) = Area(light)/Area(total) × 1/Area(light)
 5. RGB、hero wavelength、sampled wavelength 的能量一致性测试；
 6. 明确断言实际采用的是 BDPT 还是 path fallback。
 
-棱镜光谱示例包含 `specular_dielectric` 和 `medium_boundary`，因此当前会触发 path fallback。它可以验证光谱路径追踪和回退安全性，但不能验证 BDPT 折射链或双向焦散。
+棱镜光谱示例包含 `specular_dielectric`、homogeneous `sigma_a` 和漫反射光谱卡，现已成为 `light → 棱镜 delta 链 → 光谱卡 → camera` 的 BDPT `t=1` 回归场景。control/absorbing 两组正式测试会同时检查色散质心、跨度、参考一致性和分波段能量比；运行时无 path fallback。
 
 ### 9.5 工程质量判断
 
 - 数学骨架：良好；
 - 受限域内正确性：较好；
-- 完整 BDPT 覆盖度：较低；
-- 方差效率：一般，光源按面积而不是按功率选择；
-- 性能：全部顶点两两连接约为 `O(depth²)`，且当前没有 RR；
-- 验证强度：已有单元级代数验证，缺少统计收敛验证。
+- 完整 BDPT 覆盖度：中低，delta 焦散已有专用 `t=1`，但尚无完整离散 MIS；
+- 方差效率：较好，光源按面积与估算功率选择，子路径启用 RR；
+- 性能：场景扫描移出样本循环；连接为 `O(depth²)`，每连接 ratio walk 为 `O(depth)`；
+- 验证强度：已有单元、深度 benchmark 和棱镜 control/absorbing 统计能量回归。
 
-生产化前应优先加入运行期积分器诊断、严格 3D 能力门禁、真实连续表面统计基准，再扩展 `t=1`、delta/eta 和介质路径。
+下一阶段应优先补齐显式 `pdfFwd/pdfRev`、delta/eta 离散 MIS、参与介质顶点和连续表面参考能量统计，再做路径 arena、shadow-ray batch 与多光源 alias table。

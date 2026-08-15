@@ -4,8 +4,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"github.com/Algo2147483647/ray/engine/model/camera"
 	"github.com/Algo2147483647/ray/engine/model/object"
+	"github.com/Algo2147483647/ray/engine/model/optics"
 )
 
 func TestParseIntegratorKindCanonicalizesLightTraceAlias(t *testing.T) {
@@ -28,7 +30,7 @@ func TestNewSceneIntegratorSelectsRuntimeImplementation(t *testing.T) {
 		wantKernel string
 	}{
 		{IntegratorPathTracing, "pixel", "path"},
-		{IntegratorBDPT, "pixel", "bdpt"},
+		{IntegratorBDPT, "splat", "bdpt"},
 		{IntegratorLightTracing, "splat", "light"},
 	}
 	for _, test := range tests {
@@ -50,10 +52,6 @@ func TestNewSceneIntegratorSelectsRuntimeImplementation(t *testing.T) {
 				if test.wantKernel != "path" {
 					t.Fatalf("kind %q selected path kernel, want %s", test.kind, test.wantKernel)
 				}
-			case bdptKernel:
-				if test.wantKernel != "bdpt" {
-					t.Fatalf("kind %q selected bdpt kernel, want %s", test.kind, test.wantKernel)
-				}
 			default:
 				t.Fatalf("kind %q selected unexpected pixel kernel %T", test.kind, driver.kernel)
 			}
@@ -61,7 +59,16 @@ func TestNewSceneIntegratorSelectsRuntimeImplementation(t *testing.T) {
 			if test.wantDriver != "splat" {
 				t.Fatalf("kind %q selected splat driver, want %s", test.kind, test.wantDriver)
 			}
-			if _, ok := driver.kernel.(*lightTracingKernel); !ok || test.wantKernel != "light" {
+			switch driver.kernel.(type) {
+			case *lightTracingKernel:
+				if test.wantKernel != "light" {
+					t.Fatalf("kind %q selected light kernel, want %s", test.kind, test.wantKernel)
+				}
+			case *bdptKernel:
+				if test.wantKernel != "bdpt" {
+					t.Fatalf("kind %q selected bdpt kernel, want %s", test.kind, test.wantKernel)
+				}
+			default:
 				t.Fatalf("kind %q selected unexpected splat kernel %T", test.kind, driver.kernel)
 			}
 		default:
@@ -86,6 +93,27 @@ func TestLightTracingRejectsNonProjectiveCamera(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "projective camera") {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestBDPTWorkCountIncludesSampledWavelengthStrata(t *testing.T) {
+	handler := NewHandler()
+	handler.SceneGeometry = geometry.Euclidean()
+	handler.SpectrumMode = optics.SpectrumModeSampledWavelengths
+	handler.WavelengthSamples = 4
+	session, err := newRenderSession(handler, RenderContext{
+		Camera: fixedCamera{}, ObjectTree: (&object.ObjectTree{}).Build(),
+		Film: camera.NewFilm(2, 1), Samples: 3,
+	}, true)
+	if err != nil {
+		t.Fatalf("newRenderSession: %v", err)
+	}
+	kernel := &bdptKernel{}
+	if err := kernel.Prepare(session); err != nil {
+		t.Fatalf("Prepare: %v", err)
+	}
+	if got, want := kernel.WorkCount(session), int64(2*3*4); got != want {
+		t.Fatalf("BDPT work count = %d, want %d", got, want)
 	}
 }
 

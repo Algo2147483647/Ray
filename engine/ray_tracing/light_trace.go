@@ -14,12 +14,12 @@ import (
 // lightTracingKernel implements the t=1 algorithm while splatDriver owns
 // scheduling, synchronization, normalization and progress reporting.
 type lightTracingKernel struct {
-	projective camera.ProjectiveCamera
-	lights     []areaLight
-	totalArea  float64
-	activeMask []bool
-	pixelCount int
-	totalPaths int64
+	projective  camera.ProjectiveCamera
+	lights      []areaLight
+	totalWeight float64
+	activeMask  []bool
+	pixelCount  int
+	totalPaths  int64
 }
 
 func (k *lightTracingKernel) Prepare(session *RenderSession) error {
@@ -28,7 +28,7 @@ func (k *lightTracingKernel) Prepare(session *RenderSession) error {
 		return fmt.Errorf("light tracing requires a projective camera, got %T", session.Context.Camera)
 	}
 	k.projective = projective
-	k.lights, k.totalArea = collectAreaLights(session.Context.ObjectTree)
+	k.lights, k.totalWeight = collectAreaLights(session.Context.ObjectTree)
 	k.pixelCount = shapeElementCount(session.Context.Film.Data[0].Shape)
 	k.activeMask = make([]bool, k.pixelCount)
 	activePixels := int64(k.pixelCount)
@@ -42,7 +42,7 @@ func (k *lightTracingKernel) Prepare(session *RenderSession) error {
 			session.Context.PixelWindows,
 		)
 	}
-	if len(k.lights) == 0 || k.totalArea <= 0 || activePixels <= 0 {
+	if len(k.lights) == 0 || k.totalWeight <= 0 || activePixels <= 0 {
 		k.totalPaths = 0
 		return nil
 	}
@@ -54,7 +54,7 @@ func (k *lightTracingKernel) WorkCount(*RenderSession) int64 {
 	return k.totalPaths
 }
 
-func (k *lightTracingKernel) TraceSample(session *RenderSession) []FilmSplat {
+func (k *lightTracingKernel) TraceSample(session *RenderSession, _ int64) []FilmSplat {
 	wavelengthNM := 0.0
 	wavelengthPDF := 0.0
 	if session.Handler.SpectrumMode != optics.SpectrumModeRGB {
@@ -65,7 +65,7 @@ func (k *lightTracingKernel) TraceSample(session *RenderSession) []FilmSplat {
 	path := session.Handler.buildLightSubpath(
 		session.Context.ObjectTree,
 		k.lights,
-		k.totalArea,
+		k.totalWeight,
 		wavelengthNM,
 		wavelengthPDF,
 	)

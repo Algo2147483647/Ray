@@ -16,7 +16,6 @@ type pixelKernel interface {
 }
 
 type pathTracingKernel struct{}
-type bdptKernel struct{}
 
 func (pathTracingKernel) sampleRGB(
 	h *Handler,
@@ -26,23 +25,6 @@ func (pathTracingKernel) sampleRGB(
 	index ...int,
 ) optics.Color3 {
 	return h.TraceRGB(renderCamera, objTree, ray, index...)
-}
-
-func (bdptKernel) sampleRGB(
-	h *Handler,
-	renderCamera rendercamera.Camera,
-	objTree *object.ObjectTree,
-	_ *optics.Ray,
-	index ...int,
-) optics.Color3 {
-	spectrum := h.traceBidirectionalSample(renderCamera, objTree, 0, 0, index...)
-	r, g, b := rendercamera.LinearSRGBToFilmColorSpace(
-		spectrum.RGB[0],
-		spectrum.RGB[1],
-		spectrum.RGB[2],
-		h.FilmColorSpace,
-	)
-	return optics.Color3{r, g, b}
 }
 
 func (pathTracingKernel) sampleSpectral(
@@ -62,27 +44,6 @@ func (pathTracingKernel) sampleSpectral(
 			optics.SpectralRayToScalar(ray),
 			ray.WavelengthPDF,
 		),
-	}
-}
-
-func (bdptKernel) sampleSpectral(
-	h *Handler,
-	renderCamera rendercamera.Camera,
-	objTree *object.ObjectTree,
-	_ *optics.Ray,
-	wavelength optics.WavelengthSample,
-	index ...int,
-) rendercamera.SpectralSample {
-	spectrum := h.traceBidirectionalSample(
-		renderCamera,
-		objTree,
-		wavelength.LambdaNM,
-		wavelength.PDF,
-		index...,
-	)
-	return rendercamera.SpectralSample{
-		WavelengthNM: wavelength.LambdaNM,
-		Value:        optics.SpectralSampleRadiance(spectrum.Sample(0), wavelength.PDF),
 	}
 }
 

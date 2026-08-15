@@ -48,7 +48,7 @@ func (*constantSplatKernel) Prepare(*RenderSession) error { return nil }
 
 func (k *constantSplatKernel) WorkCount(*RenderSession) int64 { return k.work }
 
-func (*constantSplatKernel) TraceSample(*RenderSession) []FilmSplat {
+func (*constantSplatKernel) TraceSample(*RenderSession, int64) []FilmSplat {
 	return []FilmSplat{{Pixel: 0, Value: optics.NewRGBSpectrum(2, 4, 6)}}
 }
 

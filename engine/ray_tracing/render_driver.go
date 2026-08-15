@@ -71,7 +71,7 @@ type FilmSplat struct {
 type splatKernel interface {
 	Prepare(*RenderSession) error
 	WorkCount(*RenderSession) int64
-	TraceSample(*RenderSession) []FilmSplat
+	TraceSample(*RenderSession, int64) []FilmSplat
 }
 
 type splatDriver struct {
@@ -109,10 +109,11 @@ func (d *splatDriver) Run(session *RenderSession) error {
 		go func() {
 			defer workers.Done()
 			for {
-				if nextWork.Add(1)-1 >= totalWork {
+				workIndex := nextWork.Add(1) - 1
+				if workIndex >= totalWork {
 					return
 				}
-				for _, splat := range d.kernel.TraceSample(session) {
+				for _, splat := range d.kernel.TraceSample(session, workIndex) {
 					d.accumulate(session, splat, totalWork)
 				}
 				progress.Add(1)
