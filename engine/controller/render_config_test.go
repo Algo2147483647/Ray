@@ -54,6 +54,18 @@ func TestParseRenderOverridesAcceptsBDPT(t *testing.T) {
 	}
 }
 
+func TestParseRenderOverridesAcceptsLightTracingNames(t *testing.T) {
+	for _, name := range []string{"light_tracing", "light_trace"} {
+		overrides, err := ParseRenderOverrides([]string{"--integrator", name})
+		if err != nil {
+			t.Fatalf("parse %q integrator: %v", name, err)
+		}
+		if overrides.Integrator != name {
+			t.Fatalf("integrator = %q, want %q", overrides.Integrator, name)
+		}
+	}
+}
+
 func TestParseRenderOverridesRejectsUnknownIntegrator(t *testing.T) {
 	if _, err := ParseRenderOverrides([]string{"--integrator", "magic"}); err == nil {
 		t.Fatal("expected unknown integrator to fail")

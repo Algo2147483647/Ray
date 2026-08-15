@@ -15,14 +15,6 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-// Integrator selects the light transport algorithm.
-type Integrator string
-
-const (
-	IntegratorPath Integrator = "path"
-	IntegratorBDPT Integrator = "bdpt"
-)
-
 type bdptVertex struct {
 	Point           *mat.VecDense
 	GeometricNormal *mat.VecDense
@@ -352,6 +344,9 @@ func (h *Handler) buildLightSubpath(
 			break
 		}
 		path = append(path, vertex)
+		if sample.Flags&bxdf.TransmissionEvent != 0 {
+			applyMediumTransmission(getMediumRegistry(tree), ray, si.Context, si.Object.MediumBoundary, sample)
+		}
 		si.Frame.LocalToWorldInto(ray.Direction, sample.Wi)
 		ray.Origin.CopyVec(hit.Point)
 		pendingPDF = vertex.SampledPDF

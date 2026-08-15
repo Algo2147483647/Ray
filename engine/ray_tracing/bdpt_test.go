@@ -54,7 +54,7 @@ func TestBDPTConnectsAreaLightToCameraVertex(t *testing.T) {
 	tree.Build()
 
 	h := NewHandler()
-	h.Integrator = IntegratorBDPT
+	h.IntegratorKind = IntegratorBDPT
 	h.SceneGeometry = geometry.Euclidean()
 	h.SpectrumMode = optics.SpectrumModeRGB
 	h.MaxRayLevel = 2
@@ -83,7 +83,7 @@ func TestBDPTFallsBackToPathTracingWithoutSampleableLights(t *testing.T) {
 	tree.Build()
 
 	h := NewHandler()
-	h.Integrator = IntegratorBDPT
+	h.IntegratorKind = IntegratorBDPT
 	h.SceneGeometry = geometry.Euclidean()
 	h.SpectrumMode = optics.SpectrumModeRGB
 	value := h.traceBidirectionalSample(fixedCamera{}, tree, 0, 0, 0, 0)

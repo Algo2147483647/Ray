@@ -10,11 +10,85 @@ import (
 
 const defaultWavelengthSamples = 4
 
-func (h *Handler) TracePixel(
+type pixelKernel interface {
+	sampleRGB(*Handler, rendercamera.Camera, *object.ObjectTree, *optics.Ray, ...int) optics.Color3
+	sampleSpectral(*Handler, rendercamera.Camera, *object.ObjectTree, *optics.Ray, optics.WavelengthSample, ...int) rendercamera.SpectralSample
+}
+
+type pathTracingKernel struct{}
+type bdptKernel struct{}
+
+func (pathTracingKernel) sampleRGB(
+	h *Handler,
 	renderCamera rendercamera.Camera,
 	objTree *object.ObjectTree,
-	film *rendercamera.Film,
-	samples int64,
+	ray *optics.Ray,
+	index ...int,
+) optics.Color3 {
+	return h.TraceRGB(renderCamera, objTree, ray, index...)
+}
+
+func (bdptKernel) sampleRGB(
+	h *Handler,
+	renderCamera rendercamera.Camera,
+	objTree *object.ObjectTree,
+	_ *optics.Ray,
+	index ...int,
+) optics.Color3 {
+	spectrum := h.traceBidirectionalSample(renderCamera, objTree, 0, 0, index...)
+	r, g, b := rendercamera.LinearSRGBToFilmColorSpace(
+		spectrum.RGB[0],
+		spectrum.RGB[1],
+		spectrum.RGB[2],
+		h.FilmColorSpace,
+	)
+	return optics.Color3{r, g, b}
+}
+
+func (pathTracingKernel) sampleSpectral(
+	h *Handler,
+	renderCamera rendercamera.Camera,
+	objTree *object.ObjectTree,
+	ray *optics.Ray,
+	wavelength optics.WavelengthSample,
+	index ...int,
+) rendercamera.SpectralSample {
+	renderCamera.GenerateRay(ray, index...)
+	ray.SetSpectralSample(wavelength)
+	h.TraceRay(objTree, ray, 0)
+	return rendercamera.SpectralSample{
+		WavelengthNM: wavelength.LambdaNM,
+		Value: optics.SpectralSampleRadiance(
+			optics.SpectralRayToScalar(ray),
+			ray.WavelengthPDF,
+		),
+	}
+}
+
+func (bdptKernel) sampleSpectral(
+	h *Handler,
+	renderCamera rendercamera.Camera,
+	objTree *object.ObjectTree,
+	_ *optics.Ray,
+	wavelength optics.WavelengthSample,
+	index ...int,
+) rendercamera.SpectralSample {
+	spectrum := h.traceBidirectionalSample(
+		renderCamera,
+		objTree,
+		wavelength.LambdaNM,
+		wavelength.PDF,
+		index...,
+	)
+	return rendercamera.SpectralSample{
+		WavelengthNM: wavelength.LambdaNM,
+		Value:        optics.SpectralSampleRadiance(spectrum.Sample(0), wavelength.PDF),
+	}
+}
+
+func (h *Handler) tracePixel(
+	kernel pixelKernel,
+	session *RenderSession,
 	pixel int,
 	index ...int,
 ) {
@@ -25,32 +99,30 @@ func (h *Handler) TracePixel(
 
 	switch h.SpectrumMode {
 	case optics.SpectrumModeSampledWavelengths, optics.SpectrumModeHeroWavelength:
-		for _, sample := range h.TraceSpectral(renderCamera, objTree, samples, index...) {
-			film.RecordSpectralSample(pixel, sample.WavelengthNM, sample.Value)
+		for _, sample := range h.traceSpectral(
+			kernel,
+			session.Context.Camera,
+			session.Context.ObjectTree,
+			session.Context.Samples,
+			index...,
+		) {
+			session.Accumulator.AddSpectral(pixel, sample.WavelengthNM, sample.Value)
 		}
 		return
 
 	case optics.SpectrumModeRGB:
-		for s := int64(0); s < samples; s++ {
-			if h.Integrator == IntegratorBDPT {
-				spectrum := h.traceBidirectionalSample(renderCamera, objTree, 0, 0, index...)
-				r, g, b := rendercamera.LinearSRGBToFilmColorSpace(
-					spectrum.RGB[0],
-					spectrum.RGB[1],
-					spectrum.RGB[2],
-					h.FilmColorSpace,
-				)
-				color = color.Add(optics.Color3{r, g, b})
-			} else {
-				color = color.Add(h.TraceRGB(renderCamera, objTree, ray, index...))
-			}
+		for s := int64(0); s < session.Context.Samples; s++ {
+			color = color.Add(kernel.sampleRGB(
+				h,
+				session.Context.Camera,
+				session.Context.ObjectTree,
+				ray,
+				index...,
+			))
 		}
 
-		color = color.MulScalar(1.0 / float64(samples))
-
-		for ch := 0; ch < 3; ch++ {
-			film.Data[ch].Data[pixel] = color[ch]
-		}
+		color = color.MulScalar(1.0 / float64(session.Context.Samples))
+		session.Accumulator.SetRGB(pixel, color)
 
 	default:
 	}
@@ -85,6 +157,16 @@ func (h *Handler) TraceSpectral(
 	samples int64,
 	index ...int,
 ) []rendercamera.SpectralSample {
+	return h.traceSpectral(pathTracingKernel{}, renderCamera, objTree, samples, index...)
+}
+
+func (h *Handler) traceSpectral(
+	kernel pixelKernel,
+	renderCamera rendercamera.Camera,
+	objTree *object.ObjectTree,
+	samples int64,
+	index ...int,
+) []rendercamera.SpectralSample {
 	ray := h.RayPool.Get().(*optics.Ray)
 	ray.Geometry = h.SceneGeometry
 	defer h.RayPool.Put(ray)
@@ -102,13 +184,8 @@ func (h *Handler) TraceSpectral(
 			for w := 0; w < wavelengthSamples; w++ {
 				u := (float64(w) + rand.Float64()) / float64(wavelengthSamples)
 
-				wavelengthBatch = append(wavelengthBatch, h.TraceSpectralSample(
-					renderCamera,
-					objTree,
-					ray,
-					wavelengthSampler,
-					u,
-					index...,
+				wavelengthBatch = append(wavelengthBatch, kernel.sampleSpectral(
+					h, renderCamera, objTree, ray, wavelengthSampler.Sample(u), index...,
 				))
 			}
 
@@ -117,13 +194,8 @@ func (h *Handler) TraceSpectral(
 
 	case optics.SpectrumModeHeroWavelength:
 		for s := int64(0); s < samples; s++ {
-			spectralSamples = append(spectralSamples, h.TraceSpectralSample(
-				renderCamera,
-				objTree,
-				ray,
-				wavelengthSampler,
-				rand.Float64(),
-				index...,
+			spectralSamples = append(spectralSamples, kernel.sampleSpectral(
+				h, renderCamera, objTree, ray, wavelengthSampler.Sample(rand.Float64()), index...,
 			))
 		}
 
@@ -142,36 +214,9 @@ func (h *Handler) TraceSpectralSample(
 	u float64,
 	index ...int,
 ) rendercamera.SpectralSample {
-	renderCamera.GenerateRay(ray, index...)
-
-	sample := wavelengthSampler.Sample(u)
-	if h.Integrator == IntegratorBDPT {
-		spectrum := h.traceBidirectionalSample(
-			renderCamera,
-			objTree,
-			sample.LambdaNM,
-			sample.PDF,
-			index...,
-		)
-		value := spectrum.Sample(0)
-		return rendercamera.SpectralSample{
-			WavelengthNM: sample.LambdaNM,
-			Value:        optics.SpectralSampleRadiance(value, sample.PDF),
-		}
-	}
-	ray.SetSpectralSample(sample)
-
-	h.TraceRay(objTree, ray, 0)
-
-	value := optics.SpectralSampleRadiance(
-		optics.SpectralRayToScalar(ray),
-		ray.WavelengthPDF,
+	return pathTracingKernel{}.sampleSpectral(
+		h, renderCamera, objTree, ray, wavelengthSampler.Sample(u), index...,
 	)
-
-	return rendercamera.SpectralSample{
-		WavelengthNM: sample.LambdaNM,
-		Value:        value,
-	}
 }
 
 func (h *Handler) wavelengthSampleCount() int {

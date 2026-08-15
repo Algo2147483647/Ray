@@ -1,11 +1,6 @@
 package ray_tracing
 
 import (
-	"fmt"
-	"sync"
-	"sync/atomic"
-	"time"
-
 	"github.com/Algo2147483647/ray/engine/model/camera"
 	"github.com/Algo2147483647/ray/engine/model/object"
 	"github.com/Algo2147483647/ray/engine/model/optics"
@@ -14,70 +9,25 @@ import (
 const (
 	defaultSpectralBinCount = 64
 	defaultTileSize         = 8
-	progressInterval        = 100 * time.Millisecond
 )
 
-// TraceScene renders the object tree from the supplied camera into the film.
+// TraceScene selects one scene-level integrator and delegates the complete
+// render schedule to it.
 func (h *Handler) TraceScene(
 	renderCamera camera.Camera,
 	objectTree *object.ObjectTree,
 	film *camera.Film,
 	samples int64,
 	pixelWindows []camera.PixelWindow,
-) {
-	h.prepareFilm(film)
-
-	var (
-		shape       = film.Data[0].Shape
-		tiles       []TileCoordinate
-		totalPixels int64
-		progress    int64
-		done        = make(chan struct{})
-		workerCount = h.ThreadNum
-		nextTile    int64
-		wg          sync.WaitGroup
-	)
-	tiles, totalPixels = buildTileCoordinatesForWindows(shape, pixelWindows, h.BlockCols, h.BlockRows)
-
-	if workerCount <= 0 {
-		workerCount = 1
+) error {
+	integrator, err := NewSceneIntegrator(h.IntegratorKind, h)
+	if err != nil {
+		return err
 	}
-
-	wg.Add(workerCount)
-
-	go reportProgress(done, &progress, totalPixels)
-
-	for range workerCount {
-		go func() {
-			defer wg.Done()
-
-			for {
-				index := int(atomic.AddInt64(&nextTile, 1) - 1)
-				if index >= len(tiles) {
-					return
-				}
-
-				rendered := h.TraceTile(
-					renderCamera,
-					objectTree,
-					film,
-					samples,
-					tiles[index],
-				)
-
-				atomic.AddInt64(&progress, rendered)
-			}
-		}()
-	}
-
-	wg.Wait()
-
-	close(done)
-
-	if h.usesSpectralRendering(film) {
-		film.ConvertSpectralBinsToFilmColorSpace()
-	}
-	film.Samples = h.EffectiveSampleCount(samples)
+	return integrator.Render(RenderContext{
+		Camera: renderCamera, ObjectTree: objectTree, Film: film,
+		Samples: samples, PixelWindows: pixelWindows,
+	})
 }
 
 func (h *Handler) prepareFilm(film *camera.Film) {
@@ -100,44 +50,4 @@ func (h *Handler) prepareFilm(film *camera.Film) {
 
 func (h *Handler) usesSpectralRendering(film *camera.Film) bool {
 	return h.SpectrumMode != optics.SpectrumModeRGB && film.HasSpectralBins()
-}
-
-func reportProgress(done <-chan struct{}, progress *int64, totalPixels int64) {
-	start := time.Now()
-	ticker := time.NewTicker(progressInterval)
-	defer ticker.Stop()
-
-	print := func(current int64) {
-		if totalPixels == 0 {
-			fmt.Printf("\rRendering: 0/0 pixels (100.00%%) Time: %v", time.Since(start).Round(time.Second))
-			return
-		}
-		percent := float64(current) / float64(totalPixels) * 100
-		elapsed := time.Since(start).Round(time.Second)
-
-		fmt.Printf(
-			"\rRendering: %d/%d pixels (%.2f%%) Time: %v",
-			current,
-			totalPixels,
-			percent,
-			elapsed,
-		)
-	}
-
-	for {
-		select {
-		case <-done:
-			elapsed := time.Since(start).Round(time.Second)
-			fmt.Printf(
-				"\rRendering complete! Pixels: %d/%d (100%%) Time: %v\n",
-				totalPixels,
-				totalPixels,
-				elapsed,
-			)
-			return
-
-		case <-ticker.C:
-			print(atomic.LoadInt64(progress))
-		}
-	}
 }

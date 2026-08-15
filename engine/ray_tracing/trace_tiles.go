@@ -1,9 +1,6 @@
 package ray_tracing
 
-import (
-	"github.com/Algo2147483647/ray/engine/model/camera"
-	"github.com/Algo2147483647/ray/engine/model/object"
-)
+import "github.com/Algo2147483647/ray/engine/model/camera"
 
 type TileCoordinate struct {
 	X0 int
@@ -20,21 +17,19 @@ func (t TileCoordinate) pixelIndex(x, y int, shape []int) int {
 	return x
 }
 
-func (h *Handler) TraceTile(
-	renderCamera camera.Camera,
-	objectTree *object.ObjectTree,
-	film *camera.Film,
-	samples int64,
+func (h *Handler) traceTile(
+	kernel pixelKernel,
+	session *RenderSession,
 	tile TileCoordinate,
 ) int64 {
 	var rendered int64
 
 	for y := tile.Y0; y < tile.Y1; y++ {
 		for x := tile.X0; x < tile.X1; x++ {
-			pixel := tile.pixelIndex(x, y, film.Data[0].Shape)
-			coords := film.Data[0].GetCoordinates(pixel)
+			pixel := tile.pixelIndex(x, y, session.Context.Film.Data[0].Shape)
+			coords := session.Context.Film.Data[0].GetCoordinates(pixel)
 
-			h.TracePixel(renderCamera, objectTree, film, samples, pixel, coords...)
+			h.tracePixel(kernel, session, pixel, coords...)
 
 			rendered++
 		}

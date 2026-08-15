@@ -201,14 +201,28 @@ func (h *Handler) Render() *Handler {
 	start := time.Now()
 
 	renderHandler := ray_tracing.NewHandler()
-	renderHandler.Integrator = ray_tracing.Integrator(h.Config.Integrator)
+	integratorKind, err := ray_tracing.ParseIntegratorKind(h.Config.Integrator)
+	if err != nil {
+		h.err = err
+		return h
+	}
+	renderHandler.IntegratorKind = integratorKind
 	renderHandler.ThreadNum = h.Config.ThreadNum
 	renderHandler.SpectrumMode = renderSpectrumMode(h.Config.SpectrumMode)
 	renderHandler.WavelengthSamples = h.Config.WavelengthSamples
 	renderHandler.FilmColorSpace = h.Film.ColorSpace
 	renderHandler.SceneGeometry = h.Scene.Geometry
 	renderHandler.MaxArc = h.Scene.MaxArc
-	renderHandler.TraceScene(h.ActiveCamera, h.Scene.ObjectTree, h.Film, h.Config.Samples, h.Config.PixelWindows)
+	if err := renderHandler.TraceScene(
+		h.ActiveCamera,
+		h.Scene.ObjectTree,
+		h.Film,
+		h.Config.Samples,
+		h.Config.PixelWindows,
+	); err != nil {
+		h.err = err
+		return h
+	}
 
 	fmt.Printf("Rendering completed in %v\n", time.Since(start))
 	return h

@@ -11,7 +11,7 @@ import (
 )
 
 type Handler struct {
-	Integrator           Integrator               `json:"integrator"`
+	IntegratorKind       IntegratorKind           `json:"integrator"`
 	MaxRayLevel          int64                    `json:"max_ray_level"`
 	RussianRouletteDepth int64                    `json:"russian_roulette_depth"`
 	MaxArc               float64                  `json:"max_arc"` // total geodesic distance budget per ray (0 ⇒ unbounded)
@@ -28,7 +28,7 @@ type Handler struct {
 
 func NewHandler() *Handler {
 	return &Handler{
-		Integrator:           IntegratorPath,
+		IntegratorKind:       IntegratorPathTracing,
 		MaxRayLevel:          64,
 		RussianRouletteDepth: 3,
 		MaxArc:               0, // 0 means unbounded; set by scene factory for spherical scenes.

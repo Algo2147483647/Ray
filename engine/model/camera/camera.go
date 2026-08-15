@@ -5,10 +5,28 @@ import (
 	"math"
 
 	renderray "github.com/Algo2147483647/ray/engine/model/optics"
+	"gonum.org/v1/gonum/mat"
 )
 
 type Camera interface {
 	GenerateRay(res *renderray.Ray, index ...int) *renderray.Ray // Generates a ray for a given pixel index.
+}
+
+// FilmProjection describes the pinhole-camera mapping of a scene point.
+// Jacobian converts an area density at the point into a box-filtered pixel
+// density; callers multiply it by abs(dot(surfaceNormal, ToCamera)).
+type FilmProjection struct {
+	Pixel    int
+	ToCamera *mat.VecDense
+	Distance float64
+	Jacobian float64
+}
+
+// ProjectiveCamera is implemented by cameras that can receive light-tracing
+// splats. ProjectPoint is the inverse of GenerateRay's raster mapping.
+type ProjectiveCamera interface {
+	Camera
+	ProjectPoint(point *mat.VecDense) (FilmProjection, bool)
 }
 
 type CameraType string

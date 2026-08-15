@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/Algo2147483647/ray/engine/model/camera"
+	"github.com/Algo2147483647/ray/engine/ray_tracing"
 )
 
 const (
@@ -69,7 +70,7 @@ func ParseRenderOverrides(args []string) (RenderOverrides, error) {
 	flagSet := flag.NewFlagSet("ray", flag.ContinueOnError)
 	flagSet.SetOutput(io.Discard)
 	flagSet.Var(&scriptPaths, "script", "path to a canonical scene script")
-	flagSet.StringVar(&overrides.Integrator, "integrator", "", "light transport integrator: path, bdpt")
+	flagSet.StringVar(&overrides.Integrator, "integrator", "", "light transport integrator: path, bdpt, light_tracing")
 	flagSet.Var(&pixelWindowFlags, "pixel-window", "pixel render window, for example 100:150,600:650; repeat for multiple windows")
 	flagSet.IntVar(&overrides.Dimension, "dimension", 0, "scene dimension")
 	flagSet.IntVar(&overrides.CameraIndex, "camera-index", -1, "camera index to render")
@@ -149,12 +150,8 @@ func ParseRenderOverrides(args []string) (RenderOverrides, error) {
 }
 
 func isSupportedIntegrator(value string) bool {
-	switch value {
-	case "path", "bdpt":
-		return true
-	default:
-		return false
-	}
+	_, err := ray_tracing.ParseIntegratorKind(value)
+	return err == nil
 }
 
 func ResolveRenderConfig(script *parser.Script, overrides RenderOverrides) RenderConfig {

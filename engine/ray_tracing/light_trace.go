@@ -1,0 +1,131 @@
+package ray_tracing
+
+import (
+	"fmt"
+	"math/rand/v2"
+
+	"github.com/Algo2147483647/ray/engine/model/camera"
+	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
+	"github.com/Algo2147483647/ray/engine/model/object"
+	"github.com/Algo2147483647/ray/engine/model/optics"
+	"gonum.org/v1/gonum/mat"
+)
+
+// lightTracingKernel implements the t=1 algorithm while splatDriver owns
+// scheduling, synchronization, normalization and progress reporting.
+type lightTracingKernel struct {
+	projective camera.ProjectiveCamera
+	lights     []areaLight
+	totalArea  float64
+	activeMask []bool
+	pixelCount int
+	totalPaths int64
+}
+
+func (k *lightTracingKernel) Prepare(session *RenderSession) error {
+	projective, ok := session.Context.Camera.(camera.ProjectiveCamera)
+	if !ok {
+		return fmt.Errorf("light tracing requires a projective camera, got %T", session.Context.Camera)
+	}
+	k.projective = projective
+	k.lights, k.totalArea = collectAreaLights(session.Context.ObjectTree)
+	k.pixelCount = shapeElementCount(session.Context.Film.Data[0].Shape)
+	k.activeMask = make([]bool, k.pixelCount)
+	activePixels := int64(k.pixelCount)
+	if len(session.Context.PixelWindows) == 0 {
+		for pixel := range k.activeMask {
+			k.activeMask[pixel] = true
+		}
+	} else {
+		k.activeMask, activePixels = buildPixelWindowMask(
+			session.Context.Film.Data[0].Shape,
+			session.Context.PixelWindows,
+		)
+	}
+	if len(k.lights) == 0 || k.totalArea <= 0 || activePixels <= 0 {
+		k.totalPaths = 0
+		return nil
+	}
+	k.totalPaths = session.Context.Samples * activePixels
+	return nil
+}
+
+func (k *lightTracingKernel) WorkCount(*RenderSession) int64 {
+	return k.totalPaths
+}
+
+func (k *lightTracingKernel) TraceSample(session *RenderSession) []FilmSplat {
+	wavelengthNM := 0.0
+	wavelengthPDF := 0.0
+	if session.Handler.SpectrumMode != optics.SpectrumModeRGB {
+		wavelength := session.Handler.wavelengthSampler().Sample(rand.Float64())
+		wavelengthNM = wavelength.LambdaNM
+		wavelengthPDF = wavelength.PDF
+	}
+	path := session.Handler.buildLightSubpath(
+		session.Context.ObjectTree,
+		k.lights,
+		k.totalArea,
+		wavelengthNM,
+		wavelengthPDF,
+	)
+	splats := make([]FilmSplat, 0, len(path))
+	for vertexIndex := range path {
+		value, projection, valid := session.Handler.projectLightVertex(
+			k.projective,
+			session.Context.ObjectTree,
+			&path[vertexIndex],
+		)
+		if !valid || projection.Pixel < 0 || projection.Pixel >= k.pixelCount || !k.activeMask[projection.Pixel] {
+			continue
+		}
+		splats = append(splats, FilmSplat{
+			Pixel: projection.Pixel, WavelengthNM: wavelengthNM,
+			WavelengthPDF: wavelengthPDF, Value: value,
+		})
+	}
+	return splats
+}
+
+func (h *Handler) projectLightVertex(
+	renderCamera camera.ProjectiveCamera,
+	tree *object.ObjectTree,
+	vertex *bdptVertex,
+) (optics.Spectrum, camera.FilmProjection, bool) {
+	if vertex == nil || vertex.Point == nil || vertex.GeometricNormal == nil || vertex.Object == nil || vertex.Object.Material == nil {
+		return optics.Spectrum{}, camera.FilmProjection{}, false
+	}
+	projection, ok := renderCamera.ProjectPoint(vertex.Point)
+	if !ok {
+		return optics.Spectrum{}, camera.FilmProjection{}, false
+	}
+	cameraPoint := mat.VecDenseCopyOf(vertex.Point)
+	cameraPoint.AddScaledVec(cameraPoint, projection.Distance, projection.ToCamera)
+	if !visibleSegment(tree, vertex.Point, cameraPoint, projection.ToCamera, projection.Distance) {
+		return optics.Spectrum{}, camera.FilmProjection{}, false
+	}
+
+	cosCamera := absDot(vertex.GeometricNormal, projection.ToCamera)
+	if cosCamera <= 0 {
+		return optics.Spectrum{}, camera.FilmProjection{}, false
+	}
+	factor := projection.Jacobian * cosCamera
+
+	if vertex.LightEndpoint {
+		wo := vertex.Frame.WorldToLocal(projection.ToCamera)
+		value := vertex.Object.Material.Emission.Emit(vertex.Context, wo).Mul(vertex.Beta).MulScalar(factor)
+		return value, projection, validSpectrum(value)
+	}
+	if !vertex.Object.Material.HasSurface() || vertex.SampledDelta ||
+		vertex.Object.Material.Surface.DeltaFlags() != bxdf.DeltaNone {
+		return optics.Spectrum{}, camera.FilmProjection{}, false
+	}
+
+	wi := vertex.Frame.WorldToLocal(projection.ToCamera)
+	f := vertex.Object.Material.Surface.Eval(vertex.Context, wi, vertex.WoLocal)
+	if f.IsZero() {
+		return optics.Spectrum{}, camera.FilmProjection{}, false
+	}
+	value := vertex.Beta.Mul(f).MulScalar(factor)
+	return value, projection, validSpectrum(value)
+}

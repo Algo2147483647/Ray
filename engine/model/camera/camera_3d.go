@@ -5,6 +5,7 @@ import (
 	"github.com/Algo2147483647/ray/engine/maths"
 	renderray "github.com/Algo2147483647/ray/engine/model/optics"
 	"gonum.org/v1/gonum/mat"
+	"math"
 	"math/rand/v2"
 )
 
@@ -96,4 +97,58 @@ func (c *Camera3D) GenerateRay(res *renderray.Ray, index ...int) *renderray.Ray 
 	maths.Normalize(res.Direction)
 
 	return res
+}
+
+// ProjectPoint maps a world-space point to the box-filtered pinhole film.
+// The returned Jacobian omits the receiving surface cosine because the camera
+// does not know that surface's normal.
+func (c *Camera3D) ProjectPoint(point *mat.VecDense) (FilmProjection, bool) {
+	if point == nil || point.Len() != 3 {
+		return FilmProjection{}, false
+	}
+	if !c.prepared {
+		if err := c.Prepare(); err != nil {
+			return FilmProjection{}, false
+		}
+	}
+
+	fromCamera := mat.NewVecDense(3, nil)
+	fromCamera.SubVec(point, c.Position)
+	forwardDistance := mat.Dot(fromCamera, c.dir)
+	if forwardDistance <= 0 {
+		return FilmProjection{}, false
+	}
+
+	distance := mat.Norm(fromCamera, 2)
+	if distance <= 0 || math.IsNaN(distance) || math.IsInf(distance, 0) {
+		return FilmProjection{}, false
+	}
+	x := mat.Dot(fromCamera, c.right) / forwardDistance
+	y := mat.Dot(fromCamera, c.up) / forwardDistance
+	u := x / c.halfWidth
+	v := -y / c.halfHeight
+	if u < -1 || u >= 1 || v < -1 || v >= 1 {
+		return FilmProjection{}, false
+	}
+
+	pixelX := int((u + 1) * 0.5 * float64(c.Width))
+	pixelY := int((v + 1) * 0.5 * float64(c.Height))
+	if pixelX < 0 || pixelX >= c.Width || pixelY < 0 || pixelY >= c.Height {
+		return FilmProjection{}, false
+	}
+
+	cosAxis := forwardDistance / distance
+	denominator := 4 * c.halfWidth * c.halfHeight * cosAxis * cosAxis * cosAxis * distance * distance
+	if denominator <= 0 || math.IsNaN(denominator) || math.IsInf(denominator, 0) {
+		return FilmProjection{}, false
+	}
+
+	toCamera := mat.VecDenseCopyOf(fromCamera)
+	toCamera.ScaleVec(-1/distance, toCamera)
+	return FilmProjection{
+		Pixel:    pixelY*c.Width + pixelX,
+		ToCamera: toCamera,
+		Distance: distance,
+		Jacobian: float64(c.Width*c.Height) / denominator,
+	}, true
 }
