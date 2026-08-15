@@ -1,5 +1,43 @@
 {
   "_comment": "Single-source wall-projection camera and default verification quality.",
+  "objects": [
+    {
+      "id": "screen-frame-left",
+      "shape": "cylinder",
+      "center": [-3.99, -0.76, 1],
+      "axis": [0, 0, 1],
+      "r": 0.018,
+      "height": 1.84,
+      "material_id": "apparatus-dark"
+    },
+    {
+      "id": "screen-frame-right",
+      "shape": "cylinder",
+      "center": [-3.99, 0.76, 1],
+      "axis": [0, 0, 1],
+      "r": 0.018,
+      "height": 1.84,
+      "material_id": "apparatus-dark"
+    },
+    {
+      "id": "screen-frame-bottom",
+      "shape": "cylinder",
+      "center": [-3.99, 0, 0.08],
+      "axis": [0, 1, 0],
+      "r": 0.018,
+      "height": 1.52,
+      "material_id": "apparatus-dark"
+    },
+    {
+      "id": "screen-frame-top",
+      "shape": "cylinder",
+      "center": [-3.99, 0, 1.92],
+      "axis": [0, 1, 0],
+      "r": 0.018,
+      "height": 1.52,
+      "material_id": "apparatus-dark"
+    }
+  ],
   "cameras": [
     {
       "id": "prism-diagnostic-camera",

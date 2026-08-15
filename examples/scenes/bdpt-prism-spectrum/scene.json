@@ -135,6 +135,7 @@
     },
     {
       "id": "aperture-lower",
+      "_comment": "Matte-black negative-y collimator baffle; together with aperture-upper it leaves only y=[0.145,0.22] open.",
       "shape": "cuboid",
       "pmin": [0.18, -0.45, 0.3],
       "pmax": [0.22, 0.145, 1.7],
@@ -142,6 +143,7 @@
     },
     {
       "id": "aperture-upper",
+      "_comment": "Matte-black positive-y collimator baffle; it blocks off-axis slit rays before they reach the prism.",
       "shape": "cuboid",
       "pmin": [0.18, 0.22, 0.3],
       "pmax": [0.22, 0.45, 1.7],
@@ -152,7 +154,7 @@
       "id": "projection-screen",
       "shape": "cuboid",
       "pmin": [-4.02, -0.75, 0.1],
-      "pmax": [-4, 0.75, 1.9],
+      "pmax": [-4, 0.75, 2.8],
       "material_id": "white-screen"
     },
     {
@@ -182,56 +184,6 @@
       "pmin": [1.86, -0.55, 1.75],
       "pmax": [1.9, 0.25, 1.79],
       "material_id": "aged-brass"
-    },
-    {
-      "id": "screen-frame-left",
-      "shape": "cylinder",
-      "center": [-3.99, -0.76, 1],
-      "axis": [0, 0, 1],
-      "r": 0.018,
-      "height": 1.84,
-      "material_id": "aged-brass"
-    },
-    {
-      "id": "screen-frame-right",
-      "shape": "cylinder",
-      "center": [-3.99, 0.76, 1],
-      "axis": [0, 0, 1],
-      "r": 0.018,
-      "height": 1.84,
-      "material_id": "aged-brass"
-    },
-    {
-      "id": "screen-frame-bottom",
-      "shape": "cylinder",
-      "center": [-3.99, 0, 0.08],
-      "axis": [0, 1, 0],
-      "r": 0.018,
-      "height": 1.52,
-      "material_id": "aged-brass"
-    },
-    {
-      "id": "screen-frame-top",
-      "shape": "cylinder",
-      "center": [-3.99, 0, 1.92],
-      "axis": [0, 1, 0],
-      "r": 0.018,
-      "height": 1.52,
-      "material_id": "aged-brass"
-    },
-    {
-      "id": "darkroom-floor",
-      "shape": "cuboid",
-      "pmin": [-4.45, -6, -0.12],
-      "pmax": [2.35, 1.7, 0],
-      "material_id": "aged-oak"
-    },
-    {
-      "id": "darkroom-back-wall",
-      "shape": "cuboid",
-      "pmin": [-4.5, 1.62, 0],
-      "pmax": [2.4, 1.68, 3.1],
-      "material_id": "darkroom-blue"
     },
     {
       "id": "optical-bench-top",
@@ -439,15 +391,6 @@
       "pmin": [-1.02, -1.02, 0.005],
       "pmax": [-0.28, -0.86, 0.018],
       "material_id": "paper-label"
-    },
-    {
-      "id": "practical-lamp-rod",
-      "shape": "cylinder",
-      "center": [0.62, -1.2, 2.79],
-      "axis": [0, 0, 1],
-      "r": 0.012,
-      "height": 0.58,
-      "material_id": "aged-brass"
     }
   ]
 }
