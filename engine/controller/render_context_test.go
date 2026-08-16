@@ -90,7 +90,7 @@ func TestParseRenderArgsAcceptsWidths(t *testing.T) {
 	if err != nil {
 		t.Fatalf("parse widths: %v", err)
 	}
-	assertIntSlice(t, context.FilmShape, []int{1920, 1080})
+	assertIntSlice(t, context.FilmShapeOverride, []int{1920, 1080})
 }
 
 func TestParseRenderArgsRejectsLegacyWidthFlag(t *testing.T) {
@@ -130,10 +130,10 @@ func TestResolveRenderContextsExpandsRenderJobs(t *testing.T) {
 	if len(contexts) != 2 {
 		t.Fatalf("expected two render contexts, got %d", len(contexts))
 	}
-	if contexts[0].Samples != 8 || contexts[0].FilmShape[0] != 320 || contexts[0].OutputFilm != "front.bin" {
+	if contexts[0].Samples != 8 || contexts[0].CameraIndex != 0 || contexts[0].OutputFilm != "front.bin" {
 		t.Fatalf("unexpected first render context: %+v", contexts[0])
 	}
-	if contexts[1].Samples != 32 || contexts[1].FilmShape[0] != 640 || contexts[1].OutputFilm != "detail.bin" {
+	if contexts[1].Samples != 32 || contexts[1].CameraIndex != 1 || contexts[1].OutputFilm != "detail.bin" {
 		t.Fatalf("unexpected second render context: %+v", contexts[1])
 	}
 }
@@ -238,9 +238,9 @@ func TestConfigureRenderContextRejectsOutOfBoundsPixelWindow(t *testing.T) {
 	h.Scene.Cameras = []camera.RayCamera{cam}
 
 	h.ConfigureRenderContext(RenderContext{
-		CameraIndex:  0,
-		FilmShape:    []int{10, 10},
-		PixelWindows: []camera.PixelWindow{{Min: []int{9, 0}, Max: []int{11, 1}}},
+		CameraIndex:       0,
+		FilmShapeOverride: []int{10, 10},
+		PixelWindows:      []camera.PixelWindow{{Min: []int{9, 0}, Max: []int{11, 1}}},
 	})
 
 	if h.err == nil {

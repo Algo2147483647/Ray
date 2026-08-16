@@ -9,6 +9,7 @@ import (
 	"slices"
 
 	"github.com/Algo2147483647/ray/engine/maths"
+	"github.com/Algo2147483647/ray/engine/utils/binaryio"
 )
 
 var filmFileMagic = [8]byte{'R', 'A', 'Y', 'F', 'I', 'L', 'M', 0}
@@ -20,185 +21,242 @@ const (
 	maxFilmSpectralBins uint32 = 4096
 )
 
-func (f *Film) SaveToFile(filename string) error {
-	shape, elementCount, spectralCount, err := validateFilmForWrite(f)
-	if err != nil {
-		return err
-	}
-	file, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
-	writeErr := f.writeFilm(file, shape, elementCount, spectralCount)
-	closeErr := file.Close()
-	if writeErr != nil {
-		return writeErr
-	}
-	return closeErr
+var filmByteOrder = binary.LittleEndian
+
+type filmFileHeader struct {
+	Magic   [8]byte
+	Version uint32
+	Samples int64
+	Rank    uint32
 }
 
-func (f *Film) writeFilm(w io.Writer, shape []int, elementCount int, spectralCount uint32) error {
-	if err := writeFull(w, filmFileMagic[:]); err != nil {
+type filmSpectrumHeader struct {
+	BinCount uint32
+	MinNM    float64
+	MaxNM    float64
+}
+
+type filmFileMetadata struct {
+	Samples      int64
+	Shape        []int
+	BinCount     int
+	MinNM        float64
+	MaxNM        float64
+	ElementCount int
+}
+
+func (f *Film) SaveToFile(filename string) error {
+	metadata, err := metadataForFilm(f)
+	if err != nil {
 		return err
 	}
-	for _, value := range []interface{}{filmFileVersion, f.Samples, uint32(len(shape))} {
-		if err := binary.Write(w, binary.LittleEndian, value); err != nil {
-			return err
-		}
+
+	file, err := os.Create(filename)
+	if err != nil {
+		return fmt.Errorf("create Film %q: %w", filename, err)
 	}
-	for _, extent := range shape {
-		if err := binary.Write(w, binary.LittleEndian, uint64(extent)); err != nil {
-			return err
-		}
+	if err := writeFilm(file, f, metadata); err != nil {
+		_ = file.Close()
+		return fmt.Errorf("write Film %q: %w", filename, err)
 	}
-	for _, value := range []interface{}{spectralCount, f.SpectralMinNM, f.SpectralMaxNM} {
-		if err := binary.Write(w, binary.LittleEndian, value); err != nil {
-			return err
-		}
-	}
-	buffer := make([]byte, filmFloatChunkBytes)
-	for bin := range f.SpectralBins {
-		if err := writeFloat64Blocks(w, f.SpectralBins[bin].Data[:elementCount], buffer); err != nil {
-			return fmt.Errorf("write spectral plane %d: %w", bin, err)
-		}
+	if err := file.Close(); err != nil {
+		return fmt.Errorf("close Film %q: %w", filename, err)
 	}
 	return nil
 }
 
 func (f *Film) LoadFromFile(filename string) error {
+	if f == nil {
+		return fmt.Errorf("cannot load into a nil Film")
+	}
+
 	file, err := os.Open(filename)
 	if err != nil {
-		return err
+		return fmt.Errorf("open Film %q: %w", filename, err)
 	}
 	defer file.Close()
-	stat, err := file.Stat()
-	if err != nil {
-		return err
-	}
-	return f.readFilm(file, stat.Size())
-}
 
-func (f *Film) readFilm(file *os.File, fileSize int64) error {
-	var magic [8]byte
-	if _, err := io.ReadFull(file, magic[:]); err != nil {
-		return fmt.Errorf("read Film magic: %w", err)
-	}
-	if magic != filmFileMagic {
-		return fmt.Errorf("unsupported Film file: invalid magic")
-	}
-	var version uint32
-	if err := binary.Read(file, binary.LittleEndian, &version); err != nil {
-		return fmt.Errorf("read Film version: %w", err)
-	}
-	if version != filmFileVersion {
-		return fmt.Errorf("unsupported Film version %d; expected %d", version, filmFileVersion)
-	}
-	var samples int64
-	if err := binary.Read(file, binary.LittleEndian, &samples); err != nil {
-		return fmt.Errorf("read Film sample count: %w", err)
-	}
-	if samples < 0 {
-		return fmt.Errorf("invalid Film sample count %d", samples)
-	}
-	var rank uint32
-	if err := binary.Read(file, binary.LittleEndian, &rank); err != nil {
-		return fmt.Errorf("read Film rank: %w", err)
-	}
-	if rank == 0 || rank > maxFilmRank {
-		return fmt.Errorf("invalid Film rank %d", rank)
-	}
-	shape := make([]int, rank)
-	maxInt := uint64(^uint(0) >> 1)
-	for i := range shape {
-		var extent uint64
-		if err := binary.Read(file, binary.LittleEndian, &extent); err != nil {
-			return fmt.Errorf("read Film dimension %d: %w", i, err)
-		}
-		if extent == 0 || extent > maxInt {
-			return fmt.Errorf("invalid Film dimension %d at axis %d", extent, i)
-		}
-		shape[i] = int(extent)
-	}
-	elementCount, err := checkedElementCount(shape)
+	loaded, err := readFilm(file)
 	if err != nil {
-		return err
+		return fmt.Errorf("read Film %q: %w", filename, err)
 	}
-	var spectralCount uint32
-	if err := binary.Read(file, binary.LittleEndian, &spectralCount); err != nil {
-		return fmt.Errorf("read Film spectral-bin count: %w", err)
-	}
-	if spectralCount == 0 || spectralCount > maxFilmSpectralBins {
-		return fmt.Errorf("invalid Film spectral-bin count %d", spectralCount)
-	}
-	var spectralMin, spectralMax float64
-	if err := binary.Read(file, binary.LittleEndian, &spectralMin); err != nil {
-		return fmt.Errorf("read Film spectral minimum: %w", err)
-	}
-	if err := binary.Read(file, binary.LittleEndian, &spectralMax); err != nil {
-		return fmt.Errorf("read Film spectral maximum: %w", err)
-	}
-	if !(spectralMin > 0) || !(spectralMax > spectralMin) || math.IsInf(spectralMin, 0) || math.IsInf(spectralMax, 0) {
-		return fmt.Errorf("invalid Film spectral range [%v, %v]", spectralMin, spectralMax)
-	}
-	position, err := file.Seek(0, io.SeekCurrent)
-	if err != nil {
-		return err
-	}
-	expectedBytes, err := checkedPlaneBytes(elementCount, int(spectralCount))
-	if err != nil {
-		return err
-	}
-	if remaining := fileSize - position; remaining != expectedBytes {
-		return fmt.Errorf("invalid Film payload size %d; expected %d", remaining, expectedBytes)
-	}
-	bins := make([]maths.Tensor[float64], spectralCount)
-	for i := range bins {
-		bins[i] = *maths.NewTensor[float64](shape)
-	}
-	buffer := make([]byte, filmFloatChunkBytes)
-	for bin := range bins {
-		if err := readFloat64Blocks(file, bins[bin].Data, buffer); err != nil {
-			return fmt.Errorf("read spectral plane %d: %w", bin, err)
-		}
-	}
-	f.Shape = shape
-	f.Samples = samples
-	f.SpectralBins = bins
-	f.SpectralMinNM = spectralMin
-	f.SpectralMaxNM = spectralMax
+
+	// Commit only after the complete file has been decoded successfully.
+	f.Shape = loaded.Shape
+	f.Samples = loaded.Samples
+	f.SpectralBins = loaded.SpectralBins
+	f.SpectralMinNM = loaded.SpectralMinNM
+	f.SpectralMaxNM = loaded.SpectralMaxNM
 	return nil
 }
 
-func validateFilmForWrite(f *Film) ([]int, int, uint32, error) {
-	if f == nil {
-		return nil, 0, 0, fmt.Errorf("cannot save a nil Film")
+func writeFilm(w io.Writer, film *Film, metadata filmFileMetadata) error {
+	header := filmFileHeader{
+		Magic:   filmFileMagic,
+		Version: filmFileVersion,
+		Samples: metadata.Samples,
+		Rank:    uint32(len(metadata.Shape)),
 	}
-	if len(f.Shape) == 0 || len(f.Shape) > int(maxFilmRank) {
-		return nil, 0, 0, fmt.Errorf("invalid Film rank %d", len(f.Shape))
+	if err := binary.Write(w, filmByteOrder, header); err != nil {
+		return fmt.Errorf("header: %w", err)
 	}
-	elementCount, err := checkedElementCount(f.Shape)
-	if err != nil {
-		return nil, 0, 0, err
+
+	dimensions := make([]uint64, len(metadata.Shape))
+	for axis, extent := range metadata.Shape {
+		dimensions[axis] = uint64(extent)
 	}
-	if f.Samples < 0 {
-		return nil, 0, 0, fmt.Errorf("invalid Film sample count %d", f.Samples)
+	if err := binary.Write(w, filmByteOrder, dimensions); err != nil {
+		return fmt.Errorf("shape: %w", err)
 	}
-	if len(f.SpectralBins) == 0 || len(f.SpectralBins) > int(maxFilmSpectralBins) {
-		return nil, 0, 0, fmt.Errorf("invalid Film spectral-bin count %d", len(f.SpectralBins))
+
+	spectrum := filmSpectrumHeader{
+		BinCount: uint32(metadata.BinCount),
+		MinNM:    metadata.MinNM,
+		MaxNM:    metadata.MaxNM,
 	}
-	if !(f.SpectralMinNM > 0) || !(f.SpectralMaxNM > f.SpectralMinNM) ||
-		math.IsInf(f.SpectralMinNM, 0) || math.IsInf(f.SpectralMaxNM, 0) {
-		return nil, 0, 0, fmt.Errorf("invalid Film spectral range [%v, %v]", f.SpectralMinNM, f.SpectralMaxNM)
+	if err := binary.Write(w, filmByteOrder, spectrum); err != nil {
+		return fmt.Errorf("spectrum header: %w", err)
 	}
-	for bin := range f.SpectralBins {
-		if !slices.Equal(f.SpectralBins[bin].Shape, f.Shape) || len(f.SpectralBins[bin].Data) != elementCount {
-			return nil, 0, 0, fmt.Errorf("Film spectral plane %d does not match shape %v", bin, f.Shape)
+
+	buffer := make([]byte, filmFloatChunkBytes)
+	for bin := range film.SpectralBins {
+		if err := binaryio.WriteFloat64s(w, filmByteOrder, film.SpectralBins[bin].Data, buffer); err != nil {
+			return fmt.Errorf("spectral plane %d: %w", bin, err)
 		}
 	}
-	if _, err := checkedPlaneBytes(elementCount, len(f.SpectralBins)); err != nil {
-		return nil, 0, 0, err
+	return nil
+}
+
+func readFilm(r io.Reader) (*Film, error) {
+	metadata, err := readFilmMetadata(r)
+	if err != nil {
+		return nil, err
 	}
-	return f.Shape, elementCount, uint32(len(f.SpectralBins)), nil
+
+	film := &Film{
+		Shape:         metadata.Shape,
+		Samples:       metadata.Samples,
+		SpectralBins:  make([]maths.Tensor[float64], metadata.BinCount),
+		SpectralMinNM: metadata.MinNM,
+		SpectralMaxNM: metadata.MaxNM,
+	}
+	buffer := make([]byte, filmFloatChunkBytes)
+	for bin := range film.SpectralBins {
+		film.SpectralBins[bin] = *maths.NewTensor[float64](metadata.Shape)
+		if err := binaryio.ReadFloat64s(r, filmByteOrder, film.SpectralBins[bin].Data, buffer); err != nil {
+			return nil, fmt.Errorf("spectral plane %d: %w", bin, err)
+		}
+	}
+	if err := binaryio.RequireEOF(r); err != nil {
+		return nil, err
+	}
+	return film, nil
+}
+
+func readFilmMetadata(r io.Reader) (filmFileMetadata, error) {
+	var header filmFileHeader
+	if err := binary.Read(r, filmByteOrder, &header); err != nil {
+		return filmFileMetadata{}, fmt.Errorf("header: %w", err)
+	}
+	if header.Magic != filmFileMagic {
+		return filmFileMetadata{}, fmt.Errorf("invalid magic")
+	}
+	if header.Version != filmFileVersion {
+		return filmFileMetadata{}, fmt.Errorf("unsupported version %d; expected %d", header.Version, filmFileVersion)
+	}
+	if header.Rank == 0 || header.Rank > maxFilmRank {
+		return filmFileMetadata{}, fmt.Errorf("invalid rank %d", header.Rank)
+	}
+
+	dimensions := make([]uint64, header.Rank)
+	if err := binary.Read(r, filmByteOrder, dimensions); err != nil {
+		return filmFileMetadata{}, fmt.Errorf("shape: %w", err)
+	}
+	shape, err := decodeFilmShape(dimensions)
+	if err != nil {
+		return filmFileMetadata{}, err
+	}
+
+	var spectrum filmSpectrumHeader
+	if err := binary.Read(r, filmByteOrder, &spectrum); err != nil {
+		return filmFileMetadata{}, fmt.Errorf("spectrum header: %w", err)
+	}
+	metadata := filmFileMetadata{
+		Samples:  header.Samples,
+		Shape:    shape,
+		BinCount: int(spectrum.BinCount),
+		MinNM:    spectrum.MinNM,
+		MaxNM:    spectrum.MaxNM,
+	}
+	if err := metadata.validate(); err != nil {
+		return filmFileMetadata{}, err
+	}
+	return metadata, nil
+}
+
+func metadataForFilm(film *Film) (filmFileMetadata, error) {
+	if film == nil {
+		return filmFileMetadata{}, fmt.Errorf("cannot save a nil Film")
+	}
+	metadata := filmFileMetadata{
+		Samples:  film.Samples,
+		Shape:    film.Shape,
+		BinCount: len(film.SpectralBins),
+		MinNM:    film.SpectralMinNM,
+		MaxNM:    film.SpectralMaxNM,
+	}
+	if err := metadata.validate(); err != nil {
+		return filmFileMetadata{}, err
+	}
+	for bin := range film.SpectralBins {
+		plane := &film.SpectralBins[bin]
+		if !slices.Equal(plane.Shape, metadata.Shape) || len(plane.Data) != metadata.ElementCount {
+			return filmFileMetadata{}, fmt.Errorf("spectral plane %d does not match Film shape %v", bin, metadata.Shape)
+		}
+	}
+	return metadata, nil
+}
+
+func (metadata *filmFileMetadata) validate() error {
+	if metadata.Samples < 0 {
+		return fmt.Errorf("invalid sample count %d", metadata.Samples)
+	}
+	if len(metadata.Shape) == 0 || len(metadata.Shape) > int(maxFilmRank) {
+		return fmt.Errorf("invalid rank %d", len(metadata.Shape))
+	}
+	elementCount, err := checkedElementCount(metadata.Shape)
+	if err != nil {
+		return err
+	}
+	if metadata.BinCount <= 0 || metadata.BinCount > int(maxFilmSpectralBins) {
+		return fmt.Errorf("invalid spectral-bin count %d", metadata.BinCount)
+	}
+	if !validSpectralRange(metadata.MinNM, metadata.MaxNM) {
+		return fmt.Errorf("invalid spectral range [%v, %v]", metadata.MinNM, metadata.MaxNM)
+	}
+	if _, err := checkedPayloadBytes(elementCount, metadata.BinCount); err != nil {
+		return err
+	}
+	metadata.ElementCount = elementCount
+	return nil
+}
+
+func decodeFilmShape(dimensions []uint64) ([]int, error) {
+	maxInt := uint64(^uint(0) >> 1)
+	shape := make([]int, len(dimensions))
+	for axis, extent := range dimensions {
+		if extent == 0 || extent > maxInt {
+			return nil, fmt.Errorf("invalid dimension %d at axis %d", extent, axis)
+		}
+		shape[axis] = int(extent)
+	}
+	return shape, nil
+}
+
+func validSpectralRange(minNM, maxNM float64) bool {
+	return minNM > 0 && maxNM > minNM &&
+		!math.IsNaN(minNM) && !math.IsNaN(maxNM) &&
+		!math.IsInf(minNM, 0) && !math.IsInf(maxNM, 0)
 }
 
 func checkedElementCount(shape []int) (int, error) {
@@ -213,57 +271,13 @@ func checkedElementCount(shape []int) (int, error) {
 	return count, nil
 }
 
-func checkedPlaneBytes(elementCount, planeCount int) (int64, error) {
-	if elementCount <= 0 || planeCount <= 0 {
+func checkedPayloadBytes(elementCount, binCount int) (int64, error) {
+	if elementCount <= 0 || binCount <= 0 {
 		return 0, fmt.Errorf("invalid Film payload dimensions")
 	}
 	maxInt64 := uint64(^uint64(0) >> 1)
-	if uint64(elementCount) > maxInt64/uint64(planeCount)/8 {
+	if uint64(elementCount) > maxInt64/uint64(binCount)/8 {
 		return 0, fmt.Errorf("Film payload is too large")
 	}
-	return int64(uint64(elementCount) * uint64(planeCount) * 8), nil
-}
-
-func writeFloat64Blocks(w io.Writer, values []float64, buffer []byte) error {
-	valuesPerBlock := len(buffer) / 8
-	for start := 0; start < len(values); start += valuesPerBlock {
-		end := min(start+valuesPerBlock, len(values))
-		block := buffer[:(end-start)*8]
-		for i, value := range values[start:end] {
-			binary.LittleEndian.PutUint64(block[i*8:], math.Float64bits(value))
-		}
-		if err := writeFull(w, block); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func readFloat64Blocks(r io.Reader, values []float64, buffer []byte) error {
-	valuesPerBlock := len(buffer) / 8
-	for start := 0; start < len(values); start += valuesPerBlock {
-		end := min(start+valuesPerBlock, len(values))
-		block := buffer[:(end-start)*8]
-		if _, err := io.ReadFull(r, block); err != nil {
-			return err
-		}
-		for i := range values[start:end] {
-			values[start+i] = math.Float64frombits(binary.LittleEndian.Uint64(block[i*8:]))
-		}
-	}
-	return nil
-}
-
-func writeFull(w io.Writer, data []byte) error {
-	for len(data) > 0 {
-		written, err := w.Write(data)
-		if err != nil {
-			return err
-		}
-		if written == 0 {
-			return io.ErrShortWrite
-		}
-		data = data[written:]
-	}
-	return nil
+	return int64(elementCount) * int64(binCount) * 8, nil
 }

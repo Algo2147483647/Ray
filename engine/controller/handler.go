@@ -2,8 +2,6 @@ package controller
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/Algo2147483647/ray/engine/controller/factory"
@@ -73,18 +71,25 @@ func (h *Handler) ConfigureRenderContext(context RenderContext) *Handler {
 		return h
 	}
 
-	renderCamera, err := h.selectRenderCamera(context.CameraIndex)
+	var err error
+
+	h.Camera, err = h.selectRenderCamera(context.CameraIndex)
 	if err != nil {
 		h.err = err
 		return h
 	}
-	film := renderCamera.GetFilm()
+
+	film := h.Camera.GetFilm()
 	if film == nil {
 		h.err = fmt.Errorf("camera %q has no film", context.CameraID)
 		return h
 	}
 
-	filmShape := append([]int(nil), context.FilmShape...)
+	filmShape := film.Shape
+	if len(context.FilmShapeOverride) > 0 {
+		film.Shape = append(film.Shape[:0], context.FilmShapeOverride...)
+		filmShape = film.Shape
+	}
 	if len(filmShape) == 0 {
 		h.err = fmt.Errorf("camera %q film shape is not configured", context.CameraID)
 		return h
@@ -98,8 +103,6 @@ func (h *Handler) ConfigureRenderContext(context RenderContext) *Handler {
 
 	context.PixelWindows = normalizedWindows
 	h.Context = context
-	film.Shape = append(film.Shape[:0], filmShape...)
-	h.Camera = renderCamera
 	return h
 }
 
@@ -113,6 +116,7 @@ func (h *Handler) RenderJobs() *Handler {
 		if len(jobs) > 1 {
 			fmt.Printf("Starting render job %d/%d\n", idx+1, len(jobs))
 		}
+
 		h.ConfigureRenderContext(context).
 			Render().
 			SaveFilm(h.Context.OutputFilm)
@@ -154,6 +158,7 @@ func (h *Handler) Render() *Handler {
 		h.err = fmt.Errorf("render camera is not configured")
 		return h
 	}
+
 	film := h.Camera.GetFilm()
 	if film == nil {
 		h.err = fmt.Errorf("film is not initialized")
@@ -164,13 +169,14 @@ func (h *Handler) Render() *Handler {
 	fmt.Println("Starting rendering...")
 	start := time.Now()
 
+	var err error
+
 	renderHandler := ray_tracing.NewHandler()
-	integratorKind, err := ray_tracing.ParseIntegratorKind(h.Context.Integrator)
+	renderHandler.IntegratorKind, err = ray_tracing.ParseIntegratorKind(h.Context.Integrator)
 	if err != nil {
 		h.err = err
 		return h
 	}
-	renderHandler.IntegratorKind = integratorKind
 	renderHandler.ThreadNum = h.Context.ThreadNum
 	renderHandler.SpectrumMode = renderSpectrumMode(h.Context.SpectrumMode)
 	renderHandler.WavelengthSamples = h.Context.WavelengthSamples
@@ -204,27 +210,11 @@ func (h *Handler) SaveFilm(filename string) *Handler {
 		return h
 	}
 
-	if err := ensureParentDir(filename); err != nil {
-		h.err = err
-		return h
-	}
-
-	if h.Camera == nil || h.Camera.GetFilm() == nil {
-		h.err = fmt.Errorf("film is not initialized")
-		return h
-	}
-	if err := h.Camera.GetFilm().SaveToFile(filename); err != nil {
+	err := h.Camera.GetFilm().SaveToFile(filename)
+	if err != nil {
 		h.err = err
 		return h
 	}
 
 	return h
-}
-
-func ensureParentDir(filename string) error {
-	dir := filepath.Dir(filename)
-	if dir == "." || dir == "" {
-		return nil
-	}
-	return os.MkdirAll(dir, 0o755)
 }

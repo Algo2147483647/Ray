@@ -26,7 +26,7 @@ type RenderContext struct {
 	CameraID          string
 	CameraIndex       int
 	ThreadNum         int
-	FilmShape         []int
+	FilmShapeOverride []int
 	Samples           int64
 	OutputFilm        string
 	SpectrumMode      string
@@ -56,7 +56,7 @@ func (h *Handler) ParseRenderArgs(args []string) *Handler {
 	flagSet.Func("widths", "film dimensions, for example 1920,1080", func(value string) error {
 		width, err := parseWidths(value)
 		if err == nil {
-			context.FilmShape = width
+			context.FilmShapeOverride = width
 		}
 		return err
 	})
@@ -232,8 +232,8 @@ func applyRequestedContext(context RenderContext, requested RenderContext) Rende
 	if requested.ThreadNum > 0 {
 		context.ThreadNum = requested.ThreadNum
 	}
-	if len(requested.FilmShape) > 0 {
-		context.FilmShape = append([]int(nil), requested.FilmShape...)
+	if len(requested.FilmShapeOverride) > 0 {
+		context.FilmShapeOverride = append([]int(nil), requested.FilmShapeOverride...)
 	}
 	if requested.Samples > 0 {
 		context.Samples = requested.Samples
@@ -278,7 +278,6 @@ func resolveCameraContext(script *parser.Script, context RenderContext, requeste
 	context.CameraIndex = index
 	context.CameraID = def.ID
 	if def.Film != nil {
-		context.FilmShape = append([]int(nil), def.Film.Shape...)
 		context.PixelWindows = clonePixelWindows(def.Film.PixelWindows)
 		if def.Film.OutputFilm != "" {
 			context.OutputFilm = def.Film.OutputFilm

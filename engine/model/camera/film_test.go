@@ -85,3 +85,44 @@ func TestSpectralFilmChunkedPayloadRoundTrip(t *testing.T) {
 		}
 	}
 }
+
+func TestSpectralFilmRejectsTrailingData(t *testing.T) {
+	film := NewFilm(2, 1)
+	film.InitSpectralBins(1, 380, 750)
+	path := filepath.Join(t.TempDir(), "trailing.bin")
+	if err := film.SaveToFile(path); err != nil {
+		t.Fatal(err)
+	}
+	file, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := file.Write([]byte{0}); err != nil {
+		file.Close()
+		t.Fatal(err)
+	}
+	if err := file.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := NewFilm().LoadFromFile(path); err == nil {
+		t.Fatal("expected trailing Film data to be rejected")
+	}
+}
+
+func TestSpectralFilmLoadFailureDoesNotMutateReceiver(t *testing.T) {
+	film := NewFilm(2, 1)
+	film.Samples = 9
+	film.InitSpectralBins(1, 400, 700)
+	film.SpectralBins[0].Data[0] = 42
+
+	path := filepath.Join(t.TempDir(), "invalid.bin")
+	if err := os.WriteFile(path, []byte("not a Film"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := film.LoadFromFile(path); err == nil {
+		t.Fatal("expected invalid Film to be rejected")
+	}
+	if film.Samples != 9 || film.SpectralMinNM != 400 || film.SpectralMaxNM != 700 || film.SpectralBins[0].Data[0] != 42 {
+		t.Fatalf("failed load mutated receiver: %+v", film)
+	}
+}
