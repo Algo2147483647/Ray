@@ -3,7 +3,6 @@ package factory
 import (
 	"fmt"
 	"math"
-	"sync"
 
 	"github.com/Algo2147483647/ray/engine/maths/exprdiff"
 	"github.com/Algo2147483647/ray/engine/model/shape"
@@ -20,12 +19,7 @@ type parametricExprCurve struct {
 	constRadius    float64
 	hasConstRadius bool
 	derivative     [3]*vm.Program
-	Mem            parametricCurveExprCalculateStorage
-}
-
-type parametricCurveExprCalculateStorage struct {
-	baseEnv map[string]interface{}
-	envPool sync.Pool
+	Mem            *exprEnvPool
 }
 
 func parseParametricExprCurve(curveDef map[string]interface{}) (shape.ParametricCurveFunction, shape.ParametricCurveDerivative, shape.ParametricCurveRadius, error) {
@@ -48,7 +42,7 @@ func parseParametricExprCurve(curveDef map[string]interface{}) (shape.Parametric
 	}
 
 	curve := &parametricExprCurve{
-		Mem: newParametricCurveExprCalculateStorage(constants),
+		Mem: newExprEnvPool(constants, "t"),
 	}
 	if curve.xProgram, err = compileParametricCurveExprProgram("curve.x", xSource, constants); err != nil {
 		return nil, nil, nil, err
@@ -171,11 +165,11 @@ func (c *parametricExprCurve) evaluate(t float64) *mat.VecDense {
 	if c == nil {
 		return nil
 	}
-	env := c.Mem.getEnv(t)
+	env := c.Mem.get(t)
 	x := runImplicitExprProgram(c.xProgram, env)
 	y := runImplicitExprProgram(c.yProgram, env)
 	z := runImplicitExprProgram(c.zProgram, env)
-	c.Mem.putEnv(env)
+	c.Mem.put(env)
 	if !implicitExprIsFinite(x) || !implicitExprIsFinite(y) || !implicitExprIsFinite(z) {
 		return nil
 	}
@@ -189,9 +183,9 @@ func (c *parametricExprCurve) radiusAt(t float64) float64 {
 	if c.hasConstRadius {
 		return c.constRadius
 	}
-	env := c.Mem.getEnv(t)
+	env := c.Mem.get(t)
 	radius := runImplicitExprProgram(c.radiusProgram, env)
-	c.Mem.putEnv(env)
+	c.Mem.put(env)
 	return radius
 }
 
@@ -205,16 +199,16 @@ func (c *parametricExprCurve) derivativeAt(t float64, res *mat.VecDense) *mat.Ve
 		res.Zero()
 	}
 
-	env := c.Mem.getEnv(t)
+	env := c.Mem.get(t)
 	for axis := 0; axis < 3; axis++ {
 		value := runImplicitExprProgram(c.derivative[axis], env)
 		if !implicitExprIsFinite(value) {
-			c.Mem.putEnv(env)
+			c.Mem.put(env)
 			return nil
 		}
 		res.SetVec(axis, value)
 	}
-	c.Mem.putEnv(env)
+	c.Mem.put(env)
 	return res
 }
 
@@ -225,38 +219,4 @@ func (c *parametricExprCurve) hasDerivative() bool {
 		}
 	}
 	return true
-}
-
-func newParametricCurveExprCalculateStorage(constants map[string]float64) parametricCurveExprCalculateStorage {
-	baseEnv := implicitExprBaseEnvWithConstants(constants)
-	baseEnv["t"] = 0.0
-	mem := parametricCurveExprCalculateStorage{
-		baseEnv: baseEnv,
-	}
-	mem.envPool.New = func() interface{} {
-		return cloneImplicitExprEnv(baseEnv)
-	}
-	return mem
-}
-
-func (m *parametricCurveExprCalculateStorage) getEnv(t float64) map[string]interface{} {
-	if m == nil {
-		env := implicitExprBaseEnv()
-		env["t"] = t
-		return env
-	}
-	raw := m.envPool.Get()
-	env, ok := raw.(map[string]interface{})
-	if !ok || env == nil {
-		env = cloneImplicitExprEnv(m.baseEnv)
-	}
-	env["t"] = t
-	return env
-}
-
-func (m *parametricCurveExprCalculateStorage) putEnv(env map[string]interface{}) {
-	if m == nil || env == nil {
-		return
-	}
-	m.envPool.Put(env)
 }

@@ -193,7 +193,7 @@ func (p *PolynomialSurface) rayPolynomial(raySt, rayDir *mat.VecDense) ([]float6
 	localSt := p.localPoint(raySt)
 	localDir := p.localDirection(rayDir)
 	if p.InputDim > len(localSt) {
-		return nil, ErrPolynomialSurfaceDimension
+		return nil, fmt.Errorf("%w: polynomial surface dimension mismatch", maths.ErrInvalidInput)
 	}
 	ascending := make([]float64, p.calculateStorage().Degree+1)
 	p.addTermsToRayPolynomial(ascending, localSt[:p.InputDim], localDir[:p.InputDim], 0)
@@ -274,20 +274,6 @@ func buildPolynomialSurfaceCalculateStorage(inputDim int, coefficients *maths.Sp
 	return mem
 }
 
-func (p *PolynomialSurface) coefficientsHaveOutputAxis() bool {
-	if p == nil || p.Coefficients == nil {
-		return false
-	}
-	return p.calculateStorage().HasOutputAxis
-}
-
-func (p *PolynomialSurface) polynomialDegree() int {
-	if p == nil || p.Coefficients == nil {
-		return 0
-	}
-	return p.calculateStorage().Degree
-}
-
 func (p *PolynomialSurface) localPoint(point *mat.VecDense) []float64 {
 	local := make([]float64, minInt(point.Len(), 3))
 	for localAxis := range local {
@@ -366,5 +352,3 @@ func minInt(a, b int) int {
 	}
 	return b
 }
-
-var ErrPolynomialSurfaceDimension = fmt.Errorf("%w: polynomial surface dimension mismatch", maths.ErrInvalidInput)

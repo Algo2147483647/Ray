@@ -388,20 +388,6 @@ func optionalDirectionField(def map[string]interface{}, key string, fallback mat
 	return maths.NewDirection(values[0], values[1], values[2]), nil
 }
 
-func optionalPositiveIntegerField(def map[string]interface{}, key string, fallback int) (int, error) {
-	value, ok, err := utils.OptionalFloat64Field(def, key)
-	if err != nil {
-		return 0, err
-	}
-	if !ok {
-		return fallback, nil
-	}
-	if value <= 0 || math.Trunc(value) != value {
-		return 0, fmt.Errorf("%s must be a positive integer", key)
-	}
-	return int(value), nil
-}
-
 func parseEmission(def map[string]interface{}) (emission.Emitter, error) {
 	emissionType, err := utils.RequiredStringField(def, "type")
 	if err != nil {

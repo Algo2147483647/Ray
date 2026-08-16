@@ -2,10 +2,9 @@ package factory
 
 import (
 	"fmt"
-	"github.com/Algo2147483647/ray/engine/maths/exprdiff"
 	"math"
-	"sync"
 
+	"github.com/Algo2147483647/ray/engine/maths/exprdiff"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"github.com/expr-lang/expr"
 	"github.com/expr-lang/expr/vm"
@@ -18,12 +17,7 @@ type implicitExprField struct {
 	gradientY *vm.Program
 	gradientZ *vm.Program
 	constants map[string]float64
-	Mem       implicitExprCalculateStorage
-}
-
-type implicitExprCalculateStorage struct {
-	baseEnv map[string]interface{}
-	envPool sync.Pool
+	Mem       *exprEnvPool
 }
 
 func parseImplicitExprField(
@@ -51,7 +45,7 @@ func parseImplicitExprField(
 	field := &implicitExprField{
 		program:   program,
 		constants: constants,
-		Mem:       newImplicitExprCalculateStorage(constants),
+		Mem:       newExprEnvPool(constants, "x", "y", "z"),
 	}
 
 	if gradientDef, ok, err := utils.OptionalMapField(fieldDef, "gradient"); err != nil {
@@ -144,9 +138,9 @@ func (f *implicitExprField) evaluate(point *mat.VecDense) float64 {
 		return math.NaN()
 	}
 	x, y, z := point.AtVec(0), point.AtVec(1), point.AtVec(2)
-	env := f.Mem.getEnv(x, y, z)
+	env := f.Mem.get(x, y, z)
 	value := runImplicitExprProgram(f.program, env)
-	f.Mem.putEnv(env)
+	f.Mem.put(env)
 	return value
 }
 
@@ -161,11 +155,11 @@ func (f *implicitExprField) gradient(point, res *mat.VecDense) *mat.VecDense {
 	}
 
 	x, y, z := point.AtVec(0), point.AtVec(1), point.AtVec(2)
-	env := f.Mem.getEnv(x, y, z)
+	env := f.Mem.get(x, y, z)
 	gx := runImplicitExprProgram(f.gradientX, env)
 	gy := runImplicitExprProgram(f.gradientY, env)
 	gz := runImplicitExprProgram(f.gradientZ, env)
-	f.Mem.putEnv(env)
+	f.Mem.put(env)
 	if !implicitExprIsFinite(gx) || !implicitExprIsFinite(gy) || !implicitExprIsFinite(gz) {
 		return nil
 	}
@@ -186,43 +180,6 @@ func runImplicitExprProgram(program *vm.Program, env map[string]interface{}) flo
 		return math.NaN()
 	}
 	return value
-}
-
-func newImplicitExprCalculateStorage(constants map[string]float64) implicitExprCalculateStorage {
-	baseEnv := implicitExprBaseEnvWithConstants(constants)
-	mem := implicitExprCalculateStorage{
-		baseEnv: baseEnv,
-	}
-	mem.envPool.New = func() interface{} {
-		return cloneImplicitExprEnv(baseEnv)
-	}
-	return mem
-}
-
-func (m *implicitExprCalculateStorage) getEnv(x, y, z float64) map[string]interface{} {
-	if m == nil {
-		env := implicitExprBaseEnv()
-		env["x"] = x
-		env["y"] = y
-		env["z"] = z
-		return env
-	}
-	raw := m.envPool.Get()
-	env, ok := raw.(map[string]interface{})
-	if !ok || env == nil {
-		env = cloneImplicitExprEnv(m.baseEnv)
-	}
-	env["x"] = x
-	env["y"] = y
-	env["z"] = z
-	return env
-}
-
-func (m *implicitExprCalculateStorage) putEnv(env map[string]interface{}) {
-	if m == nil || env == nil {
-		return
-	}
-	m.envPool.Put(env)
 }
 
 func implicitExprBaseEnvWithConstants(constants map[string]float64) map[string]interface{} {

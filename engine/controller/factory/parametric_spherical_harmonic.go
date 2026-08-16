@@ -186,22 +186,6 @@ func (t sphericalHarmonicTerm) valueAndDerivatives(theta, phi float64) (float64,
 	}
 }
 
-func realSphericalHarmonic(l, m int, basis string, theta, phi float64) float64 {
-	x := math.Cos(theta)
-	p := associatedLegendre(l, m, x)
-	norm := sphericalHarmonicNorm(l, m)
-	if m == 0 {
-		return norm * p
-	}
-	value := math.Sqrt2 * norm * p
-	switch basis {
-	case "sin":
-		return value * math.Sin(float64(m)*phi)
-	default:
-		return value * math.Cos(float64(m)*phi)
-	}
-}
-
 func sphericalHarmonicNorm(l, m int) float64 {
 	logRatio, _ := math.Lgamma(float64(l - m + 1))
 	logDenom, _ := math.Lgamma(float64(l + m + 1))

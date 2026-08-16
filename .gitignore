@@ -25,6 +25,14 @@ go.work.sum
 # Go dependencies
 /go.sum
 
+# Package-manager caches and dependencies
+node_modules/
+.npm-cache*/
+
+# Python bytecode caches
+__pycache__/
+*.py[cod]
+
 # Generated files
 *.gen.go
 *.pb.go
@@ -52,6 +60,9 @@ output.png
 *.coverprofile
 coverage.out
 *.cover.out
+
+# Local profiling output
+**/results/profile/
 
 # System files
 .DS_Store

@@ -20,15 +20,3 @@ func adaptScript(script *studioScript, source []string, dimension int) (*interme
 func readStudioScriptFiles(paths []string) (*studioScript, error) {
 	return storage.ReadStudioScriptFiles(paths)
 }
-
-func writeIntermediateScript(script *intermediateScript, source []string) (string, error) {
-	return storage.WriteIntermediateScript(script, source)
-}
-
-func repoRoot() (string, error) {
-	return storage.RepoRoot()
-}
-
-func stringField(object map[string]interface{}, key string) (string, bool) {
-	return adapt.StringField(object, key)
-}

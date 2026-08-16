@@ -26,27 +26,38 @@ Supporting tagged inputs include spectral parameters and IOR models. Media are a
 
 ### Surface Discriminators
 
-| JSON `surface.type` | Actual runtime result | Category | Delta/event flags |
-| --- | --- | --- | --- |
-| `weighted_mixture` | `bsdf.WeightedMixture` | Normalized probabilistic mixture | Union of component flags |
-| `lambert` | `bsdf.Single{BxDF: bxdf.Lambert}` | Diffuse reflection | None |
-| `specular_reflection` | `bsdf.Single{BxDF: bxdf.SpecularReflection}` | Perfect mirror reflection | `DeltaReflection` |
-| `specular_dielectric` | `bsdf.Single{BxDF: bxdf.SpecularDielectric}` | Perfect Fresnel reflection and refraction | `DeltaReflection`, `DeltaTransmission`, `TransmissionEvent` |
-| `rough_conductor` | `bsdf.Single{BxDF: bxdf.RoughConductor}` | GGX conductor reflection | None |
-| `rough_dielectric_reflection` | `bsdf.Single{BxDF: bxdf.RoughDielectricReflection}` | GGX dielectric reflection lobe only | None |
-| `rough_dielectric_transmission` | `bsdf.Single{BxDF: bxdf.RoughDielectricTransmission}` | GGX dielectric transmission lobe only | `TransmissionEvent`, `NonReciprocal` |
-| `cylindrical_grid_cutout` | `bsdf.CylindricalGridCutout` | Procedural line BSDF plus transparent gaps | Always includes `DeltaTransmission`, plus line-surface flags |
-| `wire_mesh` | `bsdf.CylindricalGridCutout` | Alias of `cylindrical_grid_cutout` | Same as above |
+The first column is the logical surface-model key. JSON aliases are grouped into the same row instead of being presented as separate material types.
+
+| Surface material type | JSON `surface.type` | Description and mathematical model | Input parameters | Actual runtime result | Category | Delta/event flags |
+| --- | --- | --- | --- | --- | --- | --- |
+| Weighted Mixture | `weighted_mixture` | Normalized statistical mixture of recursively defined surfaces, with $p_i=w_i/\sum\limits_j w_j$ and $f=\sum\limits_i p_i f_i$. | Non-empty `components`; each component has finite $w_i>0$ and a recursive `surface`. | `bsdf.WeightedMixture` | Probabilistic mixture | Union of component flags |
+| Lambert | `lambert` | Ideal reciprocal diffuse reflector, $f=\rho(\lambda)/I_D$; in 3D, $I_3=\pi$. | Required spectral albedo $\rho(\lambda)\ge 0$. | `bsdf.Single{BxDF: bxdf.Lambert}` | Diffuse reflection | None |
+| Specular Reflection | `specular_reflection` | Colored ideal mirror with a single deterministic reflected direction and no Fresnel model. | Spectral reflectance $R(\lambda)\ge 0$; optional, default $R=1$. | `bsdf.Single{BxDF: bxdf.SpecularReflection}` | Perfect mirror reflection | `DeltaReflection` |
+| Specular Dielectric | `specular_dielectric` | Smooth dielectric interface selecting perfect reflection with probability $F$ and refraction with probability $1-F$; supports dispersion and total internal reflection. | Spectral $R(\lambda),T(\lambda)\ge0$; optional, default 1. Outside IOR $\eta_o>0$, default 1. Inside `ior` is constant or Cauchy; legacy $\eta_i>0$, default 1.5. | `bsdf.Single{BxDF: bxdf.SpecularDielectric}` | Perfect Fresnel reflection and refraction | `DeltaReflection`, `DeltaTransmission`, `TransmissionEvent` |
+| Rough Conductor | `rough_conductor` | Reciprocal GGX microfacet reflection using complex spectral IOR $\eta(\lambda)+ik(\lambda)$ and $\alpha=\max(r^2,10^{-4})$. | Required spectral $\eta(\lambda),k(\lambda)\ge0$; roughness $r\in[0,1]$, default 0.25; spectral weight $W(\lambda)\ge0$, default 1. | `bsdf.Single{BxDF: bxdf.RoughConductor}` | GGX conductor reflection | None |
+| Rough Dielectric Reflection | `rough_dielectric_reflection` | Reciprocal GGX dielectric reflection lobe with Fresnel modulation; it contains no transmission lobe. | Spectral $R(\lambda)\ge0$, default 1; $\eta_o>0$, default 1; constant or Cauchy inside `ior`; $r\in[0,1]$, default 0.25. | `bsdf.Single{BxDF: bxdf.RoughDielectricReflection}` | GGX dielectric reflection only | None |
+| Rough Dielectric Transmission | `rough_dielectric_transmission` | Walter-style GGX dielectric transmission lobe for opposite hemispheres; it contains no reflection fallback. | Spectral $T(\lambda)\ge0$, default 1; $\eta_o>0$, default 1; constant or Cauchy inside `ior`; $r\in[0,1]$, default 0.25. | `bsdf.Single{BxDF: bxdf.RoughDielectricTransmission}` | GGX dielectric transmission only | `TransmissionEvent`, `NonReciprocal` |
+| Cylindrical Grid Cutout / Wire Mesh | `cylindrical_grid_cutout`, `wire_mesh` | Procedural cylindrical-coordinate mask: grid lines delegate to `line_surface`, while gaps are deterministic straight-through delta transmission. | Recursive `line_surface`; 3-vectors $o$, axis $a\ne0$, and reference axis; widths $w_l,w_g,h_g\ge0$; reference radius $r_{ref}>0$. All are optional and have documented defaults. | `bsdf.CylindricalGridCutout` | Spatial line BSDF plus transparent gaps | Always `DeltaTransmission`, plus line-surface flags |
 
 There are nine JSON surface values but only eight distinct runtime surface constructions because `wire_mesh` is an alias.
 
 ### Emission Discriminators
 
-| JSON `emission.type` | Runtime type | Spatial rule | `IsDelta()` |
-| --- | --- | --- | --- |
-| `constant` | `emission.Constant` | Direction-independent spectral radiance | False |
-| `cell_palette` | `emission.CellPalette` | Color selected from the dominant normal axis and sign | False |
-| `uv_klein` | `emission.UVKlein` | HSL visualization of Klein-bottle UV coordinates | False |
+The first column is the logical emission-model key. An emission model may be the only component of a material or may coexist with a surface model.
+
+| Emission material type | JSON `emission.type` | Description and mathematical model | Input parameters | Runtime type | Spatial rule | `IsDelta()` |
+| --- | --- | --- | --- | --- | --- | --- |
+| Constant Emission | `constant` | Spatially and directionally invariant spectral radiance, $L_e(x,\omega_o,\lambda)=L(\lambda)$. | Required spectral radiance $L(\lambda)\ge0$ in `radiance`; `color` is a fallback alias. | `emission.Constant` | Constant over position and outgoing direction | False |
+| Cell Palette Emission | `cell_palette` | Diagnostic emission indexed by the dominant signed normal axis, $i=2\operatorname*{arg\,max}_j\lvert n_j\rvert+\mathbf{1}_{n_i>0}$, with optional boundary-grid replacement. | Non-empty RGB `palette` $C_i\in\mathbb{R}_{\ge0}^3$; intensity $s\ge0$; `shading`; RGB `grid_color`; grid thickness $t\ge0$. All are optional with documented defaults. | `emission.CellPalette` | Dominant normal axis/sign, optionally modified near AABB boundaries | False |
+| UV Klein Emission | `uv_klein` | Diagnostic Klein-bottle parameter visualization: hue follows wrapped $u$, and $2N$ alternating lightness bands follow wrapped $v$. | Saturation $S\in[0,1]$, default 1; lightness $L\in[0,1]$, default 0.55; positive integer $N=$ `v_stripes`; intensity $s\ge0$, default 1. `v_stripes` is effectively required by the current parser bug. | `emission.UVKlein` | HSL mapping of Klein-bottle UV coordinates | False |
+
+### Medium Discriminators
+
+Media are scene-level optical models rather than subtypes of `material.Material`, but they participate directly in dielectric boundary resolution and path throughput. The first column is the logical medium-model key.
+
+| Medium type | JSON `media.<name>.type` | Description and mathematical model | Input parameters | Runtime type | Current transport support |
+| --- | --- | --- | --- | --- | --- |
+| Homogeneous Medium | `homogeneous` or omitted | Spatially invariant IOR and extinction coefficients. Absorption over arc length $d$ is $T(\lambda,d)=\exp[-\sigma_a(\lambda)d]$; extinction data also includes $\sigma_s(\lambda)$. | Optional `ior`: constant $\eta>0$ or Cauchy $\eta(\lambda)=A+B/\lambda^2+C/\lambda^4$, default $\eta=1$. Optional spectral $\sigma_a(\lambda),\sigma_s(\lambda)\ge0$, both default 0. | `medium.Homogeneous` | IOR boundary transitions and Beer-Lambert absorption are active. $\sigma_s$ is parsed and stored, but volumetric scattering events are not implemented. |
 
 ### Supporting Tagged Types
 
@@ -54,7 +65,6 @@ There are nine JSON surface values but only eight distinct runtime surface const
 | --- | --- | --- |
 | Spectral parameter | `rgb`, `constant`, `sampled`, `blackbody` | `RGBParameter`, `ConstantParameter`, `SampledParameter`, `BlackbodyParameter` |
 | IOR model | `constant`, `cauchy` | `medium.Constant`, `medium.Cauchy` |
-| Scene medium | `homogeneous` only | `medium.Homogeneous` |
 
 ### Common Material Schema and Runtime Contract
 

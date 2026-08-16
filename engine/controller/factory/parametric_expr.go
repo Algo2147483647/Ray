@@ -2,7 +2,6 @@ package factory
 
 import (
 	"fmt"
-	"sync"
 
 	"github.com/Algo2147483647/ray/engine/maths/exprdiff"
 	"github.com/Algo2147483647/ray/engine/model/shape"
@@ -17,12 +16,7 @@ type parametricExprSurface struct {
 	zProgram *vm.Program
 	du       [3]*vm.Program
 	dv       [3]*vm.Program
-	Mem      parametricExprCalculateStorage
-}
-
-type parametricExprCalculateStorage struct {
-	baseEnv map[string]interface{}
-	envPool sync.Pool
+	Mem      *exprEnvPool
 }
 
 func parseParametricExprSurface(surfaceDef map[string]interface{}) (shape.ParametricFunction, shape.ParametricDerivative, error) {
@@ -45,7 +39,7 @@ func parseParametricExprSurface(surfaceDef map[string]interface{}) (shape.Parame
 	}
 
 	surface := &parametricExprSurface{
-		Mem: newParametricExprCalculateStorage(constants),
+		Mem: newExprEnvPool(constants, "u", "v"),
 	}
 	if surface.xProgram, err = compileParametricExprProgram("surface.x", xSource, constants); err != nil {
 		return nil, nil, err
@@ -164,11 +158,11 @@ func (s *parametricExprSurface) evaluate(u, v float64) *mat.VecDense {
 	if s == nil {
 		return nil
 	}
-	env := s.Mem.getEnv(u, v)
+	env := s.Mem.get(u, v)
 	x := runImplicitExprProgram(s.xProgram, env)
 	y := runImplicitExprProgram(s.yProgram, env)
 	z := runImplicitExprProgram(s.zProgram, env)
-	s.Mem.putEnv(env)
+	s.Mem.put(env)
 	if !implicitExprIsFinite(x) || !implicitExprIsFinite(y) || !implicitExprIsFinite(z) {
 		return nil
 	}
@@ -190,18 +184,18 @@ func (s *parametricExprSurface) derivative(u, v float64, du, dv *mat.VecDense) (
 		dv.Zero()
 	}
 
-	env := s.Mem.getEnv(u, v)
+	env := s.Mem.get(u, v)
 	for axis := 0; axis < 3; axis++ {
 		duValue := runImplicitExprProgram(s.du[axis], env)
 		dvValue := runImplicitExprProgram(s.dv[axis], env)
 		if !implicitExprIsFinite(duValue) || !implicitExprIsFinite(dvValue) {
-			s.Mem.putEnv(env)
+			s.Mem.put(env)
 			return nil, nil
 		}
 		du.SetVec(axis, duValue)
 		dv.SetVec(axis, dvValue)
 	}
-	s.Mem.putEnv(env)
+	s.Mem.put(env)
 	return du, dv
 }
 
@@ -212,41 +206,4 @@ func (s *parametricExprSurface) hasDerivative() bool {
 		}
 	}
 	return true
-}
-
-func newParametricExprCalculateStorage(constants map[string]float64) parametricExprCalculateStorage {
-	baseEnv := implicitExprBaseEnvWithConstants(constants)
-	baseEnv["u"] = 0.0
-	baseEnv["v"] = 0.0
-	mem := parametricExprCalculateStorage{
-		baseEnv: baseEnv,
-	}
-	mem.envPool.New = func() interface{} {
-		return cloneImplicitExprEnv(baseEnv)
-	}
-	return mem
-}
-
-func (m *parametricExprCalculateStorage) getEnv(u, v float64) map[string]interface{} {
-	if m == nil {
-		env := implicitExprBaseEnv()
-		env["u"] = u
-		env["v"] = v
-		return env
-	}
-	raw := m.envPool.Get()
-	env, ok := raw.(map[string]interface{})
-	if !ok || env == nil {
-		env = cloneImplicitExprEnv(m.baseEnv)
-	}
-	env["u"] = u
-	env["v"] = v
-	return env
-}
-
-func (m *parametricExprCalculateStorage) putEnv(env map[string]interface{}) {
-	if m == nil || env == nil {
-		return
-	}
-	m.envPool.Put(env)
 }
