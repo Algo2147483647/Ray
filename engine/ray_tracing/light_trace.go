@@ -40,14 +40,14 @@ func (k *lightTracingKernel) Prepare(session *RenderSession) error {
 	k.pixelCount = film.ElementCount()
 	k.activeMask = make([]bool, k.pixelCount)
 	activePixels := int64(k.pixelCount)
-	if len(session.Context.PixelWindows) == 0 {
+	if len(film.PixelWindows) == 0 {
 		for pixel := range k.activeMask {
 			k.activeMask[pixel] = true
 		}
 	} else {
 		k.activeMask, activePixels = buildPixelWindowMask(
 			film.Shape,
-			session.Context.PixelWindows,
+			film.PixelWindows,
 		)
 	}
 	if len(k.lights) == 0 || k.totalWeight <= 0 || activePixels <= 0 {

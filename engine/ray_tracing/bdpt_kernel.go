@@ -32,14 +32,15 @@ func (k *bdptKernel) Prepare(session *RenderSession) error {
 	if k == nil || session == nil {
 		return fmt.Errorf("BDPT kernel or render session is nil")
 	}
-	shape := session.Context.Camera.GetFilm().Shape
+	film := session.Context.Camera.GetFilm()
+	shape := film.Shape
 	mask := make([]bool, shapeElementCount(shape))
-	if len(session.Context.PixelWindows) == 0 {
+	if len(film.PixelWindows) == 0 {
 		for pixel := range mask {
 			mask[pixel] = true
 		}
 	} else {
-		mask, _ = buildPixelWindowMask(shape, session.Context.PixelWindows)
+		mask, _ = buildPixelWindowMask(shape, film.PixelWindows)
 	}
 	activePixels := make([]int, 0, len(mask))
 	for pixel, active := range mask {

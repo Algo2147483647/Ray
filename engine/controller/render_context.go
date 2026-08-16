@@ -2,11 +2,10 @@ package controller
 
 import (
 	"fmt"
-	"github.com/Algo2147483647/ray/engine/model/optics"
 	"runtime"
 
 	"github.com/Algo2147483647/ray/engine/controller/parser"
-	"github.com/Algo2147483647/ray/engine/model/camera"
+	"github.com/Algo2147483647/ray/engine/model/optics"
 )
 
 const (
@@ -24,7 +23,6 @@ type RenderContext struct {
 	OutputFilm        string
 	SpectrumMode      string
 	WavelengthSamples int
-	PixelWindows      []camera.PixelWindow
 }
 
 func defaultRenderContext() RenderContext {
@@ -94,13 +92,6 @@ func (h *Handler) ConfigureRenderContext(context RenderContext) *Handler {
 	}
 
 	film := h.Camera.GetFilm()
-	normalizedWindows, err := camera.NormalizePixelWindows(film.PixelWindows, film.Shape)
-	if err != nil {
-		h.err = err
-		return h
-	}
-
-	context.PixelWindows = normalizedWindows
 	context.OutputFilm = film.OutputFilm
 	if context.OutputFilm == "" {
 		context.OutputFilm = defaultOutputFilm

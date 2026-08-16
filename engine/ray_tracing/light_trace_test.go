@@ -165,7 +165,7 @@ func renderDirectAreaLight(t *testing.T, sigmaA float64, samples int64) float64 
 	handler.MaxRayLevel = 0
 	film := renderCamera.Film
 
-	if err := handler.TraceScene(renderCamera, tree, samples, nil); err != nil {
+	if err := handler.TraceScene(renderCamera, tree, samples); err != nil {
 		t.Fatalf("light-tracing render: %v", err)
 	}
 	if film.Samples != samples {

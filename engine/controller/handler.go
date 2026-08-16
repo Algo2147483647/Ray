@@ -100,7 +100,6 @@ func (h *Handler) Render() *Handler {
 		h.Camera,
 		h.Scene.ObjectTree,
 		h.Context.Samples,
-		h.Context.PixelWindows,
 	); err != nil {
 		h.err = err
 		return h

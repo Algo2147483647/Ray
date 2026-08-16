@@ -116,10 +116,27 @@ func TestBDPTWorkCountIncludesSampledWavelengthStrata(t *testing.T) {
 	}
 }
 
+func TestRenderSessionNormalizesFilmPixelWindows(t *testing.T) {
+	film := camera.NewFilm(4, 5)
+	film.PixelWindows = []camera.PixelWindow{{Min: []int{1}, Max: []int{3}}}
+
+	_, err := newRenderSession(NewHandler(), RenderContext{
+		Camera:     fixedCamera{Camera: camera.Camera{Film: film}},
+		ObjectTree: &object.ObjectTree{},
+	}, false)
+	if err != nil {
+		t.Fatalf("newRenderSession: %v", err)
+	}
+	if got := film.PixelWindows[0]; len(got.Min) != 2 || got.Min[0] != 1 || got.Min[1] != 0 ||
+		got.Max[0] != 3 || got.Max[1] != 5 {
+		t.Fatalf("normalized Film pixel window = %+v", got)
+	}
+}
+
 func TestTraceSceneRejectsUnknownIntegrator(t *testing.T) {
 	handler := NewHandler()
 	handler.IntegratorKind = IntegratorKind("unknown")
-	err := handler.TraceScene(fixedCamera{Camera: camera.Camera{Film: camera.NewFilm(1, 1)}}, nil, 1, nil)
+	err := handler.TraceScene(fixedCamera{Camera: camera.Camera{Film: camera.NewFilm(1, 1)}}, nil, 1)
 	if err == nil {
 		t.Fatal("TraceScene accepted an unknown integrator")
 	}

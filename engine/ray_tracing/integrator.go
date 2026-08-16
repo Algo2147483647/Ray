@@ -36,10 +36,9 @@ func ParseIntegratorKind(value string) (IntegratorKind, error) {
 // Scene-level ownership is necessary because splatting integrators may write to
 // pixels other than the one associated with a generated camera ray.
 type RenderContext struct {
-	Camera       camera.RayCamera
-	ObjectTree   *object.ObjectTree
-	Samples      int64
-	PixelWindows []camera.PixelWindow
+	Camera     camera.RayCamera
+	ObjectTree *object.ObjectTree
+	Samples    int64
 }
 
 func (ctx RenderContext) validate() error {
