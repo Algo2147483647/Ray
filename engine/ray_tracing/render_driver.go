@@ -78,8 +78,6 @@ type splatDriver struct {
 	kernel splatKernel
 }
 
-const splatWorkBatchSize int64 = 64
-
 func (d *splatDriver) ConcurrentFilmWrites() bool { return true }
 
 func (d *splatDriver) EffectiveSampleCount(session *RenderSession) int64 {
@@ -111,17 +109,14 @@ func (d *splatDriver) Run(session *RenderSession) error {
 		go func() {
 			defer workers.Done()
 			for {
-				batchStart := nextWork.Add(splatWorkBatchSize) - splatWorkBatchSize
-				if batchStart >= totalWork {
+				workIndex := nextWork.Add(1) - 1
+				if workIndex >= totalWork {
 					return
 				}
-				batchEnd := min(batchStart+splatWorkBatchSize, totalWork)
-				for workIndex := batchStart; workIndex < batchEnd; workIndex++ {
-					for _, splat := range d.kernel.TraceSample(session, workIndex) {
-						d.accumulate(session, splat, totalWork)
-					}
+				for _, splat := range d.kernel.TraceSample(session, workIndex) {
+					d.accumulate(session, splat, totalWork)
 				}
-				progress.Add(batchEnd - batchStart)
+				progress.Add(1)
 			}
 		}()
 	}
