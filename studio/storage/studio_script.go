@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Algo2147483647/ray/studio/adapt"
 	"github.com/Algo2147483647/ray/studio/schema"
 )
 
@@ -114,7 +113,7 @@ func mergeStudioScripts(dst, src *schema.StudioScript, source string) error {
 	}
 	dst.Render = mergeStudioRenderScript(dst.Render, src.Render)
 	if len(src.Geometry) > 0 {
-		dst.Geometry = adapt.CloneMap(src.Geometry)
+		dst.Geometry = cloneMap(src.Geometry)
 	}
 	dst.Renders = append(dst.Renders, src.Renders...)
 	return nil
@@ -131,7 +130,7 @@ func mergeStudioMedia(dst, src *schema.StudioScript, source string) error {
 		if _, exists := dst.Media[id]; exists {
 			return fmt.Errorf("duplicate medium id %q while merging %s", id, source)
 		}
-		dst.Media[id] = adapt.CloneMap(medium)
+		dst.Media[id] = cloneMap(medium)
 	}
 	return nil
 }
@@ -139,21 +138,21 @@ func mergeStudioMedia(dst, src *schema.StudioScript, source string) error {
 func appendUniqueStudioIDMaps(dst *[]map[string]interface{}, src []map[string]interface{}, label, source string) error {
 	ids := map[string]bool{}
 	for _, item := range *dst {
-		if id, ok := adapt.StringField(item, "id"); ok {
+		if id, ok := stringField(item, "id"); ok {
 			ids[id] = true
 		}
 	}
 	for _, item := range src {
-		id, ok := adapt.StringField(item, "id")
+		id, ok := stringField(item, "id")
 		if !ok {
-			*dst = append(*dst, adapt.CloneMap(item))
+			*dst = append(*dst, cloneMap(item))
 			continue
 		}
 		if ids[id] {
 			return fmt.Errorf("duplicate %s id %q while merging %s", label, id, source)
 		}
 		ids[id] = true
-		*dst = append(*dst, adapt.CloneMap(item))
+		*dst = append(*dst, cloneMap(item))
 	}
 	return nil
 }
@@ -161,14 +160,14 @@ func appendUniqueStudioIDMaps(dst *[]map[string]interface{}, src []map[string]in
 func appendOrMergeStudioObjects(dst *[]map[string]interface{}, src []map[string]interface{}, source string) error {
 	ids := map[string]int{}
 	for index, item := range *dst {
-		if id, ok := adapt.StringField(item, "id"); ok {
+		if id, ok := stringField(item, "id"); ok {
 			ids[id] = index
 		}
 	}
 	for _, item := range src {
-		id, ok := adapt.StringField(item, "id")
+		id, ok := stringField(item, "id")
 		if !ok {
-			*dst = append(*dst, adapt.CloneMap(item))
+			*dst = append(*dst, cloneMap(item))
 			continue
 		}
 		if existingIndex, exists := ids[id]; exists {
@@ -180,23 +179,23 @@ func appendOrMergeStudioObjects(dst *[]map[string]interface{}, src []map[string]
 			continue
 		}
 		ids[id] = len(*dst)
-		*dst = append(*dst, adapt.CloneMap(item))
+		*dst = append(*dst, cloneMap(item))
 	}
 	return nil
 }
 
 func mergeStudioObject(base, override map[string]interface{}, source string) (map[string]interface{}, error) {
-	baseShape, _ := adapt.StringField(base, "shape")
-	overrideShape, _ := adapt.StringField(override, "shape")
+	baseShape, _ := stringField(base, "shape")
+	overrideShape, _ := stringField(override, "shape")
 	baseShape = strings.ToLower(baseShape)
 	overrideShape = strings.ToLower(overrideShape)
 	if !mergeableContainerShape(baseShape) || !mergeableContainerShape(overrideShape) || baseShape != overrideShape {
-		id, _ := adapt.StringField(base, "id")
+		id, _ := stringField(base, "id")
 		return nil, fmt.Errorf("duplicate object id %q while merging %s", id, source)
 	}
 
-	merged := adapt.CloneMap(base)
-	overrideClone := adapt.CloneMap(override)
+	merged := cloneMap(base)
+	overrideClone := cloneMap(override)
 	for key, value := range overrideClone {
 		if key == "objects" {
 			continue
@@ -242,7 +241,7 @@ func mergeStudioObjectLists(baseRaw, overrideRaw interface{}, source string) ([]
 		if !ok {
 			continue
 		}
-		if id, ok := adapt.StringField(object, "id"); ok {
+		if id, ok := stringField(object, "id"); ok {
 			ids[id] = index
 		}
 	}
@@ -251,7 +250,7 @@ func mergeStudioObjectLists(baseRaw, overrideRaw interface{}, source string) ([]
 		if !ok {
 			return nil, fmt.Errorf("field %q: expected object, got %T", "objects", item)
 		}
-		id, hasID := adapt.StringField(object, "id")
+		id, hasID := stringField(object, "id")
 		if !hasID {
 			merged = append(merged, cloneInterfaceValue(item))
 			continue
@@ -378,18 +377,56 @@ func cloneInterfaceSlice(value []interface{}) []interface{} {
 func cloneInterfaceValue(value interface{}) interface{} {
 	switch v := value.(type) {
 	case map[string]interface{}:
-		return adapt.CloneMap(v)
+		return cloneMap(v)
 	case []interface{}:
 		return cloneInterfaceSlice(v)
 	case []map[string]interface{}:
 		result := make([]interface{}, len(v))
 		for i, item := range v {
-			result[i] = adapt.CloneMap(item)
+			result[i] = cloneMap(item)
 		}
 		return result
+	case []float64:
+		return append([]float64(nil), v...)
+	case []string:
+		return append([]string(nil), v...)
 	default:
 		return value
 	}
+}
+
+func cloneMap(value map[string]interface{}) map[string]interface{} {
+	result := make(map[string]interface{}, len(value))
+	for key, item := range value {
+		result[key] = cloneInterfaceValue(item)
+	}
+	return result
+}
+
+func stringField(object map[string]interface{}, key string) (string, bool) {
+	raw, ok := object[key]
+	if !ok {
+		return "", false
+	}
+	value, ok := raw.(string)
+	return value, ok && value != ""
+}
+
+func cloneStudioCamera(def schema.StudioCameraScript) schema.StudioCameraScript {
+	camera := def
+	camera.Position = append([]float64(nil), def.Position...)
+	camera.LookAt = append([]float64(nil), def.LookAt...)
+	camera.Direction = append([]float64(nil), def.Direction...)
+	camera.Up = append([]float64(nil), def.Up...)
+	camera.Widths = append([]int(nil), def.Widths...)
+	camera.FieldOfViews = append([]float64(nil), def.FieldOfViews...)
+	if len(def.Coordinates) > 0 {
+		camera.Coordinates = make([][]float64, len(def.Coordinates))
+		for i, coordinate := range def.Coordinates {
+			camera.Coordinates[i] = append([]float64(nil), coordinate...)
+		}
+	}
+	return camera
 }
 
 func appendUniqueStudioCameras(dst *[]schema.StudioCameraScript, src []schema.StudioCameraScript, source string) error {
@@ -406,7 +443,7 @@ func appendUniqueStudioCameras(dst *[]schema.StudioCameraScript, src []schema.St
 			}
 			ids[camera.ID] = true
 		}
-		*dst = append(*dst, adapt.CloneStudioCamera(camera))
+		*dst = append(*dst, cloneStudioCamera(camera))
 	}
 	return nil
 }

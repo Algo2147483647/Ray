@@ -3,9 +3,11 @@ package adapt
 import (
 	"errors"
 	"time"
+
+	"github.com/Algo2147483647/ray/studio/schema"
 )
 
-func AdaptScript(script *studioScript, source []string, dimension int) (*intermediateScript, error) {
+func AdaptScript(script *schema.StudioScript, source []string, dimension int) (*schema.IntermediateScript, error) {
 	if script == nil {
 		return nil, errors.New("script is nil")
 	}
@@ -19,8 +21,8 @@ func AdaptScript(script *studioScript, source []string, dimension int) (*interme
 		return nil, err
 	}
 
-	return &intermediateScript{
-		Studio: studioMetadata{
+	return &schema.IntermediateScript{
+		Studio: schema.StudioMetadata{
 			Version:     "0.1",
 			Source:      append([]string(nil), source...),
 			GeneratedAt: time.Now().UTC().Format(time.RFC3339),
@@ -36,7 +38,7 @@ func AdaptScript(script *studioScript, source []string, dimension int) (*interme
 	}, nil
 }
 
-func renderToMap(render studioRenderScript) map[string]interface{} {
+func renderToMap(render schema.StudioRenderScript) map[string]interface{} {
 	result := map[string]interface{}{}
 	if render.Integrator != "" {
 		result["integrator"] = render.Integrator
@@ -89,7 +91,7 @@ func renderToMap(render studioRenderScript) map[string]interface{} {
 	return result
 }
 
-func rendersToMaps(renders []studioRenderScript) []map[string]interface{} {
+func rendersToMaps(renders []schema.StudioRenderScript) []map[string]interface{} {
 	if len(renders) == 0 {
 		return nil
 	}
@@ -100,13 +102,13 @@ func rendersToMaps(renders []studioRenderScript) []map[string]interface{} {
 	return result
 }
 
-func clonePixelWindows(windows []pixelWindowScript) []pixelWindowScript {
+func clonePixelWindows(windows []schema.PixelWindowScript) []schema.PixelWindowScript {
 	if len(windows) == 0 {
 		return nil
 	}
-	cloned := make([]pixelWindowScript, len(windows))
+	cloned := make([]schema.PixelWindowScript, len(windows))
 	for i, window := range windows {
-		cloned[i] = pixelWindowScript{
+		cloned[i] = schema.PixelWindowScript{
 			Min: append([]int(nil), window.Min...),
 			Max: append([]int(nil), window.Max...),
 		}

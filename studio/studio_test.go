@@ -8,11 +8,14 @@ import (
 	"testing"
 
 	modelshape "github.com/Algo2147483647/ray/engine/model/shape"
+	"github.com/Algo2147483647/ray/studio/adapt"
+	"github.com/Algo2147483647/ray/studio/schema"
+	"github.com/Algo2147483647/ray/studio/storage"
 	"gonum.org/v1/gonum/mat"
 )
 
 func TestFlattenNestedGroupAndInheritFields(t *testing.T) {
-	script := &studioScript{
+	script := &schema.StudioScript{
 		Objects: []map[string]interface{}{
 			{
 				"id":          "outer",
@@ -46,7 +49,7 @@ func TestFlattenNestedGroupAndInheritFields(t *testing.T) {
 		},
 	}
 
-	adapted, err := adaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt script: %v", err)
 	}
@@ -88,7 +91,7 @@ func TestFlattenNestedGroupAndInheritFields(t *testing.T) {
 }
 
 func TestChildFieldOverridesGroupInheritance(t *testing.T) {
-	script := &studioScript{
+	script := &schema.StudioScript{
 		Objects: []map[string]interface{}{
 			{
 				"id":          "g",
@@ -106,7 +109,7 @@ func TestChildFieldOverridesGroupInheritance(t *testing.T) {
 		},
 	}
 
-	adapted, err := adaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt script: %v", err)
 	}
@@ -116,7 +119,7 @@ func TestChildFieldOverridesGroupInheritance(t *testing.T) {
 }
 
 func TestGroupDoesNotRequireMaterialID(t *testing.T) {
-	script := &studioScript{
+	script := &schema.StudioScript{
 		Objects: []map[string]interface{}{
 			{
 				"id":     "g",
@@ -135,7 +138,7 @@ func TestGroupDoesNotRequireMaterialID(t *testing.T) {
 		},
 	}
 
-	adapted, err := adaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt group without material_id: %v", err)
 	}
@@ -152,7 +155,7 @@ func TestGroupDoesNotRequireMaterialID(t *testing.T) {
 }
 
 func TestStudioAdaptsArrayCells(t *testing.T) {
-	script := &studioScript{
+	script := &schema.StudioScript{
 		Objects: []map[string]interface{}{
 			{
 				"id":          "grid",
@@ -183,7 +186,7 @@ func TestStudioAdaptsArrayCells(t *testing.T) {
 		},
 	}
 
-	adapted, err := adaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt array: %v", err)
 	}
@@ -246,7 +249,7 @@ func TestStudioMergesArrayObjectsAcrossFiles(t *testing.T) {
 		t.Fatalf("write second script: %v", err)
 	}
 
-	script, err := readStudioScriptFiles([]string{firstPath, secondPath})
+	script, err := storage.ReadStudioScriptFiles([]string{firstPath, secondPath})
 	if err != nil {
 		t.Fatalf("read merged studio scripts: %v", err)
 	}
@@ -254,7 +257,7 @@ func TestStudioMergesArrayObjectsAcrossFiles(t *testing.T) {
 		t.Fatalf("expected one merged array, got %d", len(script.Objects))
 	}
 
-	adapted, err := adaptScript(script, []string{firstPath, secondPath}, 3)
+	adapted, err := adapt.AdaptScript(script, []string{firstPath, secondPath}, 3)
 	if err != nil {
 		t.Fatalf("adapt merged array: %v", err)
 	}
@@ -300,11 +303,11 @@ func TestStudioMergesGroupObjectsAcrossFiles(t *testing.T) {
 		t.Fatalf("write second group script: %v", err)
 	}
 
-	script, err := readStudioScriptFiles([]string{firstPath, secondPath})
+	script, err := storage.ReadStudioScriptFiles([]string{firstPath, secondPath})
 	if err != nil {
 		t.Fatalf("read merged group scripts: %v", err)
 	}
-	adapted, err := adaptScript(script, []string{firstPath, secondPath}, 3)
+	adapted, err := adapt.AdaptScript(script, []string{firstPath, secondPath}, 3)
 	if err != nil {
 		t.Fatalf("adapt merged group: %v", err)
 	}
@@ -319,7 +322,7 @@ func TestStudioMergesGroupObjectsAcrossFiles(t *testing.T) {
 }
 
 func TestStudioAdaptsTriangleCenterAndGroupPlacement(t *testing.T) {
-	script := &studioScript{
+	script := &schema.StudioScript{
 		Objects: []map[string]interface{}{
 			{
 				"id":     "g",
@@ -340,7 +343,7 @@ func TestStudioAdaptsTriangleCenterAndGroupPlacement(t *testing.T) {
 		},
 	}
 
-	adapted, err := adaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt triangle: %v", err)
 	}
@@ -354,7 +357,7 @@ func TestStudioAdaptsTriangleCenterAndGroupPlacement(t *testing.T) {
 }
 
 func TestStudioAdaptsBasicShapesWithGroupPlacement(t *testing.T) {
-	script := &studioScript{
+	script := &schema.StudioScript{
 		Objects: []map[string]interface{}{
 			{
 				"id":     "g",
@@ -388,7 +391,7 @@ func TestStudioAdaptsBasicShapesWithGroupPlacement(t *testing.T) {
 		},
 	}
 
-	adapted, err := adaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt basic shapes: %v", err)
 	}
@@ -411,7 +414,7 @@ func TestStudioAdaptsBasicShapesWithGroupPlacement(t *testing.T) {
 }
 
 func TestStudioAdaptsCuboidPositionSizeToMinMax(t *testing.T) {
-	script := &studioScript{
+	script := &schema.StudioScript{
 		Objects: []map[string]interface{}{
 			{
 				"id":     "g",
@@ -430,7 +433,7 @@ func TestStudioAdaptsCuboidPositionSizeToMinMax(t *testing.T) {
 		},
 	}
 
-	adapted, err := adaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt cuboid: %v", err)
 	}
@@ -446,7 +449,7 @@ func TestStudioAdaptsCuboidPositionSizeToMinMax(t *testing.T) {
 }
 
 func TestStudioAdaptsHypercubeToCuboid(t *testing.T) {
-	script := &studioScript{
+	script := &schema.StudioScript{
 		Objects: []map[string]interface{}{
 			{
 				"id":     "cube",
@@ -457,7 +460,7 @@ func TestStudioAdaptsHypercubeToCuboid(t *testing.T) {
 		},
 	}
 
-	adapted, err := adaptScript(script, []string{"scene.json"}, 4)
+	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 4)
 	if err != nil {
 		t.Fatalf("adapt hypercube: %v", err)
 	}
@@ -470,7 +473,7 @@ func TestStudioAdaptsHypercubeToCuboid(t *testing.T) {
 }
 
 func TestStudioAdaptsBoundsCenterSizeToMinMax(t *testing.T) {
-	script := &studioScript{
+	script := &schema.StudioScript{
 		Objects: []map[string]interface{}{
 			{
 				"id":    "expr",
@@ -487,7 +490,7 @@ func TestStudioAdaptsBoundsCenterSizeToMinMax(t *testing.T) {
 		},
 	}
 
-	adapted, err := adaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt bounds: %v", err)
 	}
@@ -507,7 +510,7 @@ func TestStudioAdaptsBoundsCenterSizeToMinMax(t *testing.T) {
 }
 
 func TestStudioAdaptsImplicitEquationCenterScaleBasisToTransform(t *testing.T) {
-	script := &studioScript{
+	script := &schema.StudioScript{
 		Objects: []map[string]interface{}{
 			{
 				"id":    "expr",
@@ -531,7 +534,7 @@ func TestStudioAdaptsImplicitEquationCenterScaleBasisToTransform(t *testing.T) {
 		},
 	}
 
-	adapted, err := adaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt implicit equation: %v", err)
 	}
@@ -556,7 +559,7 @@ func TestStudioAdaptsImplicitEquationCenterScaleBasisToTransform(t *testing.T) {
 }
 
 func TestStudioNormalizesImplicitEquationFieldAlias(t *testing.T) {
-	script := &studioScript{
+	script := &schema.StudioScript{
 		Objects: []map[string]interface{}{
 			{
 				"id":    "lp",
@@ -574,7 +577,7 @@ func TestStudioNormalizesImplicitEquationFieldAlias(t *testing.T) {
 		},
 	}
 
-	adapted, err := adaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt implicit equation alias: %v", err)
 	}
@@ -588,8 +591,8 @@ func TestStudioNormalizesImplicitEquationFieldAlias(t *testing.T) {
 }
 
 func TestStudioAdaptsCameraLookAtFromRawFields(t *testing.T) {
-	script := &studioScript{}
-	cameras := []studioCameraScript{
+	script := &schema.StudioScript{}
+	cameras := []schema.StudioCameraScript{
 		{
 			Type:        "3d",
 			Position:    []float64{-4, 0, 1},
@@ -600,7 +603,7 @@ func TestStudioAdaptsCameraLookAtFromRawFields(t *testing.T) {
 	}
 
 	script.Cameras = cameras
-	adapted, err := adaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt camera: %v", err)
 	}
@@ -609,15 +612,15 @@ func TestStudioAdaptsCameraLookAtFromRawFields(t *testing.T) {
 }
 
 func TestStudioDoesNotEmitResumeFilmToIntermediateScript(t *testing.T) {
-	script := &studioScript{
-		Render: studioRenderScript{
+	script := &schema.StudioScript{
+		Render: schema.StudioRenderScript{
 			OutputFilm:  "final.bin",
 			OutputImage: "final.png",
 			ResumeFilm:  "existing.bin",
 		},
 	}
 
-	adapted, err := adaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt script: %v", err)
 	}
@@ -633,10 +636,10 @@ func TestStudioDoesNotEmitResumeFilmToIntermediateScript(t *testing.T) {
 }
 
 func TestStudioEmitsIntegratorToIntermediateScript(t *testing.T) {
-	script := &studioScript{
-		Render: studioRenderScript{Integrator: "bdpt"},
+	script := &schema.StudioScript{
+		Render: schema.StudioRenderScript{Integrator: "bdpt"},
 	}
-	adapted, err := adaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt script: %v", err)
 	}
@@ -646,20 +649,20 @@ func TestStudioEmitsIntegratorToIntermediateScript(t *testing.T) {
 }
 
 func TestStudioEmitsPixelWindowsToIntermediateScript(t *testing.T) {
-	script := &studioScript{
-		Render: studioRenderScript{
-			PixelWindows: []pixelWindowScript{
+	script := &schema.StudioScript{
+		Render: schema.StudioRenderScript{
+			PixelWindows: []schema.PixelWindowScript{
 				{Min: []int{100, 600}, Max: []int{150, 650}},
 			},
 		},
 	}
 
-	adapted, err := adaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt script: %v", err)
 	}
 
-	windows, ok := adapted.Render["pixel_windows"].([]pixelWindowScript)
+	windows, ok := adapted.Render["pixel_windows"].([]schema.PixelWindowScript)
 	if !ok {
 		t.Fatalf("expected pixel_windows in intermediate render config, got %T", adapted.Render["pixel_windows"])
 	}
@@ -695,7 +698,7 @@ func TestStudioEngineArgsDoNotForwardResumeFilm(t *testing.T) {
 func TestStudioEngineArgsForwardsPixelWindows(t *testing.T) {
 	config := studioConfig{
 		provided: map[string]bool{"pixel-window": true},
-		pixelWindows: []pixelWindowScript{
+		pixelWindows: []schema.PixelWindowScript{
 			{Min: []int{100, 600}, Max: []int{150, 650}},
 			{Min: []int{2, 6}, Max: []int{4, 8}},
 		},
@@ -805,7 +808,7 @@ func TestCheckpointPathsUseIterationNames(t *testing.T) {
 }
 
 func TestStudioRejectsUnequalHypercubeExtents(t *testing.T) {
-	script := &studioScript{
+	script := &schema.StudioScript{
 		Objects: []map[string]interface{}{
 			{
 				"id":     "bad-cube",
@@ -816,13 +819,13 @@ func TestStudioRejectsUnequalHypercubeExtents(t *testing.T) {
 		},
 	}
 
-	if _, err := adaptScript(script, []string{"scene.json"}, 3); err == nil {
+	if _, err := adapt.AdaptScript(script, []string{"scene.json"}, 3); err == nil {
 		t.Fatal("expected unequal hypercube extents to fail")
 	}
 }
 
 func TestStudioAdaptsQuadraticCenterScaleToWorldCoefficients(t *testing.T) {
-	script := &studioScript{
+	script := &schema.StudioScript{
 		Objects: []map[string]interface{}{
 			{
 				"id":     "quad",
@@ -836,7 +839,7 @@ func TestStudioAdaptsQuadraticCenterScaleToWorldCoefficients(t *testing.T) {
 		},
 	}
 
-	adapted, err := adaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt quadratic: %v", err)
 	}
@@ -859,7 +862,7 @@ func TestStudioAdaptsQuadraticCenterScaleToWorldCoefficients(t *testing.T) {
 }
 
 func TestStudioAdaptsFourOrderCenterScaleBasisToWorldCoefficients(t *testing.T) {
-	script := &studioScript{
+	script := &schema.StudioScript{
 		Objects: []map[string]interface{}{
 			{
 				"id":    "quartic",
@@ -879,7 +882,7 @@ func TestStudioAdaptsFourOrderCenterScaleBasisToWorldCoefficients(t *testing.T) 
 		},
 	}
 
-	adapted, err := adaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt four-order equation: %v", err)
 	}
@@ -912,7 +915,7 @@ func TestStudioAdaptsFourOrderCenterScaleBasisToWorldCoefficients(t *testing.T) 
 }
 
 func TestStudioAdaptsPolynomialSurfaceCenterScaleBasisToTransform(t *testing.T) {
-	script := &studioScript{
+	script := &schema.StudioScript{
 		Objects: []map[string]interface{}{
 			{
 				"id":        "surface",
@@ -935,7 +938,7 @@ func TestStudioAdaptsPolynomialSurfaceCenterScaleBasisToTransform(t *testing.T) 
 		},
 	}
 
-	adapted, err := adaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt polynomial surface: %v", err)
 	}
