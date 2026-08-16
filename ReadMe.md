@@ -14,40 +14,26 @@ Each geometry class stresses different parts of the pipeline. Smooth algebraic s
 
 The rendered matrix demonstrates coherent shading and clean silhouettes across simple primitives, meshes, higher-order polynomial surfaces, and implicit forms. Baseline primitives show stable intersections and predictable highlights, while higher-order and implicit objects exhibit complex curvature, cavities, and topology that cannot be captured by fixed primitive libraries alone. Overall, the experiment confirms that the renderer functions as a unified ray-tracing framework for both standard shapes and arbitrary polynomial or implicit geometry.
 
-![geometry-benchmark-matrix.png](docs%2Fassets%2Fgeometry-benchmark-matrix.png)
+![geometry-benchmark-matrix.png](experiment\geometric_object\geometry-benchmark-matrix\results\geometry-benchmark-matrix.png)
 
 ### Material rendering
 
-![material-benchmark-matrix.png](docs%2Fassets%2Fmaterial-benchmark-matrix.png)
+![material-benchmark-matrix.png](experiment\material\material-benchmark-matrix\results\material-benchmark-matrix.png)
+
+![Triangular Prism Dispersion.png](experiment/material/triangular_prism_dispersion/results/Triangular_Prism_Dispersion.png)
 
 ### Non-Euclidean hyperbolic-space rendering
 
-The hyperbolic observatory is rendered in three-dimensional hyperbolic space
-(`H³`) using the Beltrami–Klein model. Its composition combines three
-independent geometric witnesses in one scene:
+The hyperbolic observatory is rendered in three-dimensional hyperbolic space(`H³`) using the Beltrami–Klein model. Its composition combines three independent geometric witnesses in one scene:
+- Five congruent `{4,3,5}` cells meet around one geodesic edge. Their `72°` dihedral angles close to `360°`, an incidence pattern that euclidean right-angle cubes cannot reproduce.
+- Six true `H³` balls have the same intrinsic radius (`0.105`) and equal center spacing (`0.55`). Their apparent shrinkage toward the ideal boundary `|p| = 1` visualizes Klein-coordinate distortion rather than a perspective camera effect.
+- A geodesic triangle has intrinsic angles `35.278°`, `35.278°`, and `70.557°`; its `141.114°` angle sum exposes the negative curvature directly.
 
-- Five congruent `{4,3,5}` cells meet around one geodesic edge. Their
-  `72°` dihedral angles close to `360°`, an incidence pattern that euclidean
-  right-angle cubes cannot reproduce.
-- Six true `H³` balls have the same intrinsic radius (`0.105`) and equal
-  center spacing (`0.55`). Their apparent shrinkage toward the ideal boundary
-  `|p| = 1` visualizes Klein-coordinate distortion rather than a perspective
-  camera effect.
-- A geodesic triangle has intrinsic angles `35.278°`, `35.278°`, and
-  `70.557°`; its `141.114°` angle sum exposes the negative curvature directly.
+The artistic version uses a dark diffuse stage, ceramic Lambertian surfaces, alternating ideal mirrors, a central mirror ball, and warm/cool area lighting. Normals, shading frames, diffuse cosines, and mirror directions are all evaluated with the local Klein metric, so the material response remains intrinsic away from the coordinate origin.
 
-The artistic version uses a dark diffuse stage, ceramic Lambertian surfaces,
-alternating ideal mirrors, a central mirror ball, and warm/cool area lighting.
-Normals, shading frames, diffuse cosines, and mirror directions are all
-evaluated with the local Klein metric, so the material response remains
-intrinsic away from the coordinate origin.
+![Hyperbolic observatory](experiment\geometric_spaces\non-euclidean\results\hyperbolic_showcase_art.png)
 
-![Hyperbolic observatory](docs%2Fassets%2Fhyperbolic-showcase-art.png)
-
-See the
-[non-euclidean coordinate-system documentation](docs/non-euclidean-coordinate-system.md)
-for the metric formulas, scene construction, validation invariants, generator,
-and reproduction command.
+See the [non-euclidean coordinate-system documentation](docs/non-euclidean-coordinate-system.md)for the metric formulas, scene construction, validation invariants, generator, and reproduction command.
 
 ### High-dimensional space rendering
 
@@ -59,7 +45,7 @@ The second rendering replaces the physically based surface model with a cell-pal
 
 Together, the two results demonstrate a useful trade-off. The Lambertian rendering provides perceptual continuity, depth cues, and a more intuitive sense of global form, but individual cells can be difficult to distinguish. The colored-cell rendering sacrifices physical realism in favor of structural clarity, making adjacency and cell decomposition more explicit. The comparison therefore shows that realistic shading and categorical coloring serve different but complementary roles in 4D visualization: one supports spatial perception, while the other supports topological interpretation.
 
-![4d-hypercube-geometry-focus-centered-combined.png](docs%2Fassets%2F4d-hypercube-geometry-focus-centered-combined.png)
+![4d-hypercube-geometry-focus-centered-combined.png](experiment/geometric_spaces/4d/results/4d-hypercube-geometry-focus-centered-combined.png)
 
 The experiment visualizes a four-dimensional hypercube from an exterior viewpoint and examines how its eight cubic cells appear after projection into a three-dimensional volume. In the figure, the projected object is shown from several viewing angles, together with a bottom-surface projection. The most important feature is that the object does not appear as a single undifferentiated solid. Instead, it is divided into several colored volumetric regions, each corresponding to one cubic cell of the original 4D hypercube.
 
@@ -71,7 +57,7 @@ The bottom projection further clarifies the geometric result. Seen from below, t
 
 The geometric conclusion is that the boundary of a 4D hypercube is composed of eight cubic cells, and this structure remains observable after projection when cell identity is preserved by color. The image therefore provides a concrete way to inspect the hypercube not merely as a projected outline, but as a volume assembled from eight mutually connected 3D cubes.
 
-![4d-hypercube-geometry-focus-centered2.volume.png](docs%2Fassets%2F4d-hypercube-geometry-focus-centered2.volume.png)
+![4d-hypercube-geometry-focus-centered2.volume.png](experiment/geometric_spaces/4d/results/4d-hypercube-geometry-focus-centered2.volume.png)
 
 The experiment visualizes the local corner structure of a four-dimensional hypercube from an interior viewpoint. In the image grid, each panel shows the camera looking from inside the hypercube toward one of its vertices. The visible colored regions are not ordinary 2D faces, but projected views of the cubic cells that meet at that vertex. The green, red, cyan, and blue regions form four wall-like volumes converging into the same corner, which is the key geometric observation of the experiment.
 
@@ -81,7 +67,7 @@ The hyperspherical light source provides an additional geometric cue. Its bright
 
 The mathematical conclusion is therefore observed directly from the convergence pattern. The corner is not bounded by three surfaces, as in a 3D cube, but by four cubic cells meeting orthogonally in 4D space. The grid presentation reinforces this conclusion by showing the same structure under slightly varying views: although the apparent sizes and brightness of the colored regions change, the four-cell meeting pattern remains stable. This stability indicates that the observed structure is not a rendering artifact, but the expected local geometry of a tesseract vertex.
 
-![4D-2000-grid-20x10.png](docs%2Fassets%2F4D-2000-grid-20x10.png)![4D.png](docs%2Fassets%2F4D.png)
+![4D-2000-grid-20x10.png](docs%2Fassets%2F4D-2000-grid-20x10.png)![4D.png](experiment/geometric_spaces/4d/results/4D.png)
 
 ## Project Structure
 
