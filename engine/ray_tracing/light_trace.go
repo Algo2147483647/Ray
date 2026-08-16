@@ -81,7 +81,7 @@ func (k *lightTracingKernel) TraceSample(session *RenderSession, _ int64) []Film
 		if !valid {
 			continue
 		}
-		pixel, ok := projection.Raster.PixelIndex(k.width, k.height)
+		pixel, ok := camera.PixelIndex(projection.Position[0], projection.Position[1], k.width, k.height)
 		if !ok || !k.activeMask[pixel] {
 			continue
 		}
