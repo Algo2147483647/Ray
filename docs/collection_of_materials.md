@@ -1,9 +1,7 @@
-# Engine Material Categories, Mathematics, and Input Schemas
+# Collection of Materials
 
 > Scope: this document describes only the current implementation under `engine/`. Studio schemas, example-only conventions, and older documentation are excluded.
 >
-
-## 1. What a Material Really Is
 
 The Engine does not have a top-level material `type` hierarchy. Every JSON entry becomes the same runtime type, `*material.Material`, which is a composition of:
 
@@ -24,20 +22,9 @@ material.Material
 
 Supporting tagged inputs include spectral parameters and IOR models. Media are a related scene-level subsystem, not another material subtype.
 
-## 2. Real Category Tables
+## Real Category Tables
 
-### 2.1 Top-Level Material Forms
-
-| JSON form | Runtime result | Accepted | Current path-tracing behavior |
-| --- | --- | --- | --- |
-| `surface` only | `Material{Surface: ...}` | Yes | Samples the BSDF at a hit |
-| `emission` only | `Material{Emission: ...}` | Yes | Evaluates emission and terminates the camera path |
-| both | `Material{Surface: ..., Emission: ...}` | Yes | The regular `TraceRay` path evaluates emission first and returns, so its surface is not sampled at that hit |
-| neither | Empty `Material` | No | Factory error: material requires surface or emission |
-
-Every material requires a unique, non-empty `id`. Objects refer to it through `material_id`.
-
-### 2.2 Surface Discriminators
+### Surface Discriminators
 
 | JSON `surface.type` | Actual runtime result | Category | Delta/event flags |
 | --- | --- | --- | --- |
@@ -53,7 +40,7 @@ Every material requires a unique, non-empty `id`. Objects refer to it through `m
 
 There are nine JSON surface values but only eight distinct runtime surface constructions because `wire_mesh` is an alias.
 
-### 2.3 Emission Discriminators
+### Emission Discriminators
 
 | JSON `emission.type` | Runtime type | Spatial rule | `IsDelta()` |
 | --- | --- | --- | --- |
@@ -61,7 +48,7 @@ There are nine JSON surface values but only eight distinct runtime surface const
 | `cell_palette` | `emission.CellPalette` | Color selected from the dominant normal axis and sign | False |
 | `uv_klein` | `emission.UVKlein` | HSL visualization of Klein-bottle UV coordinates | False |
 
-### 2.4 Supporting Tagged Types
+### Supporting Tagged Types
 
 | Input layer | JSON values | Runtime implementations |
 | --- | --- | --- |
@@ -69,7 +56,7 @@ There are nine JSON surface values but only eight distinct runtime surface const
 | IOR model | `constant`, `cauchy` | `medium.Constant`, `medium.Cauchy` |
 | Scene medium | `homogeneous` only | `medium.Homogeneous` |
 
-## 3. Common Material Schema and Runtime Contract
+### Common Material Schema and Runtime Contract
 
 ```jsonc
 {
@@ -106,7 +93,7 @@ $$
 
 Delta models return zero from `Eval` and `PDF`; their non-zero probability and value exist only in `Sample`.
 
-## 4. Shared Spectral Parameter Schema
+### Shared Spectral Parameter Schema
 
 Every documented spectral field, including albedo, reflectance, transmittance, conductor eta/k, weight, radiance, and medium coefficients, uses the same parser.
 
@@ -144,7 +131,7 @@ Processing details:
 - The parser enforces non-negativity but does not cap reflectance, transmittance, albedo, or weights at 1. Values above 1 can violate energy conservation.
 - Any spectral form is syntactically accepted for any spectral field, even combinations that are not physically meaningful, such as blackbody conductor eta.
 
-## 5. Shared IOR Schema
+### Shared IOR Schema
 
 Used by `specular_dielectric`, `rough_dielectric_reflection`, and `rough_dielectric_transmission`:
 
@@ -188,11 +175,39 @@ The parser checks positive finite eta at 380, 550, and 750 nm. If `ior` is prese
 
 For transmissive models, an active `medium_boundary` supplies incident and transmitted IOR values through `ShadingContext`; these override the surface's fallback eta pair. The rough reflection-only model is an exception: it always evaluates Fresnel with `eta_outside` and its inside IOR, rather than the boundary-resolved pair.
 
-## 6. Surface Models
+## Surface Models
 
-### 6.1 Weighted Mixture
+### Weighted Mixture
 
-Schema:
+#### Definition, Properties, and Model
+
+A weighted mixture is a statistical BSDF mixture over one or more component surfaces. Let $w_i>0$ be the authored component weights and define
+
+$$
+p_i=\frac{w_i}{\sum\limits_jw_j}.
+$$
+
+The normalized model is
+
+$$
+f=\sum\limits_i p_i f_i,
+\qquad
+p_\omega=\sum\limits_i p_i p_{\omega,i}.
+$$
+
+It is a probabilistic blend, not an additive layer stack. It does not model coating order, multiple internal reflections, or Fresnel-aware lobe-selection probabilities. Parsing is recursive, so a component may itself be a mixture or procedural cutout.
+
+#### Implementation Logic and Mathematical Process
+
+Sampling selects component $i$ with probability $p_i$ and remaps the random number into that component's interval. For a non-delta sample, the final value and PDF are recomputed from the complete mixture. For a delta sample, only the selected component contributes and both its value and discrete PDF are multiplied by $p_i$.
+
+Flags are bitwise-unioned. Roughness reports the largest component alpha and is delta only when every active component is delta. Consequently, a `NonReciprocal` or transmission flag in any component propagates to the complete mixture and can affect integrator compatibility.
+
+#### Parameters and Schema
+
+- `components` must be non-empty.
+- Every $w_i$ must be finite and strictly positive.
+- `surface` accepts any recursively parseable surface model.
 
 ```jsonc
 {
@@ -204,30 +219,11 @@ Schema:
 }
 ```
 
-The component list must be non-empty. Parsing is recursive, so mixtures and procedural cutouts may themselves appear as components.
+### Lambert
 
-Let $w_i$ be a component weight and define $p_i=w_i/\sum_jw_j$. This model is a normalized blend, not an additive layer stack:
+#### Definition, Properties, and Model
 
-$$
-f=\sum_i p_i f_i,
-\qquad
-p_\omega=\sum_i p_i p_{\omega,i}.
-$$
-
-Sampling selects component $i$ with probability $p_i$ and remaps the random number into that component's interval. For a non-delta sample, the final value and PDF are recomputed from the complete mixture. For a delta sample, only the selected component contributes and both its value and discrete PDF are multiplied by $p_i$.
-
-Flags are bitwise-unioned. Roughness reports the largest component alpha and is delta only when every active component is delta. This is a statistical mixture; it does not implement coating order, multiple internal reflections, or Fresnel-aware lobe-selection probabilities.
-
-### 6.2 Lambert
-
-```jsonc
-{
-  "type": "lambert",
-  "albedo": "spectral parameter; required"
-}
-```
-
-For local direction dimension $D$, define:
+A Lambert surface is an ideal diffuse reflector with direction-independent BRDF over the upper hemisphere. It is reciprocal, non-delta, and parameterized by spectral albedo $\rho$. For local direction dimension $D$, define the projected-hemisphere normalization
 
 $$
 I_D
@@ -246,18 +242,41 @@ $$
 
 where $\rho$ is the albedo.
 
-In 3D, $I_3=\pi$, giving the standard $\rho/\pi$. Sampling is cosine-weighted and has a dedicated N-dimensional implementation, so Lambert is one of the surfaces intentionally supporting local dimensions above three.
+In 3D, $I_3=\pi$, giving the standard $\rho/\pi$ law.
 
-### 6.3 Specular Reflection
+#### Implementation Logic and Mathematical Process
+
+`Eval` returns $\rho/I_D$ only when both directions lie in the upper local hemisphere. `PDF` returns $\cos\theta_i/I_D$ on the same domain. Sampling uses a cosine-weighted N-dimensional hemisphere construction, so the throughput factor simplifies to the albedo:
+
+$$
+\frac{\rho}{I_D}
+\frac{\cos\theta_i}{\cos\theta_i/I_D}
+=\rho.
+$$
+
+This dedicated N-dimensional sampler makes Lambert one of the surfaces intentionally supporting local dimensions above three.
+
+#### Parameters and Schema
+
+- `albedo` is a required non-negative spectral parameter $\rho(\lambda)$.
+- Values above one are syntactically accepted but can violate energy conservation.
 
 ```jsonc
 {
-  "type": "specular_reflection",
-  "reflectance": "spectral parameter" // optional, default constant 1
+  "type": "lambert",
+  "albedo": "spectral parameter; required"
 }
 ```
 
-This is a colored perfect mirror without a Fresnel term. It deterministically negates every tangential component of $\omega_o$ while preserving the final normal component. The discrete sample is:
+### Specular Reflection
+
+#### Definition, Properties, and Model
+
+This model is a colored ideal mirror without a Fresnel term. It is a reciprocal delta-reflection distribution: all energy lies at one reflected direction, so its ordinary solid-angle function is zero almost everywhere. Reflection preserves the normal component and negates every tangential component of $\omega_o$.
+
+#### Implementation Logic and Mathematical Process
+
+The deterministic discrete sample is
 
 $$
 \omega_i=\operatorname{reflect}(\omega_o),
@@ -271,19 +290,24 @@ where $R$ is the spectral reflectance.
 
 The path-throughput cosine factor cancels the division. `Eval` and solid-angle `PDF` return zero because the distribution is a delta. The reflection logic supports arbitrary local direction dimension.
 
-### 6.4 Specular Dielectric
+#### Parameters and Schema
+
+- `reflectance` is a non-negative spectral parameter $R(\lambda)$.
+- Its default is the constant value one.
+- No IOR or Fresnel model is evaluated.
 
 ```jsonc
 {
-  "type": "specular_dielectric",
-  "reflectance": "spectral parameter",   // optional, default 1
-  "transmittance": "spectral parameter", // optional, default 1
-  "eta_outside": 1,                       // optional
-  "ior": { /* constant or cauchy */ }      // optional; eta_inside fallback supported
+  "type": "specular_reflection",
+  "reflectance": "spectral parameter" // optional, default constant 1
 }
 ```
 
-For incident index $\eta_i$, transmitted index $\eta_t$, and incident cosine $c$, unpolarized dielectric Fresnel is:
+### Specular Dielectric
+
+#### Definition, Properties, and Model
+
+This model is an ideal smooth dielectric interface with mutually exclusive delta reflection and delta transmission. It supports constant or dispersive IOR, medium-boundary transitions, and total internal reflection. For incident index $\eta_i$, transmitted index $\eta_t$, and incident cosine $c$, unpolarized dielectric Fresnel is
 
 $$
 F=\frac{r_{\parallel}^2+r_{\perp}^2}{2}.
@@ -297,6 +321,8 @@ $$
 
 Total internal reflection gives $F=1$.
 
+#### Implementation Logic and Mathematical Process
+
 Sampling chooses reflection with probability $F$ and transmission with probability $1-F$:
 
 - reflection: $f_{\mathrm{sample}}=RF/|\cos\theta_i|$ and $p=F$;
@@ -306,19 +332,28 @@ If refraction fails, sampling falls back to reflection with probability 1. A tra
 
 The implementation does not apply an additional eta-squared radiance factor in this delta model.
 
-### 6.5 Rough Conductor
+#### Parameters and Schema
+
+- `reflectance` and `transmittance` are non-negative spectral multipliers with default one.
+- `eta_outside` is positive and defaults to one.
+- `ior` accepts the shared constant or Cauchy schema; legacy `eta_inside` is used only when `ior` is absent.
+- An active `medium_boundary` can override the fallback incident/transmitted IOR pair.
 
 ```jsonc
 {
-  "type": "rough_conductor",
-  "eta": "spectral parameter; required",
-  "k": "spectral parameter; required",
-  "roughness": "number in [0,1]", // optional, default 0.25
-  "weight": "spectral parameter"  // optional, default 1
+  "type": "specular_dielectric",
+  "reflectance": "spectral parameter",   // optional, default 1
+  "transmittance": "spectral parameter", // optional, default 1
+  "eta_outside": 1,                       // optional
+  "ior": { /* constant or cauchy */ }      // optional; eta_inside fallback supported
 }
 ```
 
-The factory maps perceptual roughness $r$ to $\alpha=r^2$; GGX then clamps $\alpha$ to $[10^{-4},1]$. Roughness zero is therefore still a very sharp non-delta GGX lobe, not a perfect mirror.
+### Rough Conductor
+
+#### Definition, Properties, and Model
+
+This is a reciprocal, non-delta microfacet reflection model for a conductor with complex spectral IOR $\eta+ik$. The GGX distribution models unresolved surface normals, conductor Fresnel supplies wavelength-dependent reflection, and the scalar/spectral weight $W$ scales the lobe.
 
 For the half-vector
 
@@ -350,21 +385,36 @@ G(\omega_i,\omega_o)
 \frac{1}{1+\Lambda(\omega_i)+\Lambda(\omega_o)}.
 $$
 
+#### Implementation Logic and Mathematical Process
+
+The factory maps perceptual roughness $r$ to $\alpha=r^2$; GGX then clamps $\alpha$ to $[10^{-4},1]$. Roughness zero is therefore still a very sharp non-delta GGX lobe, not a perfect mirror.
+
 Sampling uses GGX visible-normal sampling, reflects $\omega_o$ about the sampled microfacet normal, and transforms visible-normal density with $1/(4|\omega_o\cdot\omega_h|)$.
 
-### 6.6 Rough Dielectric Reflection
+`Eval` and `PDF` reject directions outside the reflection hemispheres, and `AlbedoBound` uses the spectral weight as its conservative throughput control.
+
+#### Parameters and Schema
+
+- `eta` is the required non-negative real part $\eta(\lambda)$ of the conductor IOR.
+- `k` is the required non-negative extinction coefficient $k(\lambda)$.
+- `roughness` is $r\in[0,1]$, defaulting to $0.25$.
+- `weight` is a non-negative spectral factor $W(\lambda)$, defaulting to one.
 
 ```jsonc
 {
-  "type": "rough_dielectric_reflection",
-  "reflectance": "spectral parameter", // optional, default 1
-  "eta_outside": 1,
-  "ior": { /* constant or cauchy */ },
-  "roughness": "number in [0,1]" // optional, default 0.25
+  "type": "rough_conductor",
+  "eta": "spectral parameter; required",
+  "k": "spectral parameter; required",
+  "roughness": "number in [0,1]", // optional, default 0.25
+  "weight": "spectral parameter"  // optional, default 1
 }
 ```
 
-This is the reflection lobe only. It uses the same GGX distribution and visible-normal sampling as the rough conductor, but with scalar dielectric Fresnel:
+### Rough Dielectric Reflection
+
+#### Definition, Properties, and Model
+
+This model is the reciprocal, non-delta reflection lobe of a rough dielectric interface. It contains no transmission lobe. GGX describes the microfacet normals and scalar dielectric Fresnel modulates reflection:
 
 $$
 f(\omega_i,\omega_o)
@@ -376,21 +426,34 @@ $$
 
 It never produces transmission and is useful as a clearcoat/glaze reflection component in a mixture. Its effective roughness parameter is $\alpha=\max(r^2,10^{-4})$.
 
+#### Implementation Logic and Mathematical Process
+
+The implementation samples a GGX visible normal, reflects $\omega_o$ about it, evaluates the dielectric Fresnel term, and applies the reflection half-vector Jacobian. `Eval`, `Sample`, and `PDF` use the same GGX $D$ and Smith $G$ functions as `rough_conductor`.
+
 Current limitation: Fresnel always uses the configured outside and inside IOR values. It does not use `ctx.EtaIncident` and `ctx.EtaTransmit`, so exiting-interface or nested-medium reflection can use the wrong eta orientation.
 
-### 6.7 Rough Dielectric Transmission
+#### Parameters and Schema
+
+- `reflectance` is a non-negative spectral factor $R(\lambda)$, default one.
+- `eta_outside` is positive and defaults to one.
+- `ior` accepts the shared constant or Cauchy model.
+- `roughness` is $r\in[0,1]$, default $0.25$, with effective $\alpha=\max(r^2,10^{-4})$.
 
 ```jsonc
 {
-  "type": "rough_dielectric_transmission",
-  "transmittance": "spectral parameter", // optional, default 1
+  "type": "rough_dielectric_reflection",
+  "reflectance": "spectral parameter", // optional, default 1
   "eta_outside": 1,
   "ior": { /* constant or cauchy */ },
   "roughness": "number in [0,1]" // optional, default 0.25
 }
 ```
 
-This is the transmission lobe only. Directions $\omega_i$ and $\omega_o$ must be in opposite hemispheres. With $\eta=\eta_t/\eta_i$, the Walter-style transmission half-vector is:
+### Rough Dielectric Transmission
+
+#### Definition, Properties, and Model
+
+This model is the rough dielectric transmission lobe only. It is a non-delta, non-reciprocal radiance-transport model and never produces reflection. Directions $\omega_i$ and $\omega_o$ must lie in opposite hemispheres. With $\eta=\eta_t/\eta_i$, the Walter-style transmission half-vector is
 
 $$
 \omega_h
@@ -417,37 +480,35 @@ $$
 
 Radiance transport additionally applies the squared $(\eta_i/\eta_t)^2$ adjoint factor. The PDF multiplies visible-normal density by the half-vector-to-direction Jacobian.
 
+#### Implementation Logic and Mathematical Process
+
 Sampling draws a GGX visible normal and refracts through it. Refraction failure or total internal reflection returns an invalid sample; this model does not fall back to reflection. Use `specular_dielectric` for a combined perfect interface, or combine rough reflection and transmission explicitly while accounting for the fact that mixture selection is not Fresnel-aware.
 
 The event is marked `TransmissionEvent|NonReciprocal`. Consequently, any scene containing this surface, directly or inside a mixture, is rejected by the current BDPT support check.
 
-### 6.8 Cylindrical Grid Cutout / Wire Mesh
+#### Parameters and Schema
+
+- `transmittance` is a non-negative spectral factor $T(\lambda)$, default one.
+- `eta_outside` is positive and defaults to one.
+- `ior` accepts the shared constant or Cauchy model.
+- `roughness` is $r\in[0,1]$, default $0.25$, with effective $\alpha=\max(r^2,10^{-4})$.
+- Active medium-boundary data supplies $\eta_i$, $\eta_t$, and the transmitted medium.
 
 ```jsonc
 {
-  "type": "cylindrical_grid_cutout | wire_mesh",
-  "line_surface": { "type": "any surface type" }, // optional
-  "origin": [0, 0, 0],                              // optional 3-vector
-  "axis": [0, 0, 1],                                // optional non-zero 3-vector
-  "reference_axis": [1, 0, 0],                      // optional 3-vector
-  "line_width": 0.006,                              // optional, >= 0
-  "gap_width": 0.03,                                // optional, >= 0
-  "gap_height": 0.03,                               // optional, >= 0
-  "reference_radius": 1                             // optional, > 0
+  "type": "rough_dielectric_transmission",
+  "transmittance": "spectral parameter", // optional, default 1
+  "eta_outside": 1,
+  "ior": { /* constant or cauchy */ },
+  "roughness": "number in [0,1]" // optional, default 0.25
 }
 ```
 
-The default line surface is a silver-like rough conductor with hard-coded eta, k, roughness, and weight values.
+### Cylindrical Grid Cutout / Wire Mesh
 
-```jsonc
-{
-  "type": "rough_conductor",
-  "eta": [0.15, 0.14, 0.13],
-  "k": [4.1, 3.5, 2.7],
-  "roughness": 0.22,
-  "weight": [0.88, 0.90, 0.92]
-}
-```
+#### Definition, Properties, and Model
+
+This is a procedural BSDF mask on cylindrical coordinates, not geometric displacement. It alternates a recursively defined `line_surface` with perfectly transparent gaps. `wire_mesh` is an exact parser alias of `cylindrical_grid_cutout`.
 
 For hit point $p$, the model projects $p-o$ onto the cylinder axis. Let $h$ be axial height, $\theta$ the angle around the orthonormal reference/bitangent frame, and $s=\theta r_{\mathrm{reference}}$. A point lies on a grid line when either:
 
@@ -465,13 +526,72 @@ $$
 \le \frac{w_{\mathrm{line}}}{2}.
 $$
 
+The model is spatially discontinuous at line/gap boundaries. The line region inherits all properties and flags of `line_surface`; the gap is a delta straight-through event.
+
+#### Implementation Logic and Mathematical Process
+
 On a line, Eval/Sample/PDF delegate to `line_surface`. In a gap, Sample returns deterministic straight-through transmission $\omega_i=-\omega_o$, value $1/|\cos\theta_i|$, and discrete PDF one. Gap transmission has `DeltaTransmission` but deliberately lacks `TransmissionEvent`, so it does not modify the medium stack.
 
 The pattern uses the first three world-space hit coordinates. If fewer than three are available, every point is treated as a line. This is a BSDF mask, not geometric displacement: gaps remain intersection surfaces for visibility and shadow rays unless the transport path samples through them.
 
-## 7. Emission Models
+The factory normalizes `axis`, projects `reference_axis` into its orthogonal plane, normalizes the result, and derives the bitangent by a cross product. The default line surface is a silver-like rough conductor with hard-coded optical constants.
 
-### 7.1 Constant Emission
+#### Parameters and Schema
+
+- `origin`, `axis`, and `reference_axis` define the cylindrical coordinate frame in 3D.
+- `line_width`, `gap_width`, and `gap_height` are non-negative.
+- `reference_radius` is strictly positive and converts angle to arc coordinate $s$.
+- `line_surface` is optional and recursively accepts any surface model.
+
+```jsonc
+{
+  "type": "cylindrical_grid_cutout | wire_mesh",
+  "line_surface": { "type": "any surface type" }, // optional
+  "origin": [0, 0, 0],                              // optional 3-vector
+  "axis": [0, 0, 1],                                // optional non-zero 3-vector
+  "reference_axis": [1, 0, 0],                      // optional 3-vector
+  "line_width": 0.006,                              // optional, >= 0
+  "gap_width": 0.03,                                // optional, >= 0
+  "gap_height": 0.03,                               // optional, >= 0
+  "reference_radius": 1                             // optional, > 0
+}
+```
+
+Default `line_surface`:
+
+```jsonc
+{
+  "type": "rough_conductor",
+  "eta": [0.15, 0.14, 0.13],
+  "k": [4.1, 3.5, 2.7],
+  "roughness": 0.22,
+  "weight": [0.88, 0.90, 0.92]
+}
+```
+
+## Emission Models
+
+### Constant Emission
+
+#### Definition, Properties, and Model
+
+Constant emission is a spatially and directionally invariant radiance model:
+
+$$
+L_e(x,\omega_o,\lambda)=L(\lambda).
+$$
+
+It is non-delta and does not impose one-sided emission at the emitter level.
+
+#### Implementation Logic and Mathematical Process
+
+`Emit` ignores outgoing direction and interaction coordinates, evaluates the shared spectral parameter in the active spectral context, and returns it directly. Any visibility, surface-area sampling, or sidedness behavior belongs to the Shape and integrator rather than this emitter.
+
+#### Parameters and Schema
+
+- `radiance` is the required non-negative spectral function $L(\lambda)$.
+- `color` is accepted only as a fallback alias when `radiance` is absent.
+- If both fields exist, `radiance` takes precedence.
 
 ```jsonc
 {
@@ -481,22 +601,17 @@ The pattern uses the first three world-space hit coordinates. If fewer than thre
 }
 ```
 
-If both `radiance` and `color` exist, `radiance` wins. `Emit` ignores outgoing direction and returns the evaluated spectral parameter, so emission is direction-independent and not one-sided at the emitter level.
+### Cell Palette Emission
 
-### 7.2 Cell Palette Emission
+#### Definition, Properties, and Model
 
-```jsonc
-{
-  "type": "cell_palette",
-  "palette": [[r,g,b], /* one or more non-negative RGB triples */], // optional
-  "intensity": "non-negative number",                              // optional
-  "shading": "solid | boundary_grid",                              // optional, default solid
-  "grid_color": [r,g,b],                                            // optional, default white
-  "grid_thickness": "non-negative world-space number"              // optional, default 0.02
-}
-```
+Cell-palette emission is a diagnostic, direction-independent emitter that assigns color from the dominant signed axis of the geometric normal. The default palette contains eight colors for `-X,+X,-Y,+Y,-Z,+Z,-W,+W`. For
 
-The default palette contains eight colors for `-X,+X,-Y,+Y,-Z,+Z,-W,+W`. The emitter finds the geometric-normal component with largest absolute magnitude and chooses
+$$
+a=\operatorname*{arg\,max}_j|n_j|,
+$$
+
+the palette index is
 
 $$
 i=2a+\mathbf{1}_{\mathrm{positive}},
@@ -511,11 +626,59 @@ wrapping the index modulo the palette length. Missing or zero normal data falls 
 -W [1.00, 0.55, 0.10]   +W [0.92, 0.92, 0.92]
 ```
 
+The model is intended for cell/face orientation visualization rather than physical illumination.
+
+#### Implementation Logic and Mathematical Process
+
 In `boundary_grid` mode, non-dominant coordinates are compared with the object's AABB faces. A point within `grid_thickness` of any such boundary emits `grid_color`; otherwise it emits the cell color. Grid evaluation therefore depends on valid hit position, geometric normal, and Shape AABB data in `ShadingContext`.
 
 Intensity scales palette colors but does not scale `grid_color`. `grid_color` and `grid_thickness` are parsed only in boundary-grid mode.
 
-### 7.3 UV Klein Emission
+#### Parameters and Schema
+
+- `palette` is an optional non-empty list of non-negative RGB triples.
+- `intensity` is non-negative.
+- `shading` is `solid` or `boundary_grid`, defaulting to `solid`.
+- `grid_color` defaults to white and is not multiplied by `intensity`.
+- `grid_thickness` is a non-negative world-space distance with default $0.02$.
+
+```jsonc
+{
+  "type": "cell_palette",
+  "palette": [[r,g,b], /* one or more non-negative RGB triples */], // optional
+  "intensity": "non-negative number",                              // optional
+  "shading": "solid | boundary_grid",                              // optional, default solid
+  "grid_color": [r,g,b],                                            // optional, default white
+  "grid_thickness": "non-negative world-space number"              // optional, default 0.02
+}
+```
+
+### UV Klein Emission
+
+#### Definition, Properties, and Model
+
+UV Klein emission is a diagnostic parameter-space visualization for Klein-bottle geometry. It assumes $(u,v)$ are angular coordinates in radians. Wrapped $u$ controls cyclic hue, while $v$ controls alternating light and dark stripes. It is direction-independent, non-delta, and intentionally non-physical.
+
+#### Implementation Logic and Mathematical Process
+
+The wrapped angular coordinates are
+
+$$
+\hat{u}=\operatorname{frac}\!\left(\frac{u}{2\pi}\right),
+\qquad
+\hat{v}=\operatorname{frac}\!\left(\frac{v}{2\pi}\right).
+$$
+
+The hue is $H=360\hat{u}$ degrees. The stripe index alternates across $2N$ bands per $v$ cycle, where $N=\mathtt{v\_stripes}$. Even and odd bands use lightness $L$ and $0.45L$, respectively. The HSL result is converted to RGB and multiplied by `intensity`.
+
+Current parser bug: `v_stripes` is intended to default to 1, but when the field is absent the subsequent integer check compares the default against the original zero value and rejects the material. In current code, `v_stripes` is effectively required.
+
+#### Parameters and Schema
+
+- `saturation` lies in $[0,1]$ and defaults to one.
+- `lightness` lies in $[0,1]$ and defaults to $0.55$.
+- `v_stripes` is a positive integer and is effectively required by the current parser bug.
+- `intensity` is non-negative and defaults to one.
 
 ```jsonc
 {
@@ -527,11 +690,7 @@ Intensity scales palette colors but does not scale `grid_color`. `grid_color` an
 }
 ```
 
-The emitter assumes UV values are angular coordinates in radians. It maps wrapped $u$ to HSL hue and alternates $v$ bands between full lightness and $0.45$ times the configured lightness, with $2\,\mathtt{v\_stripes}$ bands per $v$ cycle. The HSL color is converted to RGB and multiplied by intensity.
-
-Current parser bug: `v_stripes` is intended to default to 1, but when the field is absent the subsequent integer check compares the default against the original zero value and rejects the material. In current code, `v_stripes` is effectively required.
-
-## 8. Medium Integration
+## Medium Integration
 
 Media are scene-level definitions but are essential to dielectric material behavior.
 
@@ -572,15 +731,15 @@ $$
 
 `sigma_s` is parsed, stored, and queryable, but no ray-tracing code currently consumes it. The Engine therefore implements homogeneous absorption but not volumetric scattering events.
 
-## 9. Spectral, Dimensional, and Integrator Behavior
+## Spectral, Dimensional, and Integrator Behavior
 
-### 9.1 Spectral Processing
+### Spectral Processing
 
 The render selects RGB, hero-wavelength, or sampled-wavelength mode. `ShadingContext` carries the active wavelength data to every spectral parameter and IOR model. Cauchy dielectric samples can propagate wavelength metadata on transmission. RGB authored data is uplifted when a wavelength representation is requested.
 
 The generic `Spectrum` type does not freely combine RGB and sampled values. Most mixed-kind operations return zero unless a model explicitly performs a compatible uplift. Authors should use consistent spectral parameter forms within one model.
 
-### 9.2 Dimension Support
+### Dimension Support
 
 - Lambert and perfect specular reflection intentionally support N-dimensional local directions.
 - Specular dielectric reflection/refraction helpers preserve the input direction length.
@@ -588,44 +747,9 @@ The generic `Spectrum` type does not freely combine RGB and sampled values. Most
 - Cylindrical grid placement is explicitly based on three world-space coordinates.
 - Cell palette selection is dimension-generic because it scans every normal component.
 
-### 9.3 Emission and Integrators
+### Emission and Integrators
 
 - The regular recursive path tracer stops at every emissive hit, even if the same material also has a surface.
 - BDPT rejects non-Euclidean scenes and any surface whose flags include `NonReciprocal`; this excludes rough dielectric transmission and mixtures containing it.
 - Area-light sampling requires both an emitter and a Shape implementing `SurfaceSampler` with positive area. Material emission alone does not make a Shape sampleable.
 - Light-to-camera projection skips non-endpoint vertices whose surface advertises any delta flag. A mixed or cutout surface may therefore be excluded even when it also contains a continuous lobe.
-
-## 10. Validation, Physical Limits, and Known Risks
-
-The package contains numerical checks for non-negativity, reciprocity, energy conservation, and Sample/Eval/PDF consistency. These are utilities used by tests; the JSON factory does not run them on every loaded material.
-
-| Topic | Current fact | Consequence |
-| --- | --- | --- |
-| Unknown fields | Generally ignored | Misspelled optional fields may silently use defaults |
-| Spectral magnitudes | Non-negative but usually not capped at 1 | User input can create energy gain |
-| Roughness zero | Squared, then alpha clamps to `1e-4` | Rough models never become true delta models |
-| Rough reflection eta | Ignores boundary-resolved eta pair | Incorrect Fresnel is possible when exiting or nesting media |
-| Rough transmission TIR | Returns an invalid sample instead of reflection | Paths can terminate when only the transmission lobe is present or selected |
-| Rough transmission reciprocity | Marked `NonReciprocal` | BDPT rejects the entire scene |
-| Combined surface and emission | Accepted, but emission wins in regular tracing | The surface is not sampled after an emissive hit |
-| Cutout gaps | BSDF straight-through, not geometric holes | Shadow/visibility intersection behavior differs from alpha-tested geometry |
-| `uv_klein.v_stripes` | Intended optional default is broken | Field is effectively required |
-| Cell palette intensity | Scales palette but not grid color | Grid brightness may not track the requested intensity |
-| ACEScg input | Stored without color-space conversion | Values are not transformed into the renderer's linear-sRGB working space |
-| `sigma_s` | Parsed and stored but unused | No volume scattering despite a scattering coefficient in the schema |
-| Material metadata | Mostly zero/default and not JSON-configurable | Do not treat it as a complete capability registry |
-
-## 11. Maintenance Sources of Truth
-
-When changing the material system, inspect at least:
-
-1. `engine/controller/factory/materials.go` for all JSON discriminators, defaults, schemas, aliases, and recursive composition.
-2. `engine/model/material/bxdf/` for physical evaluation, sampling, PDFs, eta resolution, and event flags.
-3. `engine/model/material/bsdf/` for wrappers, mixtures, and procedural cutouts.
-4. `engine/model/material/microfacet/` for GGX and Fresnel implementation details.
-5. `engine/model/material/emission/` for emitter behavior and required shading context.
-6. `engine/model/optics/spectrum_parameter/` for authored spectral input semantics.
-7. `engine/model/material/medium/` and `engine/controller/factory/media.go` for IOR, absorption, boundaries, and stack priority.
-8. `engine/ray_tracing/trace_ray.go`, `medium_transport.go`, `bdpt.go`, and `light_trace.go` for the behavior integrators actually apply.
-
-Adding a BxDF or Emitter Go type does not make it JSON-loadable. It also requires a factory discriminator and schema. Event flags are part of the transport contract: they control delta handling, medium transitions, BDPT support, and light-tracing visibility behavior.

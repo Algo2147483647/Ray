@@ -1,51 +1,16 @@
-# Engine Integrator Categories, Mathematics, and Execution Details
+# Integrator
 
-> Scope: this document describes only the current implementation under `engine/`. Studio behavior, example-only conventions, and older documentation are excluded.
->
-> Primary sources: `engine/ray_tracing/integrator.go`, `render_driver.go`, `trace_pixel.go`, `trace_ray.go`, `light_trace.go`, `bdpt.go`, `bdpt_kernel.go`, `medium_transport.go`, and the Engine controller/parser.
+## Real Integrator Category Tables
 
-## 1. Executive Summary
-
-The Engine accepts three canonical integrator names:
-
-- `path`
-- `bdpt`
-- `light_tracing`
-
-There is one compatibility alias, `light_trace`, which is canonicalized to `light_tracing`. An empty integrator value also resolves to `path` at the runtime parsing boundary.
-
-These names are configuration values, not concrete Go integrator classes. Every accepted value creates the same `configuredSceneIntegrator`; the real implementation is the selected driver/kernel pair:
-
-```text
-configuredSceneIntegrator
-|- pixelDriver
-|  `- pathTracingKernel
-`- splatDriver
-   |- bdptKernel
-   `- lightTracingKernel
-```
-
-The most important runtime distinction is the work-distribution model:
-
-- Path tracing owns one pixel at a time and writes that pixel exclusively.
-- BDPT and light tracing generate global paths and may splat into arbitrary pixels, so film writes are synchronized per pixel.
-- Requested BDPT is not always effective BDPT. It falls back to the path estimator inside the BDPT splat schedule when its capability gate fails.
-
-## 2. Real Integrator Category Tables
-
-### 2.1 Configured Names and Actual Runtime Behavior
-
-| Input value | Canonical `IntegratorKind` | Driver | Kernel | Actual estimator | Runtime fallback or hard failure |
-| --- | --- | --- | --- | --- | --- |
-| omitted or empty | `path` | `pixelDriver` | `pathTracingKernel` | Camera-path, BSDF-sampled path tracing | None |
-| `path` | `path` | `pixelDriver` | `pathTracingKernel` | Camera-path, BSDF-sampled path tracing | None |
-| `bdpt` | `bdpt` | `splatDriver` | `bdptKernel` | Continuous bidirectional connections plus a separate delta-caustic camera-splat family | Falls back to the path estimator for unsupported scenes; the driver remains the BDPT splat driver |
-| `light_tracing` | `light_tracing` | `splatDriver` | `lightTracingKernel` | Light-subpath tracing with a $t=1$ camera projection at eligible vertices | Fails if the camera does not implement `camera.ProjectiveCamera` |
-| `light_trace` | `light_tracing` | `splatDriver` | `lightTracingKernel` | Exact alias of `light_tracing` | Same as `light_tracing` |
+| Input value | Actual estimator | Runtime fallback or hard failure |
+| --- | --- | --- |
+| Path Tracing | Camera-path, BSDF-sampled path tracing | None |
+| Light Tracing | Light-subpath tracing with a $t=1$ camera projection at eligible vertices | Fails if the camera does not implement `camera.ProjectiveCamera` |
+| Bidirectional Path Tracing | Continuous bidirectional connections plus a separate delta-caustic camera-splat family | Falls back to the path estimator for unsupported scenes; the driver remains the BDPT splat driver |
 
 Unknown values are rejected by `ParseIntegratorKind`.
 
-### 2.2 Runtime Types and Responsibilities
+### Runtime Types and Responsibilities
 
 | Runtime type/interface | Role | Selected directly by input? |
 | --- | --- | --- |
@@ -63,7 +28,7 @@ Unknown values are rejected by `ParseIntegratorKind`.
 
 Drivers and kernels are implementation components, not additional user-visible integrator categories.
 
-### 2.3 Capability Matrix
+### Capability Matrix
 
 | Capability | `path` | Effective `bdpt` | `light_tracing` |
 | --- | --- | --- | --- |
@@ -80,8 +45,111 @@ Drivers and kernels are implementation components, not additional user-visible i
 | Spherical geometry | Yes, including wrap handling | Falls back to path | No Engine projective spherical camera exists |
 | Non-reciprocal surface | Yes | Falls back to path | Not explicitly rejected |
 | Arbitrary-pixel film splats | No | Yes for delta-caustic $t=1$ paths | Yes for every eligible light vertex |
+| Unbiasedness scope | Conditional for the supported depth/arc-truncated camera-path model | Conditional for the enabled reciprocal continuous-MIS and separate supported delta-caustic families; fallback inherits path behavior | Conditional for the finite-light, finite-depth, Euclidean projective $t=1$ family |
 
-## 3. Shared Mathematical Contract
+## Model Background
+
+The former shared-contract description was not a complete model background: it defined local throughput, absorption, and roulette, but did not first state the rendering equation, camera measurement, path-space measure, PDF conversions, delta events, spectral estimator, or the conditions required for unbiased Monte Carlo estimation. Those foundations are made explicit below.
+
+### Surface Rendering Equation
+
+For a surface point $x$ and outgoing direction $\omega_o$, the surface-only transport model is
+
+$$
+L_o(x,\omega_o,\lambda)
+=
+L_e(x,\omega_o,\lambda)
++
+\int_{\mathcal{H}(x)}
+f_s(x,\omega_i,\omega_o,\lambda)
+L_i(x,\omega_i,\lambda)
+|n_x\cdot\omega_i|\,d\omega_i.
+$$
+
+$\mathcal{H}(x)$ is the valid directional domain in the local shading frame. The engine evaluates finite emissive surfaces, BSDF scattering, visibility, homogeneous absorption, and medium-boundary IOR changes. It has no environment-emission term and no volume-scattering source term.
+
+For a pixel $p$, an idealized camera measurement is
+
+$$
+I_p
+=
+\int_{\mathcal{C}_p}
+W_p(r)\,L(r)\,d\mu_{\mathrm{camera}}(r),
+$$
+
+where $W_p$ contains the camera/raster filter and $\mathcal{C}_p$ is the camera-ray domain for that pixel. Path tracing samples this domain from the camera. Light tracing and the $t=1$ BDPT family instead use `ProjectPoint`, whose returned Jacobian maps a scene-point contribution to the box-filtered raster measurement.
+
+### Path-Space Integral
+
+A complete finite surface path is $\bar{x}=(x_0,\ldots,x_k)$, with a light endpoint, zero or more scattering vertices, and a camera endpoint. The measurement can be decomposed by path length:
+
+$$
+I_p
+=
+\sum\limits_{k=1}^{\infty}
+\int_{\Omega_k}
+F_p(\bar{x})\,d\mu_k(\bar{x}).
+$$
+
+For a non-delta Euclidean surface path, the contribution contains emission, BSDFs, segment transmittance, visibility, and geometry factors:
+
+$$
+F_p(\bar{x})
+=
+W_p(\bar{x})L_e(x_0)
+\prod\limits_{i=1}^{k-1}
+\left[f_i\,T_i\,G(x_{i-1},x_i)\right].
+$$
+
+Delta reflection and transmission are singular measures and cannot be treated as ordinary area- or solid-angle-density factors. The implementation therefore samples delta events discretely and excludes sampled-delta path views from continuous BDPT MIS.
+
+### Monte Carlo Estimation and Unbiasedness Conditions
+
+For samples $X_n\sim p$ over the same measure as $F$, the standard estimator is
+
+$$
+\widehat{I}_N
+=
+\frac{1}{N}
+\sum\limits_{n=1}^{N}
+\frac{F(X_n)}{p(X_n)}.
+$$
+
+It is unbiased when:
+
+1. $p(x)>0$ everywhere $F(x)\ne0$ in the claimed path family;
+2. every area, direction, light-selection, wavelength, roulette, and camera density is included with respect to the correct measure;
+3. visibility, BSDF, emission, transmittance, and Jacobian evaluations match the sampled path;
+4. rejected samples represent zero contribution rather than silently removing non-zero support;
+5. MIS weights form a partition of unity over the strategies used for the same contribution;
+6. termination is either part of the declared finite model or compensated probabilistically.
+
+Under these conditions $\mathbb{E}[\widehat{I}_N]=I$. Unbiasedness does not imply low variance. Conversely, deterministic maximum depth, maximum arc length, omitted emitters, unsupported path measures, or missing transport phenomena make an estimator biased relative to the unrestricted physical rendering equation even when it is unbiased for the engine's narrower implemented model.
+
+### Measure Conversion and Geometry
+
+For two Euclidean surface vertices $x$ and $y$, a directional density at $x$ converts to area density at $y$ through
+
+$$
+p_A(y)
+=
+p_\omega(\omega_{xy})
+\frac{|n_y\cdot\omega_{yx}|}{\|y-x\|^2}.
+$$
+
+The corresponding connection geometry term is
+
+$$
+G(x,y)
+=
+V(x,y)
+\frac{|n_x\cdot\omega_{xy}|\,|n_y\cdot\omega_{yx}|}
+{\|y-x\|^2},
+$$
+
+where $V(x,y)$ is binary visibility. These Euclidean area-measure formulas are used by effective BDPT and projective light tracing. Regular path tracing instead follows the active geometry's ray mapping and converts intersection parameters to geometry-specific arc length.
+
+### Core Quantities and Engine Mapping
 
 The implementations use the following quantities:
 
@@ -96,7 +164,7 @@ The implementations use the following quantities:
 | $L_e(x,\omega)$ | Emitted radiance from an emissive material |
 | $J_{\mathrm{camera}}(x)$ | `ProjectPoint` Jacobian from a scene point to the box-filtered film |
 
-### 3.1 BSDF Throughput Update
+### BSDF Throughput Update
 
 All three path families use the same basic sampled-surface update:
 
@@ -111,7 +179,7 @@ The sample is rejected when its PDF is non-positive, its spectrum is non-finite,
 
 For a transmission event, the ray's medium stack and current index of refraction are updated after the BSDF weight is applied.
 
-### 3.2 Segment Transmittance
+### Segment Transmittance
 
 For homogeneous absorption coefficient $\sigma_a$ and traveled distance $d$, every traced or explicitly connected segment uses Beer-Lambert attenuation:
 
@@ -123,7 +191,21 @@ RGB mode evaluates this independently per RGB coefficient. Spectral mode evaluat
 
 The Engine does not sample a free-flight distance or phase function. A configured scattering coefficient is therefore not a volumetric path event in these integrators.
 
-### 3.3 Russian Roulette
+### Spectral Monte Carlo Estimation
+
+In wavelength modes, a sampled wavelength $\lambda\sim p_\lambda$ contributes
+
+$$
+\widehat{C}(\lambda)
+=
+\frac{C(\lambda)}{p_\lambda(\lambda)}.
+$$
+
+Hero-wavelength path tracing and both splat kernels use one active wavelength per principal path. Sampled-mode path tracing and BDPT additionally stratify the wavelength domain across `wavelength_samples`. Dividing by $p_\lambda$ makes the wavelength estimator unbiased for the engine's sampled spectral integral, provided the wavelength PDF has support wherever the spectral contribution is non-zero. Film bins are converted to the configured color space only after accumulation.
+
+RGB mode is not a wavelength Monte Carlo estimator. It evaluates the engine's RGB approximations directly, including RGB uplift behavior inside spectral parameters when a model explicitly requests wavelength evaluation.
+
+### Russian Roulette
 
 The internal handler default is to begin roulette at depth 3.
 
@@ -142,107 +224,34 @@ $$
 
 A surviving path divides throughput by $q$. BDPT also folds $q$ into the pending forward density used for subsequent area-PDF calculations.
 
-## 4. Public Input Schema
+For a continuation contribution $Y$, roulette produces
 
-### 4.1 Canonical Scene JSON
+$$
+\widehat{Y}
+=
+\begin{cases}
+Y/q, & \text{with probability }q,\\
+0, & \text{with probability }1-q,
+\end{cases}
+$$
 
-Integrator selection is part of `render`, or of each entry in `renders` for multiple render jobs:
+and therefore $\mathbb{E}[\widehat{Y}]=Y$. Roulette is unbiased when $q>0$ for every non-zero continuation and the division by $q$ is applied exactly once. It changes variance and work, not the expectation.
 
-```jsonc
-{
-  "render": {
-    "integrator": "path",
-    "samples": 20,
-    "thread_num": 8,
-    "camera_index": 0,
-    "width": 400,
-    "height": 400,
-    "spectrum_mode": "hero_wavelength",
-    "wavelength_samples": 1,
-    "color_space": "linear_srgb",
-    "pixel_windows": [
-      { "min": [0, 0], "max": [400, 400] }
-    ]
-  },
-  "geometry": {
-    "type": "euclidean",
-    "max_arc": 0
-  }
-}
-```
+### Model Completeness Boundary
 
-The same `RenderScript` schema is accepted in:
+The background above is complete for interpreting the estimators implemented in this file: it covers the surface rendering equation, camera measurement, path-space decomposition, continuous and delta measures, area/solid-angle conversion, BSDF throughput, homogeneous attenuation, spectral sampling, MIS conditions, and roulette.
 
-```jsonc
-{
-  "renders": [
-    { "integrator": "path", "samples": 20 },
-    { "integrator": "bdpt", "samples": 100 }
-  ]
-}
-```
+It is not a model of every physically possible transport process. The current engine omits environment lighting, participating-medium scattering, phase functions, free-flight sampling, polarization, fluorescence, diffraction, and transient transport. Its hard `MaxRayLevel`, optional geometry arc budget, finite supported light set, and integrator-specific strategy restrictions must therefore be included when stating any unbiasedness claim.
 
-### 4.2 Integrator-Relevant Fields
+## Path Tracing
 
-| JSON field | Accepted/current meaning | Controller default | Important behavior |
-| --- | --- | --- | --- |
-| `integrator` | `path`, `bdpt`, `light_tracing`, or alias `light_trace` | `path` | Parsed to a canonical kind immediately before rendering |
-| `samples` | Positive integer in normal controller use | `20` | Per-active-pixel target; global splat work derives from it |
-| `thread_num` | Positive worker count | `runtime.NumCPU()` | Non-positive values from script do not override the default |
-| `spectrum_mode` | `rgb`, `hero_wavelength`, `sampled` | `hero_wavelength` | Changes wavelength sampling and film accumulation |
-| `wavelength_samples` | Positive integer | `1`; promoted to `4` when resolved sampled mode is at most one | Used by path and BDPT sampled mode; not used to multiply light-tracing work |
-| `color_space` | `linear_srgb`, `acescg`, `xyz` | `linear_srgb` | Working/film space for RGB accumulation and spectral-bin conversion |
-| `working_space` | Legacy alternate JSON field read only when `color_space` is empty | Empty | The CLI flag named `--working-space` writes the resolved color-space setting |
-| `pixel_windows` | Array of half-open `{min,max}` coordinate boxes | Entire film | Restricts active pixels; overlapping windows are de-duplicated |
-| `camera_index` | Camera selected for the render | `0` | Light tracing additionally requires the selected camera to be projective |
-| `width`, `height` | Output dimensions for supported camera types | `400`, `400` when not supplied by the camera | Affect active-pixel count and splat normalization |
-| `geometry.type` | `euclidean`, `klein`, or `spherical` | Engine scene default | Determines path-geodesic behavior and BDPT fallback |
-| `geometry.max_arc` | Non-negative geodesic distance budget | `0` except spherical defaults to $2\pi$ | Enforced by regular path tracing; BDPT only runs in Euclidean geometry |
-
-The controller resolves defaults, then scene fields, then command-line overrides. The `renders` array creates independent jobs using the same schema.
-
-### 4.3 CLI Inputs
-
-The Engine CLI exposes these relevant flags:
-
-```text
---integrator path|bdpt|light_tracing
---samples N
---threads N
---spectrum-mode rgb|hero_wavelength|sampled
---wavelength-samples N
---working-space linear_srgb|acescg|xyz
---pixel-window min:max,min:max
---camera-index N
---width N
---height N
-```
-
-`--pixel-window` may be repeated. Both `light_tracing` and `light_trace` pass integrator validation even though only the canonical name is listed in the help string.
-
-### 4.4 Internal Controls That Are Not Scene Inputs
-
-`ray_tracing.Handler` contains JSON tags for several fields, but the canonical controller does not deserialize a handler from the scene. It constructs `NewHandler()` and only copies selected render settings. Consequently these are fixed internal defaults in normal Engine scene rendering:
-
-| Internal field | Default | Runtime role | Public scene/CLI override? |
-| --- | --- | --- | --- |
-| `MaxRayLevel` | `64` | Hard subpath/bounce cap | No |
-| `RussianRouletteDepth` | `3` | First depth eligible for roulette | No |
-| `BlockCols` | `8` | Pixel-driver tile width | No |
-| `BlockRows` | `8` | Pixel-driver tile height | No |
-| `WavelengthSampler` | Uniform sampler | Wavelength distribution | No |
-
-`MaxArc`, thread count, spectrum mode, wavelength count, and film color space are copied or resolved by the controller.
-
-## 5. Path Tracing (`path`)
-
-### 5.1 Actual Category
+### Actual Category
 
 This is a unidirectional camera-path tracer. It samples only the BSDF at each surface. It has no explicit next-event estimation, no light selection, and no MIS.
 
 A path contributes only when it directly reaches an emissive surface. A miss contributes zero; there is no environment-light evaluation.
 
-### 5.2 Estimator
+### Estimator
 
 For a camera path with sampled surface vertices $x_1,\ldots,x_k$ ending on an emitter, the implemented contribution has the form:
 
@@ -250,7 +259,7 @@ $$
 \widehat{L}
 =
 \left[
-\prod_{i=1}^{k-1}
+\prod\limits_{i=1}^{k-1}
 T_i f_i\frac{|\cos\theta_i|}{p_i}
 \right]
 T_k L_e(x_k,\omega_{o,k}).
@@ -260,7 +269,27 @@ Russian-roulette compensation is included in the product for surviving paths. Th
 
 If a material contains both emission and a surface, `traceEmission` evaluates the emission and returns immediately. Its surface is not sampled by this integrator at that hit.
 
-### 5.3 Per-Sample Flow
+### Unbiasedness Analysis
+
+For the engine's finite surface-transport model, one camera-path sample has the standard importance-sampling form $F(\bar{x})/p(\bar{x})$. The BSDF factors, directional PDFs, segment transmittance, wavelength PDF, and roulette survival probabilities are compensated in throughput. Therefore, for every path family with non-zero sampling support,
+
+$$
+\mathbb{E}[\widehat{L}_{\mathrm{path}}]
+=L_{\mathrm{implemented}}.
+$$
+
+The absence of next-event estimation or MIS does not by itself introduce bias. It can produce extremely high variance because an emissive surface must be reached by the BSDF random walk.
+
+This conclusion has explicit boundaries:
+
+- the deterministic `MaxRayLevel = 64` truncates longer paths and is biased relative to the infinite-bounce rendering equation;
+- `MaxArc` can additionally truncate curved-geometry paths;
+- a black miss, no environment term, no participating-medium scattering, and emission-first material behavior define a narrower engine model rather than an estimator of those omitted phenomena;
+- numerical intersection failures, unsupported Shape/geometry combinations, or a BSDF PDF with missing support can remove non-zero contributions.
+
+**Conclusion:** path tracing is conditionally unbiased for the engine's supported, depth/arc-truncated surface model. It is not strictly unbiased for the unrestricted infinite-path physical rendering equation.
+
+### Per-Sample Flow
 
 1. The camera generates a ray for the current film coordinate.
 2. RGB mode disables spectral sampling. Spectral modes attach one sampled wavelength and its PDF.
@@ -276,7 +305,7 @@ If a material contains both emission and a surface, `traceEmission` evaluates th
 12. Transmission updates the medium stack/IOR.
 13. The sampled local direction is transformed to world space, projected into the geometry tangent space, normalized with the geometry metric, and traced recursively.
 
-### 5.4 Geometry Behavior
+### Geometry Behavior
 
 Path tracing is the only current integrator with complete Engine routing for all three geometry kinds:
 
@@ -286,7 +315,7 @@ Path tracing is the only current integrator with complete Engine routing for all
 
 Actual shape support still depends on the shape's geometry-specific intersection implementation. See `geometry-shape.md` for the Engine-only shape matrix.
 
-### 5.5 Spectral and Sample Normalization
+### Spectral and Sample Normalization
 
 | Spectrum mode | Work per active pixel | Wavelength sampling | Pixel normalization | Recorded `Film.Samples` |
 | --- | --- | --- | --- | --- |
@@ -296,16 +325,16 @@ Actual shape support still depends on the shape's geometry-specific intersection
 
 Spectral contributions are accumulated into 64 default film bins and converted to the film color space during finalization.
 
-### 5.6 Strengths and Structural Limits
+### Strengths and Structural Limits
 
 - It supports curved geometry and non-reciprocal surfaces that BDPT rejects.
 - It can see any intersectable emissive surface, including an emitter whose shape cannot be area-sampled.
 - It is inefficient for small lights and caustics because it never explicitly samples a light or connects vertices.
 - It stops at the first emissive hit and does not continue through a surface component on the same material.
 
-## 6. Light Tracing (`light_tracing`, Alias `light_trace`)
+## Light Tracing
 
-### 6.1 Actual Category and Camera Requirement
+### Actual Category and Camera Requirement
 
 This is a light-subpath tracer with a projective-camera $t=1$ estimator. It starts from a finite sampleable emissive surface, walks through the scene, and tries to project every eligible light-path vertex onto the film.
 
@@ -320,7 +349,7 @@ type ProjectiveCamera interface {
 
 In the current Engine, `Camera3D` is the only implementation of `ProjectPoint`. Other camera types cause a render error rather than a fallback.
 
-### 6.2 Area-Light Distribution
+### Area-Light Distribution
 
 Only objects satisfying all of these conditions enter the distribution:
 
@@ -339,7 +368,7 @@ P_j
 \operatorname{Emit}_j(\text{RGB context},(0,0,1))_c
 \right],\\
 w_j&=A_jP_j,\\
-p_{\mathrm{select}}(j)&=\frac{w_j}{\sum_k w_k}.
+p_{\mathrm{select}}(j)&=\frac{w_j}{\sum\limits_k w_k}.
 \end{aligned}
 $$
 
@@ -351,7 +380,7 @@ $$
 
 This is a power proxy, not an integrated spectral power calculation.
 
-### 6.3 Light Endpoint and Direction Sampling
+### Light Endpoint and Direction Sampling
 
 The endpoint is initialized with:
 
@@ -377,7 +406,7 @@ $$
 
 Subsequent vertices apply segment transmittance, the shared BSDF throughput update, medium transitions, and Russian roulette.
 
-### 6.4 Camera Projection Estimator
+### Camera Projection Estimator
 
 For an eligible surface vertex $x$ projected to a camera pixel:
 
@@ -411,7 +440,34 @@ A non-endpoint vertex is also rejected when:
 
 Thus delta events can transport a light path to a later continuous surface, but a delta vertex is not directly evaluated as a continuous camera connection.
 
-### 6.5 Work Scheduling and Normalization
+### Unbiasedness Analysis
+
+Let $X_n$ be one sampled light subpath and let $\mathcal{V}(X_n)$ be its eligible projected vertices, including the sampled light endpoint. The implemented splat estimator can be written as
+
+$$
+\widehat{I}_{\mathrm{LT}}
+=
+\frac{1}{N}
+\sum\limits_{n=1}^{N}
+\sum\limits_{v\in\mathcal{V}(X_n)}
+C(v;X_n),
+$$
+
+where each $C$ already contains the inverse light-selection, endpoint-area, emission-direction, BSDF, wavelength, and roulette densities carried by $\beta$, plus the camera projection Jacobian. Multiple splats from one path are not independent, but independence within a path is unnecessary for unbiasedness of their sum.
+
+The preparation weight $w_j=A_jP_j$ affects variance, not expectation, because the selected endpoint is divided by its actual $p_A$. Global division by $N=SP$ then averages the launched paths. Subject to an accurate `ProjectPoint` Jacobian, visibility test, and positive sampling support, the estimator is unbiased for the implemented projective-camera $t=1$ path family.
+
+It is not a complete unbiased estimator of the unrestricted camera measurement:
+
+- emissive objects without a positive `SurfaceSampler` area have zero launch probability;
+- delta vertices cannot be projected directly as continuous camera connections;
+- only the current Euclidean 3D projective-camera interpretation has an established Jacobian;
+- environment and participating-medium paths are absent;
+- `MaxRayLevel` deterministically truncates long light paths.
+
+The lack of MIS is not itself bias within the supported family; it affects variance. **Conclusion:** light tracing is conditionally unbiased for its sampled finite-light, finite-depth, Euclidean projective $t=1$ family, but not for all paths of the full rendering equation.
+
+### Work Scheduling and Normalization
 
 Let $P$ be the number of active pixels and $S$ the configured sample count:
 
@@ -427,7 +483,7 @@ Pixel windows restrict accepted splats and also reduce $P$, so the number of lau
 
 In RGB mode, splat values are converted from linear sRGB to the selected film color space. In either spectral mode, each light path samples one random wavelength and stores $L(\lambda)/p(\lambda)$. `wavelength_samples` does not create extra light-tracing paths and sampled mode is not wavelength-stratified here.
 
-### 6.6 Current Limits
+### Current Limits
 
 - Only finite emissive shapes implementing `SurfaceSampler` can launch paths.
 - There is no MIS with camera-path strategies.
@@ -435,9 +491,9 @@ In RGB mode, splat values are converted from linear sRGB to the selected film co
 - There is no participating-medium scattering.
 - The kernel has no BDPT-style geometry or reciprocity capability gate. Its projection, visibility segment, squared-distance term, and current projective camera are Euclidean/3D mechanisms; using it outside that setting is not established by the code.
 
-## 7. Bidirectional Path Tracing (`bdpt`)
+## Bidirectional Path Tracing
 
-### 7.1 Actual Category
+### Actual Category
 
 The implemented BDPT combines three behaviors:
 
@@ -447,7 +503,7 @@ The implemented BDPT combines three behaviors:
 
 It is not a fully symmetric all-strategy BDPT. The camera endpoint is fixed by the selected pixel, continuous $s=0$ and $t=1$ strategies are outside the MIS family, and paths containing sampled delta events are rejected from continuous MIS.
 
-### 7.2 Preparation and Fallback
+### Preparation and Fallback
 
 Before sampling, BDPT prepares its area-light distribution and records a fallback reason. Effective BDPT requires:
 
@@ -474,7 +530,7 @@ The fallback reasons are currently:
 
 The first gate checks only the geometry kind. The reason text says three-dimensional, while the explicit three-component assumptions appear later in MIS direction/frame helpers. Non-3D Euclidean input is therefore not rejected by this gate, but its continuous BDPT densities cannot be evaluated normally.
 
-### 7.3 Camera Subpath
+### Camera Subpath
 
 The camera generates a ray for the selected pixel. The subpath begins with $\beta=1$ and uses radiance transport mode.
 
@@ -498,7 +554,7 @@ At each hit:
 
 The selective emitted term avoids adding the normal non-delta hit of a sampleable area light on top of the explicit continuous connection family. It preserves camera-visible, specular-visible, and non-sampleable emission.
 
-### 7.4 Light Subpath
+### Light Subpath
 
 The light endpoint distribution and initial direction estimator are the same as light tracing. The remainder of the subpath uses importance transport mode.
 
@@ -506,7 +562,7 @@ Each stored light vertex contains the same data as a camera vertex. Its pending 
 
 Homogeneous absorption is applied before recording each surface vertex. Delta surfaces are allowed in subpath sampling even though they are excluded from continuous connection MIS.
 
-### 7.5 Continuous Vertex Connection
+### Continuous Vertex Connection
 
 For a light vertex $x_l$ and a camera vertex $x_c$, the Engine first checks the hard depth condition:
 
@@ -544,7 +600,7 @@ $$
 
 Here the light-endpoint $\beta_l$ contains $1/p_A$. The connection transmittance is evaluated using the light vertex's current medium for the complete shadow segment.
 
-### 7.6 Continuous MIS
+### Continuous MIS
 
 For one complete non-delta path of length $n$, enabled split strategies satisfy $1\le s\le n-1$. The fixed camera endpoint is not represented as a stored BDPT vertex, so $s=0$ and the $t=1$ camera-splat strategy are excluded.
 
@@ -560,14 +616,14 @@ $$
 The light side evaluates PDFs in importance mode; the camera side evaluates them in radiance mode. The current strategy is weighted by the power heuristic:
 
 $$
-w_s=\frac{p_s^2}{\sum_k p_k^2}.
+w_s=\frac{p_s^2}{\sum\limits_k p_k^2}.
 $$
 
 The implementation evaluates adjacent-strategy density ratios in log space, clamps exponential overflow/underflow, and returns zero for invalid densities.
 
 If any selected light or camera vertex reports `SampledDelta`, the continuous MIS weight is zero. Reverse discrete densities and refractive eta corrections are not present, so discrete and continuous measures are intentionally not mixed.
 
-### 7.7 Separate Delta-Caustic $t=1$ Family
+### Separate Delta-Caustic $t=1$ Family
 
 After the continuous local estimator is computed, the kernel scans the light subpath. Once an earlier vertex sampled a delta event, each later vertex is considered for direct projective-camera splatting through the same `projectLightVertex` logic used by light tracing.
 
@@ -579,7 +635,38 @@ light -> specular chain -> continuous receiving surface -> camera
 
 These splats are not included in the continuous MIS denominator. They are emitted only when the selected camera implements `ProjectiveCamera`; otherwise continuous BDPT still runs without this family.
 
-### 7.8 Work Scheduling and Spectral Modes
+### Unbiasedness Analysis
+
+For a continuous path contribution $F(\bar{x})$ sampled by enabled strategies $s\in\mathcal{S}$, the multiple-strategy estimator is unbiased when every strategy uses the correct density and the weights satisfy
+
+$$
+\sum\limits_{s\in\mathcal{S}}w_s(\bar{x})=1.
+$$
+
+The power heuristic used by the engine has this partition property for finite positive continuous densities:
+
+$$
+w_s(\bar{x})
+=
+\frac{p_s(\bar{x})^2}
+{\sum\limits_{k\in\mathcal{S}}p_k(\bar{x})^2}.
+$$
+
+The subpath throughputs include endpoint, BSDF, wavelength, transmittance, and roulette factors, while adjacent-strategy ratios convert directional PDFs to area measure. Under those conditions, the continuous MIS estimate is unbiased for the reciprocal, non-delta strategy family actually enabled by the implementation.
+
+The separate delta-caustic $t=1$ splats use a light-tracing-style estimator and are excluded from the continuous denominator. This avoids mixing discrete delta measures with continuous PDFs. They are conditionally unbiased for that selected projective path family when their light-path PDFs and camera Jacobian are correct.
+
+The complete result still has important qualifications:
+
+- deterministic `MaxRayLevel` truncation is biased relative to infinite path space;
+- continuous MIS omits $s=0$, ordinary $t=1$, camera-endpoint density, lens strategies, and every sampled-delta path view;
+- direct camera emission and the separate delta family recover selected omitted contributions, but the implementation does not constitute a general completeness proof for every physical path class;
+- unsupported geometry, non-reciprocal surfaces, or missing sampleable lights switch to the path estimator, whose own conditional-unbiasedness statement applies;
+- the continuous density implementation is established only for reciprocal 3D Euclidean surface transport.
+
+**Conclusion:** effective BDPT is conditionally unbiased for the union of its implemented continuous reciprocal MIS family and separate supported delta-caustic family, subject to correct disjoint accounting. It is not a strictly unbiased estimator of unrestricted infinite-depth transport. Fallback mode is the path estimator under BDPT scheduling and normalization.
+
+### Work Scheduling and Spectral Modes
 
 Let $P$ be the number of active pixels, $S$ the configured sample count, and $W$ equal `wavelength_samples` only in sampled mode and one otherwise:
 
@@ -603,7 +690,7 @@ Delta-caustic splats are global contributions and are divided directly by total 
 
 The splat driver records `Film.Samples` as $S$, even when sampled mode performs $SW$ work items per active pixel. This differs from the path driver's effective sample count.
 
-### 7.9 Current Limits
+### Current Limits
 
 - Effective BDPT is limited to Euclidean geometry and reciprocal surfaces.
 - Light discovery supports only finite emissive `SurfaceSampler` shapes.
@@ -612,9 +699,100 @@ The splat driver records `Film.Samples` as $S$, even when sampled mode performs 
 - No camera endpoint density, lens sampling, $s=0$ continuous strategy, environment-light strategy, or participating-medium scattering is implemented.
 - The continuous MIS helpers explicitly require three-component points and frames even though the capability gate itself checks only Euclidean geometry kind.
 
-## 8. Shared Execution and Film Semantics
+## Public Input, Execution, and Film Semantics
 
-### 8.1 Render Lifecycle
+### Canonical Scene JSON
+
+Integrator selection is part of `render`, or of each entry in `renders` for multiple render jobs:
+
+```jsonc
+{
+  "render": {
+    "integrator": "path",
+    "samples": 20,
+    "thread_num": 8,
+    "camera_index": 0,
+    "width": 400,
+    "height": 400,
+    "spectrum_mode": "hero_wavelength",
+    "wavelength_samples": 1,
+    "color_space": "linear_srgb",
+    "pixel_windows": [
+      { "min": [0, 0], "max": [400, 400] }
+    ]
+  },
+  "geometry": {
+    "type": "euclidean",
+    "max_arc": 0
+  }
+}
+```
+
+The same `RenderScript` schema is accepted in:
+
+```jsonc
+{
+  "renders": [
+    { "integrator": "path", "samples": 20 },
+    { "integrator": "bdpt", "samples": 100 }
+  ]
+}
+```
+
+### Integrator-Relevant Fields
+
+| JSON field           | Accepted/current meaning                                     | Controller default                                           | Important behavior                                           |
+| -------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| `integrator`         | `path`, `bdpt`, `light_tracing`, or alias `light_trace`      | `path`                                                       | Parsed to a canonical kind immediately before rendering      |
+| `samples`            | Positive integer in normal controller use                    | `20`                                                         | Per-active-pixel target; global splat work derives from it   |
+| `thread_num`         | Positive worker count                                        | `runtime.NumCPU()`                                           | Non-positive values from script do not override the default  |
+| `spectrum_mode`      | `rgb`, `hero_wavelength`, `sampled`                          | `hero_wavelength`                                            | Changes wavelength sampling and film accumulation            |
+| `wavelength_samples` | Positive integer                                             | `1`; promoted to `4` when resolved sampled mode is at most one | Used by path and BDPT sampled mode; not used to multiply light-tracing work |
+| `color_space`        | `linear_srgb`, `acescg`, `xyz`                               | `linear_srgb`                                                | Working/film space for RGB accumulation and spectral-bin conversion |
+| `working_space`      | Legacy alternate JSON field read only when `color_space` is empty | Empty                                                        | The CLI flag named `--working-space` writes the resolved color-space setting |
+| `pixel_windows`      | Array of half-open `{min,max}` coordinate boxes              | Entire film                                                  | Restricts active pixels; overlapping windows are de-duplicated |
+| `camera_index`       | Camera selected for the render                               | `0`                                                          | Light tracing additionally requires the selected camera to be projective |
+| `width`, `height`    | Output dimensions for supported camera types                 | `400`, `400` when not supplied by the camera                 | Affect active-pixel count and splat normalization            |
+| `geometry.type`      | `euclidean`, `klein`, or `spherical`                         | Engine scene default                                         | Determines path-geodesic behavior and BDPT fallback          |
+| `geometry.max_arc`   | Non-negative geodesic distance budget                        | `0` except spherical defaults to $2\pi$                      | Enforced by regular path tracing; BDPT only runs in Euclidean geometry |
+
+The controller resolves defaults, then scene fields, then command-line overrides. The `renders` array creates independent jobs using the same schema.
+
+### CLI Inputs
+
+The Engine CLI exposes these relevant flags:
+
+```text
+--integrator path|bdpt|light_tracing
+--samples N
+--threads N
+--spectrum-mode rgb|hero_wavelength|sampled
+--wavelength-samples N
+--working-space linear_srgb|acescg|xyz
+--pixel-window min:max,min:max
+--camera-index N
+--width N
+--height N
+```
+
+`--pixel-window` may be repeated. Both `light_tracing` and `light_trace` pass integrator validation even though only the canonical name is listed in the help string.
+
+### Internal Controls That Are Not Scene Inputs
+
+`ray_tracing.Handler` contains JSON tags for several fields, but the canonical controller does not deserialize a handler from the scene. It constructs `NewHandler()` and only copies selected render settings. Consequently these are fixed internal defaults in normal Engine scene rendering:
+
+| Internal field         | Default         | Runtime role                      | Public scene/CLI override? |
+| ---------------------- | --------------- | --------------------------------- | -------------------------- |
+| `MaxRayLevel`          | `64`            | Hard subpath/bounce cap           | No                         |
+| `RussianRouletteDepth` | `3`             | First depth eligible for roulette | No                         |
+| `BlockCols`            | `8`             | Pixel-driver tile width           | No                         |
+| `BlockRows`            | `8`             | Pixel-driver tile height          | No                         |
+| `WavelengthSampler`    | Uniform sampler | Wavelength distribution           | No                         |
+
+`MaxArc`, thread count, spectrum mode, wavelength count, and film color space are copied or resolved by the controller.
+
+
+### Render Lifecycle
 
 Every configured integrator follows the same scene-level lifecycle:
 
@@ -626,21 +804,21 @@ Every configured integrator follows the same scene-level lifecycle:
 
 Zero samples are accepted by the lower-level `RenderContext`. The pixel driver performs no work. Splat kernels may prepare first, then report zero work.
 
-### 8.2 Scheduling Comparison
+### Scheduling Comparison
 
-| Property | Pixel driver (`path`) | Splat driver (`bdpt`, `light_tracing`) |
-| --- | --- | --- |
-| Work unit | Tile/pixel | Global path sample |
-| Worker allocation | Atomic next-tile counter | Atomic next-work counter |
-| Default spatial block | `8 x 8` for 2D films; 64-element chunks otherwise | Not tiled |
-| Film write ownership | One worker owns the pixel while tracing it | Any worker may add to any pixel |
-| Synchronization | No per-pixel locks | One mutex per film element |
-| RGB write | Path sets the final pixel mean | Splats add normalized contributions |
-| Spectral write | Path adds already normalized spectral samples | Splats add $L(\lambda)/[p(\lambda)N_{\mathrm{work}}]$ |
+| Property              | Pixel driver (`path`)                             | Splat driver (`bdpt`, `light_tracing`)                |
+| --------------------- | ------------------------------------------------- | ----------------------------------------------------- |
+| Work unit             | Tile/pixel                                        | Global path sample                                    |
+| Worker allocation     | Atomic next-tile counter                          | Atomic next-work counter                              |
+| Default spatial block | `8 x 8` for 2D films; 64-element chunks otherwise | Not tiled                                             |
+| Film write ownership  | One worker owns the pixel while tracing it        | Any worker may add to any pixel                       |
+| Synchronization       | No per-pixel locks                                | One mutex per film element                            |
+| RGB write             | Path sets the final pixel mean                    | Splats add normalized contributions                   |
+| Spectral write        | Path adds already normalized spectral samples     | Splats add $L(\lambda)/[p(\lambda)N_{\mathrm{work}}]$ |
 
 If `ThreadNum` is non-positive at the driver layer, it is treated as one worker. Normal controller rendering resolves a positive CPU-count default.
 
-### 8.3 Pixel Windows
+### Pixel Windows
 
 Pixel windows are half-open boxes `[min,max)` in every film dimension.
 
@@ -651,33 +829,19 @@ Pixel windows are half-open boxes `[min,max)` in every film dimension.
 
 For non-2D films, path work is linearized. Splat projection currently depends on the projective 3D camera and its 2D raster mapping.
 
-### 8.4 Recorded Sample Count
+### Recorded Sample Count
 
-| Integrator/mode | Actual principal work | `Film.Samples` |
-| --- | --- | --- |
-| Path RGB/hero | `S` paths per active pixel | `S` |
-| Path sampled | $SW$ paths per active pixel | $SW$ |
-| BDPT RGB/hero | $SP$ global work items | $S$ |
-| BDPT sampled | $SPW$ global work items | $S$ |
-| Light tracing, any mode | $SP$ light paths | $S$ |
+| Integrator/mode         | Actual principal work       | `Film.Samples` |
+| ----------------------- | --------------------------- | -------------- |
+| Path RGB/hero           | `S` paths per active pixel  | `S`            |
+| Path sampled            | $SW$ paths per active pixel | $SW$           |
+| BDPT RGB/hero           | $SP$ global work items      | $S$            |
+| BDPT sampled            | $SPW$ global work items     | $S$            |
+| Light tracing, any mode | $SP$ light paths            | $S$            |
 
 This field is therefore driver-defined metadata, not a uniform count of every traced path across all integrators.
 
-## 9. Choosing an Integrator from Current Code Behavior
-
-| Scene/property | Most directly supported choice | Reason |
-| --- | --- | --- |
-| Klein or spherical geometry | `path` | It is the only integrator with geometry-aware tracing; BDPT falls back and light tracing lacks a matching projective camera |
-| Non-reciprocal transmission surface | `path` | BDPT explicitly falls back |
-| Emission on a non-sampleable or infinite shape | `path` | Light-origin algorithms cannot select it; BDPT may fall back when no other area light exists |
-| General reciprocal Euclidean area-light scene | `bdpt` | Combines camera/light subpaths and continuous MIS |
-| Light-to-specular-to-diffuse caustic with `Camera3D` | `bdpt` | Has the separate delta-caustic $t=1$ projection family |
-| Pure forward light splatting with `Camera3D` | `light_tracing` | Projects all eligible light-path vertices without building camera subpaths |
-| Scene dominated by camera-visible emission | `path` | Direct camera hits are structurally simple and require no sampleable-light distribution |
-
-These are consequences of the present implementation, not general claims about the algorithms in other renderers.
-
-## 10. Core Implementation Facts and Caveats
+### Core Implementation Facts and Caveats
 
 1. **Configured kind and effective algorithm are different concepts.** In particular, `bdpt` can execute the regular path estimator while retaining the splat schedule and BDPT film metadata.
 2. **Only `Camera3D` is currently projective.** Light tracing rejects all other camera types; BDPT merely omits its delta-caustic splats when projection is unavailable.
@@ -693,8 +857,6 @@ These are consequences of the present implementation, not general claims about t
 12. **Continuous BDPT deliberately rejects delta measures.** Delta-caustic splats are a separate, non-MIS path family.
 13. **Random samples use `math/rand/v2` package-level generation.** The integrator input schema exposes no seed or sampler-selection control.
 14. **Unknown JSON fields are normally ignored by `encoding/json`.** Integrator value validation occurs later through `ParseIntegratorKind`; CLI values are validated during flag parsing.
-
-## 11. Source Map
 
 | Concern | Engine source |
 | --- | --- |

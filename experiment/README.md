@@ -47,7 +47,6 @@ From the repository root, the main commands are:
 ```powershell
 npm run ray:build
 npm run ray:test
-npm run studio -- --help
 ```
 
 `npm run studio -- ...` delegates scene composition and rendering to Studio. Direct
