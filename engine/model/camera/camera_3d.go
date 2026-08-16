@@ -55,13 +55,16 @@ func (c *Camera3D) Prepare() error {
 
 	c.dir = mat.VecDenseCopyOf(c.Direction)
 	maths.Normalize(c.dir)
-	c.up = mat.VecDenseCopyOf(c.Up)
-	maths.Normalize(c.up)
-	right := maths.Cross2(c.dir, c.up)
+	right := maths.Cross2(c.dir, c.Up)
 	if mat.Norm(right, 2) == 0 {
 		return fmt.Errorf("camera direction and up vector must not be parallel")
 	}
 	c.right = maths.Normalize(right)
+	// Rebuild the cached up vector from the other two axes. The configured Up
+	// vector is an orientation hint and need not already be perpendicular to
+	// Direction (look-at cameras commonly use the world-up axis). GenerateRay
+	// and ProjectPoint must share an orthonormal basis to be exact inverses.
+	c.up = maths.Normalize(maths.Cross2(c.right, c.dir))
 
 	c.halfHeight = halfHeight
 	c.halfWidth = halfWidth
@@ -127,6 +130,15 @@ func (c *Camera3D) ProjectPoint(point *mat.VecDense) (FilmProjection, bool) {
 	y := mat.Dot(fromCamera, c.up) / forwardDistance
 	u := x / c.halfWidth
 	v := -y / c.halfHeight
+	// Make the optical-axis mapping deterministic for even-sized films. Dot
+	// products of an analytically perpendicular basis can retain a few ULPs of
+	// signed error, otherwise placing the center ray one pixel left or above.
+	if math.Abs(u) < 1e-14 {
+		u = 0
+	}
+	if math.Abs(v) < 1e-14 {
+		v = 0
+	}
 	if u < -1 || u >= 1 || v < -1 || v >= 1 {
 		return FilmProjection{}, false
 	}
