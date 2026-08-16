@@ -122,6 +122,38 @@ func TestRoughConductorKeepsSampledColorFromSampledParameters(t *testing.T) {
 	}
 }
 
+func TestRoughDielectricReflectionSamplesSameHemisphere(t *testing.T) {
+	reflection := bxdf.NewRoughDielectricReflection(
+		optics.NewSpectrum(1, 1, 1),
+		1,
+		1.5,
+		0.14*0.14,
+	)
+	ctx := bxdf.ShadingContext{WavelengthNM: 550}
+	wo := maths.NewDirection(0.15, -0.1, 0.98).Normalize()
+
+	sample := reflection.Sample(ctx, wo, maths.Sample2D{U: 0.37, V: 0.61})
+
+	if sample.PDF <= 0 {
+		t.Fatalf("expected positive PDF, got %+v", sample)
+	}
+	if !sample.F.IsFinite() || !sample.F.IsNonNegative() {
+		t.Fatalf("expected finite non-negative sample value, got %+v", sample.F)
+	}
+	if !maths.SameHemisphere(sample.Wi, wo) {
+		t.Fatalf("expected reflection to remain in the same hemisphere, got wi=%+v wo=%+v", sample.Wi, wo)
+	}
+	if sample.Flags != bxdf.DeltaNone {
+		t.Fatalf("rough reflection should not be marked as delta, got %v", sample.Flags)
+	}
+	if !sample.F.AlmostEqual(reflection.Eval(ctx, sample.Wi, wo), 1e-12) {
+		t.Fatalf("sample/eval mismatch: sample=%+v eval=%+v", sample.F, reflection.Eval(ctx, sample.Wi, wo))
+	}
+	if got := reflection.PDF(ctx, sample.Wi, wo); math.Abs(got-sample.PDF) > 1e-12 {
+		t.Fatalf("sample/pdf mismatch: sample=%f pdf=%f", sample.PDF, got)
+	}
+}
+
 func TestRoughDielectricTransmissionSamplesOppositeHemisphere(t *testing.T) {
 	transmission := bxdf.NewRoughDielectricTransmission(
 		optics.NewSpectrum(0.9, 0.85, 0.8),

@@ -93,6 +93,47 @@ func parseSurface(def map[string]interface{}) (bsdf.BSDF, error) {
 	}
 
 	switch surfaceType {
+	case "weighted_mixture":
+		componentsRaw, ok := def["components"]
+		if !ok {
+			return nil, fmt.Errorf("missing required field %q", "components")
+		}
+		componentDefs, ok := componentsRaw.([]interface{})
+		if !ok {
+			return nil, fmt.Errorf("field %q: expected array, got %T", "components", componentsRaw)
+		}
+		if len(componentDefs) == 0 {
+			return nil, fmt.Errorf("field %q must not be empty", "components")
+		}
+
+		components := make([]bsdf.WeightedBxDF, 0, len(componentDefs))
+		for index, componentRaw := range componentDefs {
+			component, ok := componentRaw.(map[string]interface{})
+			if !ok {
+				return nil, fmt.Errorf("components[%d]: expected object, got %T", index, componentRaw)
+			}
+			weight, err := utils.RequiredFloat64Field(component, "weight")
+			if err != nil {
+				return nil, fmt.Errorf("components[%d]: %w", index, err)
+			}
+			if weight <= 0 || math.IsNaN(weight) || math.IsInf(weight, 0) {
+				return nil, fmt.Errorf("components[%d] weight must be finite and > 0", index)
+			}
+			surfaceDef, ok, err := utils.OptionalMapField(component, "surface")
+			if err != nil {
+				return nil, fmt.Errorf("components[%d]: %w", index, err)
+			}
+			if !ok {
+				return nil, fmt.Errorf("components[%d]: missing required field %q", index, "surface")
+			}
+			surface, err := parseSurface(surfaceDef)
+			if err != nil {
+				return nil, fmt.Errorf("components[%d] surface: %w", index, err)
+			}
+			components = append(components, bsdf.WeightedBxDF{Weight: weight, BxDF: surface})
+		}
+		return bsdf.NewWeightedMixture(components...), nil
+
 	case "lambert":
 		albedo, err := requiredSpectralParameterField(def, "albedo")
 		if err != nil {
@@ -159,6 +200,42 @@ func parseSurface(def map[string]interface{}) (bsdf.BSDF, error) {
 		conductor := bxdf.NewRoughConductorParameter(eta, k, alpha)
 		conductor.Weight = weight
 		return bsdf.NewSingle(conductor), nil
+
+	case "rough_dielectric_reflection":
+		reflectance, _, err := optionalSpectralParameterField(def, "reflectance", spectrum_parameter.NewConstantParameter(1))
+		if err != nil {
+			return nil, err
+		}
+		etaOutside, ok, err := utils.OptionalFloat64Field(def, "eta_outside")
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			etaOutside = 1
+		}
+		if !medium.IsValidEta(etaOutside) {
+			return nil, fmt.Errorf("eta_outside must be > 0")
+		}
+		insideIOR, err := parseIORModel(def)
+		if err != nil {
+			return nil, err
+		}
+		roughness, ok, err := utils.OptionalFloat64Field(def, "roughness")
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			roughness = 0.25
+		}
+		if roughness < 0 || roughness > 1 {
+			return nil, fmt.Errorf("roughness must be in [0, 1]")
+		}
+		return bsdf.NewSingle(bxdf.NewRoughDielectricReflectionParameter(
+			reflectance,
+			etaOutside,
+			insideIOR,
+			roughness*roughness,
+		)), nil
 
 	case "cylindrical_grid_cutout", "wire_mesh":
 		return parseCylindricalGridCutoutSurface(def)

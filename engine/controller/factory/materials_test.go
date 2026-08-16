@@ -85,6 +85,91 @@ func TestParseRoughDielectricTransmission(t *testing.T) {
 	}
 }
 
+func TestParseWeightedMixture(t *testing.T) {
+	script := &parser.Script{
+		Materials: []map[string]interface{}{
+			{
+				"id": "glazed-porcelain",
+				"surface": map[string]interface{}{
+					"type": "weighted_mixture",
+					"components": []interface{}{
+						map[string]interface{}{
+							"weight": 0.8,
+							"surface": map[string]interface{}{
+								"type":   "lambert",
+								"albedo": []interface{}{0.78, 0.78, 0.78},
+							},
+						},
+						map[string]interface{}{
+							"weight": 0.2,
+							"surface": map[string]interface{}{
+								"type":        "rough_dielectric_reflection",
+								"reflectance": []interface{}{1.0, 1.0, 1.0},
+								"eta_outside": 1.0,
+								"eta_inside":  1.5,
+								"roughness":   0.14,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	materials, err := ParseMaterials(script)
+	if err != nil {
+		t.Fatalf("ParseMaterials failed: %v", err)
+	}
+	mixture, ok := materials["glazed-porcelain"].Surface.(bsdf.WeightedMixture)
+	if !ok {
+		t.Fatalf("expected weighted mixture, got %T", materials["glazed-porcelain"].Surface)
+	}
+	if len(mixture.Components) != 2 {
+		t.Fatalf("component count = %d, want 2", len(mixture.Components))
+	}
+	if mixture.Components[0].Weight != 0.8 || mixture.Components[1].Weight != 0.2 {
+		t.Fatalf("unexpected component weights: %+v", mixture.Components)
+	}
+	glaze, ok := mixture.Components[1].BxDF.(bsdf.Single)
+	if !ok {
+		t.Fatalf("expected glaze component to be a single BSDF, got %T", mixture.Components[1].BxDF)
+	}
+	if _, ok := glaze.BxDF.(bxdf.RoughDielectricReflection); !ok {
+		t.Fatalf("expected rough dielectric glaze, got %T", glaze.BxDF)
+	}
+}
+
+func TestParseWeightedMixtureRejectsInvalidComponents(t *testing.T) {
+	for name, components := range map[string]interface{}{
+		"not an array": "invalid",
+		"empty":        []interface{}{},
+		"zero weight": []interface{}{
+			map[string]interface{}{
+				"weight": 0.0,
+				"surface": map[string]interface{}{
+					"type":   "lambert",
+					"albedo": []interface{}{1.0, 1.0, 1.0},
+				},
+			},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			script := &parser.Script{Materials: []map[string]interface{}{
+				{
+					"id": "invalid-mixture",
+					"surface": map[string]interface{}{
+						"type":       "weighted_mixture",
+						"components": components,
+					},
+				},
+			}}
+			if _, err := ParseMaterials(script); err == nil {
+				t.Fatal("expected invalid weighted mixture to fail")
+			}
+		})
+	}
+}
+
 func TestParseCylindricalGridCutout(t *testing.T) {
 	script := &parser.Script{
 		Materials: []map[string]interface{}{
