@@ -150,7 +150,7 @@ func (h *Handler) projectBDPTDeltaCaustics(
 		if !seenDelta {
 			continue
 		}
-		value, projection, ok := h.projectLightVertex(projective, tree, &lightPath[vertexIndex])
+		value, projection, ok := projectLightVertex(projective, tree, &lightPath[vertexIndex])
 		if !ok {
 			continue
 		}

@@ -74,7 +74,7 @@ func (k *lightTracingKernel) TraceSample(context *RenderContext, _ int64) []Film
 	)
 	splats := make([]FilmSplat, 0, len(path))
 	for vertexIndex := range path {
-		value, projection, valid := context.Handler.projectLightVertex(
+		value, projection, valid := projectLightVertex(
 			k.projective,
 			context.ObjectTree,
 			&path[vertexIndex],
@@ -94,7 +94,7 @@ func (k *lightTracingKernel) TraceSample(context *RenderContext, _ int64) []Film
 	return splats
 }
 
-func (h *Handler) projectLightVertex(
+func projectLightVertex(
 	renderCamera camera.ProjectiveCamera,
 	tree *object.ObjectTree,
 	vertex *bdptVertex,
