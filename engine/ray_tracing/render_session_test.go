@@ -71,7 +71,7 @@ func TestSplatDriverNormalizesByGlobalWorkCount(t *testing.T) {
 	if err := driver.Run(session); err != nil {
 		t.Fatalf("splat Run: %v", err)
 	}
-	session.Finalize(driver.EffectiveSampleCount(session))
+	film.Samples = driver.EffectiveSampleCount(session)
 
 	bin := film.SpectralBinIndex(550)
 	if got, want := film.SpectralBins[bin].Data[0], 2.0; math.Abs(got-want) > 1e-12 {

@@ -8,7 +8,6 @@ import (
 )
 
 // IntegratorKind is the serialized name of a light-transport algorithm.
-// It is configuration data; SceneIntegrator owns the runtime behavior.
 type IntegratorKind string
 
 const (
@@ -18,7 +17,6 @@ const (
 )
 
 // ParseIntegratorKind accepts canonical names and compatibility aliases at the
-// configuration boundary. Runtime code only sees canonical IntegratorKind values.
 func ParseIntegratorKind(value string) (IntegratorKind, error) {
 	switch value {
 	case "", string(IntegratorPathTracing):
@@ -33,28 +31,10 @@ func ParseIntegratorKind(value string) (IntegratorKind, error) {
 }
 
 // RenderContext contains the scene-level inputs shared by all integrators.
-// Scene-level ownership is necessary because splatting integrators may write to
-// pixels other than the one associated with a generated camera ray.
 type RenderContext struct {
 	Camera     camera.RayCamera
 	ObjectTree *object.ObjectTree
 	Samples    int64
-}
-
-func (ctx RenderContext) validate() error {
-	if ctx.Camera == nil {
-		return fmt.Errorf("render camera is nil")
-	}
-	if ctx.ObjectTree == nil {
-		return fmt.Errorf("render object tree is nil")
-	}
-	if ctx.Camera.GetFilm() == nil {
-		return fmt.Errorf("render film is nil")
-	}
-	if ctx.Samples < 0 {
-		return fmt.Errorf("render samples must be >= 0")
-	}
-	return nil
 }
 
 // SceneIntegrator owns the complete lifecycle of one configured render.
@@ -81,22 +61,26 @@ func NewSceneIntegrator(kind IntegratorKind, handler *Handler) (SceneIntegrator,
 	if handler == nil {
 		return nil, fmt.Errorf("integrator handler is nil")
 	}
+
 	switch kind {
 	case IntegratorPathTracing:
 		return &configuredSceneIntegrator{
 			handler: handler,
 			driver:  &pixelDriver{kernel: pathTracingKernel{}},
 		}, nil
+
 	case IntegratorBDPT:
 		return &configuredSceneIntegrator{
 			handler: handler,
 			driver:  &splatDriver{kernel: &bdptKernel{}},
 		}, nil
+
 	case IntegratorLightTracing:
 		return &configuredSceneIntegrator{
 			handler: handler,
 			driver:  &splatDriver{kernel: &lightTracingKernel{}},
 		}, nil
+
 	default:
 		return nil, fmt.Errorf("unsupported integrator %q", kind)
 	}
@@ -107,9 +91,12 @@ func (i *configuredSceneIntegrator) Render(ctx RenderContext) error {
 	if err != nil {
 		return err
 	}
-	if err := i.driver.Run(session); err != nil {
+
+	err = i.driver.Run(session)
+	if err != nil {
 		return err
 	}
-	session.Finalize(i.driver.EffectiveSampleCount(session))
+
+	session.Context.Camera.GetFilm().Samples = i.driver.EffectiveSampleCount(session)
 	return nil
 }

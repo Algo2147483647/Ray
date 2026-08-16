@@ -5,10 +5,7 @@ import (
 	"github.com/Algo2147483647/ray/engine/model/object"
 )
 
-const (
-	defaultSpectralBinCount = 64
-	defaultTileSize         = 8
-)
+const defaultTileSize = 8
 
 // TraceScene selects one scene-level integrator and delegates the complete
 // render schedule to it.

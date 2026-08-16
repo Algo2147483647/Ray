@@ -46,9 +46,9 @@ func (f *Film) Reset() {
 		return
 	}
 	f.Samples = 0
-	f.SpectralBins = nil
-	f.SpectralMinNM = 0
-	f.SpectralMaxNM = 0
+	for i := range f.SpectralBins {
+		clear(f.SpectralBins[i].Data)
+	}
 }
 
 func (f *Film) ElementCount() int {

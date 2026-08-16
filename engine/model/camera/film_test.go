@@ -126,3 +126,24 @@ func TestSpectralFilmLoadFailureDoesNotMutateReceiver(t *testing.T) {
 		t.Fatalf("failed load mutated receiver: %+v", film)
 	}
 }
+
+func TestFilmResetPreservesSpectralConfiguration(t *testing.T) {
+	film := NewFilm(2, 1)
+	film.InitSpectralBins(2, 400, 700)
+	film.Samples = 9
+	film.SpectralBins[0].Data[0] = 42
+	film.SpectralBins[1].Data[1] = 24
+
+	film.Reset()
+
+	if film.Samples != 0 || len(film.SpectralBins) != 2 || film.SpectralMinNM != 400 || film.SpectralMaxNM != 700 {
+		t.Fatalf("Reset changed Film spectral configuration: %+v", film)
+	}
+	for _, bin := range film.SpectralBins {
+		for _, value := range bin.Data {
+			if value != 0 {
+				t.Fatalf("Reset left accumulated value %v", value)
+			}
+		}
+	}
+}

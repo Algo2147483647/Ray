@@ -5,8 +5,11 @@ import (
 
 	"github.com/Algo2147483647/ray/engine/controller/parser"
 	modelcamera "github.com/Algo2147483647/ray/engine/model/camera"
+	"github.com/Algo2147483647/ray/engine/model/optics"
 	"github.com/Algo2147483647/ray/engine/utils"
 )
+
+const defaultSpectralBinCount = 64
 
 func ParseCameras(script *parser.Script) (map[string]modelcamera.RayCamera, error) {
 	cameras := make(map[string]modelcamera.RayCamera, len(script.Cameras))
@@ -25,6 +28,9 @@ func ParseCameras(script *parser.Script) (map[string]modelcamera.RayCamera, erro
 		}
 		if _, err := modelcamera.NormalizePixelWindows(def.Film.PixelWindows, def.Film.Shape); err != nil {
 			return nil, fmt.Errorf("parse camera[%d] %q: %w", index, def.ID, err)
+		}
+		if !def.Film.HasSpectralBins() {
+			def.Film.InitSpectralBins(defaultSpectralBinCount, optics.WavelengthMin, optics.WavelengthMax)
 		}
 
 		parsed, err := BuildCameraFromScript(def)
