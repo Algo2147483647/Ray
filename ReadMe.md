@@ -14,11 +14,11 @@ Each geometry class stresses different parts of the pipeline. Smooth algebraic s
 
 The rendered matrix demonstrates coherent shading and clean silhouettes across simple primitives, meshes, higher-order polynomial surfaces, and implicit forms. Baseline primitives show stable intersections and predictable highlights, while higher-order and implicit objects exhibit complex curvature, cavities, and topology that cannot be captured by fixed primitive libraries alone. Overall, the experiment confirms that the renderer functions as a unified ray-tracing framework for both standard shapes and arbitrary polynomial or implicit geometry.
 
-![geometry-benchmark-matrix.png](experiment\geometric_object\geometry-benchmark-matrix\results\geometry-benchmark-matrix.png)
+![geometry-benchmark-matrix.png](experiment/geometric_object/geometry-benchmark-matrix/results/geometry-benchmark-matrix.png)
 
 ### Material rendering
 
-![material-benchmark-matrix.png](experiment\material\material-benchmark-matrix\results\material-benchmark-matrix.png)
+![material-benchmark-matrix.png](experiment/material/material-benchmark-matrix/results/material-benchmark-matrix.png)
 
 ![Triangular Prism Dispersion.png](experiment/material/triangular_prism_dispersion/results/Triangular_Prism_Dispersion.png)
 
@@ -31,7 +31,7 @@ The hyperbolic observatory is rendered in three-dimensional hyperbolic space(`HÂ
 
 The artistic version uses a dark diffuse stage, ceramic Lambertian surfaces, alternating ideal mirrors, a central mirror ball, and warm/cool area lighting. Normals, shading frames, diffuse cosines, and mirror directions are all evaluated with the local Klein metric, so the material response remains intrinsic away from the coordinate origin.
 
-![Hyperbolic observatory](experiment\geometric_spaces\non-euclidean\results\hyperbolic_showcase_art.png)
+![Hyperbolic observatory](experiment/geometric_spaces/non-euclidean/results/hyperbolic_showcase_art.png)
 
 See the [non-euclidean coordinate-system documentation](docs/non-euclidean-coordinate-system.md)for the metric formulas, scene construction, validation invariants, generator, and reproduction command.
 
