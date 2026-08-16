@@ -1,8 +1,10 @@
 package camera
 
 import (
+	"encoding/binary"
 	"image/color"
 	"math"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -168,6 +170,93 @@ func TestFilmFileRoundTripsACEScgAndSpectralBins(t *testing.T) {
 	}
 	if got := loaded.SpectralBins[1].Data[0]; math.Abs(got-2.5) > 1e-12 {
 		t.Fatalf("unexpected second spectral bin: %f", got)
+	}
+}
+
+func TestFilmFileRoundTripsAcrossCodecBlocks(t *testing.T) {
+	const width = filmFloatChunkBytes/8 + 17
+	film := NewFilm(width, 1)
+	film.Samples = 123
+	film.ColorSpace = FilmColorSpaceXYZ
+	film.InitSpectralBins(2, 400, 800)
+	for i := range film.Data[0].Data {
+		for channel := range film.Data {
+			film.Data[channel].Data[i] = float64(i*3+channel) / 7
+		}
+		for bin := range film.SpectralBins {
+			film.SpectralBins[bin].Data[i] = float64(i+bin) / 11
+		}
+	}
+
+	filename := filepath.Join(t.TempDir(), "chunked-film.bin")
+	if err := film.SaveToFile(filename); err != nil {
+		t.Fatalf("save film: %v", err)
+	}
+	loaded := NewFilm()
+	if err := loaded.LoadFromFile(filename); err != nil {
+		t.Fatalf("load film: %v", err)
+	}
+
+	for _, index := range []int{0, width/2 - 1, width / 2, width - 1} {
+		for channel := range film.Data {
+			if got, want := loaded.Data[channel].Data[index], film.Data[channel].Data[index]; got != want {
+				t.Fatalf("color channel %d index %d = %v, want %v", channel, index, got, want)
+			}
+		}
+		for bin := range film.SpectralBins {
+			if got, want := loaded.SpectralBins[bin].Data[index], film.SpectralBins[bin].Data[index]; got != want {
+				t.Fatalf("spectral bin %d index %d = %v, want %v", bin, index, got, want)
+			}
+		}
+	}
+}
+
+func TestFilmFileRejectsLegacyHeaderlessFormat(t *testing.T) {
+	filename := filepath.Join(t.TempDir(), "legacy.bin")
+	if err := os.WriteFile(filename, make([]byte, 64), 0o644); err != nil {
+		t.Fatalf("write legacy fixture: %v", err)
+	}
+	if err := NewFilm().LoadFromFile(filename); err == nil {
+		t.Fatal("expected legacy Film format to be rejected")
+	}
+}
+
+func TestFilmFileWritesCurrentMagicAndVersion(t *testing.T) {
+	filename := filepath.Join(t.TempDir(), "header.bin")
+	if err := NewFilm(1, 1).SaveToFile(filename); err != nil {
+		t.Fatalf("save film: %v", err)
+	}
+	header, err := os.ReadFile(filename)
+	if err != nil {
+		t.Fatalf("read film: %v", err)
+	}
+	if len(header) < 12 || string(header[:8]) != string(filmFileMagic[:]) {
+		t.Fatalf("unexpected Film magic: %x", header[:min(len(header), 8)])
+	}
+	if got := binary.LittleEndian.Uint32(header[8:12]); got != filmFileVersion {
+		t.Fatalf("Film version = %d, want %d", got, filmFileVersion)
+	}
+}
+
+func TestFilmFileRejectsTrailingPayload(t *testing.T) {
+	filename := filepath.Join(t.TempDir(), "trailing.bin")
+	film := NewFilm(1, 1)
+	if err := film.SaveToFile(filename); err != nil {
+		t.Fatalf("save film: %v", err)
+	}
+	file, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0)
+	if err != nil {
+		t.Fatalf("open film: %v", err)
+	}
+	if _, err := file.Write([]byte{0}); err != nil {
+		file.Close()
+		t.Fatalf("append payload: %v", err)
+	}
+	if err := file.Close(); err != nil {
+		t.Fatalf("close film: %v", err)
+	}
+	if err := NewFilm().LoadFromFile(filename); err == nil {
+		t.Fatal("expected trailing Film payload to be rejected")
 	}
 }
 

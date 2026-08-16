@@ -3,6 +3,7 @@ package ray_tracing
 import (
 	"math"
 	"sync"
+	"sync/atomic"
 	"testing"
 
 	"github.com/Algo2147483647/ray/engine/model/camera"
@@ -77,5 +78,41 @@ func TestSplatDriverNormalizesByGlobalWorkCount(t *testing.T) {
 	}
 	if film.Samples != 7 {
 		t.Fatalf("film samples = %d, want 7", film.Samples)
+	}
+}
+
+type recordingSplatKernel struct {
+	visits []atomic.Int32
+}
+
+func (*recordingSplatKernel) Prepare(*RenderSession) error { return nil }
+
+func (k *recordingSplatKernel) WorkCount(*RenderSession) int64 { return int64(len(k.visits)) }
+
+func (k *recordingSplatKernel) TraceSample(_ *RenderSession, index int64) []FilmSplat {
+	k.visits[index].Add(1)
+	return nil
+}
+
+func TestSplatDriverBatchAcquisitionVisitsTailExactlyOnce(t *testing.T) {
+	const workCount = splatWorkBatchSize*3 + 17
+	handler := NewHandler()
+	handler.ThreadNum = 8
+	film := camera.NewFilm(1, 1)
+	session, err := newRenderSession(handler, RenderContext{
+		Camera: fixedCamera{}, ObjectTree: &object.ObjectTree{},
+		Film: film, Samples: 1,
+	}, true)
+	if err != nil {
+		t.Fatalf("newRenderSession: %v", err)
+	}
+	kernel := &recordingSplatKernel{visits: make([]atomic.Int32, workCount)}
+	if err := (&splatDriver{kernel: kernel}).Run(session); err != nil {
+		t.Fatalf("splat Run: %v", err)
+	}
+	for index := range kernel.visits {
+		if got := kernel.visits[index].Load(); got != 1 {
+			t.Fatalf("work item %d visited %d times, want 1", index, got)
+		}
 	}
 }

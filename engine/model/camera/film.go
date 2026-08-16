@@ -1,15 +1,11 @@
 package camera
 
 import (
-	"encoding/binary"
-	"errors"
 	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/model/optics"
 	"image"
 	"image/color"
-	"io"
 	"math"
-	"os"
 	"reflect"
 )
 
@@ -48,8 +44,6 @@ type SpectralSample struct {
 	WavelengthNM float64
 	Value        float64
 }
-
-var spectralFilmMagic = [4]byte{'S', 'P', 'C', 'T'}
 
 func NewFilm(width ...int) *Film {
 	shape := make([]int, len(width))
@@ -346,186 +340,4 @@ func clamp01(v float64) float64 {
 		return 1
 	}
 	return v
-}
-
-func (f *Film) LoadFromFile(filename string) error {
-	file, err := os.Open(filename)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	if err = binary.Read(file, binary.LittleEndian, &f.Samples); err != nil {
-		return err
-	}
-
-	var shapeLen int32
-	if err = binary.Read(file, binary.LittleEndian, &shapeLen); err != nil {
-		return err
-	}
-
-	shape := make([]int, shapeLen)
-	for i := range shape {
-		var dim int32
-		if err = binary.Read(file, binary.LittleEndian, &dim); err != nil {
-			return err
-		}
-		shape[i] = int(dim)
-	}
-
-	f.Data = [3]maths.Tensor[float64]{
-		*maths.NewTensor[float64](shape),
-		*maths.NewTensor[float64](shape),
-		*maths.NewTensor[float64](shape),
-	}
-	f.ColorSpace = FilmColorSpaceLinearSRGB
-
-	for ch := 0; ch < 3; ch++ {
-		for i := range f.Data[ch].Data {
-			if err = binary.Read(file, binary.LittleEndian, &f.Data[ch].Data[i]); err != nil {
-				return err
-			}
-		}
-	}
-
-	if err = f.readOptionalColorSpace(file); err != nil {
-		return err
-	}
-	if err = f.readOptionalSpectralBins(file); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (f *Film) SaveToFile(filename string) error {
-	file, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	if err = binary.Write(file, binary.LittleEndian, f.Samples); err != nil {
-		return err
-	}
-
-	shapeLen := int32(len(f.Data[0].Shape))
-	if err = binary.Write(file, binary.LittleEndian, shapeLen); err != nil {
-		return err
-	}
-
-	for _, dim := range f.Data[0].Shape {
-		if err = binary.Write(file, binary.LittleEndian, int32(dim)); err != nil {
-			return err
-		}
-	}
-
-	for ch := 0; ch < 3; ch++ {
-		for i := range f.Data[ch].Data {
-			if err = binary.Write(file, binary.LittleEndian, f.Data[ch].Data[i]); err != nil {
-				return err
-			}
-		}
-	}
-
-	space := []byte(f.ColorSpace)
-	spaceLen := int32(len(space))
-	if err = binary.Write(file, binary.LittleEndian, spaceLen); err != nil {
-		return err
-	}
-	if spaceLen > 0 {
-		if _, err = file.Write(space); err != nil {
-			return err
-		}
-	}
-
-	if err = f.writeOptionalSpectralBins(file); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (f *Film) readOptionalColorSpace(file *os.File) error {
-	var spaceLen int32
-	if err := binary.Read(file, binary.LittleEndian, &spaceLen); err != nil {
-		if errors.Is(err, io.EOF) {
-			return nil
-		}
-		return err
-	}
-	if spaceLen <= 0 {
-		return nil
-	}
-
-	buf := make([]byte, spaceLen)
-	if _, err := io.ReadFull(file, buf); err != nil {
-		return err
-	}
-	switch FilmColorSpace(buf) {
-	case FilmColorSpaceLinearSRGB, FilmColorSpaceXYZ, FilmColorSpaceACEScg:
-		f.ColorSpace = FilmColorSpace(buf)
-	}
-	return nil
-}
-
-func (f *Film) writeOptionalSpectralBins(file *os.File) error {
-	if !f.HasSpectralBins() {
-		return nil
-	}
-	if _, err := file.Write(spectralFilmMagic[:]); err != nil {
-		return err
-	}
-	count := int32(len(f.SpectralBins))
-	if err := binary.Write(file, binary.LittleEndian, count); err != nil {
-		return err
-	}
-	if err := binary.Write(file, binary.LittleEndian, f.SpectralMinNM); err != nil {
-		return err
-	}
-	if err := binary.Write(file, binary.LittleEndian, f.SpectralMaxNM); err != nil {
-		return err
-	}
-	for bin := range f.SpectralBins {
-		for i := range f.SpectralBins[bin].Data {
-			if err := binary.Write(file, binary.LittleEndian, f.SpectralBins[bin].Data[i]); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func (f *Film) readOptionalSpectralBins(file *os.File) error {
-	var magic [4]byte
-	if _, err := io.ReadFull(file, magic[:]); err != nil {
-		if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
-			return nil
-		}
-		return err
-	}
-	if magic != spectralFilmMagic {
-		return nil
-	}
-
-	var count int32
-	if err := binary.Read(file, binary.LittleEndian, &count); err != nil {
-		return err
-	}
-	var minNM, maxNM float64
-	if err := binary.Read(file, binary.LittleEndian, &minNM); err != nil {
-		return err
-	}
-	if err := binary.Read(file, binary.LittleEndian, &maxNM); err != nil {
-		return err
-	}
-	f.InitSpectralBins(int(count), minNM, maxNM)
-	for bin := range f.SpectralBins {
-		for i := range f.SpectralBins[bin].Data {
-			if err := binary.Read(file, binary.LittleEndian, &f.SpectralBins[bin].Data[i]); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
 }

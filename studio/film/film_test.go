@@ -2,6 +2,7 @@ package film
 
 import (
 	"math"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -98,6 +99,19 @@ func TestMergeFilmFilesWithPixelWindowsLeavesOutsidePixelsUntouched(t *testing.T
 			}
 			assertClose(t, merged.Data[0].Data[index], expected)
 		}
+	}
+}
+
+func TestSaveFilmImageFromFilmDoesNotRequireFilmFile(t *testing.T) {
+	film := modelcamera.NewFilm(1, 1)
+	film.Data[0].Data[0] = 1
+	imagePath := filepath.Join(t.TempDir(), "direct.png")
+
+	if err := SaveFilmImageFromFilm(film, imagePath, modelcamera.ImageOptions{}); err != nil {
+		t.Fatalf("save image from in-memory Film: %v", err)
+	}
+	if info, err := os.Stat(imagePath); err != nil || info.Size() == 0 {
+		t.Fatalf("expected non-empty image at %q: info=%v err=%v", imagePath, info, err)
 	}
 }
 

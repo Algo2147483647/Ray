@@ -29,13 +29,14 @@ flowchart LR
     D --> E["Scene domain aggregate"]
     E --> F["Ray-tracing integrator"]
     F --> G["Linear Film and spectral bins"]
-    G --> H["Binary .bin Film"]
+    G --> H["Controller sink: in-memory Film"]
     H --> I["Studio Film merge / image conversion"]
+    I --> K["Versioned binary .bin Film"]
     I --> J["Exposure / tone mapping / gamma / PNG"]
 
-    K["CLI overrides"] --> C
-    L["Math and geometry kernels"] --> E
-    L --> F
+    L["CLI overrides"] --> C
+    M["Math and geometry kernels"] --> E
+    M --> F
 ```
 
 The Engine is the execution layer of the wider toolchain, not the authoring layer:
@@ -783,4 +784,3 @@ Future extension depends less on adding another switch case than on preserving t
 | Camera-path loop | `engine/ray_tracing/trace_ray.go` |
 | Medium and throughput | `engine/ray_tracing/medium_transport.go`, `throughput.go` |
 | Film and output conversion | `engine/model/camera/film.go` |
-

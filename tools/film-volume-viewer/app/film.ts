@@ -26,6 +26,8 @@ export type RayFilm = {
 
 const MAX_VOXELS = 64 * 1024 * 1024;
 const UTF8 = new TextDecoder();
+const FILM_MAGIC = [0x52, 0x41, 0x59, 0x46, 0x49, 0x4c, 0x4d, 0x00];
+const FILM_VERSION = 2;
 
 class FilmReader {
   private readonly view: DataView;
@@ -45,10 +47,17 @@ class FilmReader {
     }
   }
 
-  int32(label: string) {
+  uint32(label: string) {
     this.require(4, label);
-    const value = this.view.getInt32(this.offset, true);
+    const value = this.view.getUint32(this.offset, true);
     this.offset += 4;
+    return value;
+  }
+
+  uint64(label: string) {
+    this.require(8, label);
+    const value = this.view.getBigUint64(this.offset, true);
+    this.offset += 8;
     return value;
   }
 
@@ -132,22 +141,57 @@ function normalizeRank(shape: number[]) {
 
 export function parseRayFilm(buffer: ArrayBuffer, name = "film.bin"): RayFilm {
   const reader = new FilmReader(buffer);
-  const samples = reader.int64("采样数");
-  if (samples < 0n) throw new Error("采样数不能为负数。");
 
-  const rank = reader.int32("张量阶数");
-  if (rank < 2 || rank > 8) {
+  const magic = reader.bytes(FILM_MAGIC.length, "Film magic");
+  if (!FILM_MAGIC.every((value, index) => magic[index] === value)) {
+    throw new Error("不支持的 Film 文件：magic 无效；旧版无头格式不再兼容。");
+  }
+  const version = reader.uint32("Film 版本");
+  if (version !== FILM_VERSION) {
+    throw new Error(`不支持的 Film 版本 ${version}；当前版本为 ${FILM_VERSION}。`);
+  }
+
+  const samples = reader.int64("采样数");
+  if (samples < BigInt(0)) throw new Error("采样数不能为负数。");
+
+  const rank = reader.uint32("张量阶数");
+  if (rank < 1 || rank > 16) {
     throw new Error(`无效的张量阶数 ${rank}；这可能不是 Ray film 文件。`);
   }
 
-  const sourceShape = Array.from({ length: rank }, (_, index) =>
-    reader.int32(`shape[${index}]`),
-  );
+  const sourceShape = Array.from({ length: rank }, (_, index) => {
+    const extent = reader.uint64(`shape[${index}]`);
+    if (extent > BigInt(Number.MAX_SAFE_INTEGER)) {
+      throw new Error(`shape[${index}] 超出 JavaScript 安全整数范围。`);
+    }
+    return Number(extent);
+  });
   const voxelCount = checkedProduct(sourceShape);
   const shape = normalizeRank(sourceShape);
-  const requiredChannelBytes = voxelCount * 3 * 8;
-  if (reader.remaining < requiredChannelBytes) {
-    throw new Error("文件不足以容纳声明尺寸的三个 float64 颜色通道。");
+
+  const colorSpaceLength = reader.uint32("颜色空间长度");
+  if (colorSpaceLength < 1 || colorSpaceLength > 64) {
+    throw new Error("颜色空间字段长度无效。");
+  }
+  const parsedColorSpace = UTF8.decode(reader.bytes(colorSpaceLength, "颜色空间"));
+  if (parsedColorSpace !== "xyz" && parsedColorSpace !== "acescg" && parsedColorSpace !== "linear_srgb") {
+    throw new Error(`不支持的 Film 颜色空间 ${parsedColorSpace}。`);
+  }
+  const colorSpace: FilmColorSpace = parsedColorSpace;
+
+  const spectralBins = reader.uint32("光谱 bin 数");
+  if (spectralBins > 4096) throw new Error("光谱诊断元数据无效。");
+  const minNM = reader.float64("光谱下界");
+  const maxNM = reader.float64("光谱上界");
+  let spectralRange: [number, number] | null = null;
+  if (spectralBins > 0) {
+    if (!(minNM > 0) || !(maxNM > minNM)) throw new Error("光谱诊断元数据无效。");
+    spectralRange = [minNM, maxNM];
+  }
+
+  const requiredPayloadBytes = (3 + spectralBins) * voxelCount * 8;
+  if (reader.remaining !== requiredPayloadBytes) {
+    throw new Error(`Film payload 长度为 ${reader.remaining}，预期 ${requiredPayloadBytes}。`);
   }
 
   const source = [
@@ -160,37 +204,8 @@ export function parseRayFilm(buffer: ArrayBuffer, name = "film.bin"): RayFilm {
       source[channel][index] = reader.float64(`颜色通道 ${channel}`);
     }
   }
-
-  let colorSpace: FilmColorSpace = "linear_srgb";
-  if (reader.remaining >= 4) {
-    const length = reader.int32("颜色空间长度");
-    if (length < 0 || length > 64) throw new Error("颜色空间字段长度无效。");
-    if (length > 0) {
-      const parsed = UTF8.decode(reader.bytes(length, "颜色空间"));
-      if (parsed === "xyz" || parsed === "acescg" || parsed === "linear_srgb") {
-        colorSpace = parsed;
-      }
-    }
-  }
-
-  let spectralBins = 0;
-  let spectralRange: [number, number] | null = null;
-  if (reader.remaining >= 4) {
-    const magic = UTF8.decode(reader.bytes(4, "光谱标记"));
-    if (magic === "SPCT") {
-      spectralBins = reader.int32("光谱 bin 数");
-      const minNM = reader.float64("光谱下界");
-      const maxNM = reader.float64("光谱上界");
-      if (spectralBins < 0 || spectralBins > 4096 || maxNM <= minNM) {
-        throw new Error("光谱诊断元数据无效。");
-      }
-      const spectralBytes = spectralBins * voxelCount * 8;
-      if (reader.remaining < spectralBytes) {
-        throw new Error("光谱诊断数据不完整。");
-      }
-      reader.bytes(spectralBytes, "光谱诊断数据");
-      spectralRange = [minNM, maxNM];
-    }
+  if (spectralBins > 0) {
+    reader.bytes(spectralBins * voxelCount * 8, "光谱诊断数据");
   }
 
   const channels = [

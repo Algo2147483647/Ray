@@ -11,25 +11,19 @@ import (
 )
 
 func MergeFilmFiles(basePath, updatePath, outputPath string) error {
-	base, err := loadFilm(basePath)
+	base, err := LoadFilm(basePath)
 	if err != nil {
 		return fmt.Errorf("load resume film %q: %w", basePath, err)
 	}
-	update, err := loadFilm(updatePath)
+	update, err := LoadFilm(updatePath)
 	if err != nil {
 		return fmt.Errorf("load rendered film %q: %w", updatePath, err)
 	}
 
-	if err := mergeFilms(base, update); err != nil {
+	if err := MergeFilms(base, update); err != nil {
 		return err
 	}
-	if err := ensureParentDir(outputPath); err != nil {
-		return err
-	}
-	if err := base.SaveToFile(outputPath); err != nil {
-		return fmt.Errorf("save merged film %q: %w", outputPath, err)
-	}
-	return nil
+	return SaveFilm(base, outputPath)
 }
 
 func MergeFilmFilesWithPixelWindows(basePath, updatePath, outputPath string, windows []modelcamera.PixelWindow) error {
@@ -37,49 +31,40 @@ func MergeFilmFilesWithPixelWindows(basePath, updatePath, outputPath string, win
 		return MergeFilmFiles(basePath, updatePath, outputPath)
 	}
 
-	base, err := loadFilm(basePath)
+	base, err := LoadFilm(basePath)
 	if err != nil {
 		return fmt.Errorf("load resume film %q: %w", basePath, err)
 	}
-	update, err := loadFilm(updatePath)
+	update, err := LoadFilm(updatePath)
 	if err != nil {
 		return fmt.Errorf("load rendered film %q: %w", updatePath, err)
 	}
 
-	normalized, err := modelcamera.NormalizePixelWindows(windows, base.Data[0].Shape)
-	if err != nil {
+	if err := MergeFilmsWithPixelWindows(base, update, windows); err != nil {
 		return err
 	}
-	if err := mergeFilmsAtPixelWindows(base, update, normalized); err != nil {
-		return err
-	}
-	if err := ensureParentDir(outputPath); err != nil {
-		return err
-	}
-	if err := base.SaveToFile(outputPath); err != nil {
-		return fmt.Errorf("save merged film %q: %w", outputPath, err)
-	}
-	return nil
+	return SaveFilm(base, outputPath)
 }
 
 func CopyFilmFile(sourcePath, outputPath string) error {
-	film, err := loadFilm(sourcePath)
+	film, err := LoadFilm(sourcePath)
 	if err != nil {
 		return fmt.Errorf("load film %q: %w", sourcePath, err)
 	}
-	if err := ensureParentDir(outputPath); err != nil {
-		return err
-	}
-	if err := film.SaveToFile(outputPath); err != nil {
-		return fmt.Errorf("save film %q: %w", outputPath, err)
-	}
-	return nil
+	return SaveFilm(film, outputPath)
 }
 
 func SaveFilmImage(filmPath, imagePath string, options modelcamera.ImageOptions) error {
-	film, err := loadFilm(filmPath)
+	film, err := LoadFilm(filmPath)
 	if err != nil {
 		return fmt.Errorf("load film %q: %w", filmPath, err)
+	}
+	return SaveFilmImageFromFilm(film, imagePath, options)
+}
+
+func SaveFilmImageFromFilm(film *modelcamera.Film, imagePath string, options modelcamera.ImageOptions) error {
+	if film == nil {
+		return fmt.Errorf("cannot create image from a nil film")
 	}
 	if err := ensureParentDir(imagePath); err != nil {
 		return err
@@ -93,7 +78,7 @@ func SaveFilmImage(filmPath, imagePath string, options modelcamera.ImageOptions)
 
 	img := film.ToImageWithOptions(options)
 	if img == nil {
-		return fmt.Errorf("film %q cannot be converted to an image", filmPath)
+		return fmt.Errorf("film cannot be converted to an image")
 	}
 	if err := png.Encode(file, img); err != nil {
 		return fmt.Errorf("write image %q: %w", imagePath, err)
@@ -101,7 +86,7 @@ func SaveFilmImage(filmPath, imagePath string, options modelcamera.ImageOptions)
 	return nil
 }
 
-func loadFilm(path string) (*modelcamera.Film, error) {
+func LoadFilm(path string) (*modelcamera.Film, error) {
 	film := modelcamera.NewFilm()
 	if err := film.LoadFromFile(path); err != nil {
 		return nil, err
@@ -109,7 +94,23 @@ func loadFilm(path string) (*modelcamera.Film, error) {
 	return film, nil
 }
 
-func mergeFilms(base, update *modelcamera.Film) (err error) {
+func SaveFilm(film *modelcamera.Film, path string) error {
+	if film == nil {
+		return fmt.Errorf("cannot save a nil film")
+	}
+	if err := ensureParentDir(path); err != nil {
+		return err
+	}
+	if err := film.SaveToFile(path); err != nil {
+		return fmt.Errorf("save film %q: %w", path, err)
+	}
+	return nil
+}
+
+func MergeFilms(base, update *modelcamera.Film) (err error) {
+	if base == nil || update == nil {
+		return fmt.Errorf("merge films: nil film")
+	}
 	defer func() {
 		if recovered := recover(); recovered != nil {
 			err = fmt.Errorf("merge films: %v", recovered)
@@ -117,6 +118,20 @@ func mergeFilms(base, update *modelcamera.Film) (err error) {
 	}()
 	base.Merge(update)
 	return nil
+}
+
+func MergeFilmsWithPixelWindows(base, update *modelcamera.Film, windows []modelcamera.PixelWindow) error {
+	if base == nil || update == nil {
+		return fmt.Errorf("merge films: nil film")
+	}
+	if len(windows) == 0 {
+		return MergeFilms(base, update)
+	}
+	normalized, err := modelcamera.NormalizePixelWindows(windows, base.Data[0].Shape)
+	if err != nil {
+		return err
+	}
+	return mergeFilmsAtPixelWindows(base, update, normalized)
 }
 
 func mergeFilmsAtPixelWindows(base, update *modelcamera.Film, windows []modelcamera.PixelWindow) error {

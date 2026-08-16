@@ -163,6 +163,31 @@ The scalar $k$ determines normalization. Because an entire function is reduced t
 - XYZ or RGB cannot uniquely recover the source spectrum;
 - two RGB-matched materials can behave differently under a different illuminant or after wavelength-dependent transport.
 
+```
+Physical world
+     │
+     │ spectrum S(λ)
+     ▼
+┌───────────────────┐
+│ Human color vision│
+└───────────────────┘
+     │
+     │ tristimulus compression
+     ▼
+     XYZ
+      │
+      │ coordinate / basis transform
+      ├───────────────┐
+      ▼               ▼
+ linear sRGB        ACEScg
+      │
+      ▼
+ encoded sRGB
+      │
+      ▼
+   Display
+```
+
 ### Engine CIE 1931 Approximation
 
 The Engine does not use a tabulated CIE dataset. It evaluates an analytic approximation. Define the asymmetric Gaussian
@@ -546,7 +571,13 @@ $$
 
 The final byte is $\operatorname{round}(255v_3)$. Tone mapping is channel-wise, so it can change hue and saturation. Exposure, tone mapping, and gamma are display operations; they must not be confused with a color space, a chromatic adaptation, or physical spectral transport.
 
-The Engine executable renders and saves the binary film. It resolves the display fields in render configuration but does not apply them to that binary film. Studio later calls `Film.ToImageWithOptions` to apply these controls while creating an image.
+The standalone Engine executable renders and saves the binary film. When Studio drives the Engine, the controller instead transfers each completed `Film` in memory; Studio persists it and calls `Film.ToImageWithOptions` directly, so image creation does not reread the file that was just written. Display controls are never applied to the binary film itself.
+
+### Film Binary Format v2
+
+Film files are strict little-endian streams. The header is `RAYFILM\0`, version `uint32(2)`, sample count `int64`, rank `uint32`, `rank` dimensions as `uint64`, a length-prefixed UTF-8 color-space name, spectral-bin count `uint32`, and two `float64` spectral bounds. The payload then contains the three color planes followed by all spectral planes, each as contiguous `float64` values. Implementations encode and decode planes in reusable 1 MiB blocks.
+
+The decoder validates the exact version, rank, dimensions, color space, spectral metadata, and payload byte count before allocation. Headerless legacy Film streams are intentionally unsupported.
 
 ## Public Input Schema
 
