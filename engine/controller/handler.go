@@ -100,21 +100,15 @@ func (h *Handler) RenderJobs() *Handler {
 		return h
 	}
 
-	jobs := make([]RenderContext, 0, len(h.Script.Renders))
 	if h.Script == nil || len(h.Script.Renders) == 0 {
-		jobs = []RenderContext{defaultRenderContext()}
+		h.err = fmt.Errorf("no renders")
+		return h
 	}
 
-	for _, render := range h.Script.Renders {
-		job := mergeRenderContext(defaultRenderContext(), renderScriptContext(render))
-		jobs = append(jobs, job)
-	}
+	for idx, render := range h.Script.Renders {
+		fmt.Printf("Starting render job %d/%d\n", idx+1, len(h.Script.Renders))
 
-	for idx, context := range jobs {
-		if len(jobs) > 1 {
-			fmt.Printf("Starting render job %d/%d\n", idx+1, len(jobs))
-		}
-
+		context := mergeRenderContext(defaultRenderContext(), renderScriptContext(render))
 		h.ConfigureRenderContext(context).
 			Render().
 			SaveFilm(h.Context.OutputFilm)
