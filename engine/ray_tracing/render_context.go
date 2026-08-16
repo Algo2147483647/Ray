@@ -17,13 +17,6 @@ type RenderContext struct {
 	Accumulator FilmAccumulator
 }
 
-func newRenderContext(handler *Handler, ctx RenderContext, concurrentFilmWrites bool) *RenderContext {
-	film := ctx.Camera.GetFilm()
-	ctx.Handler = handler
-	ctx.Accumulator = newFilmAccumulator(film, concurrentFilmWrites)
-	return &ctx
-}
-
 // FilmAccumulator hides the distinct synchronization requirements of
 // exclusive pixel writes and arbitrary cross-thread splats.
 type FilmAccumulator interface {

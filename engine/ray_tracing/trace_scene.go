@@ -19,10 +19,14 @@ func (h *Handler) TraceScene(
 		return err
 	}
 
-	context := newRenderContext(h, RenderContext{
-		Camera: renderCamera, ObjectTree: objectTree,
-		Samples: samples,
-	}, integrator.ConcurrentFilmWrites())
+	context := &RenderContext{
+		Handler:     h,
+		Camera:      renderCamera,
+		ObjectTree:  objectTree,
+		Samples:     samples,
+		Accumulator: newFilmAccumulator(renderCamera.GetFilm(), integrator.ConcurrentFilmWrites()),
+	}
+
 	err = integrator.Run(context)
 	if err != nil {
 		return err
