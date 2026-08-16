@@ -320,15 +320,10 @@
   "render": {
     "film_id": "prism-beauty-film",
     "dimension": 3,
+    "integrator": "bdpt",
     "samples": 20,
     "thread_num": 0,
     "spectrum_mode": "sampled",
     "wavelength_samples": 4
-  },
-  "renders": [
-    {
-      "integrator": "bdpt",
-      "film_id": "prism-beauty-film"
-    }
-  ]
+  }
 }
