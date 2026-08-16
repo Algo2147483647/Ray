@@ -4,13 +4,13 @@
 
 | Layer | Mathematical object | Engine representation | Direction of information flow |
 | --- | --- | --- | --- |
-| Physical spectrum | A scalar function of wavelength, such as spectral radiance $L_\lambda(\lambda)$ or reflectance $\rho(\lambda)$ | `SpectrumKindSampled`, evaluated at the active ray wavelength; optional 64-bin film accumulation | Spectral transport $\rightarrow$ CIE XYZ |
-| CIE 1931 XYZ | Three linear observer responses $(X,Y,Z)$ | `optics.XYZ`; analytic color-matching-function approximation | Spectrum $\rightarrow$ XYZ; XYZ $\leftrightarrow$ RGB spaces |
-| Linear sRGB | Three linear-light coefficients relative to sRGB primaries | Default renderer RGB and default film space, `linear_srgb` | RGB transport and display-linear interchange |
+| Physical spectrum | A scalar function of wavelength, such as spectral radiance $L_\lambda(\lambda)$ or reflectance $\rho(\lambda)$ | Active-wavelength transport and mandatory 64-bin Engine Film accumulation | Engine transport $\rightarrow$ Studio observer integration |
+| CIE 1931 XYZ | Three linear observer responses $(X,Y,Z)$ | Studio analytic color-matching-function approximation for Film output | Spectrum $\rightarrow$ XYZ; XYZ $\leftrightarrow$ output RGB spaces |
+| Linear sRGB | Three linear-light coefficients relative to sRGB primaries | Authored input space and Studio display-linear output | Authored RGB uplift; XYZ $\rightarrow$ display RGB |
 | sRGB | Nonlinear display-oriented encoding of linear sRGB | Accepted only as an authored spectral-parameter space and decoded to linear values | sRGB input $\rightarrow$ linear sRGB |
-| ACEScg | Three linear AP1-primary coefficients | Optional film space, `acescg`; also accepted as an authored label | XYZ $\leftrightarrow$ ACEScg, with an important adaptation/input limitation |
-| Film encoding | Linear sRGB, XYZ, or ACEScg channel storage | `camera.FilmColorSpace` | Transport result $\rightarrow$ selected film space |
-| Display mapping | Exposure, tone mapping, clipping, and power-law gamma | `Film.ToImageWithOptions` | Film space $\rightarrow$ linear sRGB $\rightarrow$ 8-bit RGB |
+| ACEScg | Three linear AP1-primary coefficients | Studio output transform; also accepted as an authored label | XYZ $\leftrightarrow$ ACEScg |
+| Film encoding | Spectral planes over 380–750 nm | `camera.Film` v3 | Transport result $\rightarrow$ physical spectral persistence |
+| Display mapping | Exposure, tone mapping, clipping, and power-law gamma | `studio/film.ToImage` | Spectral Film $\rightarrow$ XYZ $\rightarrow$ linear sRGB $\rightarrow$ 8-bit RGB |
 
 The central pipeline is:
 
@@ -18,7 +18,7 @@ The central pipeline is:
 physical or reconstructed spectrum S(lambda)
     -> CIE 1931 observer integration
     -> XYZ
-    -> selected linear film space: XYZ / linear sRGB / ACEScg
+    -> selected Studio output space: XYZ / linear sRGB / ACEScg
     -> conversion back to linear sRGB for image output
     -> exposure -> tone map -> clamp -> power-law gamma -> 8-bit RGB
 
@@ -244,7 +244,7 @@ An RGB color space is defined by at least:
 
 Changing only the transfer function does not change the primaries: linear sRGB and encoded sRGB share primaries and D65 white, but their channel numbers have different meanings. XYZ is different: it is an observer-derived tristimulus basis rather than a display-primary RGB space. A chromatic adaptation transform is additionally required when values are moved between spaces whose reference whites differ while preserving perceived neutrality.
 
-Linear sRGB is a linear-light RGB space with sRGB primaries and a D65 white point. It is the Engine's default renderer RGB representation and default film space. Linear operations such as light addition and BSDF multiplication belong in this space, not in nonlinear sRGB.
+Linear sRGB is a linear-light RGB space with sRGB primaries and a D65 white point. Engine accepts it for authored RGB parameters and approximate spectral uplift; Studio uses it as the default display-linear output. The Film itself has no RGB space.
 
 The authored `srgb` spectral-parameter form is decoded channel by channel:
 
@@ -526,15 +526,16 @@ A spectral ray carries both `SpectralPower` and an optional `RGBCompatibility` p
 
 ## Film Space and Image Output
 
-### Film Working Spaces
+Engine Film v3 contains only spectral planes. It has no RGB/XYZ channels, color
+space, exposure, tone curve, gamma, or image encoder. Film merges require equal
+dimensions, spectral-bin counts, and wavelength bounds.
 
-| `color_space` | Film channels | RGB-mode input conversion | Spectral-mode final conversion |
-| --- | --- | --- | --- |
-| `linear_srgb` | $(R_s,G_s,B_s)$ | Identity | XYZ $\rightarrow$ linear sRGB |
-| `xyz` | $(X,Y,Z)$ | Linear sRGB $\rightarrow$ XYZ | Identity |
-| `acescg` | $(R_a,G_a,B_a)$ | Linear sRGB $\rightarrow$ XYZ $\rightarrow$ ACEScg | XYZ $\rightarrow$ ACEScg |
-
-`working_space` is accepted as a legacy scene-field alias when `color_space` is absent. The command-line flag remains named `--working-space`. Film merges require matching dimensions and matching non-empty color spaces. Spectral bins are merged only when their count and wavelength bounds also match.
+Studio owns the observer and display boundary. It integrates Film bins against
+the CIE 1931 approximation with one shared Y normalization for X, Y, and Z,
+converts XYZ to the requested `color_space`, and finally encodes linear sRGB for
+PNG output. `linear_srgb`, `xyz`, and `acescg` are the supported Studio color
+spaces. Since XYZ and ACEScg are linear transforms, selecting either preserves
+the same output tristimulus color rather than changing the physical Film.
 
 ### Output Transform
 
@@ -571,13 +572,13 @@ $$
 
 The final byte is $\operatorname{round}(255v_3)$. Tone mapping is channel-wise, so it can change hue and saturation. Exposure, tone mapping, and gamma are display operations; they must not be confused with a color space, a chromatic adaptation, or physical spectral transport.
 
-The standalone Engine executable renders and saves the binary film. When Studio drives the Engine, the controller instead transfers each completed `Film` in memory; Studio persists it and calls `Film.ToImageWithOptions` directly, so image creation does not reread the file that was just written. Display controls are never applied to the binary film itself.
+The standalone Engine executable renders and saves the binary Film. When Studio drives Engine, the controller transfers each completed `Film` in memory; Studio persists it and calls its own image conversion directly, so image creation does not reread the file that was just written. Display controls are never applied to the binary Film itself.
 
-### Film Binary Format v2
+### Film Binary Format v3
 
-Film files are strict little-endian streams. The header is `RAYFILM\0`, version `uint32(2)`, sample count `int64`, rank `uint32`, `rank` dimensions as `uint64`, a length-prefixed UTF-8 color-space name, spectral-bin count `uint32`, and two `float64` spectral bounds. The payload then contains the three color planes followed by all spectral planes, each as contiguous `float64` values. Implementations encode and decode planes in reusable 1 MiB blocks.
+Film files are strict little-endian streams. The header is `RAYFILM\0`, version `uint32(3)`, sample count `int64`, rank `uint32`, `rank` dimensions as `uint64`, spectral-bin count `uint32`, and two `float64` spectral bounds. The payload contains only contiguous `float64` spectral planes. Implementations encode and decode planes in reusable 1 MiB blocks.
 
-The decoder validates the exact version, rank, dimensions, color space, spectral metadata, and payload byte count before allocation. Headerless legacy Film streams are intentionally unsupported.
+The decoder validates the exact version, rank, dimensions, spectral metadata, and payload byte count before allocation. Every older Film version is intentionally unsupported.
 
 ## Public Input Schema
 
@@ -586,7 +587,7 @@ The decoder validates the exact version, rank, dimensions, color space, spectral
 ```jsonc
 {
   "render": {
-    "spectrum_mode": "hero_wavelength", // rgb | hero_wavelength | sampled
+    "spectrum_mode": "hero_wavelength", // hero_wavelength | sampled
     "wavelength_samples": 1,             // positive integer; sampled promotes <= 1 to 4
     "color_space": "linear_srgb",       // linear_srgb | xyz | acescg
 
@@ -597,14 +598,14 @@ The decoder validates the exact version, rank, dimensions, color space, spectral
 }
 ```
 
-Engine defaults are `hero_wavelength`, one wavelength sample, `linear_srgb`, exposure one, linear tone mapping, and gamma one. `wavelength_samples` only controls sampled wavelength mode. The `working_space` field may replace `color_space` for compatibility, but `color_space` takes precedence when both are present.
+Engine defaults are `hero_wavelength` and one wavelength sample. `wavelength_samples` only controls sampled wavelength mode. `color_space`, exposure, tone mapping, and gamma are Studio-only output settings.
 
 Equivalent command-line controls are:
 
 ```text
---spectrum-mode rgb|hero_wavelength|sampled
+--spectrum-mode hero_wavelength|sampled
 --wavelength-samples N
---working-space linear_srgb|xyz|acescg
+--color-space linear_srgb|xyz|acescg
 --exposure E
 --tone-mapping linear|reinhard|aces
 --gamma G

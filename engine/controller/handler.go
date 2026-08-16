@@ -2,15 +2,16 @@ package controller
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"time"
+
 	"github.com/Algo2147483647/ray/engine/controller/factory"
 	"github.com/Algo2147483647/ray/engine/controller/parser"
 	"github.com/Algo2147483647/ray/engine/model"
 	"github.com/Algo2147483647/ray/engine/model/camera"
 	"github.com/Algo2147483647/ray/engine/model/optics"
 	"github.com/Algo2147483647/ray/engine/ray_tracing"
-	"os"
-	"path/filepath"
-	"time"
 )
 
 type Handler struct {
@@ -129,7 +130,6 @@ func (h *Handler) ConfigureRenderConfig(config RenderConfig) *Handler {
 	h.Config = config
 	h.ActiveCamera = renderCamera
 	h.Film = camera.NewFilm(filmShape...)
-	h.Film.ColorSpace = renderColorSpace(config.ColorSpace)
 	return h
 }
 
@@ -256,7 +256,6 @@ func (h *Handler) Render() *Handler {
 	renderHandler.ThreadNum = h.Config.ThreadNum
 	renderHandler.SpectrumMode = renderSpectrumMode(h.Config.SpectrumMode)
 	renderHandler.WavelengthSamples = h.Config.WavelengthSamples
-	renderHandler.FilmColorSpace = h.Film.ColorSpace
 	renderHandler.SceneGeometry = h.Scene.Geometry
 	renderHandler.MaxArc = h.Scene.MaxArc
 	if err := renderHandler.TraceScene(
@@ -276,23 +275,10 @@ func (h *Handler) Render() *Handler {
 
 func renderSpectrumMode(value string) optics.SpectrumMode {
 	switch value {
-	case "rgb":
-		return optics.SpectrumModeRGB
 	case "sampled":
 		return optics.SpectrumModeSampledWavelengths
 	default:
 		return optics.SpectrumModeHeroWavelength
-	}
-}
-
-func renderColorSpace(value string) camera.FilmColorSpace {
-	switch value {
-	case string(camera.FilmColorSpaceXYZ):
-		return camera.FilmColorSpaceXYZ
-	case string(camera.FilmColorSpaceACEScg):
-		return camera.FilmColorSpaceACEScg
-	default:
-		return camera.FilmColorSpaceLinearSRGB
 	}
 }
 

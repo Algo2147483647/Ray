@@ -499,9 +499,6 @@ func mergeStudioRenderScript(base, override schema.StudioRenderScript) schema.St
 	if override.ColorSpace != "" {
 		result.ColorSpace = override.ColorSpace
 	}
-	if override.FilmColorSpace != "" {
-		result.FilmColorSpace = override.FilmColorSpace
-	}
 	if len(override.PixelWindows) > 0 {
 		result.PixelWindows = cloneStudioPixelWindows(override.PixelWindows)
 	}

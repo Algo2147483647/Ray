@@ -2,6 +2,7 @@ package ray_tracing
 
 import (
 	"fmt"
+	"math"
 	"math/rand/v2"
 	"os"
 
@@ -17,6 +18,8 @@ type bdptPreparedState struct {
 	projective   camera.ProjectiveCamera
 	activeMask   []bool
 	activePixels []int
+	width        int
+	height       int
 	wavelengths  int64
 	totalWork    int64
 }
@@ -29,7 +32,7 @@ func (k *bdptKernel) Prepare(session *RenderSession) error {
 	if k == nil || session == nil {
 		return fmt.Errorf("BDPT kernel or render session is nil")
 	}
-	shape := session.Context.Film.Data[0].Shape
+	shape := session.Context.Film.Shape
 	mask := make([]bool, shapeElementCount(shape))
 	if len(session.Context.PixelWindows) == 0 {
 		for pixel := range mask {
@@ -49,6 +52,8 @@ func (k *bdptKernel) Prepare(session *RenderSession) error {
 		scene:        prepareBDPTScene(session.Handler.SceneGeometry, session.Context.ObjectTree),
 		activeMask:   mask,
 		activePixels: activePixels,
+		width:        shape[0],
+		height:       shape[1],
 		wavelengths:  1,
 	}
 	if session.Handler.SpectrumMode == optics.SpectrumModeSampledWavelengths {
@@ -76,20 +81,15 @@ func (k *bdptKernel) TraceSample(session *RenderSession, workIndex int64) []Film
 	}
 	activeCount := len(k.prepared.activePixels)
 	pixel := k.prepared.activePixels[int(workIndex%int64(activeCount))]
-	coords := session.Context.Film.Data[0].GetCoordinates(pixel)
+	coords := session.Context.Film.SpectralBins[0].GetCoordinates(pixel)
 
-	wavelengthNM := 0.0
-	wavelengthPDF := 0.0
-	if session.Handler.SpectrumMode != optics.SpectrumModeRGB {
-		u := rand.Float64()
-		if session.Handler.SpectrumMode == optics.SpectrumModeSampledWavelengths {
-			stratum := (workIndex / int64(activeCount)) % k.prepared.wavelengths
-			u = (float64(stratum) + u) / float64(k.prepared.wavelengths)
-		}
-		wavelength := session.Handler.wavelengthSampler().Sample(u)
-		wavelengthNM = wavelength.LambdaNM
-		wavelengthPDF = wavelength.PDF
+	u := rand.Float64()
+	if session.Handler.SpectrumMode == optics.SpectrumModeSampledWavelengths {
+		stratum := (workIndex / int64(activeCount)) % k.prepared.wavelengths
+		u = (float64(stratum) + u) / float64(k.prepared.wavelengths)
 	}
+	wavelength := session.Handler.wavelengthSampler().Sample(u)
+	wavelengthNM, wavelengthPDF := wavelength.LambdaNM, wavelength.PDF
 	local, lightPath := session.Handler.traceBidirectionalPrepared(
 		k.prepared.scene,
 		session.Context.Camera,
@@ -124,10 +124,9 @@ func (k *bdptKernel) TraceSample(session *RenderSession, workIndex int64) []Film
 		wavelengthPDF,
 	)
 	for _, splat := range deltaSplats {
-		if splat.Pixel >= 0 && splat.Pixel < len(k.prepared.activeMask) &&
-			k.prepared.activeMask[splat.Pixel] {
-			splats = append(splats, splat)
-		}
+		splats = append(splats, filterBDPTDeltaSplat(
+			splat, k.prepared.width, k.prepared.height, k.prepared.activeMask,
+		)...)
 	}
 	return splats
 }
@@ -155,9 +154,58 @@ func (h *Handler) projectBDPTDeltaCaustics(
 			continue
 		}
 		result = append(result, FilmSplat{
-			Pixel: projection.Pixel, WavelengthNM: wavelengthNM,
-			WavelengthPDF: wavelengthPDF, Value: value,
+			WavelengthNM: wavelengthNM, WavelengthPDF: wavelengthPDF, Value: value,
+			projection: projection,
 		})
+	}
+	return result
+}
+
+func filterBDPTDeltaSplat(splat FilmSplat, width, height int, activeMask []bool) []FilmSplat {
+	if width <= 0 || height <= 0 || len(activeMask) != width*height {
+		return nil
+	}
+	x0 := int(math.Floor(splat.projection.Raster.X))
+	y0 := int(math.Floor(splat.projection.Raster.Y))
+	fx := splat.projection.Raster.X - float64(x0)
+	fy := splat.projection.Raster.Y - float64(y0)
+	type candidate struct {
+		x, y   int
+		weight float64
+	}
+	candidates := [4]candidate{
+		{x0, y0, (1 - fx) * (1 - fy)},
+		{x0 + 1, y0, fx * (1 - fy)},
+		{x0, y0 + 1, (1 - fx) * fy},
+		{x0 + 1, y0 + 1, fx * fy},
+	}
+	weightSum := 0.0
+	for _, candidate := range candidates {
+		if candidate.x < 0 || candidate.x >= width || candidate.y < 0 || candidate.y >= height {
+			continue
+		}
+		pixel := candidate.y*width + candidate.x
+		if activeMask[pixel] {
+			weightSum += candidate.weight
+		}
+	}
+	if weightSum <= 0 {
+		return nil
+	}
+	result := make([]FilmSplat, 0, 4)
+	for _, candidate := range candidates {
+		if candidate.weight <= 0 || candidate.x < 0 || candidate.x >= width ||
+			candidate.y < 0 || candidate.y >= height {
+			continue
+		}
+		pixel := candidate.y*width + candidate.x
+		if !activeMask[pixel] {
+			continue
+		}
+		filtered := splat
+		filtered.Pixel = pixel
+		filtered.Value = splat.Value.MulScalar(candidate.weight / weightSum)
+		result = append(result, filtered)
 	}
 	return result
 }

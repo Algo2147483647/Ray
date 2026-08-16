@@ -4,8 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -13,10 +11,9 @@ import (
 )
 
 const (
-	defaultScriptPath        = "../examples/scenes/default.json"
-	defaultEngineOutputImage = "../../outputs/output.png"
-	defaultEngineOutputFilm  = "../../outputs/img.bin"
-	engineBinEnvVar          = "RAY_ENGINE_BIN"
+	defaultScriptPath  = "../examples/scenes/default.json"
+	defaultOutputImage = "../../outputs/output.png"
+	defaultOutputFilm  = "../../outputs/img.bin"
 )
 
 type studioConfig struct {
@@ -30,7 +27,6 @@ type studioConfig struct {
 	samples            int64
 	outputImage        string
 	outputFilm         string
-	engineBin          string
 	resumeFilm         string
 	endless            bool
 	checkpointInterval int64
@@ -76,7 +72,6 @@ func parseStudioConfig(args []string) (studioConfig, error) {
 	flagSet.Int64Var(&config.samples, "samples", 0, "samples per pixel")
 	flagSet.StringVar(&config.outputImage, "output-image", "", "output image path")
 	flagSet.StringVar(&config.outputFilm, "output-film", "", "output film path")
-	flagSet.StringVar(&config.engineBin, "engine-bin", os.Getenv(engineBinEnvVar), "engine executable path")
 	flagSet.StringVar(&config.resumeFilm, "resume-film", "", "existing film path to merge before saving outputs")
 	flagSet.BoolVar(&config.endless, "endless", false, "render forever and save periodic film and image checkpoints")
 	flagSet.Int64Var(&config.checkpointInterval, "checkpoint-interval", 0, "samples to render between endless checkpoints")
@@ -85,9 +80,9 @@ func parseStudioConfig(args []string) (studioConfig, error) {
 	flagSet.Float64Var(&config.exposure, "exposure", 0, "output exposure multiplier")
 	flagSet.StringVar(&config.toneMapping, "tone-mapping", "", "output tone mapping: linear, reinhard, aces")
 	flagSet.Float64Var(&config.gamma, "gamma", 0, "output gamma, for example 2.2")
-	flagSet.StringVar(&config.spectrumMode, "spectrum-mode", "", "spectrum mode: rgb, hero_wavelength, sampled")
+	flagSet.StringVar(&config.spectrumMode, "spectrum-mode", "", "spectrum mode: hero_wavelength, sampled")
 	flagSet.IntVar(&config.wavelengthSamples, "wavelength-samples", 0, "wavelength samples per camera sample in sampled mode")
-	flagSet.StringVar(&config.colorSpace, "working-space", "", "film working space: linear_srgb, acescg, xyz")
+	flagSet.StringVar(&config.colorSpace, "color-space", "", "Studio output color space: linear_srgb, acescg, xyz")
 
 	if err := flagSet.Parse(args); err != nil {
 		return studioConfig{}, err
@@ -152,6 +147,15 @@ func parseStudioConfig(args []string) (studioConfig, error) {
 	if config.wavelengthSamples < 0 {
 		return studioConfig{}, fmt.Errorf("wavelength-samples must be >= 0")
 	}
+	if config.spectrumMode != "" && config.spectrumMode != "hero_wavelength" && config.spectrumMode != "sampled" {
+		return studioConfig{}, fmt.Errorf("spectrum-mode must be hero_wavelength or sampled")
+	}
+	if config.toneMapping != "" && config.toneMapping != "linear" && config.toneMapping != "reinhard" && config.toneMapping != "aces" {
+		return studioConfig{}, fmt.Errorf("tone-mapping must be linear, reinhard, or aces")
+	}
+	if config.colorSpace != "" && config.colorSpace != "linear_srgb" && config.colorSpace != "acescg" && config.colorSpace != "xyz" {
+		return studioConfig{}, fmt.Errorf("color-space must be linear_srgb, acescg, or xyz")
+	}
 	return config, nil
 }
 
@@ -182,23 +186,11 @@ func (c studioConfig) engineArgs(scriptPath, outputFilmOverride string, samplesO
 	} else if c.provided["output-film"] {
 		args = append(args, "--output-film", c.outputFilm)
 	}
-	if c.provided["exposure"] {
-		args = append(args, "--exposure", strconv.FormatFloat(c.exposure, 'g', -1, 64))
-	}
-	if c.provided["tone-mapping"] {
-		args = append(args, "--tone-mapping", c.toneMapping)
-	}
-	if c.provided["gamma"] {
-		args = append(args, "--gamma", strconv.FormatFloat(c.gamma, 'g', -1, 64))
-	}
 	if c.provided["spectrum-mode"] {
 		args = append(args, "--spectrum-mode", c.spectrumMode)
 	}
 	if c.provided["wavelength-samples"] {
 		args = append(args, "--wavelength-samples", strconv.Itoa(c.wavelengthSamples))
-	}
-	if c.provided["working-space"] {
-		args = append(args, "--working-space", c.colorSpace)
 	}
 	for _, window := range c.pixelWindows {
 		args = append(args, "--pixel-window", formatStudioPixelWindow(window))
@@ -280,13 +272,6 @@ func formatStudioPixelWindow(window schema.PixelWindowScript) string {
 		parts = append(parts, strconv.Itoa(window.Min[i])+":"+strconv.Itoa(window.Max[i]))
 	}
 	return strings.Join(parts, ",")
-}
-
-func engineCommand(config studioConfig, repoRoot string) (string, []string, error) {
-	if config.engineBin != "" {
-		return config.engineBin, nil, nil
-	}
-	return "go", []string{"-C", filepath.Join(repoRoot, "engine"), "run", "."}, nil
 }
 
 func resolveDimension(script *schema.StudioScript, config studioConfig) int {

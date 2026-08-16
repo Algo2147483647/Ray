@@ -180,7 +180,7 @@ func checkpointPaths(dir string, iteration int64) (string, string) {
 type studioRenderOutput struct {
 	FilmPath  string
 	ImagePath string
-	Options   modelcamera.ImageOptions
+	Options   studiofilm.ImageOptions
 }
 
 func writeStudioOutput(film *modelcamera.Film, output studioRenderOutput) error {
@@ -220,7 +220,7 @@ func resolveOutputFilm(script *schema.StudioScript, config studioConfig) string 
 	if len(outputs) > 0 {
 		return outputs[0].FilmPath
 	}
-	return defaultEngineOutputFilm
+	return defaultOutputFilm
 }
 
 func resolvePixelWindows(script *schema.StudioScript, config studioConfig) []modelcamera.PixelWindow {
@@ -282,13 +282,16 @@ func applyStudioRenderOverride(base, override schema.StudioRenderScript) schema.
 	if override.Gamma > 0 {
 		result.Gamma = override.Gamma
 	}
+	if override.ColorSpace != "" {
+		result.ColorSpace = override.ColorSpace
+	}
 	return result
 }
 
 func studioRenderOutputFromScript(render schema.StudioRenderScript, config studioConfig, outputFilmOverride string) studioRenderOutput {
 	filmPath := render.OutputFilm
 	if filmPath == "" {
-		filmPath = defaultEngineOutputFilm
+		filmPath = defaultOutputFilm
 	}
 	if config.provided["output-film"] {
 		filmPath = config.outputFilm
@@ -299,34 +302,41 @@ func studioRenderOutputFromScript(render schema.StudioRenderScript, config studi
 
 	imagePath := render.OutputImage
 	if imagePath == "" {
-		imagePath = defaultEngineOutputImage
+		imagePath = defaultOutputImage
 	}
 	if config.provided["output-image"] {
 		imagePath = config.outputImage
 	}
 
-	options := modelcamera.ImageOptions{
+	options := studiofilm.ImageOptions{
 		Exposure:    1,
-		ToneMapping: modelcamera.ToneMappingLinear,
+		ToneMapping: studiofilm.ToneMappingLinear,
 		Gamma:       1,
+		ColorSpace:  studiofilm.ColorSpaceLinearSRGB,
 	}
 	if render.Exposure > 0 {
 		options.Exposure = render.Exposure
 	}
 	if render.ToneMapping != "" {
-		options.ToneMapping = modelcamera.ToneMapping(render.ToneMapping)
+		options.ToneMapping = studiofilm.ToneMapping(render.ToneMapping)
 	}
 	if render.Gamma > 0 {
 		options.Gamma = render.Gamma
+	}
+	if render.ColorSpace != "" {
+		options.ColorSpace = studiofilm.ColorSpace(render.ColorSpace)
 	}
 	if config.provided["exposure"] {
 		options.Exposure = config.exposure
 	}
 	if config.provided["tone-mapping"] {
-		options.ToneMapping = modelcamera.ToneMapping(config.toneMapping)
+		options.ToneMapping = studiofilm.ToneMapping(config.toneMapping)
 	}
 	if config.provided["gamma"] {
 		options.Gamma = config.gamma
+	}
+	if config.provided["color-space"] {
+		options.ColorSpace = studiofilm.ColorSpace(config.colorSpace)
 	}
 
 	return studioRenderOutput{

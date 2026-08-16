@@ -4,7 +4,6 @@ import (
 	"math"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	modelshape "github.com/Algo2147483647/ray/engine/model/shape"
@@ -635,6 +634,24 @@ func TestStudioDoesNotEmitResumeFilmToIntermediateScript(t *testing.T) {
 	}
 }
 
+func TestStudioKeepsColorPipelineOutOfEngineIntermediateScript(t *testing.T) {
+	script := &schema.StudioScript{Render: schema.StudioRenderScript{
+		Exposure:    0.75,
+		ToneMapping: "aces",
+		Gamma:       2.2,
+		ColorSpace:  "acescg",
+	}}
+	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
+	if err != nil {
+		t.Fatalf("adapt script: %v", err)
+	}
+	for _, field := range []string{"exposure", "tone_mapping", "gamma", "color_space", "working_space"} {
+		if _, ok := adapted.Render[field]; ok {
+			t.Fatalf("Studio-only field %q leaked into Engine script", field)
+		}
+	}
+}
+
 func TestStudioEmitsIntegratorToIntermediateScript(t *testing.T) {
 	script := &schema.StudioScript{
 		Render: schema.StudioRenderScript{Integrator: "bdpt"},
@@ -692,6 +709,50 @@ func TestStudioEngineArgsDoNotForwardResumeFilm(t *testing.T) {
 	}
 	if containsString(args, "final.bin") {
 		t.Fatalf("final output film should be written by studio, not engine: %v", args)
+	}
+}
+
+func TestStudioEngineArgsDoNotForwardColorPipeline(t *testing.T) {
+	config := studioConfig{
+		provided: map[string]bool{
+			"exposure": true, "tone-mapping": true, "gamma": true, "color-space": true,
+		},
+		exposure: 0.75, toneMapping: "aces", gamma: 2.2, colorSpace: "acescg",
+	}
+	args := config.engineArgs("intermediate.json", "", 0)
+	for _, flag := range []string{"--exposure", "--tone-mapping", "--gamma", "--color-space"} {
+		if containsString(args, flag) {
+			t.Fatalf("Studio-only flag %q leaked into Engine args: %v", flag, args)
+		}
+	}
+}
+
+func TestStudioOwnsLatestColorAndSpectrumCLI(t *testing.T) {
+	config, err := parseStudioConfig([]string{"--color-space", "acescg", "--spectrum-mode", "sampled"})
+	if err != nil {
+		t.Fatalf("parse Studio color pipeline: %v", err)
+	}
+	if config.colorSpace != "acescg" || config.spectrumMode != "sampled" {
+		t.Fatalf("unexpected Studio color pipeline: %+v", config)
+	}
+	if _, err := parseStudioConfig([]string{"--working-space", "acescg"}); err == nil {
+		t.Fatal("expected removed working-space alias to fail")
+	}
+	if _, err := parseStudioConfig([]string{"--spectrum-mode", "rgb"}); err == nil {
+		t.Fatal("expected removed RGB Film mode to fail")
+	}
+}
+
+func TestStudioResolvesPerRenderColorPipeline(t *testing.T) {
+	base := schema.StudioRenderScript{ColorSpace: "linear_srgb"}
+	override := schema.StudioRenderScript{
+		Exposure: 0.5, ToneMapping: "reinhard", Gamma: 2.4, ColorSpace: "acescg",
+	}
+	merged := applyStudioRenderOverride(base, override)
+	output := studioRenderOutputFromScript(merged, studioConfig{provided: map[string]bool{}}, "")
+	if output.Options.Exposure != 0.5 || output.Options.Gamma != 2.4 ||
+		string(output.Options.ToneMapping) != "reinhard" || string(output.Options.ColorSpace) != "acescg" {
+		t.Fatalf("unexpected Studio color pipeline: %+v", output.Options)
 	}
 }
 
@@ -755,30 +816,6 @@ func TestParseStudioConfigSupportsEndlessResumeCheckpoint(t *testing.T) {
 	}
 	if !config.endless || config.checkpointInterval != 100 || config.startIteration != 300 {
 		t.Fatalf("unexpected endless config: %+v", config)
-	}
-}
-
-func TestParseStudioConfigSupportsEngineBin(t *testing.T) {
-	config, err := parseStudioConfig([]string{"--engine-bin", "bin/ray"})
-	if err != nil {
-		t.Fatalf("parse engine bin: %v", err)
-	}
-	if config.engineBin != "bin/ray" {
-		t.Fatalf("unexpected engine bin: %q", config.engineBin)
-	}
-}
-
-func TestEngineCommandDefaultsToGoRun(t *testing.T) {
-	name, args, err := engineCommand(studioConfig{}, "repo")
-	if err != nil {
-		t.Fatalf("engine command: %v", err)
-	}
-	if name != "go" {
-		t.Fatalf("expected go command, got %q", name)
-	}
-	expected := []string{"-C", filepath.Join("repo", "engine"), "run", "."}
-	if strings.Join(args, "\x00") != strings.Join(expected, "\x00") {
-		t.Fatalf("unexpected engine args: %v", args)
 	}
 }
 

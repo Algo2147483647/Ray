@@ -31,7 +31,6 @@ type StudioRenderScript struct {
 	SpectrumMode      string              `json:"spectrum_mode"`
 	WavelengthSamples int                 `json:"wavelength_samples"`
 	ColorSpace        string              `json:"color_space"`
-	FilmColorSpace    string              `json:"working_space"`
 	PixelWindows      []PixelWindowScript `json:"pixel_windows"`
 }
 

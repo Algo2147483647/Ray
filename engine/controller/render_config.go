@@ -3,12 +3,12 @@ package controller
 import (
 	"flag"
 	"fmt"
-	"github.com/Algo2147483647/ray/engine/controller/parser"
 	"io"
 	"runtime"
 	"strconv"
 	"strings"
 
+	"github.com/Algo2147483647/ray/engine/controller/parser"
 	"github.com/Algo2147483647/ray/engine/model/camera"
 	"github.com/Algo2147483647/ray/engine/ray_tracing"
 )
@@ -32,12 +32,8 @@ type RenderOverrides struct {
 	Height            int
 	Samples           int64
 	OutputFilm        string
-	Exposure          float64
-	ToneMapping       string
-	Gamma             float64
 	SpectrumMode      string
 	WavelengthSamples int
-	ColorSpace        string
 	PixelWindows      []camera.PixelWindow
 }
 
@@ -51,12 +47,8 @@ type RenderConfig struct {
 	Height            int
 	Samples           int64
 	OutputFilm        string
-	Exposure          float64
-	ToneMapping       string
-	Gamma             float64
 	SpectrumMode      string
 	WavelengthSamples int
-	ColorSpace        string
 	PixelWindows      []camera.PixelWindow
 }
 
@@ -79,12 +71,8 @@ func ParseRenderOverrides(args []string) (RenderOverrides, error) {
 	flagSet.IntVar(&overrides.Height, "height", 0, "output height")
 	flagSet.Int64Var(&overrides.Samples, "samples", 0, "samples per pixel")
 	flagSet.StringVar(&overrides.OutputFilm, "output-film", "", "output film path")
-	flagSet.Float64Var(&overrides.Exposure, "exposure", 0, "output exposure multiplier")
-	flagSet.StringVar(&overrides.ToneMapping, "tone-mapping", "", "output tone mapping: linear, reinhard, aces")
-	flagSet.Float64Var(&overrides.Gamma, "gamma", 0, "output gamma, for example 2.2")
-	flagSet.StringVar(&overrides.SpectrumMode, "spectrum-mode", "", "spectrum mode: rgb, hero_wavelength, sampled")
+	flagSet.StringVar(&overrides.SpectrumMode, "spectrum-mode", "", "spectral sampling mode: hero_wavelength, sampled")
 	flagSet.IntVar(&overrides.WavelengthSamples, "wavelength-samples", 0, "wavelength samples per camera sample in sampled mode")
-	flagSet.StringVar(&overrides.ColorSpace, "working-space", "", "film working space: linear_srgb, acescg, xyz")
 
 	if err := flagSet.Parse(args); err != nil {
 		return RenderOverrides{}, err
@@ -124,26 +112,14 @@ func ParseRenderOverrides(args []string) (RenderOverrides, error) {
 	if overrides.Samples < 0 {
 		return RenderOverrides{}, fmt.Errorf("samples must be >= 0")
 	}
-	if overrides.Exposure < 0 {
-		return RenderOverrides{}, fmt.Errorf("exposure must be >= 0")
-	}
-	if overrides.Gamma < 0 {
-		return RenderOverrides{}, fmt.Errorf("gamma must be >= 0")
-	}
 	if overrides.Integrator != "" && !isSupportedIntegrator(overrides.Integrator) {
 		return RenderOverrides{}, fmt.Errorf("unsupported integrator %q", overrides.Integrator)
-	}
-	if overrides.ToneMapping != "" && !isSupportedToneMapping(overrides.ToneMapping) {
-		return RenderOverrides{}, fmt.Errorf("unsupported tone-mapping %q", overrides.ToneMapping)
 	}
 	if overrides.SpectrumMode != "" && !isSupportedSpectrumMode(overrides.SpectrumMode) {
 		return RenderOverrides{}, fmt.Errorf("unsupported spectrum-mode %q", overrides.SpectrumMode)
 	}
 	if overrides.WavelengthSamples < 0 {
 		return RenderOverrides{}, fmt.Errorf("wavelength-samples must be >= 0")
-	}
-	if overrides.ColorSpace != "" && !isSupportedColorSpace(overrides.ColorSpace) {
-		return RenderOverrides{}, fmt.Errorf("unsupported working-space %q", overrides.ColorSpace)
 	}
 
 	return overrides, nil
@@ -163,12 +139,8 @@ func ResolveRenderConfig(script *parser.Script, overrides RenderOverrides) Rende
 		ThreadNum:         runtime.NumCPU(),
 		Samples:           defaultSamples,
 		OutputFilm:        defaultOutputFilm,
-		Exposure:          1,
-		ToneMapping:       string(camera.ToneMappingLinear),
-		Gamma:             1,
 		SpectrumMode:      "hero_wavelength",
 		WavelengthSamples: 1,
-		ColorSpace:        "linear_srgb",
 	}
 
 	if script != nil {
@@ -196,25 +168,11 @@ func ResolveRenderConfig(script *parser.Script, overrides RenderOverrides) Rende
 		if script.Render.OutputFilm != "" {
 			config.OutputFilm = script.Render.OutputFilm
 		}
-		if script.Render.Exposure > 0 {
-			config.Exposure = script.Render.Exposure
-		}
-		if script.Render.ToneMapping != "" {
-			config.ToneMapping = script.Render.ToneMapping
-		}
-		if script.Render.Gamma > 0 {
-			config.Gamma = script.Render.Gamma
-		}
 		if script.Render.SpectrumMode != "" {
 			config.SpectrumMode = script.Render.SpectrumMode
 		}
 		if script.Render.WavelengthSamples > 0 {
 			config.WavelengthSamples = script.Render.WavelengthSamples
-		}
-		if script.Render.ColorSpace != "" {
-			config.ColorSpace = script.Render.ColorSpace
-		} else if script.Render.FilmColorSpace != "" {
-			config.ColorSpace = script.Render.FilmColorSpace
 		}
 		if len(script.Render.PixelWindows) > 0 {
 			config.PixelWindows = clonePixelWindows(script.Render.PixelWindows)
@@ -245,23 +203,11 @@ func ResolveRenderConfig(script *parser.Script, overrides RenderOverrides) Rende
 	if overrides.OutputFilm != "" {
 		config.OutputFilm = overrides.OutputFilm
 	}
-	if overrides.Exposure > 0 {
-		config.Exposure = overrides.Exposure
-	}
-	if overrides.ToneMapping != "" {
-		config.ToneMapping = overrides.ToneMapping
-	}
-	if overrides.Gamma > 0 {
-		config.Gamma = overrides.Gamma
-	}
 	if overrides.SpectrumMode != "" {
 		config.SpectrumMode = overrides.SpectrumMode
 	}
 	if overrides.WavelengthSamples > 0 {
 		config.WavelengthSamples = overrides.WavelengthSamples
-	}
-	if overrides.ColorSpace != "" {
-		config.ColorSpace = overrides.ColorSpace
 	}
 	if len(overrides.PixelWindows) > 0 {
 		config.PixelWindows = clonePixelWindows(overrides.PixelWindows)
@@ -319,25 +265,11 @@ func applyRenderScriptToConfig(config RenderConfig, render parser.RenderScript) 
 	if render.OutputFilm != "" {
 		config.OutputFilm = render.OutputFilm
 	}
-	if render.Exposure > 0 {
-		config.Exposure = render.Exposure
-	}
-	if render.ToneMapping != "" {
-		config.ToneMapping = render.ToneMapping
-	}
-	if render.Gamma > 0 {
-		config.Gamma = render.Gamma
-	}
 	if render.SpectrumMode != "" {
 		config.SpectrumMode = render.SpectrumMode
 	}
 	if render.WavelengthSamples > 0 {
 		config.WavelengthSamples = render.WavelengthSamples
-	}
-	if render.ColorSpace != "" {
-		config.ColorSpace = render.ColorSpace
-	} else if render.FilmColorSpace != "" {
-		config.ColorSpace = render.FilmColorSpace
 	}
 	if len(render.PixelWindows) > 0 {
 		config.PixelWindows = clonePixelWindows(render.PixelWindows)
@@ -373,23 +305,11 @@ func applyRenderOverridesToConfig(config RenderConfig, overrides RenderOverrides
 	if overrides.OutputFilm != "" {
 		config.OutputFilm = overrides.OutputFilm
 	}
-	if overrides.Exposure > 0 {
-		config.Exposure = overrides.Exposure
-	}
-	if overrides.ToneMapping != "" {
-		config.ToneMapping = overrides.ToneMapping
-	}
-	if overrides.Gamma > 0 {
-		config.Gamma = overrides.Gamma
-	}
 	if overrides.SpectrumMode != "" {
 		config.SpectrumMode = overrides.SpectrumMode
 	}
 	if overrides.WavelengthSamples > 0 {
 		config.WavelengthSamples = overrides.WavelengthSamples
-	}
-	if overrides.ColorSpace != "" {
-		config.ColorSpace = overrides.ColorSpace
 	}
 	if len(overrides.PixelWindows) > 0 {
 		config.PixelWindows = clonePixelWindows(overrides.PixelWindows)
@@ -495,25 +415,7 @@ func (s *stringListFlag) Set(value string) error {
 
 func isSupportedSpectrumMode(value string) bool {
 	switch value {
-	case "rgb", "hero_wavelength", "sampled":
-		return true
-	default:
-		return false
-	}
-}
-
-func isSupportedColorSpace(value string) bool {
-	switch camera.FilmColorSpace(value) {
-	case camera.FilmColorSpaceLinearSRGB, camera.FilmColorSpaceACEScg, camera.FilmColorSpaceXYZ:
-		return true
-	default:
-		return false
-	}
-}
-
-func isSupportedToneMapping(value string) bool {
-	switch camera.ToneMapping(value) {
-	case camera.ToneMappingLinear, camera.ToneMappingReinhard, camera.ToneMappingACES:
+	case "hero_wavelength", "sampled":
 		return true
 	default:
 		return false

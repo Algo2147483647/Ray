@@ -64,26 +64,11 @@ func renderToMap(render schema.StudioRenderScript) map[string]interface{} {
 	if render.OutputFilm != "" {
 		result["output_film"] = render.OutputFilm
 	}
-	if render.Exposure > 0 {
-		result["exposure"] = render.Exposure
-	}
-	if render.ToneMapping != "" {
-		result["tone_mapping"] = render.ToneMapping
-	}
-	if render.Gamma > 0 {
-		result["gamma"] = render.Gamma
-	}
 	if render.SpectrumMode != "" {
 		result["spectrum_mode"] = render.SpectrumMode
 	}
 	if render.WavelengthSamples > 0 {
 		result["wavelength_samples"] = render.WavelengthSamples
-	}
-	if render.ColorSpace != "" {
-		result["color_space"] = render.ColorSpace
-	}
-	if render.FilmColorSpace != "" {
-		result["working_space"] = render.FilmColorSpace
 	}
 	if len(render.PixelWindows) > 0 {
 		result["pixel_windows"] = clonePixelWindows(render.PixelWindows)

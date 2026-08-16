@@ -464,8 +464,7 @@ func parseUVKleinEmission(def map[string]interface{}) (emission.Emitter, error) 
 //
 //   - "palette":         array of N RGB triples (defaults to DefaultCellPalette;
 //     cells beyond palette length wrap modulo).
-//   - "intensity":       scalar applied to every palette entry, useful when the
-//     engine's exposure makes the default [0..1] colors look dim.
+//   - "intensity":       scalar applied to every palette entry.
 //   - "shading":         "solid" (default) or "boundary_grid".
 //   - "grid_color":      RGB triple for boundary stripes (defaults to white).
 //   - "grid_thickness":  world-space half-width of the grid in scene units

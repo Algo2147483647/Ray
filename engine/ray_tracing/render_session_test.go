@@ -24,7 +24,6 @@ func TestConcurrentFilmAccumulatorSerializesPixelSplats(t *testing.T) {
 		go func() {
 			defer group.Done()
 			for range writesPerWorker {
-				accumulator.AddRGB(0, optics.Color3{1, 2, 3})
 				accumulator.AddSpectral(0, 550, 0.5)
 			}
 		}()
@@ -32,9 +31,6 @@ func TestConcurrentFilmAccumulatorSerializesPixelSplats(t *testing.T) {
 	group.Wait()
 
 	writes := float64(workers * writesPerWorker)
-	if film.Data[0].Data[0] != writes || film.Data[1].Data[0] != 2*writes || film.Data[2].Data[0] != 3*writes {
-		t.Fatalf("unexpected RGB accumulation: %v %v %v", film.Data[0].Data[0], film.Data[1].Data[0], film.Data[2].Data[0])
-	}
 	bin := film.SpectralBinIndex(550)
 	if got, want := film.SpectralBins[bin].Data[0], 0.5*writes; got != want {
 		t.Fatalf("spectral accumulation = %v, want %v", got, want)
@@ -50,14 +46,20 @@ func (*constantSplatKernel) Prepare(*RenderSession) error { return nil }
 func (k *constantSplatKernel) WorkCount(*RenderSession) int64 { return k.work }
 
 func (*constantSplatKernel) TraceSample(*RenderSession, int64) []FilmSplat {
-	return []FilmSplat{{Pixel: 0, Value: optics.NewRGBSpectrum(2, 4, 6)}}
+	return []FilmSplat{{
+		Pixel:         0,
+		WavelengthNM:  550,
+		WavelengthPDF: optics.UniformWavelengthPDF(),
+		Value:         optics.NewSampledSpectrum([]float64{2}),
+	}}
 }
 
 func TestSplatDriverNormalizesByGlobalWorkCount(t *testing.T) {
 	handler := NewHandler()
 	handler.ThreadNum = 2
-	handler.SpectrumMode = optics.SpectrumModeRGB
+	handler.SpectrumMode = optics.SpectrumModeHeroWavelength
 	film := camera.NewFilm(1, 1)
+	film.InitSpectralBins(8, optics.WavelengthMin, optics.WavelengthMax)
 	session, err := newRenderSession(handler, RenderContext{
 		Camera: fixedCamera{}, ObjectTree: &object.ObjectTree{},
 		Film: film, Samples: 7,
@@ -71,10 +73,9 @@ func TestSplatDriverNormalizesByGlobalWorkCount(t *testing.T) {
 	}
 	session.Finalize(driver.EffectiveSampleCount(session))
 
-	for channel, want := range []float64{2, 4, 6} {
-		if got := film.Data[channel].Data[0]; math.Abs(got-want) > 1e-12 {
-			t.Fatalf("channel %d = %v, want %v", channel, got, want)
-		}
+	bin := film.SpectralBinIndex(550)
+	if got, want := film.SpectralBins[bin].Data[0], 2.0; math.Abs(got-want) > 1e-12 {
+		t.Fatalf("spectral bin = %v, want %v", got, want)
 	}
 	if film.Samples != 7 {
 		t.Fatalf("film samples = %d, want 7", film.Samples)

@@ -27,8 +27,9 @@ type bdptVertex struct {
 	PDFFwdArea      float64
 	SampledPDF      float64
 	SampledDelta    bool
-	RRSurvival      float64
+	RRDepth         int64
 	LightEndpoint   bool
+	LightAreaPDF    float64
 	MediumStack     medium.Stack
 }
 
@@ -104,6 +105,31 @@ func (h *Handler) traceBidirectionalPrepared(
 			if ok {
 				result = result.Add(contribution.MulScalar(weight))
 			}
+		}
+	}
+
+	// Add one reference-conditioned area-light strategy for every direct
+	// connection. Its area density is combined with every standard BDPT split
+	// in the power heuristic, so the extra strategy is unbiased.
+	for ci := range cameraPath {
+		if int64(ci+1) > h.MaxRayLevel {
+			continue
+		}
+		lightEndpoint, ok := h.sampleLightEndpointFrom(
+			state.Lights, state.TotalLightWeight, cameraPath[ci].Point,
+			wavelengthNM, wavelengthPDF,
+		)
+		if !ok {
+			continue
+		}
+		directPath := []bdptVertex{lightEndpoint}
+		weight := bdptMISWeightReferenceDirect(directPath, cameraPath, ci)
+		if weight <= 0 {
+			continue
+		}
+		contribution, ok := h.connectBDPTVertices(objTree, &lightEndpoint, &cameraPath[ci])
+		if ok {
+			result = result.Add(contribution.MulScalar(weight))
 		}
 	}
 	return result, lightPath
@@ -235,7 +261,8 @@ func (h *Handler) buildCameraSubpath(
 		vertex := bdptVertex{
 			Point: hit.Point, GeometricNormal: hit.GeometricNormal, Frame: si.Frame,
 			WoLocal: si.WoLocal, Context: si.Context, Object: si.Object,
-			Beta: beta, PDFFwdArea: pdfArea, MediumStack: ray.MediumStack.Clone(),
+			Beta: beta, PDFFwdArea: pdfArea, RRDepth: h.RussianRouletteDepth,
+			MediumStack: ray.MediumStack.Clone(),
 		}
 
 		if si.Object.Material.HasEmission() && (depth == 0 || previousDelta || !isSampleableAreaLight(si.Object)) {
@@ -261,7 +288,6 @@ func (h *Handler) buildCameraSubpath(
 			break
 		}
 		survival := bdptSurvivalProbability(beta, depth+1, h.RussianRouletteDepth)
-		vertex.RRSurvival = survival
 		path = append(path, vertex)
 		if survival < 1 {
 			if rand.Float64() >= survival {
@@ -284,6 +310,39 @@ func (h *Handler) sampleLightEndpoint(
 	lights []areaLight,
 	totalWeight, wavelengthNM, wavelengthPDF float64,
 ) (bdptVertex, bool) {
+	selected, selectionPDF, ok := selectAreaLight(lights, totalWeight)
+	if !ok {
+		return bdptVertex{}, false
+	}
+	ss, ok := selected.Sampler.SampleSurface(maths.Sample2D{U: rand.Float64(), V: rand.Float64()})
+	if !ok {
+		return bdptVertex{}, false
+	}
+	return h.makeLightEndpoint(selected, selectionPDF, ss, wavelengthNM, wavelengthPDF)
+}
+
+func (h *Handler) sampleLightEndpointFrom(
+	lights []areaLight,
+	totalWeight float64,
+	reference *mat.VecDense,
+	wavelengthNM, wavelengthPDF float64,
+) (bdptVertex, bool) {
+	selected, selectionPDF, ok := selectAreaLight(lights, totalWeight)
+	if !ok {
+		return bdptVertex{}, false
+	}
+	u := maths.Sample2D{U: rand.Float64(), V: rand.Float64()}
+	ss, ok := shape.SampleSurfaceFrom(selected.Sampler, reference, u)
+	if !ok {
+		return bdptVertex{}, false
+	}
+	return h.makeLightEndpoint(selected, selectionPDF, ss, wavelengthNM, wavelengthPDF)
+}
+
+func selectAreaLight(lights []areaLight, totalWeight float64) (areaLight, float64, bool) {
+	if len(lights) == 0 || totalWeight <= 0 || math.IsNaN(totalWeight) || math.IsInf(totalWeight, 0) {
+		return areaLight{}, 0, false
+	}
 	target := rand.Float64() * totalWeight
 	selected := lights[len(lights)-1]
 	for _, light := range lights {
@@ -293,11 +352,19 @@ func (h *Handler) sampleLightEndpoint(
 		}
 		target -= light.Weight
 	}
-	ss, ok := selected.Sampler.SampleSurface(maths.Sample2D{U: rand.Float64(), V: rand.Float64()})
-	if !ok {
-		return bdptVertex{}, false
-	}
 	selectionPDF := selected.Weight / totalWeight
+	if selectionPDF <= 0 || math.IsNaN(selectionPDF) || math.IsInf(selectionPDF, 0) {
+		return areaLight{}, 0, false
+	}
+	return selected, selectionPDF, true
+}
+
+func (h *Handler) makeLightEndpoint(
+	selected areaLight,
+	selectionPDF float64,
+	ss shape.SurfaceSample,
+	wavelengthNM, wavelengthPDF float64,
+) (bdptVertex, bool) {
 	pdfLightArea := selectionPDF * ss.PDFArea
 	if pdfLightArea <= 0 || math.IsNaN(pdfLightArea) || math.IsInf(pdfLightArea, 0) {
 		return bdptVertex{}, false
@@ -320,7 +387,8 @@ func (h *Handler) sampleLightEndpoint(
 	return bdptVertex{
 		Point: ss.Point, GeometricNormal: ss.Normal, Frame: frame,
 		Context: ctx, Object: selected.Object, Beta: unitSpectrum(wavelengthNM).MulScalar(1 / pdfLightArea),
-		PDFFwdArea: pdfLightArea, LightEndpoint: true,
+		PDFFwdArea: pdfLightArea, LightAreaPDF: selectionPDF / selected.Area,
+		RRDepth: h.RussianRouletteDepth, LightEndpoint: true,
 		MediumStack: medium.NewStack(medium.MediumAir),
 	}, true
 }
@@ -400,7 +468,8 @@ func (h *Handler) buildLightSubpath(
 		vertex := bdptVertex{
 			Point: hit.Point, GeometricNormal: hit.GeometricNormal, Frame: si.Frame,
 			WoLocal: si.WoLocal, Context: si.Context, Object: si.Object,
-			Beta: beta, PDFFwdArea: pdfArea, MediumStack: ray.MediumStack.Clone(),
+			Beta: beta, PDFFwdArea: pdfArea, RRDepth: h.RussianRouletteDepth,
+			MediumStack: ray.MediumStack.Clone(),
 		}
 		if !si.Object.Material.HasSurface() {
 			path = append(path, vertex)
@@ -419,7 +488,6 @@ func (h *Handler) buildLightSubpath(
 			break
 		}
 		survival := bdptSurvivalProbability(beta, depth+1, h.RussianRouletteDepth)
-		vertex.RRSurvival = survival
 		path = append(path, vertex)
 		if survival < 1 {
 			if rand.Float64() >= survival {
@@ -510,46 +578,61 @@ func bdptMISWeight(lightPath, cameraPath []bdptVertex, li, ci int) float64 {
 	if view.containsSampledDelta() {
 		return 0
 	}
+	return bdptStrategyWeight(view, li+1, false)
+}
 
-	currentStrategy := li + 1
-	if math.IsInf(bdptStrategyLogPDFView(view.len(), view.vertex, currentStrategy), -1) {
+func bdptMISWeightReferenceDirect(lightPath, cameraPath []bdptVertex, ci int) float64 {
+	view := bdptPathView{light: lightPath, camera: cameraPath, li: 0, ci: ci}
+	if view.len() < 2 || view.containsSampledDelta() {
 		return 0
 	}
+	return bdptStrategyWeight(view, 1, true)
+}
 
-	denominator := 1.0
-	logRatio := 0.0
-	for split := currentStrategy; split < view.len()-1; split++ {
-		forward := bdptEdgeAreaPDFView(
-			view.len(), view.vertex, split-1, split, split-2, bxdf.TransportImportance,
-		)
-		reverse := bdptEdgeAreaPDFView(
-			view.len(), view.vertex, split, split-1, split+1, bxdf.TransportRadiance,
-		)
-		if forward <= 0 || reverse <= 0 || !isFinitePDF(forward) || !isFinitePDF(reverse) {
-			break
-		}
-		logRatio += math.Log(forward) - math.Log(reverse)
-		denominator = addBDPTPowerRatio(denominator, logRatio)
+func bdptStrategyWeight(view bdptPathView, currentStrategy int, referenceDirect bool) float64 {
+	logPDFs := make([]float64, 0, view.len())
+	for strategy := 1; strategy < view.len(); strategy++ {
+		logPDFs = append(logPDFs, bdptStrategyLogPDFView(view.len(), view.vertex, strategy))
 	}
-
-	logRatio = 0
-	for split := currentStrategy; split > 1; split-- {
-		reverse := bdptEdgeAreaPDFView(
-			view.len(), view.vertex, split-1, split-2, split, bxdf.TransportRadiance,
-		)
-		forward := bdptEdgeAreaPDFView(
-			view.len(), view.vertex, split-2, split-1, split-3, bxdf.TransportImportance,
-		)
-		if forward <= 0 || reverse <= 0 || !isFinitePDF(forward) || !isFinitePDF(reverse) {
-			break
-		}
-		logRatio += math.Log(reverse) - math.Log(forward)
-		denominator = addBDPTPowerRatio(denominator, logRatio)
+	standardDirectLogPDF := logPDFs[0]
+	referenceDirectLogPDF := bdptReferenceDirectLogPDF(view, standardDirectLogPDF)
+	if !math.IsInf(referenceDirectLogPDF, -1) {
+		logPDFs = append(logPDFs, referenceDirectLogPDF)
 	}
-	if denominator <= 0 || math.IsNaN(denominator) {
+	weights := bdptPowerHeuristicWeights(logPDFs)
+	if referenceDirect {
+		if len(weights) != view.len() {
+			return 0
+		}
+		return weights[len(weights)-1]
+	}
+	if currentStrategy <= 0 || currentStrategy > len(weights) {
 		return 0
 	}
-	return 1 / denominator
+	return weights[currentStrategy-1]
+}
+
+func bdptReferenceDirectLogPDF(view bdptPathView, standardDirectLogPDF float64) float64 {
+	if math.IsInf(standardDirectLogPDF, -1) || view.len() < 2 {
+		return math.Inf(-1)
+	}
+	root, adjacent := view.vertex(0), view.vertex(1)
+	if root == nil || adjacent == nil || root.Object == nil || root.Object.Shape == nil ||
+		root.LightAreaPDF <= 0 {
+		return math.Inf(-1)
+	}
+	sampler, ok := root.Object.Shape.(shape.SurfaceSampler)
+	if !ok {
+		return math.Inf(-1)
+	}
+	shapePDF := shape.SurfacePDFFrom(sampler, adjacent.Point, root.Point)
+	area := sampler.SurfaceArea()
+	if shapePDF <= 0 || area <= 0 || !isFinitePDF(shapePDF) {
+		return math.Inf(-1)
+	}
+	// LightAreaPDF contains selectionPDF/area. Multiplying shapePDF by
+	// selectionPDF gives the reference-conditioned root density.
+	return standardDirectLogPDF + math.Log(shapePDF*area)
 }
 
 type bdptPathView struct {
@@ -584,17 +667,6 @@ func (v bdptPathView) containsSampledDelta() bool {
 	return false
 }
 
-func addBDPTPowerRatio(sum, logRatio float64) float64 {
-	exponent := 2 * logRatio
-	if exponent > 700 {
-		return math.Inf(1)
-	}
-	if exponent < -745 {
-		return sum
-	}
-	return sum + math.Exp(exponent)
-}
-
 func bdptPowerHeuristicWeights(logPDFs []float64) []float64 {
 	weights := make([]float64, len(logPDFs))
 	maxLogTerm := math.Inf(-1)
@@ -623,40 +695,24 @@ func bdptPowerHeuristicWeights(logPDFs []float64) []float64 {
 	return weights
 }
 
-// bdptStrategyLogPDFs returns the path density for every enabled split s in
-// [1,len(path)-1]. The camera endpoint is fixed to the current pixel, so t=1
-// and s=0 strategies are intentionally outside this strategy family.
-func bdptStrategyLogPDFs(path []bdptVertex) []float64 {
-	if len(path) < 2 {
-		return nil
-	}
-	result := make([]float64, len(path)-1)
-	for strategy := 1; strategy < len(path); strategy++ {
-		result[strategy-1] = bdptStrategyLogPDF(path, strategy)
-	}
-	return result
-}
-
-func bdptStrategyLogPDF(path []bdptVertex, strategy int) float64 {
-	return bdptStrategyLogPDFView(len(path), func(index int) *bdptVertex {
-		if index < 0 || index >= len(path) {
-			return nil
-		}
-		return &path[index]
-	}, strategy)
-}
-
 func bdptStrategyLogPDFView(
 	pathLength int,
 	vertex func(int) *bdptVertex,
 	strategy int,
 ) float64 {
 	root := vertex(0)
+	rootPDF := 0.0
+	if root != nil {
+		rootPDF = root.PDFFwdArea
+		if root.LightAreaPDF > 0 {
+			rootPDF = root.LightAreaPDF
+		}
+	}
 	if strategy <= 0 || strategy >= pathLength || root == nil ||
-		root.PDFFwdArea <= 0 || !isFinitePDF(root.PDFFwdArea) {
+		rootPDF <= 0 || !isFinitePDF(rootPDF) {
 		return math.Inf(-1)
 	}
-	logPDF := math.Log(root.PDFFwdArea)
+	logPDF := math.Log(rootPDF)
 
 	for source := 0; source < strategy-1; source++ {
 		pdfArea := bdptEdgeAreaPDFView(
@@ -744,6 +800,9 @@ func bdptEdgeAreaPDFView(
 	if pdfDirection <= 0 || !isFinitePDF(pdfDirection) {
 		return 0
 	}
+	pdfDirection *= bdptEdgeSurvivalProbability(
+		source, pathLength, sourceIndex, destinationIndex,
+	)
 
 	if distance2 <= utils.EPS*utils.EPS {
 		return 0
@@ -858,7 +917,9 @@ func validSpectrum(s optics.Spectrum) bool {
 	return s.IsFinite() && s.IsNonNegative() && !s.IsZero()
 }
 
-func bdptSurvivalProbability(beta optics.Spectrum, nextDepth, configuredDepth int64) float64 {
+const bdptRussianRouletteSurvival = 0.8
+
+func bdptSurvivalProbability(_ optics.Spectrum, nextDepth, configuredDepth int64) float64 {
 	depth := configuredDepth
 	if depth <= 0 {
 		depth = 3
@@ -866,7 +927,30 @@ func bdptSurvivalProbability(beta optics.Spectrum, nextDepth, configuredDepth in
 	if nextDepth < depth {
 		return 1
 	}
-	return math.Min(0.95, math.Max(minRussianRouletteSurvival, beta.MaxComponent()))
+	// A throughput-dependent probability cannot be reconstructed for alternative
+	// BDPT strategies without replaying their complete throughput. A fixed
+	// probability is still unbiased, bounds each roulette amplification, and can
+	// be included exactly in every strategy density.
+	return bdptRussianRouletteSurvival
+}
+
+func bdptEdgeSurvivalProbability(
+	source *bdptVertex,
+	pathLength, sourceIndex, destinationIndex int,
+) float64 {
+	if source == nil || source.LightEndpoint {
+		return 1
+	}
+	var sourceDepth int64
+	switch destinationIndex {
+	case sourceIndex + 1:
+		sourceDepth = int64(sourceIndex)
+	case sourceIndex - 1:
+		sourceDepth = int64(pathLength - 1 - sourceIndex)
+	default:
+		return 1
+	}
+	return bdptSurvivalProbability(optics.Spectrum{}, sourceDepth+1, source.RRDepth)
 }
 
 func squaredDistance(a, b *mat.VecDense) float64 {

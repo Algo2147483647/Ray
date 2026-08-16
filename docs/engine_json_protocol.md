@@ -26,12 +26,8 @@ the CLI:
 --height
 --samples
 --output-film
---exposure
---tone-mapping
---gamma
 --spectrum-mode
 --wavelength-samples
---working-space
 --pixel-window
 ```
 
@@ -52,9 +48,10 @@ the CLI:
 authoring composition; it writes one normalized intermediate JSON file for
 engine execution.
 
-`engine` only writes Film data through `output_film`. It does not read
+`engine` only writes physical spectral Film data through `output_film`. It does not read
 `resume_film` and does not write image files. Use `studio` when a Film should be
-resumed, merged, converted to an image, or checkpointed over multiple runs.
+resumed, merged, converted through CIE XYZ to a color image, tone-mapped, or
+checkpointed over multiple runs.
 
 Unknown fields are ignored unless a parser explicitly reads them, but canonical
 engine JSON should omit authoring-only fields such as `includes`.

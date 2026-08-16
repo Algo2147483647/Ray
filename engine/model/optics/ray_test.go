@@ -65,7 +65,7 @@ func TestRGBWeightWhitePoint(t *testing.T) {
 	}
 }
 
-func TestSpectralPowerToXYZWhitePoint(t *testing.T) {
+func TestSpectralPowerToXYZUsesCommonLuminanceNormalization(t *testing.T) {
 	const samples = 10000
 	var sum [3]float64
 	for i := 0; i < samples; i++ {
@@ -76,12 +76,39 @@ func TestSpectralPowerToXYZWhitePoint(t *testing.T) {
 		sum[2] += xyz[2]
 	}
 
-	want := d65WhiteXYZ
+	want := [3]float64{
+		spectralXYZWhitePoint[0] / spectralXYZWhitePoint[1],
+		1,
+		spectralXYZWhitePoint[2] / spectralXYZWhitePoint[1],
+	}
 	for ch, total := range sum {
 		mean := total / samples
 		if math.Abs(mean-want[ch]) > 1e-3 {
 			t.Fatalf("channel %d normalized XYZ white point = %f, want %f", ch, mean, want[ch])
 		}
+	}
+}
+
+func TestSpectralPowerToXYZKeeps6500KBlackbodyNearNeutral(t *testing.T) {
+	const (
+		samples     = 20000
+		temperature = 6500.0
+		c2NMK       = 1.438776877e7
+	)
+	var xyz XYZ
+	for i := 0; i < samples; i++ {
+		t := (float64(i) + 0.5) / samples
+		wavelength := WavelengthMin + t*(WavelengthMax-WavelengthMin)
+		power := 1 / (math.Pow(wavelength, 5) * math.Expm1(c2NMK/(wavelength*temperature)))
+		sample := SpectralPowerToXYZ(wavelength, UniformWavelengthPDF(), power)
+		xyz = xyz.Add(sample)
+	}
+	xyz = xyz.MulScalar(1 / float64(samples))
+	r, g, b := XYZToLinearSRGB(xyz[0], xyz[1], xyz[2])
+	maximum := math.Max(r, math.Max(g, b))
+	minimum := math.Min(r, math.Min(g, b))
+	if maximum <= 0 || (maximum-minimum)/maximum > 0.1 {
+		t.Fatalf("6500 K blackbody is not near neutral: RGB=[%g %g %g]", r, g, b)
 	}
 }
 

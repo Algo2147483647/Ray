@@ -9,28 +9,9 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-func TestResolveRenderConfigAcceptsFilmColorSpaceAlias(t *testing.T) {
-	config := ResolveRenderConfig(&parser.Script{
-		Render: parser.RenderScript{
-			FilmColorSpace: "acescg",
-		},
-	}, RenderOverrides{CameraIndex: -1})
-
-	if config.ColorSpace != "acescg" {
-		t.Fatalf("expected working_space alias to set color space, got %q", config.ColorSpace)
-	}
-}
-
-func TestResolveRenderConfigPrefersColorSpaceOverAlias(t *testing.T) {
-	config := ResolveRenderConfig(&parser.Script{
-		Render: parser.RenderScript{
-			ColorSpace:     "xyz",
-			FilmColorSpace: "acescg",
-		},
-	}, RenderOverrides{CameraIndex: -1})
-
-	if config.ColorSpace != "xyz" {
-		t.Fatalf("expected color_space to win over working_space alias, got %q", config.ColorSpace)
+func TestParseRenderOverridesRejectsRGBFilmMode(t *testing.T) {
+	if _, err := ParseRenderOverrides([]string{"--spectrum-mode", "rgb"}); err == nil {
+		t.Fatal("expected Engine to reject RGB Film output mode")
 	}
 }
 

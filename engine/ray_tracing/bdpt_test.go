@@ -192,7 +192,13 @@ func TestBDPTStrategyDensitiesNormalizeAcrossSameCompletePath(t *testing.T) {
 		GeometricNormal: mat.NewVecDense(3, []float64{0, 0, 1}),
 		Frame:           lightFrame,
 		PDFFwdArea:      0.25,
+		LightAreaPDF:    0.25,
 		LightEndpoint:   true,
+		Object: &object.Object{Shape: shape.NewTriangle(
+			mat.NewVecDense(3, []float64{-1, 0, 2}),
+			mat.NewVecDense(3, []float64{1, -1, 2}),
+			mat.NewVecDense(3, []float64{1, 1, 2}),
+		)},
 	}
 	z1 := makeSurfaceVertex([]float64{0, 0, 1}, []float64{0, 0, 1})
 	z2 := makeSurfaceVertex([]float64{1, 0, 2}, []float64{0, 0, -1})
@@ -204,6 +210,7 @@ func TestBDPTStrategyDensitiesNormalizeAcrossSameCompletePath(t *testing.T) {
 		bdptMISWeight(lightPath[:1], cameraPath, 0, 2),
 		bdptMISWeight(lightPath[:2], cameraPath[:2], 1, 1),
 		bdptMISWeight(lightPath, cameraPath[:1], 2, 0),
+		bdptMISWeightReferenceDirect(lightPath[:1], cameraPath, 2),
 	}
 	sum := 0.0
 	for strategy, weight := range weights {
@@ -287,6 +294,30 @@ func TestBDPTProjectsDeltaCausticWithT1Strategy(t *testing.T) {
 	}
 }
 
+func TestBDPTDeltaReconstructionFilterPreservesEnergy(t *testing.T) {
+	mask := make([]bool, 16)
+	for index := range mask {
+		mask[index] = true
+	}
+	splat := FilmSplat{
+		Pixel: 5, Value: optics.ConstantSpectrum(8),
+		projection: camera.FilmProjection{Raster: camera.RasterPosition{X: 1.25, Y: 1.75}},
+	}
+	filtered := filterBDPTDeltaSplat(splat, 4, 4, mask)
+	if len(filtered) != 4 {
+		t.Fatalf("filtered splat count = %d, want 4", len(filtered))
+	}
+	var sum optics.Spectrum
+	for _, item := range filtered {
+		sum = sum.Add(item.Value)
+	}
+	for channel := range 3 {
+		if math.Abs(sum.RGB[channel]-8) > 1e-12 {
+			t.Fatalf("filtered energy channel %d = %g, want 8", channel, sum.RGB[channel])
+		}
+	}
+}
+
 func TestBDPTContinuousMISRejectsDeltaMeasure(t *testing.T) {
 	lightPath := []bdptVertex{{PDFFwdArea: 1, SampledDelta: true}}
 	cameraPath := []bdptVertex{{}}
@@ -321,8 +352,32 @@ func TestBDPTRussianRouletteUsesConfiguredDepth(t *testing.T) {
 	if got := bdptSurvivalProbability(beta, 2, 3); got != 1 {
 		t.Fatalf("survival before configured depth = %g, want 1", got)
 	}
-	if got := bdptSurvivalProbability(beta, 3, 3); math.Abs(got-0.2) > 1e-12 {
-		t.Fatalf("survival at configured depth = %g, want 0.2", got)
+	if got := bdptSurvivalProbability(beta, 3, 3); math.Abs(got-bdptRussianRouletteSurvival) > 1e-12 {
+		t.Fatalf("survival at configured depth = %g, want %g", got, bdptRussianRouletteSurvival)
+	}
+}
+
+func TestBDPTEdgePDFIncludesReconstructibleRussianRouletteProbability(t *testing.T) {
+	lambertObject := &object.Object{Material: &material.Material{
+		Surface: bsdf.NewSingle(bxdf.NewLambert(optics.ConstantSpectrum(0.8))),
+	}}
+	makeVertex := func(z float64) bdptVertex {
+		normal := mat.NewVecDense(3, []float64{0, 0, 1})
+		frame, ok := maths.NewFrameFromNormal(normal)
+		if !ok {
+			t.Fatal("failed to build test frame")
+		}
+		return bdptVertex{
+			Point: mat.NewVecDense(3, []float64{0, 0, z}), GeometricNormal: normal,
+			Frame: frame, WoLocal: maths.NewDirection(0, 0, 1), Object: lambertObject,
+			RRDepth: 2,
+		}
+	}
+	path := []bdptVertex{makeVertex(0), makeVertex(1), makeVertex(2), makeVertex(3)}
+	withoutRR := 1 / math.Pi
+	got := bdptEdgeAreaPDF(path, 1, 2, -1, bxdf.TransportImportance)
+	if math.Abs(got-withoutRR*bdptRussianRouletteSurvival) > 1e-12 {
+		t.Fatalf("edge area PDF = %g, want %g", got, withoutRR*bdptRussianRouletteSurvival)
 	}
 }
 

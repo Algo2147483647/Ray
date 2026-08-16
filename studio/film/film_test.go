@@ -9,26 +9,29 @@ import (
 	modelcamera "github.com/Algo2147483647/ray/engine/model/camera"
 )
 
-func TestMergeFilmFilesWritesWeightedMerge(t *testing.T) {
+func spectralFilm(shape []int, bins int, samples int64, value float64) *modelcamera.Film {
+	film := modelcamera.NewFilm(shape...)
+	film.InitSpectralBins(bins, 380, 750)
+	film.Samples = samples
+	for bin := range film.SpectralBins {
+		for pixel := range film.SpectralBins[bin].Data {
+			film.SpectralBins[bin].Data[pixel] = value
+		}
+	}
+	return film
+}
+
+func TestMergeFilmFilesWritesWeightedSpectralMerge(t *testing.T) {
 	dir := t.TempDir()
 	basePath := filepath.Join(dir, "base.bin")
 	updatePath := filepath.Join(dir, "update.bin")
 	outputPath := filepath.Join(dir, "merged.bin")
 
-	base := modelcamera.NewFilm(1, 1)
-	base.Samples = 2
-	base.Data[0].Data[0] = 0.25
-	base.Data[1].Data[0] = 0.5
-	base.Data[2].Data[0] = 0.75
+	base := spectralFilm([]int{1, 1}, 4, 2, 0.25)
+	update := spectralFilm([]int{1, 1}, 4, 6, 0.75)
 	if err := base.SaveToFile(basePath); err != nil {
 		t.Fatalf("save base film: %v", err)
 	}
-
-	update := modelcamera.NewFilm(1, 1)
-	update.Samples = 6
-	update.Data[0].Data[0] = 0.75
-	update.Data[1].Data[0] = 0.25
-	update.Data[2].Data[0] = 0.5
 	if err := update.SaveToFile(updatePath); err != nil {
 		t.Fatalf("save update film: %v", err)
 	}
@@ -36,17 +39,16 @@ func TestMergeFilmFilesWritesWeightedMerge(t *testing.T) {
 	if err := MergeFilmFiles(basePath, updatePath, outputPath); err != nil {
 		t.Fatalf("merge films: %v", err)
 	}
-
-	merged := modelcamera.NewFilm()
-	if err := merged.LoadFromFile(outputPath); err != nil {
+	merged, err := LoadFilm(outputPath)
+	if err != nil {
 		t.Fatalf("load merged film: %v", err)
 	}
 	if merged.Samples != 8 {
-		t.Fatalf("expected 8 merged samples, got %d", merged.Samples)
+		t.Fatalf("samples = %d, want 8", merged.Samples)
 	}
-	assertClose(t, merged.Data[0].Data[0], 0.625)
-	assertClose(t, merged.Data[1].Data[0], 0.3125)
-	assertClose(t, merged.Data[2].Data[0], 0.5625)
+	for bin := range merged.SpectralBins {
+		assertClose(t, merged.SpectralBins[bin].Data[0], 0.625)
+	}
 }
 
 func TestMergeFilmFilesWithPixelWindowsLeavesOutsidePixelsUntouched(t *testing.T) {
@@ -55,23 +57,10 @@ func TestMergeFilmFilesWithPixelWindowsLeavesOutsidePixelsUntouched(t *testing.T
 	updatePath := filepath.Join(dir, "update.bin")
 	outputPath := filepath.Join(dir, "merged.bin")
 
-	base := modelcamera.NewFilm(4, 4)
-	base.Samples = 2
-	for ch := 0; ch < 3; ch++ {
-		for i := range base.Data[ch].Data {
-			base.Data[ch].Data[i] = 0.2
-		}
-	}
+	base := spectralFilm([]int{4, 4}, 3, 2, 0.2)
+	update := spectralFilm([]int{4, 4}, 3, 6, 1)
 	if err := base.SaveToFile(basePath); err != nil {
 		t.Fatalf("save base film: %v", err)
-	}
-
-	update := modelcamera.NewFilm(4, 4)
-	update.Samples = 6
-	for ch := 0; ch < 3; ch++ {
-		for i := range update.Data[ch].Data {
-			update.Data[ch].Data[i] = 1
-		}
 	}
 	if err := update.SaveToFile(updatePath); err != nil {
 		t.Fatalf("save update film: %v", err)
@@ -81,38 +70,72 @@ func TestMergeFilmFilesWithPixelWindowsLeavesOutsidePixelsUntouched(t *testing.T
 	if err := MergeFilmFilesWithPixelWindows(basePath, updatePath, outputPath, windows); err != nil {
 		t.Fatalf("merge films with pixel windows: %v", err)
 	}
-
-	merged := modelcamera.NewFilm()
-	if err := merged.LoadFromFile(outputPath); err != nil {
+	merged, err := LoadFilm(outputPath)
+	if err != nil {
 		t.Fatalf("load merged film: %v", err)
 	}
 	if merged.Samples != 8 {
-		t.Fatalf("expected 8 merged samples, got %d", merged.Samples)
+		t.Fatalf("samples = %d, want 8", merged.Samples)
 	}
-
 	for y := 0; y < 4; y++ {
 		for x := 0; x < 4; x++ {
-			index := y*4 + x
 			expected := 0.2
 			if x >= 1 && x < 3 && y >= 1 && y < 3 {
 				expected = 0.8
 			}
-			assertClose(t, merged.Data[0].Data[index], expected)
+			assertClose(t, merged.SpectralBins[0].Data[y*4+x], expected)
 		}
 	}
 }
 
 func TestSaveFilmImageFromFilmDoesNotRequireFilmFile(t *testing.T) {
-	film := modelcamera.NewFilm(1, 1)
-	film.Data[0].Data[0] = 1
+	film := spectralFilm([]int{1, 1}, 64, 1, 1.0/64)
 	imagePath := filepath.Join(t.TempDir(), "direct.png")
 
-	if err := SaveFilmImageFromFilm(film, imagePath, modelcamera.ImageOptions{}); err != nil {
+	if err := SaveFilmImageFromFilm(film, imagePath, ImageOptions{}); err != nil {
 		t.Fatalf("save image from in-memory Film: %v", err)
 	}
 	if info, err := os.Stat(imagePath); err != nil || info.Size() == 0 {
 		t.Fatalf("expected non-empty image at %q: info=%v err=%v", imagePath, info, err)
 	}
+}
+
+func TestToImageWorkingSpacesPreserveTheSameXYZColor(t *testing.T) {
+	film := spectralFilm([]int{1, 1}, 128, 1, 1.0/128)
+	var reference [3]uint8
+	for _, space := range []ColorSpace{ColorSpaceLinearSRGB, ColorSpaceXYZ, ColorSpaceACEScg} {
+		img, err := ToImage(film, ImageOptions{ColorSpace: space})
+		if err != nil {
+			t.Fatalf("ToImage(%s): %v", space, err)
+		}
+		pixel := img.RGBAAt(0, 0)
+		if space == ColorSpaceLinearSRGB {
+			reference = [3]uint8{pixel.R, pixel.G, pixel.B}
+			continue
+		}
+		for channel, got := range []uint8{pixel.R, pixel.G, pixel.B} {
+			if byteDistance(got, reference[channel]) > 1 {
+				t.Fatalf("working space %s changed output color: got %v, reference %v", space, pixel, reference)
+			}
+		}
+	}
+}
+
+func TestToImageRejectsOutputSettingsUnknownToStudio(t *testing.T) {
+	film := spectralFilm([]int{1, 1}, 8, 1, 1.0/8)
+	if _, err := ToImage(film, ImageOptions{ToneMapping: "legacy"}); err == nil {
+		t.Fatal("expected unsupported tone mapping to fail")
+	}
+	if _, err := ToImage(film, ImageOptions{ColorSpace: "legacy"}); err == nil {
+		t.Fatal("expected unsupported working color space to fail")
+	}
+}
+
+func byteDistance(a, b uint8) uint8 {
+	if a >= b {
+		return a - b
+	}
+	return b - a
 }
 
 func assertClose(t *testing.T, got, expected float64) {

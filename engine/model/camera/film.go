@@ -1,43 +1,19 @@
 package camera
 
 import (
-	"github.com/Algo2147483647/ray/engine/maths"
-	"github.com/Algo2147483647/ray/engine/model/optics"
-	"image"
-	"image/color"
 	"math"
-	"reflect"
+
+	"github.com/Algo2147483647/ray/engine/maths"
 )
 
+// Film is a scene-linear spectral image. It deliberately carries no observer,
+// tristimulus working space, display transform, or image-encoding policy.
 type Film struct {
-	Data          [3]maths.Tensor[float64] `json:"data"`                      // RGB or tristimulus channel data.
-	Samples       int64                    `json:"samples"`                   // Number of accumulated samples.
-	ColorSpace    FilmColorSpace           `json:"color_space"`               // Color encoding used for output.
-	SpectralBins  []maths.Tensor[float64]  `json:"spectral_bins,omitempty"`   // Per-wavelength-band accumulated spectral data.
-	SpectralMinNM float64                  `json:"spectral_min_nm,omitempty"` // Lower bound of the spectral range, in nm.
-	SpectralMaxNM float64                  `json:"spectral_max_nm,omitempty"` // Upper bound of the spectral range, in nm.
-}
-
-type FilmColorSpace string
-
-const (
-	FilmColorSpaceLinearSRGB FilmColorSpace = "linear_srgb"
-	FilmColorSpaceXYZ        FilmColorSpace = "xyz"
-	FilmColorSpaceACEScg     FilmColorSpace = "acescg"
-)
-
-type ToneMapping string
-
-const (
-	ToneMappingLinear   ToneMapping = "linear"
-	ToneMappingReinhard ToneMapping = "reinhard"
-	ToneMappingACES     ToneMapping = "aces"
-)
-
-type ImageOptions struct {
-	Exposure    float64
-	ToneMapping ToneMapping
-	Gamma       float64
+	Shape         []int                   `json:"shape"`
+	Samples       int64                   `json:"samples"`
+	SpectralBins  []maths.Tensor[float64] `json:"spectral_bins"`
+	SpectralMinNM float64                 `json:"spectral_min_nm"`
+	SpectralMaxNM float64                 `json:"spectral_max_nm"`
 }
 
 type SpectralSample struct {
@@ -45,95 +21,66 @@ type SpectralSample struct {
 	Value        float64
 }
 
-func NewFilm(width ...int) *Film {
-	shape := make([]int, len(width))
-	copy(shape, width)
-
-	return &Film{
-		Data: [3]maths.Tensor[float64]{
-			*maths.NewTensor[float64](shape),
-			*maths.NewTensor[float64](shape),
-			*maths.NewTensor[float64](shape),
-		},
-		Samples:    0,
-		ColorSpace: FilmColorSpaceLinearSRGB,
-	}
+func NewFilm(shape ...int) *Film {
+	return (&Film{}).Init(shape...)
 }
 
-func (f *Film) Init(width ...int) *Film {
-	shape := make([]int, len(width))
-	copy(shape, width)
-
-	f.Data = [3]maths.Tensor[float64]{
-		*maths.NewTensor[float64](shape),
-		*maths.NewTensor[float64](shape),
-		*maths.NewTensor[float64](shape),
+func (f *Film) Init(shape ...int) *Film {
+	if f == nil {
+		return nil
 	}
+	f.Shape = append(f.Shape[:0], shape...)
 	f.Samples = 0
-	f.ColorSpace = FilmColorSpaceLinearSRGB
 	f.SpectralBins = nil
 	f.SpectralMinNM = 0
 	f.SpectralMaxNM = 0
 	return f
 }
 
-func (f *Film) Merge(a *Film) *Film {
-	if !reflect.DeepEqual(f.Data[0].Shape, a.Data[0].Shape) {
-		panic("Dimension of a and b is not matched ")
-	} else if f.ColorSpace != "" && a.ColorSpace != "" && f.ColorSpace != a.ColorSpace {
-		panic("Working space of a and b is not matched")
+func (f *Film) ElementCount() int {
+	if f == nil || len(f.Shape) == 0 {
+		return 0
 	}
-
-	totalSamples := f.Samples + a.Samples
-	if totalSamples == 0 {
-		return f
-	}
-
-	for ch := 0; ch < 3; ch++ {
-		for i := range f.Data[ch].Data {
-			f.Data[ch].Data[i] = (f.Data[ch].Data[i]*float64(f.Samples) + a.Data[ch].Data[i]*float64(a.Samples)) / float64(totalSamples)
+	count := 1
+	for _, extent := range f.Shape {
+		if extent <= 0 {
+			return 0
 		}
+		count *= extent
 	}
-	f.mergeSpectralDiagnostics(a, totalSamples)
-	f.Samples = totalSamples
-	return f
+	return count
 }
 
 func (f *Film) InitSpectralBins(count int, minNM, maxNM float64) {
-	if count <= 0 || len(f.Data[0].Shape) == 0 {
-		f.SpectralBins = nil
-		f.SpectralMinNM = 0
-		f.SpectralMaxNM = 0
+	if f == nil || count <= 0 || f.ElementCount() == 0 || minNM <= 0 || maxNM <= minNM {
+		if f != nil {
+			f.SpectralBins = nil
+			f.SpectralMinNM = 0
+			f.SpectralMaxNM = 0
+		}
 		return
-	}
-	if minNM <= 0 {
-		minNM = 380
-	}
-	if maxNM <= minNM {
-		maxNM = 750
 	}
 	f.SpectralBins = make([]maths.Tensor[float64], count)
 	for i := range f.SpectralBins {
-		f.SpectralBins[i] = *maths.NewTensor[float64](append([]int(nil), f.Data[0].Shape...))
+		f.SpectralBins[i] = *maths.NewTensor[float64](append([]int(nil), f.Shape...))
 	}
 	f.SpectralMinNM = minNM
 	f.SpectralMaxNM = maxNM
 }
 
 func (f *Film) HasSpectralBins() bool {
-	return len(f.SpectralBins) > 0 && f.SpectralMaxNM > f.SpectralMinNM
+	return f != nil && len(f.SpectralBins) > 0 && f.SpectralMaxNM > f.SpectralMinNM
 }
 
 func (f *Film) RecordSpectralSample(pixel int, wavelengthNM, value float64) {
-	if !f.HasSpectralBins() || pixel < 0 || math.IsNaN(value) || math.IsInf(value, 0) {
+	if !f.HasSpectralBins() || pixel < 0 || pixel >= f.ElementCount() ||
+		math.IsNaN(value) || math.IsInf(value, 0) {
 		return
 	}
-
 	bin := f.SpectralBinIndex(wavelengthNM)
-	if bin < 0 || bin >= len(f.SpectralBins) || pixel >= len(f.SpectralBins[bin].Data) {
+	if bin < 0 {
 		return
 	}
-
 	f.SpectralBins[bin].Data[pixel] += value
 }
 
@@ -149,195 +96,10 @@ func (f *Film) SpectralBinIndex(wavelengthNM float64) int {
 	if !f.HasSpectralBins() || wavelengthNM < f.SpectralMinNM || wavelengthNM >= f.SpectralMaxNM {
 		return -1
 	}
-	t := (wavelengthNM - f.SpectralMinNM) / (f.SpectralMaxNM - f.SpectralMinNM)
-	idx := int(t * float64(len(f.SpectralBins)))
-	if idx < 0 || idx >= len(f.SpectralBins) {
+	index := int((wavelengthNM - f.SpectralMinNM) /
+		(f.SpectralMaxNM - f.SpectralMinNM) * float64(len(f.SpectralBins)))
+	if index < 0 || index >= len(f.SpectralBins) {
 		return -1
 	}
-	return idx
-}
-
-func (f *Film) mergeSpectralDiagnostics(a *Film, totalSamples int64) {
-	if !f.compatibleSpectralBins(a) {
-		return
-	}
-	for bin := range f.SpectralBins {
-		for i := range f.SpectralBins[bin].Data {
-			f.SpectralBins[bin].Data[i] = (f.SpectralBins[bin].Data[i]*float64(f.Samples) + a.SpectralBins[bin].Data[i]*float64(a.Samples)) / float64(totalSamples)
-		}
-	}
-}
-
-func (f *Film) compatibleSpectralBins(a *Film) bool {
-	return f != nil && a != nil &&
-		len(f.SpectralBins) > 0 &&
-		len(f.SpectralBins) == len(a.SpectralBins) &&
-		f.SpectralMinNM == a.SpectralMinNM &&
-		f.SpectralMaxNM == a.SpectralMaxNM
-}
-
-func (f *Film) ConvertSpectralBinsToFilmColorSpace() {
-	if !f.HasSpectralBins() {
-		return
-	}
-	for pixel := range f.Data[0].Data {
-		x, y, z := f.spectralXYZAt(pixel)
-		a, b, c := XYZToFilmColorSpace(x, y, z, f.ColorSpace)
-		f.Data[0].Data[pixel] = a
-		f.Data[1].Data[pixel] = b
-		f.Data[2].Data[pixel] = c
-	}
-}
-
-func (f *Film) spectralXYZAt(pixel int) (float64, float64, float64) {
-	var x, y, z float64
-	for bin := range f.SpectralBins {
-		if pixel < 0 || pixel >= len(f.SpectralBins[bin].Data) {
-			continue
-		}
-		xyz := optics.SpectralRadianceToXYZ(f.SpectralBinCenterNM(bin), f.SpectralBins[bin].Data[pixel])
-		x += xyz[0]
-		y += xyz[1]
-		z += xyz[2]
-	}
-	return x, y, z
-}
-
-func (f *Film) ToImage() *image.RGBA {
-	return f.ToImageWithOptions(ImageOptions{})
-}
-
-func (f *Film) ToImageWithOptions(options ImageOptions) *image.RGBA {
-	options = normalizeImageOptions(options)
-	if len(f.Data[0].Shape) == 2 {
-		imgout := image.NewRGBA(image.Rect(0, 0, f.Data[0].Shape[0], f.Data[0].Shape[1]))
-		for i := 0; i < len(f.Data[0].Data); i++ {
-			red, green, blue := f.outputRGBAt(i)
-			r := encodeOutputChannel(red, options)
-			g := encodeOutputChannel(green, options)
-			b := encodeOutputChannel(blue, options)
-			ind := f.Data[0].GetCoordinates(i)
-			imgout.Set(ind[0], ind[1], color.RGBA{r, g, b, 255})
-		}
-
-		return imgout
-	} else if len(f.Data[0].Shape) > 2 {
-		width := f.Data[0].Shape[0]
-		height := f.Data[0].Shape[1]
-		slices := 1
-		for _, extent := range f.Data[0].Shape[2:] {
-			slices *= extent
-		}
-		atlasCols := int(math.Ceil(math.Sqrt(float64(slices))))
-		atlasRows := (slices + atlasCols - 1) / atlasCols
-		imgout := image.NewRGBA(image.Rect(0, 0, width*atlasCols, height*atlasRows))
-		for i := 0; i < len(f.Data[0].Data); i++ {
-			red, green, blue := f.outputRGBAt(i)
-			r := encodeOutputChannel(red, options)
-			g := encodeOutputChannel(green, options)
-			b := encodeOutputChannel(blue, options)
-			ind := f.Data[0].GetCoordinates(i)
-			slice := flattenedSliceIndex(ind[2:], f.Data[0].Shape[2:])
-			atlasX := slice % atlasCols
-			atlasY := slice / atlasCols
-			imgout.Set(ind[0]+atlasX*width, ind[1]+atlasY*height, color.RGBA{r, g, b, 255})
-		}
-
-		return imgout
-	}
-	return nil
-}
-
-func flattenedSliceIndex(coords, shape []int) int {
-	index := 0
-	stride := 1
-	for i := 0; i < len(coords) && i < len(shape); i++ {
-		index += coords[i] * stride
-		stride *= shape[i]
-	}
 	return index
-}
-
-func (f *Film) outputRGBAt(i int) (float64, float64, float64) {
-	a := f.Data[0].Data[i]
-	b := f.Data[1].Data[i]
-	c := f.Data[2].Data[i]
-	switch f.ColorSpace {
-	case FilmColorSpaceXYZ:
-		return optics.XYZToLinearSRGB(a, b, c)
-	case FilmColorSpaceACEScg:
-		return optics.ACEScgToLinearSRGB(a, b, c)
-	default:
-		return a, b, c
-	}
-}
-
-func XYZToFilmColorSpace(x, y, z float64, space FilmColorSpace) (float64, float64, float64) {
-	switch space {
-	case FilmColorSpaceXYZ:
-		return x, y, z
-	case FilmColorSpaceACEScg:
-		return optics.XYZToACEScg(x, y, z)
-	default:
-		return optics.XYZToLinearSRGB(x, y, z)
-	}
-}
-
-func LinearSRGBToFilmColorSpace(r, g, b float64, space FilmColorSpace) (float64, float64, float64) {
-	switch space {
-	case FilmColorSpaceXYZ:
-		xyz := optics.LinearSRGBToXYZ(r, g, b)
-		return xyz[0], xyz[1], xyz[2]
-	case FilmColorSpaceACEScg:
-		return optics.LinearSRGBToACEScg(r, g, b)
-	default:
-		return r, g, b
-	}
-}
-
-func normalizeImageOptions(options ImageOptions) ImageOptions {
-	if options.Exposure == 0 {
-		options.Exposure = 1
-	}
-	if options.ToneMapping == "" {
-		options.ToneMapping = ToneMappingLinear
-	}
-	if options.Gamma == 0 {
-		options.Gamma = 1
-	}
-	return options
-}
-
-func encodeOutputChannel(v float64, options ImageOptions) uint8 {
-	if math.IsNaN(v) || math.IsInf(v, 0) || v <= 0 {
-		return 0
-	}
-
-	v *= options.Exposure
-	switch options.ToneMapping {
-	case ToneMappingReinhard:
-		v = v / (1 + v)
-	case ToneMappingACES:
-		v = acesToneMap(v)
-	}
-
-	v = clamp01(v)
-	if options.Gamma > 0 && options.Gamma != 1 {
-		v = math.Pow(v, 1/options.Gamma)
-	}
-	return uint8(clamp01(v)*255 + 0.5)
-}
-
-func acesToneMap(v float64) float64 {
-	return (v * (2.51*v + 0.03)) / (v*(2.43*v+0.59) + 0.14)
-}
-
-func clamp01(v float64) float64 {
-	if v < 0 {
-		return 0
-	}
-	if v > 1 {
-		return 1
-	}
-	return v
 }

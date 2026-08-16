@@ -44,7 +44,7 @@
     "samples": 128,
     "thread_num": 16,
     "spectrum_mode": "rgb",
-    "working_space": "linear_srgb",
+    "color_space": "linear_srgb",
     "exposure": 1,
     "tone_mapping": "aces",
     "gamma": 2.2,

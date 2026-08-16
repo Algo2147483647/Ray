@@ -19,6 +19,8 @@ type lightTracingKernel struct {
 	totalWeight float64
 	activeMask  []bool
 	pixelCount  int
+	width       int
+	height      int
 	totalPaths  int64
 }
 
@@ -29,7 +31,12 @@ func (k *lightTracingKernel) Prepare(session *RenderSession) error {
 	}
 	k.projective = projective
 	k.lights, k.totalWeight = collectAreaLights(session.Context.ObjectTree)
-	k.pixelCount = shapeElementCount(session.Context.Film.Data[0].Shape)
+	if len(session.Context.Film.Shape) != 2 {
+		return fmt.Errorf("light tracing requires a 2D Film")
+	}
+	k.width = session.Context.Film.Shape[0]
+	k.height = session.Context.Film.Shape[1]
+	k.pixelCount = session.Context.Film.ElementCount()
 	k.activeMask = make([]bool, k.pixelCount)
 	activePixels := int64(k.pixelCount)
 	if len(session.Context.PixelWindows) == 0 {
@@ -38,7 +45,7 @@ func (k *lightTracingKernel) Prepare(session *RenderSession) error {
 		}
 	} else {
 		k.activeMask, activePixels = buildPixelWindowMask(
-			session.Context.Film.Data[0].Shape,
+			session.Context.Film.Shape,
 			session.Context.PixelWindows,
 		)
 	}
@@ -55,13 +62,8 @@ func (k *lightTracingKernel) WorkCount(*RenderSession) int64 {
 }
 
 func (k *lightTracingKernel) TraceSample(session *RenderSession, _ int64) []FilmSplat {
-	wavelengthNM := 0.0
-	wavelengthPDF := 0.0
-	if session.Handler.SpectrumMode != optics.SpectrumModeRGB {
-		wavelength := session.Handler.wavelengthSampler().Sample(rand.Float64())
-		wavelengthNM = wavelength.LambdaNM
-		wavelengthPDF = wavelength.PDF
-	}
+	wavelength := session.Handler.wavelengthSampler().Sample(rand.Float64())
+	wavelengthNM, wavelengthPDF := wavelength.LambdaNM, wavelength.PDF
 	path := session.Handler.buildLightSubpath(
 		session.Context.ObjectTree,
 		k.lights,
@@ -76,11 +78,15 @@ func (k *lightTracingKernel) TraceSample(session *RenderSession, _ int64) []Film
 			session.Context.ObjectTree,
 			&path[vertexIndex],
 		)
-		if !valid || projection.Pixel < 0 || projection.Pixel >= k.pixelCount || !k.activeMask[projection.Pixel] {
+		if !valid {
+			continue
+		}
+		pixel, ok := projection.Raster.PixelIndex(k.width, k.height)
+		if !ok || !k.activeMask[pixel] {
 			continue
 		}
 		splats = append(splats, FilmSplat{
-			Pixel: projection.Pixel, WavelengthNM: wavelengthNM,
+			Pixel: pixel, WavelengthNM: wavelengthNM,
 			WavelengthPDF: wavelengthPDF, Value: value,
 		})
 	}

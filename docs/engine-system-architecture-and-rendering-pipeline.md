@@ -15,7 +15,7 @@ Its central purpose is not merely to convert JSON into an image. It converts sce
 - `Optics` owns rays, spectra, wavelengths, and color state.
 - `Camera` maps Film coordinates to initial rays; some cameras also support inverse projection.
 - `Integrator` decides how paths are constructed, how pixel measurements are estimated, and how work is scheduled.
-- `Film` owns linear results, optional spectral diagnostics, sample accounting, merging, and persistence.
+- `Film` owns physical spectral results, sample accounting, and persistence.
 
 The governing structure is: domain models express meaning, while the renderer orchestrates behavior. A Shape does not know about an Integrator, a Material does not know about the BVH, a Camera does not know about a BSDF, and a Film does not know how its contributions were generated. Integrators combine these capabilities through stable contracts. This separation allows most new capabilities to be introduced as local model extensions instead of requiring a rewrite of the complete rendering path.
 
@@ -28,7 +28,7 @@ flowchart LR
     C --> D["Parser and factories"]
     D --> E["Scene domain aggregate"]
     E --> F["Ray-tracing integrator"]
-    F --> G["Linear Film and spectral bins"]
+    F --> G["Physical spectral Film"]
     G --> H["Controller sink: in-memory Film"]
     H --> I["Studio Film merge / image conversion"]
     I --> K["Versioned binary .bin Film"]
@@ -47,9 +47,12 @@ The Engine is the execution layer of the wider toolchain, not the authoring laye
 | Engine controller | One canonical script, configuration resolution, model construction, render-job orchestration, and Film persistence | Multi-script composition and asset graphs |
 | Engine model | Scene, space, shapes, materials, media, optics, cameras, and Film semantics | Integrator lifecycle and worker scheduling |
 | Engine ray tracing | Path estimation, sampling, visibility, throughput, concurrent scheduling, and Film accumulation | JSON protocol details |
-| Binary Film | Linear channels, working space, sample count, and optional spectral bins | Display-encoded final-image semantics |
+| Binary Film | Shape, sample count, wavelength bounds, and spectral planes | Observer, color-space, and display-image semantics |
 
-The Engine library can call `Film.ToImageWithOptions` to create an 8-bit image, but the current Engine CLI only calls `SaveToFile` and writes a binary Film. Studio normally applies exposure, tone mapping, and gamma after loading that Film. Therefore, “Engine rendering completed” and “display image completed” are separate lifecycle boundaries.
+Engine has no Film-to-image API. Studio receives a completed Film in memory,
+saves the spectral binary, performs CIE XYZ integration, and applies the output
+color-space and display transform. Engine rendering and display-image creation
+are therefore separate ownership boundaries.
 
 ## Layer Structure and Responsibility Boundaries
 
@@ -307,14 +310,11 @@ The minimum Camera contract is `GenerateRay`. Current camera models are:
 
 `ProjectiveCamera` additionally provides `ProjectPoint`, which maps a light-path vertex to a pixel and returns distance, direction to the camera, and a measurement Jacobian. Light Tracing requires this capability. BDPT uses it only for the separate delta-caustic splat family.
 
-Film uses three equal-shaped Tensors for RGB or tristimulus channels, so its storage naturally supports both two-dimensional images and N-dimensional Film domains. More-than-two-dimensional Films are arranged as a two-dimensional atlas during image conversion. Film also stores:
-
-- the linear working space: linear sRGB, XYZ, or ACEScg;
-- effective sample count;
-- optional spectral bins and wavelength range;
-- a mergeable binary persistence format.
-
-Film is a linear measurement result, not a display-ready bitmap. This separates expensive light transport from display mapping, allowing exposure, tone mapping, and gamma to be changed without re-rendering.
+Film uses equal-shaped spectral-bin Tensors, so its storage supports both
+two-dimensional images and N-dimensional Film domains. It stores the shape,
+effective sample count, wavelength range, and physical spectral contributions.
+It deliberately has no observer or display channels. Studio arranges
+more-than-two-dimensional Films as a two-dimensional atlas during image output.
 
 ## Integrator, Driver, and Kernel Architecture
 
@@ -348,10 +348,8 @@ The pixel driver distributes 8×8 tiles by default through an atomic next-tile i
 
 `RenderSession` centralizes Context validation, Film preparation, accumulator construction, and finalization. All Integrators therefore share:
 
-- Film working-space initialization;
 - spectral-bin initialization;
-- RGB and spectral write entry points;
-- spectral-bin conversion into the Film working space;
+- spectral write entry points;
 - `Film.Samples` accounting.
 
 The estimator mathematics, MIS strategies, and unbiasedness conditions are documented in [Integrator](integrator.md).
@@ -565,25 +563,26 @@ RGB contributions are converted into the selected Film working space. Spectral c
 Spectral Film finalization performs:
 
 ```text
-spectral bins
--> CIE XYZ observer response
--> Film working space
--> three linear Film channels
+active-wavelength path contributions
+-> spectral Film bins
 ```
 
 Finally, the Driver's sample-accounting value is written to `Film.Samples`. Sampled Path Tracing records camera samples multiplied by wavelength samples. The splat driver currently records configured `samples` for both BDPT and Light Tracing, even though BDPT total work also contains active-pixel and wavelength-stratum factors. `Film.Samples` is therefore a Driver-specific statistical accounting value, not a universally identical count of traced geometric paths.
 
 ### Persistence and Display Output
 
-The controller saves Film as a little-endian binary stream containing sample count, shape, three channels, working space, and an optional spectral section. The Engine CLI finishes at this boundary.
+The controller saves Film v3 as a little-endian binary stream containing sample
+count, shape, wavelength bounds, and mandatory spectral planes. The Engine CLI
+finishes at this physical-measurement boundary.
 
 Studio or another consumer may load and sample-weight merge Films before applying:
 
 ```text
-Film space -> linear sRGB -> exposure -> tone map -> clamp -> gamma -> 8-bit image
+spectral Film -> CIE XYZ -> selected Studio color space -> linear sRGB
+-> exposure -> tone map -> clamp -> gamma -> 8-bit image
 ```
 
-For an N-dimensional Film, the first two dimensions become each atlas tile's width and height, while remaining dimensions are flattened into slices. Display conversion is lossy; binary Film retains linear results, so merging and numerical analysis belong before image encoding.
+For an N-dimensional Film, the first two dimensions become each atlas tile's width and height, while remaining dimensions are flattened into slices. Display conversion is lossy; binary Film retains physical spectral results, so merging and numerical analysis belong before image encoding.
 
 ## State Lifecycles
 

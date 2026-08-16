@@ -5,7 +5,7 @@ import (
 	"image/png"
 	"os"
 	"path/filepath"
-	"reflect"
+	"slices"
 
 	modelcamera "github.com/Algo2147483647/ray/engine/model/camera"
 )
@@ -54,7 +54,7 @@ func CopyFilmFile(sourcePath, outputPath string) error {
 	return SaveFilm(film, outputPath)
 }
 
-func SaveFilmImage(filmPath, imagePath string, options modelcamera.ImageOptions) error {
+func SaveFilmImage(filmPath, imagePath string, options ImageOptions) error {
 	film, err := LoadFilm(filmPath)
 	if err != nil {
 		return fmt.Errorf("load film %q: %w", filmPath, err)
@@ -62,7 +62,7 @@ func SaveFilmImage(filmPath, imagePath string, options modelcamera.ImageOptions)
 	return SaveFilmImageFromFilm(film, imagePath, options)
 }
 
-func SaveFilmImageFromFilm(film *modelcamera.Film, imagePath string, options modelcamera.ImageOptions) error {
+func SaveFilmImageFromFilm(film *modelcamera.Film, imagePath string, options ImageOptions) error {
 	if film == nil {
 		return fmt.Errorf("cannot create image from a nil film")
 	}
@@ -76,9 +76,9 @@ func SaveFilmImageFromFilm(film *modelcamera.Film, imagePath string, options mod
 	}
 	defer file.Close()
 
-	img := film.ToImageWithOptions(options)
-	if img == nil {
-		return fmt.Errorf("film cannot be converted to an image")
+	img, err := ToImage(film, options)
+	if err != nil {
+		return err
 	}
 	if err := png.Encode(file, img); err != nil {
 		return fmt.Errorf("write image %q: %w", imagePath, err)
@@ -107,17 +107,11 @@ func SaveFilm(film *modelcamera.Film, path string) error {
 	return nil
 }
 
-func MergeFilms(base, update *modelcamera.Film) (err error) {
+func MergeFilms(base, update *modelcamera.Film) error {
 	if base == nil || update == nil {
 		return fmt.Errorf("merge films: nil film")
 	}
-	defer func() {
-		if recovered := recover(); recovered != nil {
-			err = fmt.Errorf("merge films: %v", recovered)
-		}
-	}()
-	base.Merge(update)
-	return nil
+	return mergeFilmsAtPixelWindows(base, update, nil)
 }
 
 func MergeFilmsWithPixelWindows(base, update *modelcamera.Film, windows []modelcamera.PixelWindow) error {
@@ -127,7 +121,7 @@ func MergeFilmsWithPixelWindows(base, update *modelcamera.Film, windows []modelc
 	if len(windows) == 0 {
 		return MergeFilms(base, update)
 	}
-	normalized, err := modelcamera.NormalizePixelWindows(windows, base.Data[0].Shape)
+	normalized, err := modelcamera.NormalizePixelWindows(windows, base.Shape)
 	if err != nil {
 		return err
 	}
@@ -135,11 +129,11 @@ func MergeFilmsWithPixelWindows(base, update *modelcamera.Film, windows []modelc
 }
 
 func mergeFilmsAtPixelWindows(base, update *modelcamera.Film, windows []modelcamera.PixelWindow) error {
-	if !reflect.DeepEqual(base.Data[0].Shape, update.Data[0].Shape) {
+	if !slices.Equal(base.Shape, update.Shape) {
 		return fmt.Errorf("merge films: dimension of a and b is not matched")
 	}
-	if base.ColorSpace != "" && update.ColorSpace != "" && base.ColorSpace != update.ColorSpace {
-		return fmt.Errorf("merge films: working space of a and b is not matched")
+	if !compatibleSpectralBins(base, update) {
+		return fmt.Errorf("merge films: spectral layouts do not match")
 	}
 
 	totalSamples := base.Samples + update.Samples
@@ -147,14 +141,16 @@ func mergeFilmsAtPixelWindows(base, update *modelcamera.Film, windows []modelcam
 		return nil
 	}
 
-	for _, pixel := range pixelWindowIndices(base.Data[0].Shape, windows) {
-		for ch := 0; ch < 3; ch++ {
-			base.Data[ch].Data[pixel] = (base.Data[ch].Data[pixel]*float64(base.Samples) + update.Data[ch].Data[pixel]*float64(update.Samples)) / float64(totalSamples)
+	pixels := pixelWindowIndices(base.Shape, windows)
+	if len(windows) == 0 {
+		pixels = make([]int, base.ElementCount())
+		for pixel := range pixels {
+			pixels[pixel] = pixel
 		}
-		if compatibleSpectralBins(base, update) {
-			for bin := range base.SpectralBins {
-				base.SpectralBins[bin].Data[pixel] = (base.SpectralBins[bin].Data[pixel]*float64(base.Samples) + update.SpectralBins[bin].Data[pixel]*float64(update.Samples)) / float64(totalSamples)
-			}
+	}
+	for _, pixel := range pixels {
+		for bin := range base.SpectralBins {
+			base.SpectralBins[bin].Data[pixel] = (base.SpectralBins[bin].Data[pixel]*float64(base.Samples) + update.SpectralBins[bin].Data[pixel]*float64(update.Samples)) / float64(totalSamples)
 		}
 	}
 	base.Samples = totalSamples

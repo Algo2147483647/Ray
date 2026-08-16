@@ -33,6 +33,61 @@ type SurfaceSampler interface {
 	SurfaceArea() float64
 }
 
+// SurfacePDF evaluates the sampler's ordinary surface-area density. Uniform
+// area samplers need no method of their own; their density is derived from
+// SurfaceArea. A non-uniform sampler may provide a specialized SurfacePDF
+// method.
+func SurfacePDF(sampler SurfaceSampler, point *mat.VecDense) float64 {
+	if sampler == nil {
+		return 0
+	}
+	if specialized, ok := sampler.(interface {
+		SurfacePDF(*mat.VecDense) float64
+	}); ok {
+		return specialized.SurfacePDF(point)
+	}
+	area := sampler.SurfaceArea()
+	if area <= 0 || math.IsNaN(area) || math.IsInf(area, 0) {
+		return 0
+	}
+	return 1 / area
+}
+
+// SampleSurfaceFrom samples a surface with respect to a world-space reference
+// point when the sampler provides a specialized implementation. Otherwise it
+// falls back to the sampler's ordinary surface-area distribution.
+func SampleSurfaceFrom(
+	sampler SurfaceSampler,
+	reference *mat.VecDense,
+	u maths.Sample2D,
+) (SurfaceSample, bool) {
+	if sampler == nil {
+		return SurfaceSample{}, false
+	}
+	if conditioned, ok := sampler.(interface {
+		SampleSurfaceFrom(*mat.VecDense, maths.Sample2D) (SurfaceSample, bool)
+		SurfacePDFFrom(*mat.VecDense, *mat.VecDense) float64
+	}); ok {
+		return conditioned.SampleSurfaceFrom(reference, u)
+	}
+	return sampler.SampleSurface(u)
+}
+
+// SurfacePDFFrom evaluates the density used by SampleSurfaceFrom. Every PDF
+// remains expressed with respect to surface area.
+func SurfacePDFFrom(sampler SurfaceSampler, reference, point *mat.VecDense) float64 {
+	if sampler == nil {
+		return 0
+	}
+	if conditioned, ok := sampler.(interface {
+		SampleSurfaceFrom(*mat.VecDense, maths.Sample2D) (SurfaceSample, bool)
+		SurfacePDFFrom(*mat.VecDense, *mat.VecDense) float64
+	}); ok {
+		return conditioned.SurfacePDFFrom(reference, point)
+	}
+	return SurfacePDF(sampler, point)
+}
+
 // BaseShape provides the basic shape implementation.
 type BaseShape struct{}
 

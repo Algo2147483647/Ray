@@ -26,8 +26,8 @@ func (h *Handler) traceTile(
 
 	for y := tile.Y0; y < tile.Y1; y++ {
 		for x := tile.X0; x < tile.X1; x++ {
-			pixel := tile.pixelIndex(x, y, session.Context.Film.Data[0].Shape)
-			coords := session.Context.Film.Data[0].GetCoordinates(pixel)
+			pixel := tile.pixelIndex(x, y, session.Context.Film.Shape)
+			coords := session.Context.Film.SpectralBins[0].GetCoordinates(pixel)
 
 			h.tracePixel(kernel, session, pixel, coords...)
 

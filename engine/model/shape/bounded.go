@@ -79,6 +79,39 @@ func (b *BoundedShape) SampleSurface(u maths.Sample2D) (SurfaceSample, bool) {
 	return sampler.SampleSurface(u)
 }
 
+func (b *BoundedShape) SurfacePDF(point *mat.VecDense) float64 {
+	if b == nil || b.SurfaceArea() <= 0 {
+		return 0
+	}
+	sampler, ok := b.Shape.(SurfaceSampler)
+	if !ok {
+		return 0
+	}
+	return SurfacePDF(sampler, point)
+}
+
+func (b *BoundedShape) SampleSurfaceFrom(reference *mat.VecDense, u maths.Sample2D) (SurfaceSample, bool) {
+	if b == nil || b.SurfaceArea() <= 0 {
+		return SurfaceSample{}, false
+	}
+	sampler, ok := b.Shape.(SurfaceSampler)
+	if !ok {
+		return SurfaceSample{}, false
+	}
+	return SampleSurfaceFrom(sampler, reference, u)
+}
+
+func (b *BoundedShape) SurfacePDFFrom(reference, point *mat.VecDense) float64 {
+	if b == nil || b.SurfaceArea() <= 0 {
+		return 0
+	}
+	sampler, ok := b.Shape.(SurfaceSampler)
+	if !ok {
+		return 0
+	}
+	return SurfacePDFFrom(sampler, reference, point)
+}
+
 func boundsContainShape(bounds *Cuboid, inner Shape) bool {
 	innerMin, innerMax := inner.BuildBoundingBox()
 	if innerMin == nil || innerMax == nil || bounds.Pmin.Len() != innerMin.Len() {

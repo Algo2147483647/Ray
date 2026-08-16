@@ -9,8 +9,6 @@ const (
 	WavelengthMax = 750.0
 )
 
-var d65WhiteXYZ = [3]float64{0.95047, 1.0, 1.08883}
-
 func UniformWavelengthPDF() float64 {
 	return 1 / (WavelengthMax - WavelengthMin)
 }
@@ -43,13 +41,12 @@ func WavelengthToXYZ(wavelength float64) XYZ {
 
 func WavelengthToNormalizedXYZ(wavelength, pdf float64) XYZ {
 	xyz := WavelengthToXYZ(wavelength)
-	white := spectralXYZWhitePoint
-	pdfScale := wavelengthPDFScale(pdf)
+	scale := safeDivide(wavelengthPDFScale(pdf), spectralXYZWhitePoint[1])
 
 	return XYZ{
-		safeDivide(xyz[0]*pdfScale*d65WhiteXYZ[0], white[0]),
-		safeDivide(xyz[1]*pdfScale*d65WhiteXYZ[1], white[1]),
-		safeDivide(xyz[2]*pdfScale*d65WhiteXYZ[2], white[2]),
+		xyz[0] * scale,
+		xyz[1] * scale,
+		xyz[2] * scale,
 	}
 }
 
@@ -59,16 +56,6 @@ func SpectralPowerToXYZ(wavelength, pdf, power float64) XYZ {
 		xyz[0] * power,
 		xyz[1] * power,
 		xyz[2] * power,
-	}
-}
-
-func SpectralRadianceToXYZ(wavelength, radiance float64) XYZ {
-	xyz := WavelengthToXYZ(wavelength)
-	white := spectralXYZWhitePoint
-	return XYZ{
-		safeDivide(xyz[0]*d65WhiteXYZ[0], white[0]) * radiance,
-		safeDivide(xyz[1]*d65WhiteXYZ[1], white[1]) * radiance,
-		safeDivide(xyz[2]*d65WhiteXYZ[2], white[2]) * radiance,
 	}
 }
 

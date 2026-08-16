@@ -31,23 +31,11 @@ func (h *Handler) TraceScene(
 }
 
 func (h *Handler) prepareFilm(film *camera.Film) {
-	if h.FilmColorSpace == "" {
-		h.FilmColorSpace = film.ColorSpace
-	}
-
-	if film.ColorSpace == "" {
-		film.ColorSpace = h.FilmColorSpace
-	}
-
-	if h.SpectrumMode != optics.SpectrumModeRGB && !film.HasSpectralBins() {
+	if !film.HasSpectralBins() {
 		film.InitSpectralBins(
 			defaultSpectralBinCount,
 			optics.WavelengthMin,
 			optics.WavelengthMax,
 		)
 	}
-}
-
-func (h *Handler) usesSpectralRendering(film *camera.Film) bool {
-	return h.SpectrumMode != optics.SpectrumModeRGB && film.HasSpectralBins()
 }

@@ -143,9 +143,11 @@ func (c *Camera3D) ProjectPoint(point *mat.VecDense) (FilmProjection, bool) {
 		return FilmProjection{}, false
 	}
 
-	pixelX := int((u + 1) * 0.5 * float64(c.Width))
-	pixelY := int((v + 1) * 0.5 * float64(c.Height))
-	if pixelX < 0 || pixelX >= c.Width || pixelY < 0 || pixelY >= c.Height {
+	raster := RasterPosition{
+		X: (u+1)*0.5*float64(c.Width) - 0.5,
+		Y: (v+1)*0.5*float64(c.Height) - 0.5,
+	}
+	if _, ok := raster.PixelIndex(c.Width, c.Height); !ok {
 		return FilmProjection{}, false
 	}
 
@@ -158,7 +160,7 @@ func (c *Camera3D) ProjectPoint(point *mat.VecDense) (FilmProjection, bool) {
 	toCamera := mat.VecDenseCopyOf(fromCamera)
 	toCamera.ScaleVec(-1/distance, toCamera)
 	return FilmProjection{
-		Pixel:    pixelY*c.Width + pixelX,
+		Raster:   raster,
 		ToCamera: toCamera,
 		Distance: distance,
 		Jacobian: float64(c.Width*c.Height) / denominator,

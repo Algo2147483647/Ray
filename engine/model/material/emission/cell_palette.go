@@ -36,9 +36,7 @@ type CellPalette struct {
 }
 
 // DefaultCellPalette is a high-contrast 8-color palette indexed as
-// (-X,+X,-Y,+Y,-Z,+Z,-W,+W). Chosen for maximum perceptual separation after
-// the engine's ACES + gamma 2.2 tone-map, so colors stay distinct in the
-// final output even when channel values fall into the post-tone-map midtones.
+// (-X,+X,-Y,+Y,-Z,+Z,-W,+W), chosen for broad spectral separation.
 var DefaultCellPalette = []optics.Spectrum{
 	optics.NewSpectrum(1.00, 0.20, 0.20), // -X  red
 	optics.NewSpectrum(0.20, 1.00, 0.20), // +X  green

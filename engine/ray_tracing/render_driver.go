@@ -27,7 +27,7 @@ func (d *pixelDriver) Run(session *RenderSession) error {
 		return nil
 	}
 
-	shape := session.Context.Film.Data[0].Shape
+	shape := session.Context.Film.Shape
 	tiles, totalPixels := buildTileCoordinatesForWindows(
 		shape,
 		session.Context.PixelWindows,
@@ -66,6 +66,7 @@ type FilmSplat struct {
 	WavelengthNM  float64
 	WavelengthPDF float64
 	Value         optics.Spectrum
+	projection    camera.FilmProjection
 }
 
 type splatKernel interface {
@@ -77,6 +78,8 @@ type splatKernel interface {
 type splatDriver struct {
 	kernel splatKernel
 }
+
+const splatWorkBatchSize int64 = 64
 
 func (d *splatDriver) ConcurrentFilmWrites() bool { return true }
 
@@ -109,14 +112,17 @@ func (d *splatDriver) Run(session *RenderSession) error {
 		go func() {
 			defer workers.Done()
 			for {
-				workIndex := nextWork.Add(1) - 1
-				if workIndex >= totalWork {
+				batchStart := nextWork.Add(splatWorkBatchSize) - splatWorkBatchSize
+				if batchStart >= totalWork {
 					return
 				}
-				for _, splat := range d.kernel.TraceSample(session, workIndex) {
-					d.accumulate(session, splat, totalWork)
+				batchEnd := min(batchStart+splatWorkBatchSize, totalWork)
+				for workIndex := batchStart; workIndex < batchEnd; workIndex++ {
+					for _, splat := range d.kernel.TraceSample(session, workIndex) {
+						d.accumulate(session, splat, totalWork)
+					}
 				}
-				progress.Add(1)
+				progress.Add(batchEnd - batchStart)
 			}
 		}()
 	}
@@ -126,14 +132,6 @@ func (d *splatDriver) Run(session *RenderSession) error {
 
 func (d *splatDriver) accumulate(session *RenderSession, splat FilmSplat, totalWork int64) {
 	scale := 1 / float64(totalWork)
-	if session.Handler.SpectrumMode == optics.SpectrumModeRGB {
-		r, g, b := camera.LinearSRGBToFilmColorSpace(
-			splat.Value.RGB[0], splat.Value.RGB[1], splat.Value.RGB[2],
-			session.Handler.FilmColorSpace,
-		)
-		session.Accumulator.AddRGB(splat.Pixel, optics.Color3{r * scale, g * scale, b * scale})
-		return
-	}
 	value := optics.SpectralSampleRadiance(splat.Value.Sample(0), splat.WavelengthPDF) * scale
 	session.Accumulator.AddSpectral(splat.Pixel, splat.WavelengthNM, value)
 }

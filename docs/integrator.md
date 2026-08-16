@@ -716,7 +716,6 @@ Integrator selection is part of `render`, or of each entry in `renders` for mult
     "height": 400,
     "spectrum_mode": "hero_wavelength",
     "wavelength_samples": 1,
-    "color_space": "linear_srgb",
     "pixel_windows": [
       { "min": [0, 0], "max": [400, 400] }
     ]
@@ -746,10 +745,8 @@ The same `RenderScript` schema is accepted in:
 | `integrator`         | `path`, `bdpt`, `light_tracing`, or alias `light_trace`      | `path`                                                       | Parsed to a canonical kind immediately before rendering      |
 | `samples`            | Positive integer in normal controller use                    | `20`                                                         | Per-active-pixel target; global splat work derives from it   |
 | `thread_num`         | Positive worker count                                        | `runtime.NumCPU()`                                           | Non-positive values from script do not override the default  |
-| `spectrum_mode`      | `rgb`, `hero_wavelength`, `sampled`                          | `hero_wavelength`                                            | Changes wavelength sampling and film accumulation            |
+| `spectrum_mode`      | `hero_wavelength`, `sampled`                                 | `hero_wavelength`                                            | Changes wavelength sampling; Film accumulation is always spectral |
 | `wavelength_samples` | Positive integer                                             | `1`; promoted to `4` when resolved sampled mode is at most one | Used by path and BDPT sampled mode; not used to multiply light-tracing work |
-| `color_space`        | `linear_srgb`, `acescg`, `xyz`                               | `linear_srgb`                                                | Working/film space for RGB accumulation and spectral-bin conversion |
-| `working_space`      | Legacy alternate JSON field read only when `color_space` is empty | Empty                                                        | The CLI flag named `--working-space` writes the resolved color-space setting |
 | `pixel_windows`      | Array of half-open `{min,max}` coordinate boxes              | Entire film                                                  | Restricts active pixels; overlapping windows are de-duplicated |
 | `camera_index`       | Camera selected for the render                               | `0`                                                          | Light tracing additionally requires the selected camera to be projective |
 | `width`, `height`    | Output dimensions for supported camera types                 | `400`, `400` when not supplied by the camera                 | Affect active-pixel count and splat normalization            |
@@ -766,9 +763,8 @@ The Engine CLI exposes these relevant flags:
 --integrator path|bdpt|light_tracing
 --samples N
 --threads N
---spectrum-mode rgb|hero_wavelength|sampled
+--spectrum-mode hero_wavelength|sampled
 --wavelength-samples N
---working-space linear_srgb|acescg|xyz
 --pixel-window min:max,min:max
 --camera-index N
 --width N

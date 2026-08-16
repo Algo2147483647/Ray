@@ -11,21 +11,10 @@ import (
 const defaultWavelengthSamples = 4
 
 type pixelKernel interface {
-	sampleRGB(*Handler, rendercamera.Camera, *object.ObjectTree, *optics.Ray, ...int) optics.Color3
 	sampleSpectral(*Handler, rendercamera.Camera, *object.ObjectTree, *optics.Ray, optics.WavelengthSample, ...int) rendercamera.SpectralSample
 }
 
 type pathTracingKernel struct{}
-
-func (pathTracingKernel) sampleRGB(
-	h *Handler,
-	renderCamera rendercamera.Camera,
-	objTree *object.ObjectTree,
-	ray *optics.Ray,
-	index ...int,
-) optics.Color3 {
-	return h.TraceRGB(renderCamera, objTree, ray, index...)
-}
 
 func (pathTracingKernel) sampleSpectral(
 	h *Handler,
@@ -53,63 +42,15 @@ func (h *Handler) tracePixel(
 	pixel int,
 	index ...int,
 ) {
-	color := optics.Color3{}
-	ray := h.RayPool.Get().(*optics.Ray)
-	ray.Geometry = h.SceneGeometry
-	defer h.RayPool.Put(ray)
-
-	switch h.SpectrumMode {
-	case optics.SpectrumModeSampledWavelengths, optics.SpectrumModeHeroWavelength:
-		for _, sample := range h.traceSpectral(
-			kernel,
-			session.Context.Camera,
-			session.Context.ObjectTree,
-			session.Context.Samples,
-			index...,
-		) {
-			session.Accumulator.AddSpectral(pixel, sample.WavelengthNM, sample.Value)
-		}
-		return
-
-	case optics.SpectrumModeRGB:
-		for s := int64(0); s < session.Context.Samples; s++ {
-			color = color.Add(kernel.sampleRGB(
-				h,
-				session.Context.Camera,
-				session.Context.ObjectTree,
-				ray,
-				index...,
-			))
-		}
-
-		color = color.MulScalar(1.0 / float64(session.Context.Samples))
-		session.Accumulator.SetRGB(pixel, color)
-
-	default:
+	for _, sample := range h.traceSpectral(
+		kernel,
+		session.Context.Camera,
+		session.Context.ObjectTree,
+		session.Context.Samples,
+		index...,
+	) {
+		session.Accumulator.AddSpectral(pixel, sample.WavelengthNM, sample.Value)
 	}
-
-	return
-}
-
-func (h *Handler) TraceRGB(
-	renderCamera rendercamera.Camera,
-	objTree *object.ObjectTree,
-	ray *optics.Ray,
-	index ...int,
-) optics.Color3 {
-	renderCamera.GenerateRay(ray, index...)
-	ray.DisableSpectralSampling()
-
-	h.TraceRay(objTree, ray, 0)
-
-	r, g, b := rendercamera.LinearSRGBToFilmColorSpace(
-		ray.Color[0],
-		ray.Color[1],
-		ray.Color[2],
-		h.FilmColorSpace,
-	)
-
-	return optics.Color3{r, g, b}
 }
 
 func (h *Handler) TraceSpectral(

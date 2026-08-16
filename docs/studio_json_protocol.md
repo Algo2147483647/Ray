@@ -31,19 +31,16 @@ Studio accepts the same render override flags as engine:
 --gamma
 --spectrum-mode
 --wavelength-samples
---working-space
+--color-space
 --pixel-window
---engine-bin
 ```
 
-By default, studio runs engine as a separate `go -C engine run .` process so
-development runs always use current source. Use `--engine-bin path/to/ray` or
-`RAY_ENGINE_BIN=path/to/ray` to select an explicit built engine executable.
-
 `studio` owns authoring and output orchestration. `output_image` and
-`resume_film` are accepted by studio but are not emitted to the generated engine
-JSON and are not passed to engine. Engine renders Film data only; studio reads
-Film files to merge resumed samples and to write images.
+`resume_film`, exposure, tone mapping, gamma, and `color_space` are accepted by
+studio but are not emitted to the generated engine JSON and are not passed to
+engine. Engine renders a physical spectral Film only. Studio receives a newly
+rendered Film in memory, then saves it and creates images without rereading it.
+Only an explicitly requested resume Film is read from disk.
 
 Studio accepts repeated `--script` flags and merges them in order before
 analysis:
@@ -66,7 +63,7 @@ After adaptation, studio writes the generated engine script to:
 outputs/intermediate/<source-or-merged>.studio.<hash>.json
 ```
 
-Then it runs a separate engine process with:
+Then it invokes the Engine controller with:
 
 ```text
 --script outputs/intermediate/<...>.json

@@ -36,13 +36,8 @@ type RenderScript struct {
 	Width             int                       `json:"width"`
 	Height            int                       `json:"height"`
 	OutputFilm        string                    `json:"output_film"`
-	Exposure          float64                   `json:"exposure"`
-	ToneMapping       string                    `json:"tone_mapping"`
-	Gamma             float64                   `json:"gamma"`
 	SpectrumMode      string                    `json:"spectrum_mode"`
 	WavelengthSamples int                       `json:"wavelength_samples"`
-	ColorSpace        string                    `json:"color_space"`
-	FilmColorSpace    string                    `json:"working_space"`
 	PixelWindows      []modelcamera.PixelWindow `json:"pixel_windows"`
 }
 

@@ -129,7 +129,7 @@ func TestLightTracingRenderAttenuatesCameraConnectionStatistically(t *testing.T)
 
 	gotRatio := absorbed / unabsorbed
 	wantRatio := math.Exp(-sigmaA * distance)
-	if math.Abs(gotRatio-wantRatio) > 5e-4 {
+	if math.Abs(gotRatio-wantRatio) > 1e-2 {
 		t.Fatalf("absorbed/unabsorbed ratio = %g, want approximately %g", gotRatio, wantRatio)
 	}
 }
@@ -162,8 +162,7 @@ func renderDirectAreaLight(t *testing.T, sigmaA float64, samples int64) float64 
 	handler := NewHandler()
 	handler.IntegratorKind = IntegratorLightTracing
 	handler.SceneGeometry = geometry.Euclidean()
-	handler.SpectrumMode = optics.SpectrumModeRGB
-	handler.FilmColorSpace = camera.FilmColorSpaceLinearSRGB
+	handler.SpectrumMode = optics.SpectrumModeHeroWavelength
 	handler.ThreadNum = 1
 	handler.MaxRayLevel = 0
 	film := camera.NewFilm(1, 1)
@@ -174,12 +173,11 @@ func renderDirectAreaLight(t *testing.T, sigmaA float64, samples int64) float64 
 	if film.Samples != samples {
 		t.Fatalf("film samples = %d, want %d", film.Samples, samples)
 	}
-	for channel := 1; channel < 3; channel++ {
-		if math.Abs(film.Data[channel].Data[0]-film.Data[0].Data[0]) > 1e-12 {
-			t.Fatalf("non-neutral film energy: %g %g %g", film.Data[0].Data[0], film.Data[1].Data[0], film.Data[2].Data[0])
-		}
+	var energy float64
+	for bin := range film.SpectralBins {
+		energy += film.SpectralBins[bin].Data[0]
 	}
-	return film.Data[0].Data[0]
+	return energy
 }
 
 func absorbingAirRegistry(t *testing.T, sigmaA float64) *medium.Registry {

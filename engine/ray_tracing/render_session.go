@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/Algo2147483647/ray/engine/model/camera"
-	"github.com/Algo2147483647/ray/engine/model/optics"
 )
 
 // RenderSession centralizes validation, film preparation, accumulation and
@@ -36,17 +35,12 @@ func (s *RenderSession) Finalize(samples int64) {
 	if s == nil || s.Context.Film == nil {
 		return
 	}
-	if s.Handler.usesSpectralRendering(s.Context.Film) {
-		s.Context.Film.ConvertSpectralBinsToFilmColorSpace()
-	}
 	s.Context.Film.Samples = samples
 }
 
 // FilmAccumulator hides the distinct synchronization requirements of
 // exclusive pixel writes and arbitrary cross-thread splats.
 type FilmAccumulator interface {
-	SetRGB(pixel int, color optics.Color3)
-	AddRGB(pixel int, color optics.Color3)
 	AddSpectral(pixel int, wavelengthNM, value float64)
 }
 
@@ -58,31 +52,9 @@ type filmAccumulator struct {
 func newFilmAccumulator(film *camera.Film, concurrent bool) FilmAccumulator {
 	accumulator := &filmAccumulator{film: film}
 	if concurrent && film != nil {
-		accumulator.locks = make([]sync.Mutex, len(film.Data[0].Data))
+		accumulator.locks = make([]sync.Mutex, film.ElementCount())
 	}
 	return accumulator
-}
-
-func (a *filmAccumulator) SetRGB(pixel int, color optics.Color3) {
-	if !a.validPixel(pixel) {
-		return
-	}
-	a.withPixelLock(pixel, func() {
-		for channel := range 3 {
-			a.film.Data[channel].Data[pixel] = color[channel]
-		}
-	})
-}
-
-func (a *filmAccumulator) AddRGB(pixel int, color optics.Color3) {
-	if !a.validPixel(pixel) {
-		return
-	}
-	a.withPixelLock(pixel, func() {
-		for channel := range 3 {
-			a.film.Data[channel].Data[pixel] += color[channel]
-		}
-	})
 }
 
 func (a *filmAccumulator) AddSpectral(pixel int, wavelengthNM, value float64) {
@@ -95,7 +67,7 @@ func (a *filmAccumulator) AddSpectral(pixel int, wavelengthNM, value float64) {
 }
 
 func (a *filmAccumulator) validPixel(pixel int) bool {
-	return a != nil && a.film != nil && pixel >= 0 && pixel < len(a.film.Data[0].Data)
+	return a != nil && a.film != nil && pixel >= 0 && pixel < a.film.ElementCount()
 }
 
 func (a *filmAccumulator) withPixelLock(pixel int, write func()) {
