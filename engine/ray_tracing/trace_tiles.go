@@ -19,18 +19,18 @@ func (t TileCoordinate) pixelIndex(x, y int, shape []int) int {
 
 func (h *Handler) traceTile(
 	kernel pixelKernel,
-	session *RenderSession,
+	context *RenderContext,
 	tile TileCoordinate,
 ) int64 {
 	var rendered int64
 
 	for y := tile.Y0; y < tile.Y1; y++ {
 		for x := tile.X0; x < tile.X1; x++ {
-			film := session.Context.Camera.GetFilm()
+			film := context.Camera.GetFilm()
 			pixel := tile.pixelIndex(x, y, film.Shape)
 			coords := film.SpectralBins[0].GetCoordinates(pixel)
 
-			h.tracePixel(kernel, session, pixel, coords...)
+			h.tracePixel(kernel, context, pixel, coords...)
 
 			rendered++
 		}

@@ -18,8 +18,16 @@ func (h *Handler) TraceScene(
 	if err != nil {
 		return err
 	}
-	return integrator.Render(RenderContext{
+
+	context := newRenderContext(h, RenderContext{
 		Camera: renderCamera, ObjectTree: objectTree,
 		Samples: samples,
-	})
+	}, integrator.ConcurrentFilmWrites())
+	err = integrator.Run(context)
+	if err != nil {
+		return err
+	}
+
+	context.Camera.GetFilm().Samples = integrator.EffectiveSampleCount(context)
+	return nil
 }

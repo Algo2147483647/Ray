@@ -1,27 +1,27 @@
 package ray_tracing
 
 import (
+	"github.com/Algo2147483647/ray/engine/model/object"
 	"math"
 	"sync"
 
 	"github.com/Algo2147483647/ray/engine/model/camera"
 )
 
-// RenderSession centralizes validation, film preparation, accumulation and
-// finalization for every execution model.
-type RenderSession struct {
-	Context     RenderContext
+// RenderContext contains the scene-level inputs shared by all integrators.
+type RenderContext struct {
+	Camera      camera.RayCamera
+	ObjectTree  *object.ObjectTree
+	Samples     int64
 	Handler     *Handler
 	Accumulator FilmAccumulator
 }
 
-func newRenderSession(handler *Handler, ctx RenderContext, concurrentFilmWrites bool) (*RenderSession, error) {
+func newRenderContext(handler *Handler, ctx RenderContext, concurrentFilmWrites bool) *RenderContext {
 	film := ctx.Camera.GetFilm()
-	return &RenderSession{
-		Context:     ctx,
-		Handler:     handler,
-		Accumulator: newFilmAccumulator(film, concurrentFilmWrites),
-	}, nil
+	ctx.Handler = handler
+	ctx.Accumulator = newFilmAccumulator(film, concurrentFilmWrites)
+	return &ctx
 }
 
 // FilmAccumulator hides the distinct synchronization requirements of
@@ -44,16 +44,15 @@ func newFilmAccumulator(film *camera.Film, concurrent bool) FilmAccumulator {
 }
 
 func (a *filmAccumulator) AddSpectral(pixel int, wavelengthNM, value float64) {
-	if !a.validPixel(pixel) || math.IsNaN(value) || math.IsInf(value, 0) {
+	if a == nil || a.film == nil ||
+		pixel < 0 || pixel >= a.film.ElementCount() ||
+		math.IsNaN(value) || math.IsInf(value, 0) {
 		return
 	}
+
 	a.withPixelLock(pixel, func() {
 		a.film.RecordSpectralSample(pixel, wavelengthNM, value)
 	})
-}
-
-func (a *filmAccumulator) validPixel(pixel int) bool {
-	return a != nil && a.film != nil && pixel >= 0 && pixel < a.film.ElementCount()
 }
 
 func (a *filmAccumulator) withPixelLock(pixel int, write func()) {

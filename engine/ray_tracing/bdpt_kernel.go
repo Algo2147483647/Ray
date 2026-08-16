@@ -28,11 +28,11 @@ type bdptKernel struct {
 	prepared *bdptPreparedState
 }
 
-func (k *bdptKernel) Prepare(session *RenderSession) error {
-	if k == nil || session == nil {
-		return fmt.Errorf("BDPT kernel or render session is nil")
+func (k *bdptKernel) Prepare(context *RenderContext) error {
+	if k == nil || context == nil {
+		return fmt.Errorf("BDPT kernel or render context is nil")
 	}
-	film := session.Context.Camera.GetFilm()
+	film := context.Camera.GetFilm()
 	shape := film.Shape
 	mask := make([]bool, shapeElementCount(shape))
 	if len(film.PixelWindows) == 0 {
@@ -50,18 +50,18 @@ func (k *bdptKernel) Prepare(session *RenderSession) error {
 	}
 
 	state := &bdptPreparedState{
-		scene:        prepareBDPTScene(session.Handler.SceneGeometry, session.Context.ObjectTree),
+		scene:        prepareBDPTScene(context.Handler.SceneGeometry, context.ObjectTree),
 		activeMask:   mask,
 		activePixels: activePixels,
 		width:        shape[0],
 		height:       shape[1],
 		wavelengths:  1,
 	}
-	if session.Handler.SpectrumMode == optics.SpectrumModeSampledWavelengths {
-		state.wavelengths = int64(session.Handler.wavelengthSampleCount())
+	if context.Handler.SpectrumMode == optics.SpectrumModeSampledWavelengths {
+		state.wavelengths = int64(context.Handler.wavelengthSampleCount())
 	}
-	state.projective, _ = session.Context.Camera.(camera.ProjectiveCamera)
-	state.totalWork = session.Context.Samples * int64(len(activePixels)) * state.wavelengths
+	state.projective, _ = context.Camera.(camera.ProjectiveCamera)
+	state.totalWork = context.Samples * int64(len(activePixels)) * state.wavelengths
 	k.prepared = state
 	if state.scene.FallbackReason != "" {
 		fmt.Fprintf(os.Stderr, "BDPT fallback: requested=bdpt effective=path reason=%s\n", state.scene.FallbackReason)
@@ -69,32 +69,32 @@ func (k *bdptKernel) Prepare(session *RenderSession) error {
 	return nil
 }
 
-func (k *bdptKernel) WorkCount(*RenderSession) int64 {
+func (k *bdptKernel) WorkCount(*RenderContext) int64 {
 	if k == nil || k.prepared == nil {
 		return 0
 	}
 	return k.prepared.totalWork
 }
 
-func (k *bdptKernel) TraceSample(session *RenderSession, workIndex int64) []FilmSplat {
+func (k *bdptKernel) TraceSample(context *RenderContext, workIndex int64) []FilmSplat {
 	if k == nil || k.prepared == nil || len(k.prepared.activePixels) == 0 {
 		return nil
 	}
 	activeCount := len(k.prepared.activePixels)
 	pixel := k.prepared.activePixels[int(workIndex%int64(activeCount))]
-	coords := session.Context.Camera.GetFilm().SpectralBins[0].GetCoordinates(pixel)
+	coords := context.Camera.GetFilm().SpectralBins[0].GetCoordinates(pixel)
 
 	u := rand.Float64()
-	if session.Handler.SpectrumMode == optics.SpectrumModeSampledWavelengths {
+	if context.Handler.SpectrumMode == optics.SpectrumModeSampledWavelengths {
 		stratum := (workIndex / int64(activeCount)) % k.prepared.wavelengths
 		u = (float64(stratum) + u) / float64(k.prepared.wavelengths)
 	}
-	wavelength := session.Handler.wavelengthSampler().Sample(u)
+	wavelength := context.Handler.wavelengthSampler().Sample(u)
 	wavelengthNM, wavelengthPDF := wavelength.LambdaNM, wavelength.PDF
-	local, lightPath := session.Handler.traceBidirectionalPrepared(
+	local, lightPath := context.Handler.traceBidirectionalPrepared(
 		k.prepared.scene,
-		session.Context.Camera,
-		session.Context.ObjectTree,
+		context.Camera,
+		context.ObjectTree,
 		wavelengthNM,
 		wavelengthPDF,
 		coords...,
@@ -106,7 +106,7 @@ func (k *bdptKernel) TraceSample(session *RenderSession, workIndex int64) []Film
 			Pixel: pixel, WavelengthNM: wavelengthNM, WavelengthPDF: wavelengthPDF,
 			// Global work samples camera pixels uniformly. Multiplying the local
 			// estimator by the active pixel count restores per-pixel spp after
-			// splatDriver divides by totalWork.
+			// splatSceneIntegrator divides by totalWork.
 			Value: local.MulScalar(float64(activeCount)),
 		})
 	}
@@ -117,9 +117,9 @@ func (k *bdptKernel) TraceSample(session *RenderSession, workIndex int64) []Film
 	if k.prepared.projective == nil {
 		return splats
 	}
-	deltaSplats := session.Handler.projectBDPTDeltaCaustics(
+	deltaSplats := context.Handler.projectBDPTDeltaCaustics(
 		k.prepared.projective,
-		session.Context.ObjectTree,
+		context.ObjectTree,
 		lightPath,
 		wavelengthNM,
 		wavelengthPDF,

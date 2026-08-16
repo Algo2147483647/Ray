@@ -11,7 +11,7 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-// lightTracingKernel implements the t=1 algorithm while splatDriver owns
+// lightTracingKernel implements the t=1 algorithm while splatSceneIntegrator owns
 // scheduling, synchronization, normalization and progress reporting.
 type lightTracingKernel struct {
 	projective  camera.ProjectiveCamera
@@ -24,14 +24,14 @@ type lightTracingKernel struct {
 	totalPaths  int64
 }
 
-func (k *lightTracingKernel) Prepare(session *RenderSession) error {
-	projective, ok := session.Context.Camera.(camera.ProjectiveCamera)
+func (k *lightTracingKernel) Prepare(context *RenderContext) error {
+	projective, ok := context.Camera.(camera.ProjectiveCamera)
 	if !ok {
-		return fmt.Errorf("light tracing requires a projective camera, got %T", session.Context.Camera)
+		return fmt.Errorf("light tracing requires a projective camera, got %T", context.Camera)
 	}
 	k.projective = projective
-	k.lights, k.totalWeight = collectAreaLights(session.Context.ObjectTree)
-	film := session.Context.Camera.GetFilm()
+	k.lights, k.totalWeight = collectAreaLights(context.ObjectTree)
+	film := context.Camera.GetFilm()
 	if len(film.Shape) != 2 {
 		return fmt.Errorf("light tracing requires a 2D Film")
 	}
@@ -54,19 +54,19 @@ func (k *lightTracingKernel) Prepare(session *RenderSession) error {
 		k.totalPaths = 0
 		return nil
 	}
-	k.totalPaths = session.Context.Samples * activePixels
+	k.totalPaths = context.Samples * activePixels
 	return nil
 }
 
-func (k *lightTracingKernel) WorkCount(*RenderSession) int64 {
+func (k *lightTracingKernel) WorkCount(*RenderContext) int64 {
 	return k.totalPaths
 }
 
-func (k *lightTracingKernel) TraceSample(session *RenderSession, _ int64) []FilmSplat {
-	wavelength := session.Handler.wavelengthSampler().Sample(rand.Float64())
+func (k *lightTracingKernel) TraceSample(context *RenderContext, _ int64) []FilmSplat {
+	wavelength := context.Handler.wavelengthSampler().Sample(rand.Float64())
 	wavelengthNM, wavelengthPDF := wavelength.LambdaNM, wavelength.PDF
-	path := session.Handler.buildLightSubpath(
-		session.Context.ObjectTree,
+	path := context.Handler.buildLightSubpath(
+		context.ObjectTree,
 		k.lights,
 		k.totalWeight,
 		wavelengthNM,
@@ -74,9 +74,9 @@ func (k *lightTracingKernel) TraceSample(session *RenderSession, _ int64) []Film
 	)
 	splats := make([]FilmSplat, 0, len(path))
 	for vertexIndex := range path {
-		value, projection, valid := session.Handler.projectLightVertex(
+		value, projection, valid := context.Handler.projectLightVertex(
 			k.projective,
-			session.Context.ObjectTree,
+			context.ObjectTree,
 			&path[vertexIndex],
 		)
 		if !valid {

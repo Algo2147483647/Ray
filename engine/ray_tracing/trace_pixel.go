@@ -38,18 +38,18 @@ func (pathTracingKernel) sampleSpectral(
 
 func (h *Handler) tracePixel(
 	kernel pixelKernel,
-	session *RenderSession,
+	context *RenderContext,
 	pixel int,
 	index ...int,
 ) {
 	for _, sample := range h.traceSpectral(
 		kernel,
-		session.Context.Camera,
-		session.Context.ObjectTree,
-		session.Context.Samples,
+		context.Camera,
+		context.ObjectTree,
+		context.Samples,
 		index...,
 	) {
-		session.Accumulator.AddSpectral(pixel, sample.WavelengthNM, sample.Value)
+		context.Accumulator.AddSpectral(pixel, sample.WavelengthNM, sample.Value)
 	}
 }
 
