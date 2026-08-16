@@ -20,7 +20,7 @@ the CLI:
 
 ```text
 --dimension
---camera-index
+--camera-id
 --threads
 --widths
 --samples

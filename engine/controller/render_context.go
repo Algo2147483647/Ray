@@ -24,7 +24,6 @@ type RenderContext struct {
 	Integrator        string
 	Dimension         int
 	CameraID          string
-	CameraIndex       int
 	ThreadNum         int
 	FilmShapeOverride []int
 	Samples           int64
@@ -39,9 +38,7 @@ func (h *Handler) ParseRenderArgs(args []string) *Handler {
 		return h
 	}
 
-	context := RenderContext{
-		CameraIndex: -1,
-	}
+	context := RenderContext{}
 	scriptPaths := stringListFlag{}
 	pixelWindowFlags := stringListFlag{}
 
@@ -51,7 +48,7 @@ func (h *Handler) ParseRenderArgs(args []string) *Handler {
 	flagSet.StringVar(&context.Integrator, "integrator", "", "light transport integrator: path, bdpt, light_tracing")
 	flagSet.Var(&pixelWindowFlags, "pixel-window", "pixel render window, for example 100:150,600:650; repeat for multiple windows")
 	flagSet.IntVar(&context.Dimension, "dimension", 0, "scene dimension")
-	flagSet.IntVar(&context.CameraIndex, "camera-index", -1, "camera index to render")
+	flagSet.StringVar(&context.CameraID, "camera-id", "", "camera ID to render")
 	flagSet.IntVar(&context.ThreadNum, "threads", 0, "worker thread count")
 	flagSet.Func("widths", "film dimensions, for example 1920,1080", func(value string) error {
 		width, err := parseWidths(value)
@@ -88,10 +85,6 @@ func (h *Handler) ParseRenderArgs(args []string) *Handler {
 		return h
 	}
 	context.ScriptPath = scriptPaths[0]
-	if context.CameraIndex < -1 {
-		h.err = fmt.Errorf("camera-index must be >= -1")
-		return h
-	}
 	if context.Dimension < 0 || context.Dimension == 1 {
 		h.err = fmt.Errorf("dimension must be 0 or >= 2")
 		return h
@@ -131,10 +124,8 @@ func ResolveRenderContext(script *parser.Script, requested RenderContext) Render
 		ScriptPath:        requested.ScriptPath,
 		Integrator:        "path",
 		Dimension:         3,
-		CameraIndex:       -1,
 		ThreadNum:         runtime.NumCPU(),
 		Samples:           defaultSamples,
-		OutputFilm:        defaultOutputFilm,
 		SpectrumMode:      "hero_wavelength",
 		WavelengthSamples: 1,
 	}
@@ -160,7 +151,9 @@ func ResolveRenderContext(script *parser.Script, requested RenderContext) Render
 			context.WavelengthSamples = script.Render.WavelengthSamples
 		}
 	}
-	context = resolveCameraContext(script, context, requested.CameraIndex)
+	if requested.CameraID != "" {
+		context.CameraID = requested.CameraID
+	}
 	context = applyRequestedContext(context, requested)
 	if context.SpectrumMode == "sampled" && context.WavelengthSamples <= 1 {
 		context.WavelengthSamples = 4
@@ -170,23 +163,21 @@ func ResolveRenderContext(script *parser.Script, requested RenderContext) Render
 }
 
 func ResolveRenderContexts(script *parser.Script, requested RenderContext) []RenderContext {
-	base := ResolveRenderContext(script, RenderContext{
-		ScriptPath:  requested.ScriptPath,
-		CameraIndex: -1,
-	})
+	base := ResolveRenderContext(script, RenderContext{ScriptPath: requested.ScriptPath})
 
 	jobs := []RenderContext{base}
 	if script != nil && len(script.Renders) > 0 {
 		jobs = make([]RenderContext, 0, len(script.Renders))
 		for _, render := range script.Renders {
 			context := applyRenderScriptToContext(base, render)
-			context = resolveCameraContext(script, context, requested.CameraIndex)
+			if requested.CameraID != "" {
+				context.CameraID = requested.CameraID
+			}
 			jobs = append(jobs, applyRequestedContext(context, requested))
 		}
 		return jobs
 	}
 
-	jobs[0] = resolveCameraContext(script, jobs[0], requested.CameraIndex)
 	jobs[0] = applyRequestedContext(jobs[0], requested)
 	return jobs
 }
@@ -223,8 +214,8 @@ func applyRequestedContext(context RenderContext, requested RenderContext) Rende
 	if requested.Integrator != "" {
 		context.Integrator = requested.Integrator
 	}
-	if requested.CameraIndex >= 0 {
-		context.CameraIndex = requested.CameraIndex
+	if requested.CameraID != "" {
+		context.CameraID = requested.CameraID
 	}
 	if requested.Dimension > 0 {
 		context.Dimension = requested.Dimension
@@ -252,36 +243,6 @@ func applyRequestedContext(context RenderContext, requested RenderContext) Rende
 	}
 	if context.SpectrumMode == "sampled" && context.WavelengthSamples <= 1 {
 		context.WavelengthSamples = 4
-	}
-	return context
-}
-
-func resolveCameraContext(script *parser.Script, context RenderContext, requestedIndex int) RenderContext {
-	if script == nil {
-		return context
-	}
-	index := -1
-	if requestedIndex >= 0 {
-		index = requestedIndex
-	} else {
-		for i := range script.Cameras {
-			if script.Cameras[i].ID == context.CameraID {
-				index = i
-				break
-			}
-		}
-	}
-	if index < 0 || index >= len(script.Cameras) {
-		return context
-	}
-	def := script.Cameras[index]
-	context.CameraIndex = index
-	context.CameraID = def.ID
-	if def.Film != nil {
-		context.PixelWindows = clonePixelWindows(def.Film.PixelWindows)
-		if def.Film.OutputFilm != "" {
-			context.OutputFilm = def.Film.OutputFilm
-		}
 	}
 	return context
 }

@@ -768,7 +768,7 @@ The Engine CLI exposes these relevant flags:
 --spectrum-mode hero_wavelength|sampled
 --wavelength-samples N
 --pixel-window min:max,min:max
---camera-index N
+--camera-id ID
 --widths N,N
 ```
 

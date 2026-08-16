@@ -57,7 +57,7 @@ func TestIntermediateScriptUsesCameraOwnedFilm(t *testing.T) {
 	if err := enginefactory.LoadSceneFromScript(&engineScript, scene); err != nil {
 		t.Fatalf("load Engine scene: %v", err)
 	}
-	if len(scene.Cameras) != 1 || scene.Cameras[0].GetFilm() == nil || scene.Cameras[0].GetFilm().Shape[1] != 600 {
+	if len(scene.Cameras) != 1 || scene.Cameras["main"].GetFilm() == nil || scene.Cameras["main"].GetFilm().Shape[1] != 600 {
 		t.Fatalf("Film was not loaded into Camera: %+v", scene.Cameras)
 	}
 }

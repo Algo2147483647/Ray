@@ -66,16 +66,15 @@ func (h *Handler) ConfigureRenderContext(context RenderContext) *Handler {
 	if h.err != nil {
 		return h
 	}
-	if context.CameraIndex < 0 {
+	if context.CameraID == "" {
 		h.err = fmt.Errorf("render camera_id %q does not exist", context.CameraID)
 		return h
 	}
 
-	var err error
-
-	h.Camera, err = h.selectRenderCamera(context.CameraIndex)
-	if err != nil {
-		h.err = err
+	var exists bool
+	h.Camera, exists = h.Scene.Cameras[context.CameraID]
+	if !exists {
+		h.err = fmt.Errorf("camera %q does not exist", context.CameraID)
 		return h
 	}
 
@@ -95,13 +94,23 @@ func (h *Handler) ConfigureRenderContext(context RenderContext) *Handler {
 		return h
 	}
 
-	normalizedWindows, err := camera.NormalizePixelWindows(context.PixelWindows, filmShape)
+	windows := context.PixelWindows
+	if len(windows) == 0 {
+		windows = film.PixelWindows
+	}
+	normalizedWindows, err := camera.NormalizePixelWindows(windows, filmShape)
 	if err != nil {
 		h.err = err
 		return h
 	}
 
 	context.PixelWindows = normalizedWindows
+	if context.OutputFilm == "" {
+		context.OutputFilm = film.OutputFilm
+		if context.OutputFilm == "" {
+			context.OutputFilm = defaultOutputFilm
+		}
+	}
 	h.Context = context
 	return h
 }
@@ -125,28 +134,6 @@ func (h *Handler) RenderJobs() *Handler {
 		}
 	}
 	return h
-}
-
-func (h *Handler) selectRenderCamera(cameraIndex int) (camera.RayCamera, error) {
-	if len(h.Scene.Cameras) == 0 {
-		return nil, fmt.Errorf("scene has no cameras; use studio to generate a default camera")
-	}
-	if cameraIndex < 0 || cameraIndex >= len(h.Scene.Cameras) {
-		return nil, fmt.Errorf("camera index %d out of range (available: %d)", cameraIndex, len(h.Scene.Cameras))
-	}
-
-	selectedCamera := h.Scene.Cameras[cameraIndex]
-	preparedCamera, ok := selectedCamera.(interface {
-		camera.RayCamera
-		Prepare() error
-	})
-	if !ok {
-		return nil, fmt.Errorf("camera does not support preparation")
-	}
-	if err := preparedCamera.Prepare(); err != nil {
-		return nil, err
-	}
-	return selectedCamera, nil
 }
 
 func (h *Handler) Render() *Handler {

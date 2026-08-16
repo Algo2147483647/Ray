@@ -22,7 +22,6 @@ type studioConfig struct {
 	scriptPaths        []string
 	provided           map[string]bool
 	dimension          int
-	cameraIndex        int
 	threadNum          int
 	width              int
 	height             int
@@ -56,8 +55,7 @@ func (s *stringListFlag) Set(value string) error {
 
 func parseStudioConfig(args []string) (studioConfig, error) {
 	config := studioConfig{
-		cameraIndex: -1,
-		provided:    map[string]bool{},
+		provided: map[string]bool{},
 	}
 	scriptPaths := stringListFlag{}
 	pixelWindowFlags := stringListFlag{}
@@ -67,7 +65,6 @@ func parseStudioConfig(args []string) (studioConfig, error) {
 	flagSet.Var(&scriptPaths, "script", "path to a scene script; repeat to merge multiple scripts")
 	flagSet.Var(&pixelWindowFlags, "pixel-window", "pixel render window, for example 100:150,600:650; repeat for multiple windows")
 	flagSet.IntVar(&config.dimension, "dimension", 0, "scene dimension")
-	flagSet.IntVar(&config.cameraIndex, "camera-index", -1, "camera index to render")
 	flagSet.IntVar(&config.threadNum, "threads", 0, "worker thread count")
 	flagSet.IntVar(&config.width, "width", 0, "output width")
 	flagSet.IntVar(&config.height, "height", 0, "output height")
@@ -108,9 +105,6 @@ func parseStudioConfig(args []string) (studioConfig, error) {
 		config.scriptPaths = []string{defaultScriptPath}
 	}
 
-	if config.cameraIndex < -1 {
-		return studioConfig{}, fmt.Errorf("camera-index must be >= -1")
-	}
 	if config.dimension < 0 || config.dimension == 1 {
 		return studioConfig{}, fmt.Errorf("dimension must be 0 or >= 2")
 	}
@@ -165,9 +159,6 @@ func (c studioConfig) engineArgs(scriptPath, outputFilmOverride string, samplesO
 	args := []string{"--script", scriptPath}
 	if c.provided["dimension"] {
 		args = append(args, "--dimension", strconv.Itoa(c.dimension))
-	}
-	if c.provided["camera-index"] {
-		args = append(args, "--camera-index", strconv.Itoa(c.cameraIndex))
 	}
 	if c.provided["threads"] {
 		args = append(args, "--threads", strconv.Itoa(c.threadNum))

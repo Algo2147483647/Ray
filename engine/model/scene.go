@@ -7,14 +7,15 @@ import (
 )
 
 type Scene struct {
-	ObjectTree *object.ObjectTree `json:"object_tree"`
-	Cameras    []camera.RayCamera `json:"cameras"`
-	Geometry   geometry.Geometry  `json:"-"` // nil ⇒ Euclidean
-	MaxArc     float64            `json:"-"` // 0 ⇒ unbounded
+	ObjectTree *object.ObjectTree          `json:"object_tree"`
+	Cameras    map[string]camera.RayCamera `json:"cameras"`
+	Geometry   geometry.Geometry           `json:"-"` // nil ⇒ Euclidean
+	MaxArc     float64                     `json:"-"` // 0 ⇒ unbounded
 }
 
 func NewScene() *Scene {
 	return &Scene{
 		ObjectTree: &object.ObjectTree{},
+		Cameras:    make(map[string]camera.RayCamera),
 	}
 }

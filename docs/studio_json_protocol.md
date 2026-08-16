@@ -18,7 +18,6 @@ Studio accepts the same render override flags as engine:
 
 ```text
 --dimension
---camera-index
 --threads
 --width
 --height

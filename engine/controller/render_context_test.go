@@ -125,15 +125,15 @@ func TestResolveRenderContextsExpandsRenderJobs(t *testing.T) {
 			{ID: "front", Film: &camera.Film{Shape: []int{320, 200}, OutputFilm: "front.bin"}},
 			{ID: "detail", Film: &camera.Film{Shape: []int{640, 400}, OutputFilm: "detail.bin"}},
 		},
-	}, RenderContext{CameraIndex: -1})
+	}, RenderContext{})
 
 	if len(contexts) != 2 {
 		t.Fatalf("expected two render contexts, got %d", len(contexts))
 	}
-	if contexts[0].Samples != 8 || contexts[0].CameraIndex != 0 || contexts[0].OutputFilm != "front.bin" {
+	if contexts[0].Samples != 8 || contexts[0].CameraID != "front" {
 		t.Fatalf("unexpected first render context: %+v", contexts[0])
 	}
-	if contexts[1].Samples != 32 || contexts[1].CameraIndex != 1 || contexts[1].OutputFilm != "detail.bin" {
+	if contexts[1].Samples != 32 || contexts[1].CameraID != "detail" {
 		t.Fatalf("unexpected second render context: %+v", contexts[1])
 	}
 }
@@ -148,7 +148,6 @@ func TestResolveRenderContextPrefersRequestedPixelWindows(t *testing.T) {
 			},
 		}}},
 	}, RenderContext{
-		CameraIndex: -1,
 		PixelWindows: []camera.PixelWindow{
 			{Min: []int{3, 3}, Max: []int{4, 4}},
 		},
@@ -173,43 +172,17 @@ func TestResolveRenderContextsRenderJobInheritsCameraIDWhenOmitted(t *testing.T)
 			{ID: "unused", Film: &camera.Film{Shape: []int{10, 10}}},
 			{ID: "inherited", Film: &camera.Film{Shape: []int{10, 10}}},
 		},
-	}, RenderContext{CameraIndex: -1})
+	}, RenderContext{})
 
-	if contexts[0].CameraIndex != 2 {
-		t.Fatalf("expected first render job to inherit camera index 2, got %d", contexts[0].CameraIndex)
+	if contexts[0].CameraID != "inherited" {
+		t.Fatalf("expected first render job to inherit camera ID, got %q", contexts[0].CameraID)
 	}
-	if contexts[1].CameraIndex != 0 {
-		t.Fatalf("expected second render job to use requested camera index 0, got %d", contexts[1].CameraIndex)
-	}
-}
-
-func TestSelectRenderCameraPreparesHyperbolicCamera(t *testing.T) {
-	cam := &camera.HyperbolicCamera{Camera3D: camera.Camera3D{
-		Position:     mat.NewVecDense(3, []float64{0, 0, 0}),
-		Coordinates:  []*mat.VecDense{mat.NewVecDense(3, []float64{1, 0, 0}), mat.NewVecDense(3, []float64{0, -1, 0}), mat.NewVecDense(3, []float64{0, 0, 1})},
-		FieldOfViews: []float64{70, 70},
-	}}
-	h := NewHandler()
-	h.Scene.Cameras = []camera.RayCamera{cam}
-
-	selected, err := h.selectRenderCamera(0)
-	if err != nil {
-		t.Fatalf("select camera: %v", err)
-	}
-	if selected != cam {
-		t.Fatal("expected selected hyperbolic camera")
+	if contexts[1].CameraID != "requested" {
+		t.Fatalf("expected second render job to use requested camera ID, got %q", contexts[1].CameraID)
 	}
 }
 
-func TestSelectRenderCameraRequiresCamera(t *testing.T) {
-	h := NewHandler()
-	_, err := h.selectRenderCamera(0)
-	if err == nil {
-		t.Fatal("expected selecting without cameras to fail")
-	}
-}
-
-func TestSelectRenderCameraPreparesSphericalCamera(t *testing.T) {
+func TestConfigureRenderContextRejectsOutOfBoundsPixelWindow(t *testing.T) {
 	cam := &camera.SphericalCamera{
 		Camera:       camera.Camera{Film: camera.NewFilm(10, 10)},
 		Position:     mat.NewVecDense(4, []float64{1, 0, 0, 0}),
@@ -217,28 +190,10 @@ func TestSelectRenderCameraPreparesSphericalCamera(t *testing.T) {
 		FieldOfViews: []float64{70, 70},
 	}
 	h := NewHandler()
-	h.Scene.Cameras = []camera.RayCamera{cam}
-
-	selected, err := h.selectRenderCamera(0)
-	if err != nil {
-		t.Fatalf("select camera: %v", err)
-	}
-	if selected != cam {
-		t.Fatal("expected selected spherical camera")
-	}
-}
-
-func TestConfigureRenderContextRejectsOutOfBoundsPixelWindow(t *testing.T) {
-	cam := &camera.SphericalCamera{
-		Position:     mat.NewVecDense(4, []float64{1, 0, 0, 0}),
-		Coordinates:  []*mat.VecDense{mat.NewVecDense(4, []float64{0, 1, 0, 0}), mat.NewVecDense(4, []float64{0, 0, 0, 1}), mat.NewVecDense(4, []float64{0, 0, 1, 0})},
-		FieldOfViews: []float64{70, 70},
-	}
-	h := NewHandler()
-	h.Scene.Cameras = []camera.RayCamera{cam}
+	h.Scene.Cameras = map[string]camera.RayCamera{"main": cam}
 
 	h.ConfigureRenderContext(RenderContext{
-		CameraIndex:       0,
+		CameraID:          "main",
 		FilmShapeOverride: []int{10, 10},
 		PixelWindows:      []camera.PixelWindow{{Min: []int{9, 0}, Max: []int{11, 1}}},
 	})
@@ -252,9 +207,9 @@ func TestConfigureRenderContextRejectsBDPTInCurvedGeometry(t *testing.T) {
 	h := NewHandler()
 	h.Scene.Geometry = geometry.Klein()
 	h.ConfigureRenderContext(RenderContext{
-		Integrator:  "bdpt",
-		Dimension:   3,
-		CameraIndex: 0,
+		Integrator: "bdpt",
+		Dimension:  3,
+		CameraID:   "missing",
 	})
 	if h.err == nil {
 		t.Fatal("expected curved-space BDPT to fail during configuration")

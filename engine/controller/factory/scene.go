@@ -23,7 +23,7 @@ func LoadSceneFromScript(script *parser.Script, scene *model.Scene) error {
 	}
 
 	scene.ObjectTree = &object.ObjectTree{}
-	scene.Cameras = nil
+	scene.Cameras = make(map[string]modelcamera.RayCamera)
 	scene.Geometry = nil
 	scene.MaxArc = 0
 
@@ -131,26 +131,26 @@ func LoadSceneFromScript(script *parser.Script, scene *model.Scene) error {
 	if len(parseErrors) > 0 {
 		return errors.Join(parseErrors...)
 	}
-	scene.Cameras = append(scene.Cameras, cameras...)
+	scene.Cameras = cameras
 	scene.ObjectTree.Build()
 	return nil
 }
 
-func validateCamerasForGeometry(g geometry.Geometry, cameras []modelcamera.RayCamera) error {
-	for index, cam := range cameras {
+func validateCamerasForGeometry(g geometry.Geometry, cameras map[string]modelcamera.RayCamera) error {
+	for id, cam := range cameras {
 		switch geometry.Get(g).Kind() {
 		case geometry.EuclideanKind:
 			switch cam.(type) {
 			case *modelcamera.HyperbolicCamera, *modelcamera.SphericalCamera:
-				return fmt.Errorf("camera[%d] is non-euclidean but scene geometry is euclidean", index)
+				return fmt.Errorf("camera %q is non-euclidean but scene geometry is euclidean", id)
 			}
 		case geometry.KleinKind:
 			if _, ok := cam.(*modelcamera.HyperbolicCamera); !ok {
-				return fmt.Errorf("camera[%d] must use type %q for Klein geometry, got %T", index, modelcamera.CameraTypeHyperbolic, cam)
+				return fmt.Errorf("camera %q must use type %q for Klein geometry, got %T", id, modelcamera.CameraTypeHyperbolic, cam)
 			}
 		case geometry.SphericalKind:
 			if _, ok := cam.(*modelcamera.SphericalCamera); !ok {
-				return fmt.Errorf("camera[%d] must use type %q for spherical geometry, got %T", index, modelcamera.CameraTypeSpherical, cam)
+				return fmt.Errorf("camera %q must use type %q for spherical geometry, got %T", id, modelcamera.CameraTypeSpherical, cam)
 			}
 		}
 	}
