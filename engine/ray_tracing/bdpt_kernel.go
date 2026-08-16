@@ -165,10 +165,10 @@ func filterBDPTDeltaSplat(splat FilmSplat, width, height int, activeMask []bool)
 	if width <= 0 || height <= 0 || len(activeMask) != width*height {
 		return nil
 	}
-	x0 := int(math.Floor(splat.projection.Raster.X))
-	y0 := int(math.Floor(splat.projection.Raster.Y))
-	fx := splat.projection.Raster.X - float64(x0)
-	fy := splat.projection.Raster.Y - float64(y0)
+	x0 := int(math.Floor(splat.projection.Position[0]))
+	y0 := int(math.Floor(splat.projection.Position[1]))
+	fx := splat.projection.Position[0] - float64(x0)
+	fy := splat.projection.Position[1] - float64(y0)
 	type candidate struct {
 		x, y   int
 		weight float64
