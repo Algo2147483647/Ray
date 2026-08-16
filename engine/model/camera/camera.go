@@ -7,8 +7,17 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-type Camera interface {
-	GenerateRay(res *renderray.Ray, film *Film, index ...int) *renderray.Ray // Generates a ray for a given Film pixel index.
+type Camera struct {
+	Film *Film
+}
+
+type RayCamera interface {
+	GenerateRay(res *renderray.Ray, index ...int) *renderray.Ray
+	SetFilm(*Film)
+}
+
+func (c *Camera) SetFilm(film *Film) {
+	c.Film = film
 }
 
 // FilmProjection describes the pinhole-camera mapping of a scene point.
@@ -44,8 +53,8 @@ func (p RasterPosition) PixelIndex(width, height int) (int, bool) {
 // ProjectiveCamera is implemented by cameras that can receive light-tracing
 // splats. ProjectPoint is the inverse of GenerateRay's raster mapping.
 type ProjectiveCamera interface {
-	Camera
-	ProjectPoint(point *mat.VecDense, film *Film) (FilmProjection, bool)
+	RayCamera
+	ProjectPoint(point *mat.VecDense) (FilmProjection, bool)
 }
 
 type CameraType string

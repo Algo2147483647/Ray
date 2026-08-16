@@ -19,7 +19,8 @@ func TestCameraNDimGenerateRay3D(t *testing.T) {
 	}
 	camera.FieldOfViews = []float64{90, 90}
 
-	ray := camera.GenerateRay(nil, NewFilm(100, 100), 50, 50)
+	camera.Film = NewFilm(100, 100)
+	ray := camera.GenerateRay(nil, 50, 50)
 	if ray == nil {
 		t.Fatal("expected ray to be generated")
 	}
@@ -53,7 +54,8 @@ func TestCameraNDimGenerateRay4D(t *testing.T) {
 	}
 	camera.FieldOfViews = []float64{90, 90, 90}
 
-	ray := camera.GenerateRay(nil, NewFilm(10, 10, 10), 5, 5, 5)
+	camera.Film = NewFilm(10, 10, 10)
+	ray := camera.GenerateRay(nil, 5, 5, 5)
 	if ray == nil {
 		t.Fatal("expected ray to be generated")
 	}
@@ -81,8 +83,9 @@ func TestCameraNDimOrthoKeepsDirectionAndMovesOrigin(t *testing.T) {
 	camera.Ortho = true
 
 	film := NewFilm(10, 10, 10)
-	rayA := camera.GenerateRay(nil, film, 0, 0, 0)
-	rayB := camera.GenerateRay(nil, film, 9, 9, 9)
+	camera.Film = film
+	rayA := camera.GenerateRay(nil, 0, 0, 0)
+	rayB := camera.GenerateRay(nil, 9, 9, 9)
 
 	assertVecApprox(t, rayA.Direction, rayB.Direction, 1e-12)
 	assertVecApprox(t, rayA.Direction, mat.NewVecDense(4, []float64{1, 0, 0, 0}), 1e-12)
@@ -109,7 +112,8 @@ func TestCameraNDimGenerateRayResetsReusedRayMediumState(t *testing.T) {
 	ray.MediumStack.Push(medium.MediumID(42))
 	ray.SetSpectralWavelength(610)
 
-	camera.GenerateRay(ray, NewFilm(100, 100), 50, 50)
+	camera.Film = NewFilm(100, 100)
+	camera.GenerateRay(ray, 50, 50)
 
 	if got := ray.MediumStack.Current(); got != medium.MediumAir {
 		t.Fatalf("expected GenerateRay to reset medium stack to air, got %v", got)

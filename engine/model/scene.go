@@ -8,7 +8,7 @@ import (
 
 type Scene struct {
 	ObjectTree *object.ObjectTree `json:"object_tree"`
-	Cameras    []camera.Camera    `json:"cameras"`
+	Cameras    []camera.RayCamera `json:"cameras"`
 	Geometry   geometry.Geometry  `json:"-"` // nil ⇒ Euclidean
 	MaxArc     float64            `json:"-"` // 0 ⇒ unbounded
 }

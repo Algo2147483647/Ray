@@ -23,6 +23,7 @@ func newRenderSession(handler *Handler, ctx RenderContext, concurrentFilmWrites 
 	if err := ctx.validate(); err != nil {
 		return nil, err
 	}
+	ctx.Camera.SetFilm(ctx.Film)
 	handler.prepareFilm(ctx.Film)
 	return &RenderSession{
 		Context:     ctx,

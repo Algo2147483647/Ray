@@ -93,7 +93,6 @@ func (k *bdptKernel) TraceSample(session *RenderSession, workIndex int64) []Film
 	local, lightPath := session.Handler.traceBidirectionalPrepared(
 		k.prepared.scene,
 		session.Context.Camera,
-		session.Context.Film,
 		session.Context.ObjectTree,
 		wavelengthNM,
 		wavelengthPDF,
@@ -119,7 +118,6 @@ func (k *bdptKernel) TraceSample(session *RenderSession, workIndex int64) []Film
 	}
 	deltaSplats := session.Handler.projectBDPTDeltaCaustics(
 		k.prepared.projective,
-		session.Context.Film,
 		session.Context.ObjectTree,
 		lightPath,
 		wavelengthNM,
@@ -135,7 +133,6 @@ func (k *bdptKernel) TraceSample(session *RenderSession, workIndex int64) []Film
 
 func (h *Handler) projectBDPTDeltaCaustics(
 	projective camera.ProjectiveCamera,
-	film *camera.Film,
 	tree *object.ObjectTree,
 	lightPath []bdptVertex,
 	wavelengthNM, wavelengthPDF float64,
@@ -152,7 +149,7 @@ func (h *Handler) projectBDPTDeltaCaustics(
 		if !seenDelta {
 			continue
 		}
-		value, projection, ok := h.projectLightVertex(projective, film, tree, &lightPath[vertexIndex])
+		value, projection, ok := h.projectLightVertex(projective, tree, &lightPath[vertexIndex])
 		if !ok {
 			continue
 		}

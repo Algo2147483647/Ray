@@ -63,32 +63,30 @@ func prepareBDPTScene(sceneGeometry geometry.Geometry, tree *object.ObjectTree) 
 // renders prepare scene capabilities and the light distribution once in
 // bdptKernel.Prepare, then call traceBidirectionalPrepared for every sample.
 func (h *Handler) traceBidirectionalSample(
-	renderCamera camera.Camera,
-	film *camera.Film,
+	renderCamera camera.RayCamera,
 	objTree *object.ObjectTree,
 	wavelengthNM, wavelengthPDF float64,
 	index ...int,
 ) optics.Spectrum {
 	state := prepareBDPTScene(h.SceneGeometry, objTree)
 	result, _ := h.traceBidirectionalPrepared(
-		state, renderCamera, film, objTree, wavelengthNM, wavelengthPDF, index...,
+		state, renderCamera, objTree, wavelengthNM, wavelengthPDF, index...,
 	)
 	return result
 }
 
 func (h *Handler) traceBidirectionalPrepared(
 	state *bdptSceneState,
-	renderCamera camera.Camera,
-	film *camera.Film,
+	renderCamera camera.RayCamera,
 	objTree *object.ObjectTree,
 	wavelengthNM, wavelengthPDF float64,
 	index ...int,
 ) (optics.Spectrum, []bdptVertex) {
 	if state == nil || state.FallbackReason != "" {
-		return h.tracePathSampleSpectrum(renderCamera, film, objTree, wavelengthNM, wavelengthPDF, index...), nil
+		return h.tracePathSampleSpectrum(renderCamera, objTree, wavelengthNM, wavelengthPDF, index...), nil
 	}
 
-	cameraPath, emitted := h.buildCameraSubpath(renderCamera, film, objTree, wavelengthNM, wavelengthPDF, index...)
+	cameraPath, emitted := h.buildCameraSubpath(renderCamera, objTree, wavelengthNM, wavelengthPDF, index...)
 	lightPath := h.buildLightSubpath(
 		objTree, state.Lights, state.TotalLightWeight, wavelengthNM, wavelengthPDF,
 	)
@@ -161,8 +159,7 @@ func bdptUnsupportedReason(sceneGeometry geometry.Geometry, tree *object.ObjectT
 }
 
 func (h *Handler) tracePathSampleSpectrum(
-	renderCamera camera.Camera,
-	film *camera.Film,
+	renderCamera camera.RayCamera,
 	objTree *object.ObjectTree,
 	wavelengthNM, wavelengthPDF float64,
 	index ...int,
@@ -170,7 +167,7 @@ func (h *Handler) tracePathSampleSpectrum(
 	ray := h.RayPool.Get().(*optics.Ray)
 	ray.Geometry = h.SceneGeometry
 	defer h.RayPool.Put(ray)
-	renderCamera.GenerateRay(ray, film, index...)
+	renderCamera.GenerateRay(ray, index...)
 	if wavelengthNM > 0 {
 		ray.SetSpectralSample(optics.WavelengthSample{LambdaNM: wavelengthNM, PDF: wavelengthPDF})
 	} else {
@@ -219,14 +216,13 @@ func collectAreaLights(tree *object.ObjectTree) ([]areaLight, float64) {
 }
 
 func (h *Handler) buildCameraSubpath(
-	renderCamera camera.Camera,
-	film *camera.Film,
+	renderCamera camera.RayCamera,
 	tree *object.ObjectTree,
 	wavelengthNM, wavelengthPDF float64,
 	index ...int,
 ) ([]bdptVertex, optics.Spectrum) {
 	ray := &optics.Ray{Geometry: h.SceneGeometry}
-	renderCamera.GenerateRay(ray, film, index...)
+	renderCamera.GenerateRay(ray, index...)
 	setBDPTWavelength(ray, wavelengthNM, wavelengthPDF)
 
 	beta := unitSpectrum(wavelengthNM)

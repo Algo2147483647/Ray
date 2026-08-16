@@ -9,8 +9,8 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-func ParseCameras(script *parser.Script) ([]modelcamera.Camera, error) {
-	cameras := make([]modelcamera.Camera, 0, len(script.Cameras))
+func ParseCameras(script *parser.Script) ([]modelcamera.RayCamera, error) {
+	cameras := make([]modelcamera.RayCamera, 0, len(script.Cameras))
 	for idx, cameraDef := range script.Cameras {
 		parsedCamera, err := BuildCameraFromScript(cameraDef)
 		if err != nil {
@@ -22,7 +22,7 @@ func ParseCameras(script *parser.Script) ([]modelcamera.Camera, error) {
 	return cameras, nil
 }
 
-func BuildCameraFromScript(def parser.CameraScript) (modelcamera.Camera, error) {
+func BuildCameraFromScript(def parser.CameraScript) (modelcamera.RayCamera, error) {
 	switch def.Type {
 	case "", modelcamera.CameraType3D:
 		return BuildCamera3DFromScript(def)

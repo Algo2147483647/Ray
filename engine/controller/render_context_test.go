@@ -183,7 +183,7 @@ func TestSelectRenderCameraPreparesHyperbolicCamera(t *testing.T) {
 		FieldOfViews: []float64{70, 70},
 	}}
 	h := NewHandler()
-	h.Scene.Cameras = []camera.Camera{cam}
+	h.Scene.Cameras = []camera.RayCamera{cam}
 
 	selected, err := h.selectRenderCamera(0)
 	if err != nil {
@@ -209,7 +209,7 @@ func TestSelectRenderCameraPreparesSphericalCamera(t *testing.T) {
 		FieldOfViews: []float64{70, 70},
 	}
 	h := NewHandler()
-	h.Scene.Cameras = []camera.Camera{cam}
+	h.Scene.Cameras = []camera.RayCamera{cam}
 
 	selected, err := h.selectRenderCamera(0)
 	if err != nil {
@@ -227,7 +227,7 @@ func TestConfigureRenderContextRejectsOutOfBoundsPixelWindow(t *testing.T) {
 		FieldOfViews: []float64{70, 70},
 	}
 	h := NewHandler()
-	h.Scene.Cameras = []camera.Camera{cam}
+	h.Scene.Cameras = []camera.RayCamera{cam}
 
 	h.ConfigureRenderContext(RenderContext{
 		CameraIndex:  0,

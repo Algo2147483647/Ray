@@ -14,7 +14,7 @@ const (
 // TraceScene selects one scene-level integrator and delegates the complete
 // render schedule to it.
 func (h *Handler) TraceScene(
-	renderCamera camera.Camera,
+	renderCamera camera.RayCamera,
 	objectTree *object.ObjectTree,
 	film *camera.Film,
 	samples int64,

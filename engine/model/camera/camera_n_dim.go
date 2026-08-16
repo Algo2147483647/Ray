@@ -10,6 +10,7 @@ import (
 )
 
 type CameraNDim struct {
+	Camera
 	Position               *mat.VecDense   // Camera origin in N-dimensional space.
 	Coordinates            []*mat.VecDense // Camera basis vectors.
 	FieldOfViews           []float64       // Field-of-view angle per dimension.
@@ -47,7 +48,7 @@ func (c *CameraNDim) Prepare() error {
 	return nil
 }
 
-func (c *CameraNDim) GenerateRay(res *renderray.Ray, film *Film, x ...int) *renderray.Ray {
+func (c *CameraNDim) GenerateRay(res *renderray.Ray, x ...int) *renderray.Ray {
 	if res == nil {
 		res = &renderray.Ray{}
 	}
@@ -56,13 +57,13 @@ func (c *CameraNDim) GenerateRay(res *renderray.Ray, film *Film, x ...int) *rend
 	if err := c.Prepare(); err != nil {
 		panic(err)
 	}
-	if film == nil || len(film.Shape) != len(c.FieldOfViews) {
+	if len(c.Film.Shape) != len(c.FieldOfViews) {
 		panic(fmt.Errorf("film dimensions must match camera field of views"))
 	}
 
 	u := make([]float64, len(x))
 	for i := 0; i < len(x); i++ {
-		u[i] = 2*(float64(x[i])+rand.Float64())/float64(film.Shape[i]) - 1
+		u[i] = 2*(float64(x[i])+rand.Float64())/float64(c.Film.Shape[i]) - 1
 	}
 
 	res.Origin.CloneFromVec(c.Position)

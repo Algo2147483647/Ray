@@ -15,6 +15,7 @@ import (
 // Coordinates are R^4 basis vectors projected into T_p and orthonormalized at
 // Prepare time.
 type SphericalCamera struct {
+	Camera
 	Position     *mat.VecDense
 	Coordinates  []*mat.VecDense // Camera basis vectors: forward, right, up.
 	FieldOfViews []float64       // Vertical and horizontal field-of-view angles in degrees.
@@ -92,7 +93,7 @@ func orthogonalInTangent(p, a, b *mat.VecDense) *mat.VecDense {
 	return nil
 }
 
-func (c *SphericalCamera) GenerateRay(res *renderray.Ray, film *Film, index ...int) *renderray.Ray {
+func (c *SphericalCamera) GenerateRay(res *renderray.Ray, index ...int) *renderray.Ray {
 	if res == nil {
 		res = &renderray.Ray{}
 	}
@@ -102,7 +103,7 @@ func (c *SphericalCamera) GenerateRay(res *renderray.Ray, film *Film, index ...i
 			panic(err)
 		}
 	}
-	width, height := film.Shape[0], film.Shape[1]
+	width, height := c.Film.Shape[0], c.Film.Shape[1]
 
 	row, col := index[0], index[1]
 	u := 2*(float64(row)+rand.Float64())/float64(width) - 1

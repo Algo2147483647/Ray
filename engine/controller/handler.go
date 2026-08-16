@@ -19,7 +19,7 @@ type Handler struct {
 	Scene   *model.Scene
 	Script  *parser.Script
 	Film    *camera.Film
-	Camera  camera.Camera
+	Camera  camera.RayCamera
 	Context RenderContext
 }
 
@@ -89,8 +89,9 @@ func (h *Handler) ConfigureRenderContext(context RenderContext) *Handler {
 	}
 	context.PixelWindows = normalizedWindows
 	h.Context = context
-	h.Camera = renderCamera
 	h.Film = camera.NewFilm(filmShape...)
+	renderCamera.SetFilm(h.Film)
+	h.Camera = renderCamera
 	return h
 }
 
@@ -114,7 +115,7 @@ func (h *Handler) RenderJobs() *Handler {
 	return h
 }
 
-func (h *Handler) selectRenderCamera(cameraIndex int) (camera.Camera, error) {
+func (h *Handler) selectRenderCamera(cameraIndex int) (camera.RayCamera, error) {
 	if len(h.Scene.Cameras) == 0 {
 		return nil, fmt.Errorf("scene has no cameras; use studio to generate a default camera")
 	}
@@ -124,7 +125,7 @@ func (h *Handler) selectRenderCamera(cameraIndex int) (camera.Camera, error) {
 
 	selectedCamera := h.Scene.Cameras[cameraIndex]
 	preparedCamera, ok := selectedCamera.(interface {
-		camera.Camera
+		camera.RayCamera
 		Prepare() error
 	})
 	if !ok {

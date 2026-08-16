@@ -18,9 +18,11 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-type fixedCamera struct{}
+type fixedCamera struct{ camera.Camera }
 
-func (fixedCamera) GenerateRay(ray *optics.Ray, _ *camera.Film, _ ...int) *optics.Ray {
+func (fixedCamera) SetFilm(*camera.Film) {}
+
+func (fixedCamera) GenerateRay(ray *optics.Ray, _ ...int) *optics.Ray {
 	ray.Init()
 	ray.Origin.CloneFromVec(mat.NewVecDense(3, []float64{0, 0, 0}))
 	ray.Direction.CloneFromVec(mat.NewVecDense(3, []float64{0, 0, 1}))
@@ -59,7 +61,7 @@ func TestBDPTConnectsAreaLightToCameraVertex(t *testing.T) {
 	h.SpectrumMode = optics.SpectrumModeRGB
 	h.MaxRayLevel = 2
 
-	value := h.traceBidirectionalSample(fixedCamera{}, camera.NewFilm(1, 1), tree, 0, 0, 0, 0)
+	value := h.traceBidirectionalSample(fixedCamera{}, tree, 0, 0, 0, 0)
 	if !value.IsFinite() || !value.IsNonNegative() {
 		t.Fatalf("invalid BDPT contribution: %+v", value)
 	}
@@ -86,7 +88,7 @@ func TestBDPTFallsBackToPathTracingWithoutSampleableLights(t *testing.T) {
 	h.IntegratorKind = IntegratorBDPT
 	h.SceneGeometry = geometry.Euclidean()
 	h.SpectrumMode = optics.SpectrumModeRGB
-	value := h.traceBidirectionalSample(fixedCamera{}, camera.NewFilm(1, 1), tree, 0, 0, 0, 0)
+	value := h.traceBidirectionalSample(fixedCamera{}, tree, 0, 0, 0, 0)
 	if value.IsZero() {
 		t.Fatal("fallback path tracer should see the unsupported infinite emitter")
 	}
@@ -282,7 +284,8 @@ func TestBDPTProjectsDeltaCausticWithT1Strategy(t *testing.T) {
 			Beta: optics.ConstantSpectrum(1), MediumStack: medium.NewStack(medium.MediumAir),
 		},
 	}
-	splats := NewHandler().projectBDPTDeltaCaustics(renderCamera, camera.NewFilm(1, 1), nil, path, 0, 0)
+	renderCamera.Film = camera.NewFilm(1, 1)
+	splats := NewHandler().projectBDPTDeltaCaustics(renderCamera, nil, path, 0, 0)
 	if len(splats) != 1 {
 		t.Fatalf("delta t=1 splat count = %d, want 1", len(splats))
 	}
@@ -378,4 +381,4 @@ func TestBDPTEdgePDFIncludesReconstructibleRussianRouletteProbability(t *testing
 	}
 }
 
-var _ camera.Camera = fixedCamera{}
+var _ camera.RayCamera = fixedCamera{}

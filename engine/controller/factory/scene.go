@@ -136,7 +136,7 @@ func LoadSceneFromScript(script *parser.Script, scene *model.Scene) error {
 	return nil
 }
 
-func validateCamerasForGeometry(g geometry.Geometry, cameras []modelcamera.Camera) error {
+func validateCamerasForGeometry(g geometry.Geometry, cameras []modelcamera.RayCamera) error {
 	for index, cam := range cameras {
 		switch geometry.Get(g).Kind() {
 		case geometry.EuclideanKind:
