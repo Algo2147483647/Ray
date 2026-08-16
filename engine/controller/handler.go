@@ -13,11 +13,12 @@ import (
 )
 
 type Handler struct {
-	err     error
-	Scene   *model.Scene
-	Script  *parser.Script
-	Camera  camera.RayCamera
-	Context RenderContext
+	err        error
+	Scene      *model.Scene
+	Script     *parser.Script
+	ScriptPath string
+	Camera     camera.RayCamera
+	Context    RenderContext
 }
 
 func NewHandler() *Handler {
@@ -28,7 +29,7 @@ func NewHandler() *Handler {
 
 func Run(args []string) int {
 	h := NewHandler().
-		ParseRenderArgs(args).
+		ParseArgs(args).
 		LoadScript().
 		RenderJobs()
 	if h.err != nil {
@@ -45,9 +46,9 @@ func (h *Handler) LoadScript() *Handler {
 		return h
 	}
 
-	fmt.Printf("Loading scene from: %s\n", h.Context.ScriptPath)
+	fmt.Printf("Loading scene from: %s\n", h.ScriptPath)
 
-	script, err := parser.ReadScriptFile(h.Context.ScriptPath)
+	script, err := parser.ReadScriptFile(h.ScriptPath)
 	if err != nil {
 		h.err = err
 		return h
@@ -79,37 +80,16 @@ func (h *Handler) ConfigureRenderContext(context RenderContext) *Handler {
 	}
 
 	film := h.Camera.GetFilm()
-	if film == nil {
-		h.err = fmt.Errorf("camera %q has no film", context.CameraID)
-		return h
-	}
-
-	filmShape := film.Shape
-	if len(context.FilmShapeOverride) > 0 {
-		film.Shape = append(film.Shape[:0], context.FilmShapeOverride...)
-		filmShape = film.Shape
-	}
-	if len(filmShape) == 0 {
-		h.err = fmt.Errorf("camera %q film shape is not configured", context.CameraID)
-		return h
-	}
-
-	windows := context.PixelWindows
-	if len(windows) == 0 {
-		windows = film.PixelWindows
-	}
-	normalizedWindows, err := camera.NormalizePixelWindows(windows, filmShape)
+	normalizedWindows, err := camera.NormalizePixelWindows(film.PixelWindows, film.Shape)
 	if err != nil {
 		h.err = err
 		return h
 	}
 
 	context.PixelWindows = normalizedWindows
+	context.OutputFilm = film.OutputFilm
 	if context.OutputFilm == "" {
-		context.OutputFilm = film.OutputFilm
-		if context.OutputFilm == "" {
-			context.OutputFilm = defaultOutputFilm
-		}
+		context.OutputFilm = defaultOutputFilm
 	}
 	h.Context = context
 	return h
@@ -120,7 +100,16 @@ func (h *Handler) RenderJobs() *Handler {
 		return h
 	}
 
-	jobs := ResolveRenderContexts(h.Script, h.Context)
+	jobs := make([]RenderContext, 0, len(h.Script.Renders))
+	if h.Script == nil || len(h.Script.Renders) == 0 {
+		jobs = []RenderContext{defaultRenderContext()}
+	}
+
+	for _, render := range h.Script.Renders {
+		job := mergeRenderContext(defaultRenderContext(), renderScriptContext(render))
+		jobs = append(jobs, job)
+	}
+
 	for idx, context := range jobs {
 		if len(jobs) > 1 {
 			fmt.Printf("Starting render job %d/%d\n", idx+1, len(jobs))

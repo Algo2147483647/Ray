@@ -33,6 +33,34 @@ func TestStudioSchemaRejectsRemovedFields(t *testing.T) {
 	}
 }
 
+func TestStudioSchemaValidatesRenderConfiguration(t *testing.T) {
+	for name, source := range map[string]string{
+		"dimension":          `{"renders":[{"dimension":1}]}`,
+		"threads":            `{"renders":[{"thread_num":-1}]}`,
+		"samples":            `{"renders":[{"samples":-1}]}`,
+		"integrator":         `{"renders":[{"integrator":"magic"}]}`,
+		"spectrum mode":      `{"renders":[{"spectrum_mode":"magic"}]}`,
+		"wavelength samples": `{"renders":[{"wavelength_samples":-1}]}`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			var script schema.StudioScript
+			if err := json.Unmarshal([]byte(source), &script); err == nil {
+				t.Fatal("expected invalid Studio render configuration to fail")
+			}
+		})
+	}
+}
+
+func TestStudioSchemaUpgradesLegacyRGBSpectrumMode(t *testing.T) {
+	var script schema.StudioScript
+	if err := json.Unmarshal([]byte(`{"render":{"spectrum_mode":"rgb"}}`), &script); err != nil {
+		t.Fatalf("parse legacy RGB spectrum mode: %v", err)
+	}
+	if script.Render.SpectrumMode != "hero_wavelength" {
+		t.Fatalf("spectrum mode = %q, want hero_wavelength", script.Render.SpectrumMode)
+	}
+}
+
 func TestIntermediateScriptUsesCameraOwnedFilm(t *testing.T) {
 	adapted, err := adaptTestScript(&schema.StudioScript{
 		Cameras: []schema.StudioCameraScript{{ID: "main", Type: "3d"}},
@@ -50,7 +78,17 @@ func TestIntermediateScriptUsesCameraOwnedFilm(t *testing.T) {
 	if err := json.Unmarshal(data, &engineScript); err != nil {
 		t.Fatalf("Engine rejected Studio intermediate script: %v", err)
 	}
-	if engineScript.Render.CameraID != "main" || engineScript.Cameras[0].Film.Shape[0] != 800 {
+	var intermediate map[string]json.RawMessage
+	if err := json.Unmarshal(data, &intermediate); err != nil {
+		t.Fatalf("inspect intermediate script: %v", err)
+	}
+	if _, exists := intermediate["render"]; exists {
+		t.Fatal("legacy render field leaked into Engine intermediate script")
+	}
+	if _, exists := intermediate["renders"]; !exists {
+		t.Fatal("Engine intermediate script must contain renders")
+	}
+	if len(engineScript.Renders) != 1 || engineScript.Renders[0].CameraID != "main" || engineScript.Cameras[0].Film.Shape[0] != 800 {
 		t.Fatalf("unexpected Engine script: %+v", engineScript)
 	}
 	scene := enginemodel.NewScene()
@@ -59,6 +97,65 @@ func TestIntermediateScriptUsesCameraOwnedFilm(t *testing.T) {
 	}
 	if len(scene.Cameras) != 1 || scene.Cameras["main"].GetFilm() == nil || scene.Cameras["main"].GetFilm().Shape[1] != 600 {
 		t.Fatalf("Film was not loaded into Camera: %+v", scene.Cameras)
+	}
+}
+
+func TestStudioExpandsLegacyRenderDefaultsIntoEveryEngineJob(t *testing.T) {
+	adapted, err := adaptTestScript(&schema.StudioScript{
+		Render: schema.StudioRenderScript{
+			Integrator: "bdpt",
+			Samples:    8,
+			FilmID:     "test-film",
+		},
+		Renders: []schema.StudioRenderScript{
+			{Samples: 32},
+			{},
+		},
+	}, []string{"scene.json"}, 3)
+	if err != nil {
+		t.Fatalf("adapt script: %v", err)
+	}
+	if len(adapted.Renders) != 2 {
+		t.Fatalf("expected two Engine jobs, got %d", len(adapted.Renders))
+	}
+	if adapted.Renders[0]["integrator"] != "bdpt" || adapted.Renders[0]["samples"] != int64(32) {
+		t.Fatalf("unexpected first Engine job: %v", adapted.Renders[0])
+	}
+	if adapted.Renders[1]["integrator"] != "bdpt" || adapted.Renders[1]["samples"] != int64(8) {
+		t.Fatalf("unexpected second Engine job: %v", adapted.Renders[1])
+	}
+}
+
+func TestStudioNormalizesSampledWavelengthCount(t *testing.T) {
+	adapted, err := adaptTestScript(&schema.StudioScript{
+		Render: schema.StudioRenderScript{
+			SpectrumMode:      "sampled",
+			WavelengthSamples: 1,
+		},
+	}, []string{"scene.json"}, 3)
+	if err != nil {
+		t.Fatalf("adapt script: %v", err)
+	}
+	if adapted.Renders[0]["wavelength_samples"] != 4 {
+		t.Fatalf("wavelength samples = %v, want 4", adapted.Renders[0]["wavelength_samples"])
+	}
+}
+
+func TestStudioNormalizesSampledWavelengthCountAfterCLIOverrides(t *testing.T) {
+	config := studioConfig{
+		provided: map[string]bool{
+			"spectrum-mode":      true,
+			"wavelength-samples": true,
+		},
+		spectrumMode:      "sampled",
+		wavelengthSamples: 1,
+	}
+	intermediate := &schema.IntermediateScript{Renders: []map[string]interface{}{{}}}
+
+	config.applyEngineOverrides(intermediate, "", 0)
+
+	if intermediate.Renders[0]["wavelength_samples"] != 4 {
+		t.Fatalf("wavelength samples = %v, want 4", intermediate.Renders[0]["wavelength_samples"])
 	}
 }
 
@@ -742,10 +839,10 @@ func TestStudioDoesNotEmitResumeFilmToIntermediateScript(t *testing.T) {
 	if err != nil {
 		t.Fatalf("adapt script: %v", err)
 	}
-	if _, ok := adapted.Render["resume_film"]; ok {
+	if _, ok := adapted.Renders[0]["resume_film"]; ok {
 		t.Fatal("resume_film must stay in studio and not be emitted to engine intermediate scripts")
 	}
-	if _, ok := adapted.Render["output_image"]; ok {
+	if _, ok := adapted.Renders[0]["output_image"]; ok {
 		t.Fatal("output_image must stay in studio and not be emitted to engine intermediate scripts")
 	}
 	if adapted.Cameras[0].Film.OutputFilm != "final.bin" {
@@ -766,7 +863,7 @@ func TestStudioKeepsColorPipelineOutOfEngineIntermediateScript(t *testing.T) {
 		t.Fatalf("adapt script: %v", err)
 	}
 	for _, field := range []string{"exposure", "tone_mapping", "gamma", "color_space", "working_space"} {
-		if _, ok := adapted.Render[field]; ok {
+		if _, ok := adapted.Renders[0][field]; ok {
 			t.Fatalf("Studio-only field %q leaked into Engine script", field)
 		}
 	}
@@ -780,8 +877,8 @@ func TestStudioEmitsIntegratorToIntermediateScript(t *testing.T) {
 	if err != nil {
 		t.Fatalf("adapt script: %v", err)
 	}
-	if adapted.Render["integrator"] != "bdpt" {
-		t.Fatalf("expected bdpt integrator in intermediate script, got %v", adapted.Render["integrator"])
+	if adapted.Renders[0]["integrator"] != "bdpt" {
+		t.Fatalf("expected bdpt integrator in intermediate script, got %v", adapted.Renders[0]["integrator"])
 	}
 }
 
@@ -809,7 +906,7 @@ func TestStudioEmitsPixelWindowsToIntermediateScript(t *testing.T) {
 	assertIntSlice(t, windows[0].Max, []int{150, 650})
 }
 
-func TestStudioEngineArgsDoNotForwardResumeFilm(t *testing.T) {
+func TestStudioEngineArgsOnlyPassScriptPath(t *testing.T) {
 	config := studioConfig{
 		provided: map[string]bool{
 			"resume-film": true,
@@ -819,15 +916,9 @@ func TestStudioEngineArgsDoNotForwardResumeFilm(t *testing.T) {
 		outputFilm: "final.bin",
 	}
 
-	args := config.engineArgs("intermediate.json", "rendered.bin", 0)
-	if containsString(args, "--resume-film") || containsString(args, "existing.bin") {
-		t.Fatalf("engine args must not contain resume-film: %v", args)
-	}
-	if !containsString(args, "--output-film") || !containsString(args, "rendered.bin") {
-		t.Fatalf("expected output-film override to point at rendered temp film: %v", args)
-	}
-	if containsString(args, "final.bin") {
-		t.Fatalf("final output film should be written by studio, not engine: %v", args)
+	args := config.engineArgs("intermediate.json")
+	if len(args) != 2 || args[0] != "--script" || args[1] != "intermediate.json" {
+		t.Fatalf("Engine must receive only the script path: %v", args)
 	}
 }
 
@@ -838,7 +929,7 @@ func TestStudioEngineArgsDoNotForwardColorPipeline(t *testing.T) {
 		},
 		exposure: 0.75, toneMapping: "aces", gamma: 2.2, colorSpace: "acescg",
 	}
-	args := config.engineArgs("intermediate.json", "", 0)
+	args := config.engineArgs("intermediate.json")
 	for _, flag := range []string{"--exposure", "--tone-mapping", "--gamma", "--color-space"} {
 		if containsString(args, flag) {
 			t.Fatalf("Studio-only flag %q leaked into Engine args: %v", flag, args)
@@ -846,19 +937,67 @@ func TestStudioEngineArgsDoNotForwardColorPipeline(t *testing.T) {
 	}
 }
 
-func TestStudioEngineArgsConvertsDimensionsToWidths(t *testing.T) {
+func TestStudioEmbedsFilmShapeOverrideInIntermediateScript(t *testing.T) {
 	config := studioConfig{
 		provided: map[string]bool{"width": true, "height": true},
 		width:    1920,
 		height:   1080,
 	}
-	args := config.engineArgs("intermediate.json", "", 0)
-	if !containsString(args, "--widths") || !containsString(args, "1920,1080") {
-		t.Fatalf("expected canonical widths argument, got %v", args)
+	intermediate := &schema.IntermediateScript{Cameras: []schema.EngineCameraScript{{}}}
+	config.applyEngineOverrides(intermediate, "", 0)
+	assertIntSlice(t, intermediate.Cameras[0].Film.Shape, []int{1920, 1080})
+}
+
+func TestStudioEmbedsRenderOverridesInIntermediateScript(t *testing.T) {
+	config := studioConfig{
+		provided: map[string]bool{
+			"integrator":         true,
+			"camera-id":          true,
+			"threads":            true,
+			"samples":            true,
+			"output-film":        true,
+			"spectrum-mode":      true,
+			"wavelength-samples": true,
+		},
+		integrator:        "bdpt",
+		cameraID:          "camera-override",
+		threadNum:         6,
+		samples:           48,
+		outputFilm:        "override.bin",
+		spectrumMode:      "sampled",
+		wavelengthSamples: 8,
 	}
-	if containsString(args, "--width") || containsString(args, "--height") {
-		t.Fatalf("legacy dimensions leaked into Engine arguments: %v", args)
+	intermediate := &schema.IntermediateScript{
+		Renders: []map[string]interface{}{{}},
+		Cameras: []schema.EngineCameraScript{{}},
 	}
+
+	config.applyEngineOverrides(intermediate, "", 0)
+
+	render := intermediate.Renders[0]
+	if render["integrator"] != "bdpt" || render["camera_id"] != "camera-override" ||
+		render["thread_num"] != 6 || render["samples"] != int64(48) ||
+		render["spectrum_mode"] != "sampled" || render["wavelength_samples"] != 8 {
+		t.Fatalf("render overrides were not embedded in JSON: %v", render)
+	}
+	if intermediate.Cameras[0].Film.OutputFilm != "override.bin" {
+		t.Fatalf("film override was not embedded in JSON: %+v", intermediate.Cameras[0].Film)
+	}
+}
+
+func TestStudioAcceptsLegacyEngineRenderFlags(t *testing.T) {
+	config, err := parseStudioConfig([]string{
+		"--integrator", "bdpt",
+		"--camera-id", "main",
+		"--widths", "16,12,8",
+	})
+	if err != nil {
+		t.Fatalf("parse legacy Engine flags in Studio: %v", err)
+	}
+	if config.integrator != "bdpt" || config.cameraID != "main" {
+		t.Fatalf("unexpected render overrides: %+v", config)
+	}
+	assertIntSlice(t, config.widths, []int{16, 12, 8})
 }
 
 func TestStudioAdaptAttachesFilmShapeToCamera(t *testing.T) {
@@ -871,13 +1010,13 @@ func TestStudioAdaptAttachesFilmShapeToCamera(t *testing.T) {
 		t.Fatalf("adapt script: %v", err)
 	}
 	assertIntSlice(t, adapted.Cameras[0].Film.Shape, []int{1280, 720})
-	if adapted.Render["camera_id"] != "test-camera" {
-		t.Fatalf("render camera_id = %v, want test-camera", adapted.Render["camera_id"])
+	if adapted.Renders[0]["camera_id"] != "test-camera" {
+		t.Fatalf("render camera_id = %v, want test-camera", adapted.Renders[0]["camera_id"])
 	}
-	if _, exists := adapted.Render["width"]; exists {
+	if _, exists := adapted.Renders[0]["width"]; exists {
 		t.Fatal("legacy width leaked into canonical Engine script")
 	}
-	if _, exists := adapted.Render["height"]; exists {
+	if _, exists := adapted.Renders[0]["height"]; exists {
 		t.Fatal("legacy height leaked into canonical Engine script")
 	}
 }
@@ -926,7 +1065,7 @@ func TestStudioResolvesPerRenderColorPipeline(t *testing.T) {
 	}
 }
 
-func TestStudioEngineArgsForwardsPixelWindows(t *testing.T) {
+func TestStudioEmbedsPixelWindowsInIntermediateScript(t *testing.T) {
 	config := studioConfig{
 		provided: map[string]bool{"pixel-window": true},
 		pixelWindows: []schema.PixelWindowScript{
@@ -935,12 +1074,14 @@ func TestStudioEngineArgsForwardsPixelWindows(t *testing.T) {
 		},
 	}
 
-	args := config.engineArgs("intermediate.json", "", 0)
-	if !containsString(args, "--pixel-window") ||
-		!containsString(args, "100:150,600:650") ||
-		!containsString(args, "2:4,6:8") {
-		t.Fatalf("expected pixel windows to be forwarded to engine: %v", args)
+	intermediate := &schema.IntermediateScript{Cameras: []schema.EngineCameraScript{{}}}
+	config.applyEngineOverrides(intermediate, "", 0)
+	windows := intermediate.Cameras[0].Film.PixelWindows
+	if len(windows) != 2 {
+		t.Fatalf("expected two embedded pixel windows, got %v", windows)
 	}
+	assertIntSlice(t, windows[0].Min, []int{100, 600})
+	assertIntSlice(t, windows[1].Max, []int{4, 8})
 }
 
 func TestParseStudioConfigAcceptsPixelWindows(t *testing.T) {
@@ -989,18 +1130,22 @@ func TestParseStudioConfigSupportsEndlessResumeCheckpoint(t *testing.T) {
 	}
 }
 
-func TestStudioEngineArgsUsesEndlessSampleOverride(t *testing.T) {
+func TestStudioEmbedsEndlessSampleAndFilmOverrides(t *testing.T) {
 	config := studioConfig{
 		provided: map[string]bool{"samples": true},
 		samples:  10,
 	}
 
-	args := config.engineArgs("intermediate.json", "checkpoint.bin", 100)
-	if !containsString(args, "--samples") || !containsString(args, "100") {
-		t.Fatalf("expected endless sample override in engine args: %v", args)
+	intermediate := &schema.IntermediateScript{
+		Renders: []map[string]interface{}{{}},
+		Cameras: []schema.EngineCameraScript{{}},
 	}
-	if containsString(args, "10") {
-		t.Fatalf("configured samples should not override endless interval: %v", args)
+	config.applyEngineOverrides(intermediate, "checkpoint.bin", 100)
+	if intermediate.Renders[0]["samples"] != int64(100) {
+		t.Fatalf("expected endless sample override in JSON: %v", intermediate.Renders[0])
+	}
+	if intermediate.Cameras[0].Film.OutputFilm != "checkpoint.bin" {
+		t.Fatalf("expected checkpoint film override in JSON: %+v", intermediate.Cameras[0].Film)
 	}
 }
 

@@ -10,7 +10,7 @@ func TestReadScriptFilePreservesGeometry(t *testing.T) {
 	dir := t.TempDir()
 	writeTestScript(t, filepath.Join(dir, "main.json"), `{
 		"geometry": {"type": "klein", "max_arc": 12.5},
-		"render": {"dimension": 3}
+		"renders": [{"dimension": 3}]
 	}`)
 
 	script, err := ReadScriptFile(filepath.Join(dir, "main.json"))
@@ -30,13 +30,13 @@ func TestReadScriptFileAcceptsCameraOwnedFilm(t *testing.T) {
 	path := filepath.Join(dir, "main.json")
 	writeTestScript(t, path, `{
 		"cameras":[{"id":"main","film":{"shape":[800,600],"output_film":"main.bin"}}],
-		"render":{"camera_id":"main"}
+		"renders":[{"camera_id":"main"}]
 	}`)
 	script, err := ReadScriptFile(path)
 	if err != nil {
 		t.Fatalf("read script: %v", err)
 	}
-	if script.Render.CameraID != "main" || len(script.Cameras) != 1 || script.Cameras[0].Film.Shape[0] != 800 {
+	if len(script.Renders) != 1 || script.Renders[0].CameraID != "main" || len(script.Cameras) != 1 || script.Cameras[0].Film.Shape[0] != 800 {
 		t.Fatalf("unexpected camera-owned film: %+v", script)
 	}
 }

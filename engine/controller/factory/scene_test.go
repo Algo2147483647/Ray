@@ -14,7 +14,7 @@ import (
 func TestLoadSceneFromScriptParsesGeometry(t *testing.T) {
 	scene := model.NewScene()
 	script := &parser.Script{
-		Render:   parser.RenderScript{Dimension: 3},
+		Renders:  []parser.RenderScript{{Dimension: 3}},
 		Geometry: &parser.GeometryScript{Type: "klein"},
 	}
 
@@ -32,7 +32,7 @@ func TestLoadSceneFromScriptParsesGeometry(t *testing.T) {
 func TestLoadSceneFromScriptDefaultsSphericalMaxArc(t *testing.T) {
 	scene := model.NewScene()
 	script := &parser.Script{
-		Render:   parser.RenderScript{Dimension: 4},
+		Renders:  []parser.RenderScript{{Dimension: 4}},
 		Geometry: &parser.GeometryScript{Type: "spherical"},
 	}
 
@@ -50,14 +50,14 @@ func TestLoadSceneFromScriptDefaultsSphericalMaxArc(t *testing.T) {
 func TestLoadSceneFromScriptResetsGeometryOnReuse(t *testing.T) {
 	scene := model.NewScene()
 	first := &parser.Script{
-		Render:   parser.RenderScript{Dimension: 4},
+		Renders:  []parser.RenderScript{{Dimension: 4}},
 		Geometry: &parser.GeometryScript{Type: "spherical"},
 	}
 	if err := LoadSceneFromScript(first, scene); err != nil {
 		t.Fatalf("LoadSceneFromScript first failed: %v", err)
 	}
 
-	second := &parser.Script{Render: parser.RenderScript{Dimension: 3}}
+	second := &parser.Script{Renders: []parser.RenderScript{{Dimension: 3}}}
 	if err := LoadSceneFromScript(second, scene); err != nil {
 		t.Fatalf("LoadSceneFromScript second failed: %v", err)
 	}
@@ -72,7 +72,7 @@ func TestLoadSceneFromScriptResetsGeometryOnReuse(t *testing.T) {
 func TestLoadSceneFromScriptRejectsGeometryDimensionMismatch(t *testing.T) {
 	scene := model.NewScene()
 	script := &parser.Script{
-		Render:   parser.RenderScript{Dimension: 4},
+		Renders:  []parser.RenderScript{{Dimension: 4}},
 		Geometry: &parser.GeometryScript{Type: "klein"},
 	}
 
@@ -85,7 +85,7 @@ func TestLoadSceneFromScriptRejectsGeometryDimensionMismatch(t *testing.T) {
 func TestLoadSceneFromScriptRejectsKleinCameraMismatch(t *testing.T) {
 	scene := model.NewScene()
 	script := &parser.Script{
-		Render:   parser.RenderScript{Dimension: 3},
+		Renders:  []parser.RenderScript{{Dimension: 3}},
 		Geometry: &parser.GeometryScript{Type: "klein"},
 		Cameras: []parser.CameraScript{{
 			ID:           "main",
@@ -106,12 +106,25 @@ func TestLoadSceneFromScriptRejectsKleinCameraMismatch(t *testing.T) {
 func TestLoadSceneFromScriptRejectsNegativeMaxArc(t *testing.T) {
 	scene := model.NewScene()
 	script := &parser.Script{
-		Render:   parser.RenderScript{Dimension: 3},
+		Renders:  []parser.RenderScript{{Dimension: 3}},
 		Geometry: &parser.GeometryScript{Type: "klein", MaxArc: -1},
 	}
 
 	err := LoadSceneFromScript(script, scene)
 	if err == nil || !strings.Contains(err.Error(), "max_arc") {
 		t.Fatalf("expected max_arc error, got %v", err)
+	}
+}
+
+func TestLoadSceneFromScriptRejectsConflictingRenderDimensions(t *testing.T) {
+	scene := model.NewScene()
+	script := &parser.Script{Renders: []parser.RenderScript{
+		{Dimension: 3},
+		{Dimension: 4},
+	}}
+
+	err := LoadSceneFromScript(script, scene)
+	if err == nil || !strings.Contains(err.Error(), "conflicts with dimension") {
+		t.Fatalf("expected conflicting render dimensions to fail, got %v", err)
 	}
 }

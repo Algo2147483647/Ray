@@ -32,6 +32,7 @@ func run(args []string) int {
 		fmt.Printf("Error: %v\n", err)
 		return 1
 	}
+	config.applyEngineOverrides(adapted, "", 0)
 
 	outputPath, err := storage.WriteIntermediateScript(adapted, config.scriptPaths)
 	if err != nil {
@@ -50,7 +51,7 @@ func run(args []string) int {
 		return 1
 	}
 	if config.endless {
-		if err := runEndless(outputPath, script, config); err != nil {
+		if err := runEndless(adapted, script, config); err != nil {
 			fmt.Printf("Error: %v\n", err)
 			return 1
 		}
@@ -58,7 +59,7 @@ func run(args []string) int {
 	}
 	resumeFilm := resolveResumeFilm(script, config)
 	if resumeFilm == "" {
-		code := controller.Run(config.engineArgs(outputPath, "", 0))
+		code := controller.Run(config.engineArgs(outputPath))
 		if code != 0 {
 			return code
 		}
@@ -76,7 +77,13 @@ func run(args []string) int {
 	}
 	defer os.Remove(tempFilmPath)
 
-	code := controller.Run(config.engineArgs(outputPath, tempFilmPath, 0))
+	config.applyEngineOverrides(adapted, tempFilmPath, 0)
+	outputPath, err = storage.WriteIntermediateScript(adapted, config.scriptPaths)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return 1
+	}
+	code := controller.Run(config.engineArgs(outputPath))
 	if code != 0 {
 		return code
 	}
@@ -94,7 +101,7 @@ func run(args []string) int {
 	return 0
 }
 
-func runEndless(scriptPath string, script *schema.StudioScript, config studioConfig) error {
+func runEndless(adapted *schema.IntermediateScript, script *schema.StudioScript, config studioConfig) error {
 	if script != nil && len(script.Renders) > 0 {
 		return fmt.Errorf("endless mode supports a single render; remove renders or run them separately")
 	}
@@ -118,7 +125,13 @@ func runEndless(scriptPath string, script *schema.StudioScript, config studioCon
 		}
 
 		fmt.Printf("Studio endless checkpoint %d: rendering %d samples\n", nextIteration, config.checkpointInterval)
-		code := controller.Run(config.engineArgs(scriptPath, tempFilmPath, config.checkpointInterval))
+		config.applyEngineOverrides(adapted, tempFilmPath, config.checkpointInterval)
+		scriptPath, err := storage.WriteIntermediateScript(adapted, config.scriptPaths)
+		if err != nil {
+			os.Remove(tempFilmPath)
+			return err
+		}
+		code := controller.Run(config.engineArgs(scriptPath))
 		if code != 0 {
 			os.Remove(tempFilmPath)
 			return fmt.Errorf("engine render failed with exit code %d", code)

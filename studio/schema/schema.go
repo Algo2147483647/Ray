@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+
+	"github.com/Algo2147483647/ray/engine/ray_tracing"
 )
 
 type StudioScript struct {
@@ -28,12 +30,69 @@ type StudioRenderScript struct {
 	WavelengthSamples int    `json:"wavelength_samples"`
 }
 
+const DefaultSampledWavelengthCount = 4
+
+func NormalizeWavelengthSamples(spectrumMode string, wavelengthSamples int) int {
+	if spectrumMode == "sampled" && wavelengthSamples <= 1 {
+		return DefaultSampledWavelengthCount
+	}
+	return wavelengthSamples
+}
+
+func MergeRenderScripts(base, override StudioRenderScript) StudioRenderScript {
+	if override.Integrator != "" {
+		base.Integrator = override.Integrator
+	}
+	if override.Dimension > 0 {
+		base.Dimension = override.Dimension
+	}
+	if override.Samples > 0 {
+		base.Samples = override.Samples
+	}
+	if override.ThreadNum > 0 {
+		base.ThreadNum = override.ThreadNum
+	}
+	if override.FilmID != "" {
+		base.FilmID = override.FilmID
+	}
+	if override.SpectrumMode != "" {
+		base.SpectrumMode = override.SpectrumMode
+	}
+	if override.WavelengthSamples > 0 {
+		base.WavelengthSamples = override.WavelengthSamples
+	}
+	return base
+}
+
 func (r *StudioRenderScript) UnmarshalJSON(data []byte) error {
 	type plain StudioRenderScript
 	if err := rejectUnknownFields(data, "render", "integrator", "dimension", "samples", "thread_num", "film_id", "spectrum_mode", "wavelength_samples"); err != nil {
 		return err
 	}
-	return json.Unmarshal(data, (*plain)(r))
+	if err := json.Unmarshal(data, (*plain)(r)); err != nil {
+		return err
+	}
+	if r.Dimension < 0 || r.Dimension == 1 {
+		return fmt.Errorf("render dimension must be 0 or >= 2")
+	}
+	if r.ThreadNum < 0 {
+		return fmt.Errorf("render thread_num must be >= 0")
+	}
+	if r.Samples < 0 {
+		return fmt.Errorf("render samples must be >= 0")
+	}
+	if _, err := ray_tracing.ParseIntegratorKind(r.Integrator); err != nil {
+		return err
+	}
+	if r.SpectrumMode == "rgb" {
+		r.SpectrumMode = "hero_wavelength"
+	} else if r.SpectrumMode != "" && r.SpectrumMode != "hero_wavelength" && r.SpectrumMode != "sampled" {
+		return fmt.Errorf("unsupported spectrum_mode %q", r.SpectrumMode)
+	}
+	if r.WavelengthSamples < 0 {
+		return fmt.Errorf("render wavelength_samples must be >= 0")
+	}
+	return nil
 }
 
 // StudioFilmScript owns a Film's sampling grid, camera association, and
@@ -110,7 +169,6 @@ type IntermediateScript struct {
 	Media     map[string]map[string]interface{} `json:"media,omitempty"`
 	Objects   []map[string]interface{}          `json:"objects,omitempty"`
 	Cameras   []EngineCameraScript              `json:"cameras,omitempty"`
-	Render    map[string]interface{}            `json:"render,omitempty"`
 	Geometry  map[string]interface{}            `json:"geometry,omitempty"`
 	Renders   []map[string]interface{}          `json:"renders,omitempty"`
 }

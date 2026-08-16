@@ -26,11 +26,7 @@ func AdaptScript(script *schema.StudioScript, source []string, dimension int) (*
 		return nil, err
 	}
 
-	render, err := renderToMap(script, script.Render, cameraIDs)
-	if err != nil {
-		return nil, err
-	}
-	renders, err := rendersToMaps(script, cameraIDs)
+	renders, err := rendersToMaps(script, cameraIDs, dimension)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +42,6 @@ func AdaptScript(script *schema.StudioScript, source []string, dimension int) (*
 		Media:     cloneNestedStringMap(script.Media),
 		Objects:   objects,
 		Cameras:   cameras,
-		Render:    render,
 		Geometry:  cloneMap(script.Geometry),
 		Renders:   renders,
 	}, nil
@@ -54,11 +49,7 @@ func AdaptScript(script *schema.StudioScript, source []string, dimension int) (*
 
 func renderToMap(script *schema.StudioScript, render schema.StudioRenderScript, cameraIDs map[string]string) (map[string]interface{}, error) {
 	result := map[string]interface{}{}
-	filmID := render.FilmID
-	if filmID == "" {
-		filmID = script.Render.FilmID
-	}
-	film, err := selectedFilm(script, filmID)
+	film, err := selectedFilm(script, render.FilmID)
 	if err != nil {
 		return nil, err
 	}
@@ -82,8 +73,9 @@ func renderToMap(script *schema.StudioScript, render schema.StudioRenderScript, 
 	if render.SpectrumMode != "" {
 		result["spectrum_mode"] = render.SpectrumMode
 	}
-	if render.WavelengthSamples > 0 {
-		result["wavelength_samples"] = render.WavelengthSamples
+	wavelengthSamples := schema.NormalizeWavelengthSamples(render.SpectrumMode, render.WavelengthSamples)
+	if wavelengthSamples > 0 {
+		result["wavelength_samples"] = wavelengthSamples
 	}
 	return result, nil
 }
@@ -153,25 +145,17 @@ func activeFilmIDs(script *schema.StudioScript) []string {
 		seen[id] = true
 		result = append(result, id)
 	}
-	add(script.Render.FilmID)
-	if len(script.Renders) > 0 {
-		for _, render := range script.Renders {
-			id := render.FilmID
-			if id == "" {
-				id = script.Render.FilmID
-			}
-			add(id)
-		}
+	for _, render := range resolvedRenderScripts(script) {
+		add(render.FilmID)
 	}
 	return result
 }
 
-func rendersToMaps(script *schema.StudioScript, cameraIDs map[string]string) ([]map[string]interface{}, error) {
-	if len(script.Renders) == 0 {
-		return nil, nil
-	}
-	result := make([]map[string]interface{}, len(script.Renders))
-	for i, render := range script.Renders {
+func rendersToMaps(script *schema.StudioScript, cameraIDs map[string]string, dimension int) ([]map[string]interface{}, error) {
+	renders := resolvedRenderScripts(script)
+	result := make([]map[string]interface{}, len(renders))
+	for i, render := range renders {
+		render.Dimension = dimension
 		mapped, err := renderToMap(script, render, cameraIDs)
 		if err != nil {
 			return nil, err
@@ -179,6 +163,19 @@ func rendersToMaps(script *schema.StudioScript, cameraIDs map[string]string) ([]
 		result[i] = mapped
 	}
 	return result, nil
+}
+
+// resolvedRenderScripts upgrades Studio's legacy render defaults into complete
+// Engine render jobs. The Engine schema only exposes renders.
+func resolvedRenderScripts(script *schema.StudioScript) []schema.StudioRenderScript {
+	if len(script.Renders) == 0 {
+		return []schema.StudioRenderScript{script.Render}
+	}
+	renders := make([]schema.StudioRenderScript, len(script.Renders))
+	for i, render := range script.Renders {
+		renders[i] = schema.MergeRenderScripts(script.Render, render)
+	}
+	return renders
 }
 
 func selectedFilm(script *schema.StudioScript, id string) (schema.StudioFilmScript, error) {

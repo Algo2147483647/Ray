@@ -48,9 +48,9 @@ func LoadSceneFromScript(script *parser.Script, scene *model.Scene) error {
 		}
 	}
 
-	dimension := script.Render.Dimension
-	if dimension <= 0 {
-		dimension = 3
+	dimension, err := renderDimension(script.Renders)
+	if err != nil {
+		return err
 	}
 	if dimension < 2 {
 		return fmt.Errorf("render dimension must be >= 2, got %d", dimension)
@@ -134,6 +134,21 @@ func LoadSceneFromScript(script *parser.Script, scene *model.Scene) error {
 	scene.Cameras = cameras
 	scene.ObjectTree.Build()
 	return nil
+}
+
+func renderDimension(renders []parser.RenderScript) (int, error) {
+	dimension := 3
+	for i, render := range renders {
+		jobDimension := render.Dimension
+		if jobDimension <= 0 {
+			jobDimension = 3
+		}
+		if i > 0 && jobDimension != dimension {
+			return 0, fmt.Errorf("renders[%d] dimension %d conflicts with dimension %d", i, jobDimension, dimension)
+		}
+		dimension = jobDimension
+	}
+	return dimension, nil
 }
 
 func validateCamerasForGeometry(g geometry.Geometry, cameras map[string]modelcamera.RayCamera) error {

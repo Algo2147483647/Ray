@@ -9,123 +9,63 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-func TestParseRenderArgsRejectsRGBFilmMode(t *testing.T) {
-	if _, err := parseRenderArgs([]string{"--spectrum-mode", "rgb"}); err == nil {
-		t.Fatal("expected Engine to reject RGB Film output mode")
-	}
-}
-
-func TestParseRenderArgsRejectsRepeatedScripts(t *testing.T) {
-	_, err := parseRenderArgs([]string{
+func TestParseArgsRejectsRepeatedScripts(t *testing.T) {
+	h := NewHandler().ParseArgs([]string{
 		"--script", "studio.json",
 		"--script", "geometry.json",
 	})
-	if err == nil {
+	if h.err == nil {
 		t.Fatal("expected repeated engine scripts to fail")
 	}
 }
 
-func TestParseRenderArgsAcceptsBDPT(t *testing.T) {
-	context, err := parseRenderArgs([]string{"--integrator", "bdpt"})
-	if err != nil {
-		t.Fatalf("parse bdpt integrator: %v", err)
+func TestParseArgsAcceptsOnlyScriptPath(t *testing.T) {
+	h := NewHandler().ParseArgs([]string{"--script", "scene.json"})
+	if h.err != nil {
+		t.Fatalf("parse script path: %v", h.err)
 	}
-	if context.Integrator != "bdpt" {
-		t.Fatalf("integrator = %q, want bdpt", context.Integrator)
-	}
-}
-
-func TestParseRenderArgsAcceptsLightTracingNames(t *testing.T) {
-	for _, name := range []string{"light_tracing", "light_trace"} {
-		context, err := parseRenderArgs([]string{"--integrator", name})
-		if err != nil {
-			t.Fatalf("parse %q integrator: %v", name, err)
-		}
-		if context.Integrator != name {
-			t.Fatalf("integrator = %q, want %q", context.Integrator, name)
-		}
+	if h.ScriptPath != "scene.json" {
+		t.Fatalf("script path = %q, want scene.json", h.ScriptPath)
 	}
 }
 
-func TestParseRenderArgsRejectsUnknownIntegrator(t *testing.T) {
-	if _, err := parseRenderArgs([]string{"--integrator", "magic"}); err == nil {
-		t.Fatal("expected unknown integrator to fail")
-	}
-}
-
-func TestParseRenderArgsRejectsMultiplePositionalScripts(t *testing.T) {
-	_, err := parseRenderArgs([]string{"studio.json", "geometry.json"})
-	if err == nil {
+func TestParseArgsRejectsMultiplePositionalScripts(t *testing.T) {
+	h := NewHandler().ParseArgs([]string{"studio.json", "geometry.json"})
+	if h.err == nil {
 		t.Fatal("expected multiple positional engine scripts to fail")
 	}
 }
 
-func TestParseRenderArgsRejectsResumeFilm(t *testing.T) {
-	_, err := parseRenderArgs([]string{"--resume-film", "existing.bin"})
-	if err == nil {
-		t.Fatal("expected engine resume-film flag to fail; studio owns film resume")
+func TestParseArgsRejectsRenderOverrides(t *testing.T) {
+	for _, args := range [][]string{
+		{"--integrator", "bdpt"},
+		{"--camera-id", "main"},
+		{"--dimension", "3"},
+		{"--samples", "8"},
+		{"--threads", "4"},
+		{"--widths", "16,16"},
+		{"--output-film", "image.bin"},
+		{"--spectrum-mode", "sampled"},
+		{"--wavelength-samples", "4"},
+		{"--pixel-window", "0:1,0:1"},
+	} {
+		if h := NewHandler().ParseArgs(args); h.err == nil {
+			t.Fatalf("expected Engine to reject render override %v", args)
+		}
 	}
-}
-
-func TestParseRenderArgsAcceptsPixelWindows(t *testing.T) {
-	context, err := parseRenderArgs([]string{
-		"--pixel-window", "100-150,600-650",
-		"--pixel-window", "2:4,6:8",
-	})
-	if err != nil {
-		t.Fatalf("parse render arguments: %v", err)
-	}
-
-	if len(context.PixelWindows) != 2 {
-		t.Fatalf("expected two pixel windows, got %d", len(context.PixelWindows))
-	}
-	assertIntSlice(t, context.PixelWindows[0].Min, []int{100, 600})
-	assertIntSlice(t, context.PixelWindows[0].Max, []int{150, 650})
-	assertIntSlice(t, context.PixelWindows[1].Min, []int{2, 6})
-	assertIntSlice(t, context.PixelWindows[1].Max, []int{4, 8})
-}
-
-func TestParseRenderArgsAcceptsWidths(t *testing.T) {
-	context, err := parseRenderArgs([]string{"--widths", "1920,1080"})
-	if err != nil {
-		t.Fatalf("parse widths: %v", err)
-	}
-	assertIntSlice(t, context.FilmShapeOverride, []int{1920, 1080})
-}
-
-func TestParseRenderArgsRejectsLegacyWidthFlag(t *testing.T) {
-	if _, err := parseRenderArgs([]string{"--width", "1920"}); err == nil {
-		t.Fatal("expected Engine to reject Studio-only width compatibility flag")
-	}
-}
-
-func TestParseRenderArgsRejectsInvalidPixelWindow(t *testing.T) {
-	_, err := parseRenderArgs([]string{"--pixel-window", "10:10,0:1"})
-	if err == nil {
-		t.Fatal("expected invalid pixel window to fail")
-	}
-}
-
-func parseRenderArgs(args []string) (RenderContext, error) {
-	h := NewHandler().ParseRenderArgs(args)
-	return h.Context, h.err
 }
 
 func TestResolveRenderContextsExpandsRenderJobs(t *testing.T) {
 	contexts := ResolveRenderContexts(&parser.Script{
-		Render: parser.RenderScript{
-			Samples:  8,
-			CameraID: "front",
-		},
 		Renders: []parser.RenderScript{
-			{},
+			{Samples: 8, CameraID: "front"},
 			{Samples: 32, CameraID: "detail"},
 		},
 		Cameras: []parser.CameraScript{
 			{ID: "front", Film: &camera.Film{Shape: []int{320, 200}, OutputFilm: "front.bin"}},
 			{ID: "detail", Film: &camera.Film{Shape: []int{640, 400}, OutputFilm: "detail.bin"}},
 		},
-	}, RenderContext{})
+	})
 
 	if len(contexts) != 2 {
 		t.Fatalf("expected two render contexts, got %d", len(contexts))
@@ -138,47 +78,48 @@ func TestResolveRenderContextsExpandsRenderJobs(t *testing.T) {
 	}
 }
 
-func TestResolveRenderContextPrefersRequestedPixelWindows(t *testing.T) {
-	context := ResolveRenderContext(&parser.Script{
-		Render: parser.RenderScript{CameraID: "main"},
-		Cameras: []parser.CameraScript{{ID: "main", Film: &camera.Film{
-			Shape: []int{10, 10},
-			PixelWindows: []camera.PixelWindow{
-				{Min: []int{1, 1}, Max: []int{2, 2}},
-			},
-		}}},
-	}, RenderContext{
-		PixelWindows: []camera.PixelWindow{
-			{Min: []int{3, 3}, Max: []int{4, 4}},
-		},
-	})
-
-	if len(context.PixelWindows) != 1 {
-		t.Fatalf("expected one pixel window, got %d", len(context.PixelWindows))
-	}
-	assertIntSlice(t, context.PixelWindows[0].Min, []int{3, 3})
-	assertIntSlice(t, context.PixelWindows[0].Max, []int{4, 4})
-}
-
-func TestResolveRenderContextsRenderJobInheritsCameraIDWhenOmitted(t *testing.T) {
+func TestResolveRenderContextsUsesEachJobCameraID(t *testing.T) {
 	contexts := ResolveRenderContexts(&parser.Script{
-		Render: parser.RenderScript{CameraID: "inherited"},
 		Renders: []parser.RenderScript{
-			{},
-			{CameraID: "requested"},
+			{CameraID: "inherited"},
+			{CameraID: "side"},
 		},
 		Cameras: []parser.CameraScript{
-			{ID: "requested", Film: &camera.Film{Shape: []int{10, 10}}},
+			{ID: "side", Film: &camera.Film{Shape: []int{10, 10}}},
 			{ID: "unused", Film: &camera.Film{Shape: []int{10, 10}}},
 			{ID: "inherited", Film: &camera.Film{Shape: []int{10, 10}}},
 		},
-	}, RenderContext{})
+	})
 
 	if contexts[0].CameraID != "inherited" {
-		t.Fatalf("expected first render job to inherit camera ID, got %q", contexts[0].CameraID)
+		t.Fatalf("expected first render job camera ID, got %q", contexts[0].CameraID)
 	}
-	if contexts[1].CameraID != "requested" {
-		t.Fatalf("expected second render job to use requested camera ID, got %q", contexts[1].CameraID)
+	if contexts[1].CameraID != "side" {
+		t.Fatalf("expected second render job camera ID, got %q", contexts[1].CameraID)
+	}
+}
+
+func TestResolveRenderContextsUsesDefaultsForOmittedJobValues(t *testing.T) {
+	contexts := ResolveRenderContexts(&parser.Script{
+		Renders: []parser.RenderScript{
+			{Samples: 32, CameraID: "detail"},
+			{CameraID: "main"},
+		},
+	})
+
+	if contexts[1].Samples != defaultSamples || contexts[1].CameraID != "main" {
+		t.Fatalf("second render inherited values from the first: %+v", contexts[1])
+	}
+}
+
+func TestResolveRenderContextsDoesNotNormalizeStudioConfiguration(t *testing.T) {
+	contexts := ResolveRenderContexts(&parser.Script{Renders: []parser.RenderScript{{
+		SpectrumMode:      "sampled",
+		WavelengthSamples: 1,
+	}}})
+
+	if contexts[0].WavelengthSamples != 1 {
+		t.Fatalf("Engine normalized wavelength samples to %d, want canonical JSON value 1", contexts[0].WavelengthSamples)
 	}
 }
 
@@ -190,12 +131,11 @@ func TestConfigureRenderContextRejectsOutOfBoundsPixelWindow(t *testing.T) {
 		FieldOfViews: []float64{70, 70},
 	}
 	h := NewHandler()
+	cam.Film.PixelWindows = []camera.PixelWindow{{Min: []int{9, 0}, Max: []int{11, 1}}}
 	h.Scene.Cameras = map[string]camera.RayCamera{"main": cam}
 
 	h.ConfigureRenderContext(RenderContext{
-		CameraID:          "main",
-		FilmShapeOverride: []int{10, 10},
-		PixelWindows:      []camera.PixelWindow{{Min: []int{9, 0}, Max: []int{11, 1}}},
+		CameraID: "main",
 	})
 
 	if h.err == nil {

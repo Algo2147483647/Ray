@@ -114,7 +114,7 @@ func mergeStudioScripts(dst, src *schema.StudioScript, source string) error {
 	if err := appendUniqueStudioFilms(&dst.Films, src.Films, source); err != nil {
 		return err
 	}
-	dst.Render = mergeStudioRenderScript(dst.Render, src.Render)
+	dst.Render = schema.MergeRenderScripts(dst.Render, src.Render)
 	if len(src.Geometry) > 0 {
 		dst.Geometry = cloneMap(src.Geometry)
 	}
@@ -469,32 +469,6 @@ func appendUniqueStudioCameras(dst *[]schema.StudioCameraScript, src []schema.St
 		*dst = append(*dst, cloneStudioCamera(camera))
 	}
 	return nil
-}
-
-func mergeStudioRenderScript(base, override schema.StudioRenderScript) schema.StudioRenderScript {
-	result := base
-	if override.Integrator != "" {
-		result.Integrator = override.Integrator
-	}
-	if override.Dimension > 0 {
-		result.Dimension = override.Dimension
-	}
-	if override.Samples > 0 {
-		result.Samples = override.Samples
-	}
-	if override.ThreadNum > 0 {
-		result.ThreadNum = override.ThreadNum
-	}
-	if override.FilmID != "" {
-		result.FilmID = override.FilmID
-	}
-	if override.SpectrumMode != "" {
-		result.SpectrumMode = override.SpectrumMode
-	}
-	if override.WavelengthSamples > 0 {
-		result.WavelengthSamples = override.WavelengthSamples
-	}
-	return result
 }
 
 func cloneStudioPixelWindows(windows []schema.PixelWindowScript) []schema.PixelWindowScript {

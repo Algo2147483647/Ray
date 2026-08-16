@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Algo2147483647/ray/engine/ray_tracing"
 	"github.com/Algo2147483647/ray/studio/schema"
 )
 
@@ -21,10 +22,13 @@ const (
 type studioConfig struct {
 	scriptPaths        []string
 	provided           map[string]bool
+	integrator         string
+	cameraID           string
 	dimension          int
 	threadNum          int
 	width              int
 	height             int
+	widths             []int
 	samples            int64
 	outputImage        string
 	outputFilm         string
@@ -64,10 +68,19 @@ func parseStudioConfig(args []string) (studioConfig, error) {
 	flagSet.SetOutput(io.Discard)
 	flagSet.Var(&scriptPaths, "script", "path to a scene script; repeat to merge multiple scripts")
 	flagSet.Var(&pixelWindowFlags, "pixel-window", "pixel render window, for example 100:150,600:650; repeat for multiple windows")
+	flagSet.StringVar(&config.integrator, "integrator", "", "light transport integrator: path, bdpt, light_tracing")
+	flagSet.StringVar(&config.cameraID, "camera-id", "", "canonical Engine camera ID override")
 	flagSet.IntVar(&config.dimension, "dimension", 0, "scene dimension")
 	flagSet.IntVar(&config.threadNum, "threads", 0, "worker thread count")
 	flagSet.IntVar(&config.width, "width", 0, "output width")
 	flagSet.IntVar(&config.height, "height", 0, "output height")
+	flagSet.Func("widths", "film dimensions, for example 1920,1080", func(value string) error {
+		widths, err := parseStudioWidths(value)
+		if err == nil {
+			config.widths = widths
+		}
+		return err
+	})
 	flagSet.Int64Var(&config.samples, "samples", 0, "samples per pixel")
 	flagSet.StringVar(&config.outputImage, "output-image", "", "output image path")
 	flagSet.StringVar(&config.outputFilm, "output-film", "", "output film path")
@@ -114,6 +127,14 @@ func parseStudioConfig(args []string) (studioConfig, error) {
 	if config.width < 0 || config.height < 0 {
 		return studioConfig{}, fmt.Errorf("width and height must be >= 0")
 	}
+	if len(config.widths) > 0 && (config.provided["width"] || config.provided["height"]) {
+		return studioConfig{}, fmt.Errorf("widths cannot be combined with width or height")
+	}
+	if config.integrator != "" {
+		if _, err := ray_tracing.ParseIntegratorKind(config.integrator); err != nil {
+			return studioConfig{}, err
+		}
+	}
 	if config.samples < 0 {
 		return studioConfig{}, fmt.Errorf("samples must be >= 0")
 	}
@@ -155,52 +176,103 @@ func parseStudioConfig(args []string) (studioConfig, error) {
 	return config, nil
 }
 
-func (c studioConfig) engineArgs(scriptPath, outputFilmOverride string, samplesOverride int64) []string {
-	args := []string{"--script", scriptPath}
-	if c.provided["dimension"] {
-		args = append(args, "--dimension", strconv.Itoa(c.dimension))
+func (c studioConfig) engineArgs(scriptPath string) []string {
+	return []string{"--script", scriptPath}
+}
+
+func (c studioConfig) applyEngineOverrides(script *schema.IntermediateScript, outputFilmOverride string, samplesOverride int64) {
+	if script == nil {
+		return
 	}
-	if c.provided["threads"] {
-		args = append(args, "--threads", strconv.Itoa(c.threadNum))
-	}
-	if c.provided["width"] {
-		width := c.width
-		if width <= 0 {
-			width = defaultFilmWidth
+	for _, render := range script.Renders {
+		if c.provided["integrator"] {
+			render["integrator"] = c.integrator
 		}
-		height := c.height
-		if height <= 0 {
-			height = defaultFilmHeight
+		if c.provided["camera-id"] {
+			render["camera_id"] = c.cameraID
 		}
-		args = append(args, "--widths", strconv.Itoa(width)+","+strconv.Itoa(height))
-	} else if c.provided["height"] {
-		width := defaultFilmWidth
-		height := c.height
-		if height <= 0 {
-			height = defaultFilmHeight
+		if c.provided["threads"] {
+			render["thread_num"] = c.threadNum
 		}
-		args = append(args, "--widths", strconv.Itoa(width)+","+strconv.Itoa(height))
+		if samplesOverride > 0 {
+			render["samples"] = samplesOverride
+		} else if c.provided["samples"] {
+			render["samples"] = c.samples
+		}
+		if c.provided["spectrum-mode"] {
+			render["spectrum_mode"] = c.spectrumMode
+		}
+		if c.provided["wavelength-samples"] {
+			render["wavelength_samples"] = c.wavelengthSamples
+		}
+		normalizeIntermediateRender(render)
 	}
-	if samplesOverride > 0 {
-		args = append(args, "--samples", strconv.FormatInt(samplesOverride, 10))
-	} else if c.provided["samples"] {
-		args = append(args, "--samples", strconv.FormatInt(c.samples, 10))
+
+	widths := c.filmShapeOverride()
+	for i := range script.Cameras {
+		film := &script.Cameras[i].Film
+		if len(widths) > 0 {
+			film.Shape = append([]int(nil), widths...)
+		}
+		if outputFilmOverride != "" {
+			film.OutputFilm = outputFilmOverride
+		} else if c.provided["output-film"] {
+			film.OutputFilm = c.outputFilm
+		}
+		if c.provided["pixel-window"] {
+			film.PixelWindows = cloneStudioPixelWindows(c.pixelWindows)
+		}
 	}
-	if outputFilmOverride != "" {
-		args = append(args, "--output-film", outputFilmOverride)
-	} else if c.provided["output-film"] {
-		args = append(args, "--output-film", c.outputFilm)
+}
+
+func normalizeIntermediateRender(render map[string]interface{}) {
+	if render["spectrum_mode"] != "sampled" {
+		return
 	}
-	if c.provided["spectrum-mode"] {
-		args = append(args, "--spectrum-mode", c.spectrumMode)
+	wavelengthSamples, _ := render["wavelength_samples"].(int)
+	render["wavelength_samples"] = schema.NormalizeWavelengthSamples("sampled", wavelengthSamples)
+}
+
+func (c studioConfig) filmShapeOverride() []int {
+	if len(c.widths) > 0 {
+		return append([]int(nil), c.widths...)
 	}
-	if c.provided["wavelength-samples"] {
-		args = append(args, "--wavelength-samples", strconv.Itoa(c.wavelengthSamples))
+	if !c.provided["width"] && !c.provided["height"] {
+		return nil
 	}
-	for _, window := range c.pixelWindows {
-		args = append(args, "--pixel-window", formatStudioPixelWindow(window))
+	width := c.width
+	if width <= 0 {
+		width = defaultFilmWidth
 	}
-	return args
+	height := c.height
+	if height <= 0 {
+		height = defaultFilmHeight
+	}
+	return []int{width, height}
+}
+
+func parseStudioWidths(value string) ([]int, error) {
+	parts := strings.Split(value, ",")
+	widths := make([]int, len(parts))
+	for i, part := range parts {
+		width, err := strconv.Atoi(strings.TrimSpace(part))
+		if err != nil || width <= 0 {
+			return nil, fmt.Errorf("widths[%d] must be a positive integer", i)
+		}
+		widths[i] = width
+	}
+	return widths, nil
+}
+
+func cloneStudioPixelWindows(windows []schema.PixelWindowScript) []schema.PixelWindowScript {
+	cloned := make([]schema.PixelWindowScript, len(windows))
+	for i, window := range windows {
+		cloned[i] = schema.PixelWindowScript{
+			Min: append([]int(nil), window.Min...),
+			Max: append([]int(nil), window.Max...),
+		}
+	}
+	return cloned
 }
 
 func parseStudioPixelWindowFlags(values []string) ([]schema.PixelWindowScript, error) {
@@ -271,20 +343,19 @@ func parseStudioPixelWindowAxis(value string) (int, int, error) {
 	return lo, hi, nil
 }
 
-func formatStudioPixelWindow(window schema.PixelWindowScript) string {
-	parts := make([]string, 0, len(window.Min))
-	for i := range window.Min {
-		parts = append(parts, strconv.Itoa(window.Min[i])+":"+strconv.Itoa(window.Max[i]))
-	}
-	return strings.Join(parts, ",")
-}
-
 func resolveDimension(script *schema.StudioScript, config studioConfig) int {
 	if config.dimension > 0 {
 		return config.dimension
 	}
 	if script != nil && script.Render.Dimension > 0 {
 		return script.Render.Dimension
+	}
+	if script != nil {
+		for _, render := range script.Renders {
+			if render.Dimension > 0 {
+				return render.Dimension
+			}
+		}
 	}
 	return 3
 }

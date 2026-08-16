@@ -9,7 +9,6 @@ type Script struct {
 	Media     map[string]map[string]interface{} `json:"media"`
 	Objects   []map[string]interface{}          `json:"objects"`
 	Cameras   []CameraScript                    `json:"cameras"`
-	Render    RenderScript                      `json:"render"`
 	Geometry  *GeometryScript                   `json:"geometry"`
 	Renders   []RenderScript                    `json:"renders"`
 }
