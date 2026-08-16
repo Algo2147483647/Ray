@@ -58,55 +58,36 @@ func run(args []string) int {
 	}
 	resumeFilm := resolveResumeFilm(script, config)
 	if resumeFilm == "" {
-		outputs := resolveRenderOutputs(script, config, "")
-		outputIndex := 0
-		code := controller.RunWithRenderSink(config.engineArgs(outputPath, "", 0), func(result controller.RenderResult) error {
-			if outputIndex >= len(outputs) {
-				return fmt.Errorf("engine produced more render jobs than Studio configured")
-			}
-			output := outputs[outputIndex]
-			outputIndex++
-			return writeStudioOutput(result.Film, output)
-		})
+		code := controller.Run(config.engineArgs(outputPath, "", 0))
 		if code != 0 {
 			return code
 		}
-		if outputIndex != len(outputs) {
-			fmt.Printf("Error: engine produced %d render jobs; Studio configured %d\n", outputIndex, len(outputs))
+		if err := writeStudioImages(resolveRenderOutputs(script, config, "")); err != nil {
+			fmt.Printf("Error: %v\n", err)
 			return 1
 		}
 		return 0
 	}
 
-	var renderedFilm *modelcamera.Film
-	code := controller.RunWithRenderSink(config.engineArgs(outputPath, "", 0), func(result controller.RenderResult) error {
-		renderedFilm = result.Film
-		return nil
-	})
+	tempFilmPath, err := createTempFilmPath()
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return 1
+	}
+	defer os.Remove(tempFilmPath)
+
+	code := controller.Run(config.engineArgs(outputPath, tempFilmPath, 0))
 	if code != 0 {
 		return code
 	}
-	if renderedFilm == nil {
-		fmt.Println("Error: engine produced no Film")
-		return 1
-	}
 
 	outputFilm := resolveOutputFilm(script, config)
-	fmt.Printf("Studio merging in-memory Film with %s -> %s\n", resumeFilm, outputFilm)
-	mergedFilm, err := studiofilm.LoadFilm(resumeFilm)
-	if err != nil {
-		fmt.Printf("Error: load resume film %q: %v\n", resumeFilm, err)
-		return 1
-	}
-	if err := studiofilm.MergeFilmsWithPixelWindows(mergedFilm, renderedFilm, resolvePixelWindows(script, config)); err != nil {
+	fmt.Printf("Studio merging film: %s + %s -> %s\n", resumeFilm, tempFilmPath, outputFilm)
+	if err := studiofilm.MergeFilmFilesWithPixelWindows(resumeFilm, tempFilmPath, outputFilm, resolvePixelWindows(script, config)); err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return 1
 	}
-	if err := studiofilm.SaveFilm(mergedFilm, outputFilm); err != nil {
-		fmt.Printf("Error: %v\n", err)
-		return 1
-	}
-	if err := writeStudioImagesFromFilm(mergedFilm, resolveRenderOutputs(script, config, outputFilm)); err != nil {
+	if err := writeStudioImages(resolveRenderOutputs(script, config, outputFilm)); err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return 1
 	}
@@ -131,38 +112,31 @@ func runEndless(scriptPath string, script *schema.StudioScript, config studioCon
 	for {
 		nextIteration := currentIteration + config.checkpointInterval
 		checkpointFilm, checkpointImage := checkpointPaths(config.checkpointDir, nextIteration)
+		tempFilmPath, err := createTempFilmPath()
+		if err != nil {
+			return err
+		}
 
 		fmt.Printf("Studio endless checkpoint %d: rendering %d samples\n", nextIteration, config.checkpointInterval)
-		var renderedFilm *modelcamera.Film
-		code := controller.RunWithRenderSink(config.engineArgs(scriptPath, "", config.checkpointInterval), func(result controller.RenderResult) error {
-			renderedFilm = result.Film
-			return nil
-		})
+		code := controller.Run(config.engineArgs(scriptPath, tempFilmPath, config.checkpointInterval))
 		if code != 0 {
+			os.Remove(tempFilmPath)
 			return fmt.Errorf("engine render failed with exit code %d", code)
 		}
-		if renderedFilm == nil {
-			return fmt.Errorf("engine produced no Film")
-		}
 
-		accumulatedFilm := renderedFilm
-		if currentFilm != "" {
-			baseFilm, err := studiofilm.LoadFilm(currentFilm)
-			if err != nil {
-				return err
-			}
-			if err := studiofilm.MergeFilmsWithPixelWindows(baseFilm, renderedFilm, resolvePixelWindows(script, config)); err != nil {
-				return err
-			}
-			accumulatedFilm = baseFilm
+		if currentFilm == "" {
+			err = studiofilm.CopyFilmFile(tempFilmPath, checkpointFilm)
+		} else {
+			err = studiofilm.MergeFilmFilesWithPixelWindows(currentFilm, tempFilmPath, checkpointFilm, resolvePixelWindows(script, config))
 		}
-		if err := studiofilm.SaveFilm(accumulatedFilm, checkpointFilm); err != nil {
+		os.Remove(tempFilmPath)
+		if err != nil {
 			return err
 		}
 
 		output := studioRenderOutputFromScript(baseStudioRender(script), config, checkpointFilm)
 		output.ImagePath = checkpointImage
-		if err := writeStudioImagesFromFilm(accumulatedFilm, []studioRenderOutput{output}); err != nil {
+		if err := writeStudioImages([]studioRenderOutput{output}); err != nil {
 			return err
 		}
 		fmt.Printf("Studio saved checkpoint: %s and %s\n", checkpointFilm, checkpointImage)
@@ -170,6 +144,18 @@ func runEndless(scriptPath string, script *schema.StudioScript, config studioCon
 		currentIteration = nextIteration
 		currentFilm = checkpointFilm
 	}
+}
+
+func createTempFilmPath() (string, error) {
+	tempFilm, err := os.CreateTemp("", "ray-studio-render-*.bin")
+	if err != nil {
+		return "", fmt.Errorf("create temporary film: %w", err)
+	}
+	tempFilmPath := tempFilm.Name()
+	if err := tempFilm.Close(); err != nil {
+		return "", fmt.Errorf("close temporary film: %w", err)
+	}
+	return tempFilmPath, nil
 }
 
 func checkpointPaths(dir string, iteration int64) (string, string) {
@@ -183,22 +169,12 @@ type studioRenderOutput struct {
 	Options   studiofilm.ImageOptions
 }
 
-func writeStudioOutput(film *modelcamera.Film, output studioRenderOutput) error {
-	if err := studiofilm.SaveFilm(film, output.FilmPath); err != nil {
-		return err
-	}
-	if output.ImagePath == "" {
-		return nil
-	}
-	return studiofilm.SaveFilmImageFromFilm(film, output.ImagePath, output.Options)
-}
-
-func writeStudioImagesFromFilm(film *modelcamera.Film, outputs []studioRenderOutput) error {
+func writeStudioImages(outputs []studioRenderOutput) error {
 	for _, output := range outputs {
 		if output.ImagePath == "" {
 			continue
 		}
-		if err := studiofilm.SaveFilmImageFromFilm(film, output.ImagePath, output.Options); err != nil {
+		if err := studiofilm.SaveFilmImage(output.FilmPath, output.ImagePath, output.Options); err != nil {
 			return err
 		}
 	}

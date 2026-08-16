@@ -15,22 +15,13 @@ import (
 )
 
 type Handler struct {
-	err          error
-	Scene        *model.Scene
-	Script       *parser.Script
-	Film         *camera.Film
-	ActiveCamera camera.Camera
-	Config       RenderConfig
-}
-
-// RenderResult transfers ownership of a completed in-memory Film to a caller.
-// The sink is invoked synchronously before the next render job is configured.
-type RenderResult struct {
+	err    error
+	Scene  *model.Scene
+	Script *parser.Script
 	Film   *camera.Film
+	Camera camera.Camera
 	Config RenderConfig
 }
-
-type RenderSink func(RenderResult) error
 
 func NewHandler() *Handler {
 	return &Handler{
@@ -39,21 +30,6 @@ func NewHandler() *Handler {
 }
 
 func Run(args []string) int {
-	return run(args, nil)
-}
-
-// RunWithRenderSink renders without persisting Film files in the controller.
-// The sink owns persistence and post-processing, avoiding a write-then-read
-// handoff for callers such as Studio.
-func RunWithRenderSink(args []string, sink RenderSink) int {
-	if sink == nil {
-		fmt.Println("Error: render sink is nil")
-		return 1
-	}
-	return run(args, sink)
-}
-
-func run(args []string, sink RenderSink) int {
 	overrides, err := ParseRenderOverrides(args)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
@@ -61,13 +37,8 @@ func run(args []string, sink RenderSink) int {
 	}
 
 	h := NewHandler().
-		LoadScript(overrides.ScriptPath)
-	if sink == nil {
-		h.RenderJobs(overrides)
-	} else {
-		h.RenderJobsWithSink(overrides, sink)
-	}
-
+		LoadScript(overrides.ScriptPath).
+		RenderJobs(overrides)
 	if h.err != nil {
 		fmt.Printf("Error: %v\n", h.err)
 		return 1
@@ -128,24 +99,12 @@ func (h *Handler) ConfigureRenderConfig(config RenderConfig) *Handler {
 	}
 	config.PixelWindows = normalizedWindows
 	h.Config = config
-	h.ActiveCamera = renderCamera
+	h.Camera = renderCamera
 	h.Film = camera.NewFilm(filmShape...)
 	return h
 }
 
 func (h *Handler) RenderJobs(overrides RenderOverrides) *Handler {
-	return h.renderJobs(overrides, nil)
-}
-
-func (h *Handler) RenderJobsWithSink(overrides RenderOverrides, sink RenderSink) *Handler {
-	if sink == nil && h.err == nil {
-		h.err = fmt.Errorf("render sink is nil")
-		return h
-	}
-	return h.renderJobs(overrides, sink)
-}
-
-func (h *Handler) renderJobs(overrides RenderOverrides, sink RenderSink) *Handler {
 	if h.err != nil {
 		return h
 	}
@@ -155,15 +114,9 @@ func (h *Handler) renderJobs(overrides RenderOverrides, sink RenderSink) *Handle
 		if len(jobs) > 1 {
 			fmt.Printf("Starting render job %d/%d\n", idx+1, len(jobs))
 		}
-		h.ConfigureRenderConfig(config).Render()
-		if h.err != nil {
-			return h
-		}
-		if sink == nil {
-			h.SaveFilm(h.Config.OutputFilm)
-		} else if err := sink(RenderResult{Film: h.Film, Config: h.Config}); err != nil {
-			h.err = err
-		}
+		h.ConfigureRenderConfig(config).
+			Render().
+			SaveFilm(h.Config.OutputFilm)
 		if h.err != nil {
 			return h
 		}
@@ -235,7 +188,7 @@ func (h *Handler) Render() *Handler {
 		return h
 	}
 
-	if h.ActiveCamera == nil {
+	if h.Camera == nil {
 		h.err = fmt.Errorf("render camera is not configured")
 		return h
 	} else if h.Film == nil {
@@ -259,7 +212,7 @@ func (h *Handler) Render() *Handler {
 	renderHandler.SceneGeometry = h.Scene.Geometry
 	renderHandler.MaxArc = h.Scene.MaxArc
 	if err := renderHandler.TraceScene(
-		h.ActiveCamera,
+		h.Camera,
 		h.Scene.ObjectTree,
 		h.Film,
 		h.Config.Samples,

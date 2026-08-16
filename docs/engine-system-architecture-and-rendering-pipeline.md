@@ -29,7 +29,7 @@ flowchart LR
     D --> E["Scene domain aggregate"]
     E --> F["Ray-tracing integrator"]
     F --> G["Physical spectral Film"]
-    G --> H["Controller sink: in-memory Film"]
+    G --> H["Controller Film persistence"]
     H --> I["Studio Film merge / image conversion"]
     I --> K["Versioned binary .bin Film"]
     I --> J["Exposure / tone mapping / gamma / PNG"]
@@ -49,10 +49,10 @@ The Engine is the execution layer of the wider toolchain, not the authoring laye
 | Engine ray tracing | Path estimation, sampling, visibility, throughput, concurrent scheduling, and Film accumulation | JSON protocol details |
 | Binary Film | Shape, sample count, wavelength bounds, and spectral planes | Observer, color-space, and display-image semantics |
 
-Engine has no Film-to-image API. Studio receives a completed Film in memory,
-saves the spectral binary, performs CIE XYZ integration, and applies the output
-color-space and display transform. Engine rendering and display-image creation
-are therefore separate ownership boundaries.
+Engine has no Film-to-image API. The controller persists the completed spectral
+Film, after which Studio can merge Film files, perform CIE XYZ integration, and
+apply the output color-space and display transform. Engine rendering and
+display-image creation are therefore separate ownership boundaries.
 
 ## Layer Structure and Responsibility Boundaries
 
