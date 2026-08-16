@@ -9,14 +9,14 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-func TestParseRenderOverridesRejectsRGBFilmMode(t *testing.T) {
-	if _, err := ParseRenderOverrides([]string{"--spectrum-mode", "rgb"}); err == nil {
+func TestParseRenderArgsRejectsRGBFilmMode(t *testing.T) {
+	if _, err := parseRenderArgs([]string{"--spectrum-mode", "rgb"}); err == nil {
 		t.Fatal("expected Engine to reject RGB Film output mode")
 	}
 }
 
-func TestParseRenderOverridesRejectsRepeatedScripts(t *testing.T) {
-	_, err := ParseRenderOverrides([]string{
+func TestParseRenderArgsRejectsRepeatedScripts(t *testing.T) {
+	_, err := parseRenderArgs([]string{
 		"--script", "studio.json",
 		"--script", "geometry.json",
 	})
@@ -25,75 +25,80 @@ func TestParseRenderOverridesRejectsRepeatedScripts(t *testing.T) {
 	}
 }
 
-func TestParseRenderOverridesAcceptsBDPT(t *testing.T) {
-	overrides, err := ParseRenderOverrides([]string{"--integrator", "bdpt"})
+func TestParseRenderArgsAcceptsBDPT(t *testing.T) {
+	context, err := parseRenderArgs([]string{"--integrator", "bdpt"})
 	if err != nil {
 		t.Fatalf("parse bdpt integrator: %v", err)
 	}
-	if overrides.Integrator != "bdpt" {
-		t.Fatalf("integrator = %q, want bdpt", overrides.Integrator)
+	if context.Integrator != "bdpt" {
+		t.Fatalf("integrator = %q, want bdpt", context.Integrator)
 	}
 }
 
-func TestParseRenderOverridesAcceptsLightTracingNames(t *testing.T) {
+func TestParseRenderArgsAcceptsLightTracingNames(t *testing.T) {
 	for _, name := range []string{"light_tracing", "light_trace"} {
-		overrides, err := ParseRenderOverrides([]string{"--integrator", name})
+		context, err := parseRenderArgs([]string{"--integrator", name})
 		if err != nil {
 			t.Fatalf("parse %q integrator: %v", name, err)
 		}
-		if overrides.Integrator != name {
-			t.Fatalf("integrator = %q, want %q", overrides.Integrator, name)
+		if context.Integrator != name {
+			t.Fatalf("integrator = %q, want %q", context.Integrator, name)
 		}
 	}
 }
 
-func TestParseRenderOverridesRejectsUnknownIntegrator(t *testing.T) {
-	if _, err := ParseRenderOverrides([]string{"--integrator", "magic"}); err == nil {
+func TestParseRenderArgsRejectsUnknownIntegrator(t *testing.T) {
+	if _, err := parseRenderArgs([]string{"--integrator", "magic"}); err == nil {
 		t.Fatal("expected unknown integrator to fail")
 	}
 }
 
-func TestParseRenderOverridesRejectsMultiplePositionalScripts(t *testing.T) {
-	_, err := ParseRenderOverrides([]string{"studio.json", "geometry.json"})
+func TestParseRenderArgsRejectsMultiplePositionalScripts(t *testing.T) {
+	_, err := parseRenderArgs([]string{"studio.json", "geometry.json"})
 	if err == nil {
 		t.Fatal("expected multiple positional engine scripts to fail")
 	}
 }
 
-func TestParseRenderOverridesRejectsResumeFilm(t *testing.T) {
-	_, err := ParseRenderOverrides([]string{"--resume-film", "existing.bin"})
+func TestParseRenderArgsRejectsResumeFilm(t *testing.T) {
+	_, err := parseRenderArgs([]string{"--resume-film", "existing.bin"})
 	if err == nil {
 		t.Fatal("expected engine resume-film flag to fail; studio owns film resume")
 	}
 }
 
-func TestParseRenderOverridesAcceptsPixelWindows(t *testing.T) {
-	overrides, err := ParseRenderOverrides([]string{
+func TestParseRenderArgsAcceptsPixelWindows(t *testing.T) {
+	context, err := parseRenderArgs([]string{
 		"--pixel-window", "100-150,600-650",
 		"--pixel-window", "2:4,6:8",
 	})
 	if err != nil {
-		t.Fatalf("parse overrides: %v", err)
+		t.Fatalf("parse render arguments: %v", err)
 	}
 
-	if len(overrides.PixelWindows) != 2 {
-		t.Fatalf("expected two pixel windows, got %d", len(overrides.PixelWindows))
+	if len(context.PixelWindows) != 2 {
+		t.Fatalf("expected two pixel windows, got %d", len(context.PixelWindows))
 	}
-	assertIntSlice(t, overrides.PixelWindows[0].Min, []int{100, 600})
-	assertIntSlice(t, overrides.PixelWindows[0].Max, []int{150, 650})
-	assertIntSlice(t, overrides.PixelWindows[1].Min, []int{2, 6})
-	assertIntSlice(t, overrides.PixelWindows[1].Max, []int{4, 8})
+	assertIntSlice(t, context.PixelWindows[0].Min, []int{100, 600})
+	assertIntSlice(t, context.PixelWindows[0].Max, []int{150, 650})
+	assertIntSlice(t, context.PixelWindows[1].Min, []int{2, 6})
+	assertIntSlice(t, context.PixelWindows[1].Max, []int{4, 8})
 }
 
-func TestParseRenderOverridesRejectsInvalidPixelWindow(t *testing.T) {
-	_, err := ParseRenderOverrides([]string{"--pixel-window", "10:10,0:1"})
+func TestParseRenderArgsRejectsInvalidPixelWindow(t *testing.T) {
+	_, err := parseRenderArgs([]string{"--pixel-window", "10:10,0:1"})
 	if err == nil {
 		t.Fatal("expected invalid pixel window to fail")
 	}
 }
 
-func TestResolveRenderConfigsExpandsRenderJobs(t *testing.T) {
-	configs := ResolveRenderConfigs(&parser.Script{
+func parseRenderArgs(args []string) (RenderContext, error) {
+	h := NewHandler().ParseRenderArgs(args)
+	return h.Context, h.err
+}
+
+func TestResolveRenderContextsExpandsRenderJobs(t *testing.T) {
+	contexts := ResolveRenderContexts(&parser.Script{
 		Render: parser.RenderScript{
 			Samples:    8,
 			Width:      320,
@@ -103,61 +108,61 @@ func TestResolveRenderConfigsExpandsRenderJobs(t *testing.T) {
 			{OutputFilm: "front.bin"},
 			{Samples: 32, OutputFilm: "detail.bin"},
 		},
-	}, RenderOverrides{CameraIndex: -1})
+	}, RenderContext{CameraIndex: -1})
 
-	if len(configs) != 2 {
-		t.Fatalf("expected two render configs, got %d", len(configs))
+	if len(contexts) != 2 {
+		t.Fatalf("expected two render contexts, got %d", len(contexts))
 	}
-	if configs[0].Samples != 8 || configs[0].Width != 320 || configs[0].OutputFilm != "front.bin" {
-		t.Fatalf("unexpected first render config: %+v", configs[0])
+	if contexts[0].Samples != 8 || contexts[0].Width != 320 || contexts[0].OutputFilm != "front.bin" {
+		t.Fatalf("unexpected first render context: %+v", contexts[0])
 	}
-	if configs[1].Samples != 32 || configs[1].Width != 320 || configs[1].OutputFilm != "detail.bin" {
-		t.Fatalf("unexpected second render config: %+v", configs[1])
+	if contexts[1].Samples != 32 || contexts[1].Width != 320 || contexts[1].OutputFilm != "detail.bin" {
+		t.Fatalf("unexpected second render context: %+v", contexts[1])
 	}
 }
 
-func TestResolveRenderConfigPrefersOverridePixelWindows(t *testing.T) {
-	config := ResolveRenderConfig(&parser.Script{
+func TestResolveRenderContextPrefersRequestedPixelWindows(t *testing.T) {
+	context := ResolveRenderContext(&parser.Script{
 		Render: parser.RenderScript{
 			PixelWindows: []camera.PixelWindow{
 				{Min: []int{1, 1}, Max: []int{2, 2}},
 			},
 		},
-	}, RenderOverrides{
+	}, RenderContext{
 		CameraIndex: -1,
 		PixelWindows: []camera.PixelWindow{
 			{Min: []int{3, 3}, Max: []int{4, 4}},
 		},
 	})
 
-	if len(config.PixelWindows) != 1 {
-		t.Fatalf("expected one pixel window, got %d", len(config.PixelWindows))
+	if len(context.PixelWindows) != 1 {
+		t.Fatalf("expected one pixel window, got %d", len(context.PixelWindows))
 	}
-	assertIntSlice(t, config.PixelWindows[0].Min, []int{3, 3})
-	assertIntSlice(t, config.PixelWindows[0].Max, []int{4, 4})
+	assertIntSlice(t, context.PixelWindows[0].Min, []int{3, 3})
+	assertIntSlice(t, context.PixelWindows[0].Max, []int{4, 4})
 }
 
-func TestResolveRenderConfigsRenderJobInheritsCameraIndexWhenOmitted(t *testing.T) {
-	configs := ResolveRenderConfigs(&parser.Script{
+func TestResolveRenderContextsRenderJobInheritsCameraIndexWhenOmitted(t *testing.T) {
+	contexts := ResolveRenderContexts(&parser.Script{
 		Render: parser.RenderScript{
 			CameraIndex:    2,
 			CameraIndexSet: true,
 		},
 		Renders: []parser.RenderScript{
 			{OutputFilm: "inherited.bin"},
-			{CameraIndex: 0, CameraIndexSet: true, OutputFilm: "override.bin"},
+			{CameraIndex: 0, CameraIndexSet: true, OutputFilm: "requested.bin"},
 		},
-	}, RenderOverrides{CameraIndex: -1})
+	}, RenderContext{CameraIndex: -1})
 
-	if configs[0].CameraIndex != 2 {
-		t.Fatalf("expected first render job to inherit camera index 2, got %d", configs[0].CameraIndex)
+	if contexts[0].CameraIndex != 2 {
+		t.Fatalf("expected first render job to inherit camera index 2, got %d", contexts[0].CameraIndex)
 	}
-	if configs[1].CameraIndex != 0 {
-		t.Fatalf("expected second render job to override camera index to 0, got %d", configs[1].CameraIndex)
+	if contexts[1].CameraIndex != 0 {
+		t.Fatalf("expected second render job to use requested camera index 0, got %d", contexts[1].CameraIndex)
 	}
 }
 
-func TestSelectRenderCameraAppliesOverridesToHyperbolicCamera(t *testing.T) {
+func TestSelectRenderCameraAppliesRequestedDimensionsToHyperbolicCamera(t *testing.T) {
 	cam := &camera.HyperbolicCamera{Camera3D: camera.Camera3D{
 		Position:     mat.NewVecDense(3, []float64{0, 0, 0}),
 		Direction:    mat.NewVecDense(3, []float64{1, 0, 0}),
@@ -186,7 +191,7 @@ func TestSelectRenderCameraRequiresCamera(t *testing.T) {
 	}
 }
 
-func TestSelectRenderCameraAppliesOverridesToSphericalCamera(t *testing.T) {
+func TestSelectRenderCameraAppliesRequestedDimensionsToSphericalCamera(t *testing.T) {
 	cam := &camera.SphericalCamera{
 		Position:     mat.NewVecDense(4, []float64{1, 0, 0, 0}),
 		Forward:      mat.NewVecDense(4, []float64{0, 1, 0, 0}),
@@ -207,7 +212,7 @@ func TestSelectRenderCameraAppliesOverridesToSphericalCamera(t *testing.T) {
 	}
 }
 
-func TestConfigureRenderConfigRejectsOutOfBoundsPixelWindow(t *testing.T) {
+func TestConfigureRenderContextRejectsOutOfBoundsPixelWindow(t *testing.T) {
 	cam := &camera.SphericalCamera{
 		Position:     mat.NewVecDense(4, []float64{1, 0, 0, 0}),
 		Forward:      mat.NewVecDense(4, []float64{0, 1, 0, 0}),
@@ -219,7 +224,7 @@ func TestConfigureRenderConfigRejectsOutOfBoundsPixelWindow(t *testing.T) {
 	h := NewHandler()
 	h.Scene.Cameras = []camera.Camera{cam}
 
-	h.ConfigureRenderConfig(RenderConfig{
+	h.ConfigureRenderContext(RenderContext{
 		CameraIndex:  0,
 		Width:        10,
 		Height:       10,
@@ -231,10 +236,10 @@ func TestConfigureRenderConfigRejectsOutOfBoundsPixelWindow(t *testing.T) {
 	}
 }
 
-func TestConfigureRenderConfigRejectsBDPTInCurvedGeometry(t *testing.T) {
+func TestConfigureRenderContextRejectsBDPTInCurvedGeometry(t *testing.T) {
 	h := NewHandler()
 	h.Scene.Geometry = geometry.Klein()
-	h.ConfigureRenderConfig(RenderConfig{
+	h.ConfigureRenderContext(RenderContext{
 		Integrator:  "bdpt",
 		Dimension:   3,
 		CameraIndex: 0,

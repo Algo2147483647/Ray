@@ -15,12 +15,12 @@ import (
 )
 
 type Handler struct {
-	err    error
-	Scene  *model.Scene
-	Script *parser.Script
-	Film   *camera.Film
-	Camera camera.Camera
-	Config RenderConfig
+	err     error
+	Scene   *model.Scene
+	Script  *parser.Script
+	Film    *camera.Film
+	Camera  camera.Camera
+	Context RenderContext
 }
 
 func NewHandler() *Handler {
@@ -30,15 +30,10 @@ func NewHandler() *Handler {
 }
 
 func Run(args []string) int {
-	overrides, err := ParseRenderOverrides(args)
-	if err != nil {
-		fmt.Printf("Error: %v\n", err)
-		return 1
-	}
-
 	h := NewHandler().
-		LoadScript(overrides.ScriptPath).
-		RenderJobs(overrides)
+		ParseRenderArgs(args).
+		LoadScript().
+		RenderJobs()
 	if h.err != nil {
 		fmt.Printf("Error: %v\n", h.err)
 		return 1
@@ -48,14 +43,14 @@ func Run(args []string) int {
 	return 0
 }
 
-func (h *Handler) LoadScript(scriptPath string) *Handler {
+func (h *Handler) LoadScript() *Handler {
 	if h.err != nil {
 		return h
 	}
 
-	fmt.Printf("Loading scene from: %s\n", scriptPath)
+	fmt.Printf("Loading scene from: %s\n", h.Context.ScriptPath)
 
-	script, err := parser.ReadScriptFile(scriptPath)
+	script, err := parser.ReadScriptFile(h.Context.ScriptPath)
 	if err != nil {
 		h.err = err
 		return h
@@ -70,53 +65,48 @@ func (h *Handler) LoadScript(scriptPath string) *Handler {
 	return h
 }
 
-func (h *Handler) ConfigureRender(overrides RenderOverrides) *Handler {
-	config := ResolveRenderConfig(h.Script, overrides)
-	return h.ConfigureRenderConfig(config)
-}
-
-func (h *Handler) ConfigureRenderConfig(config RenderConfig) *Handler {
+func (h *Handler) ConfigureRenderContext(context RenderContext) *Handler {
 	if h.err != nil {
 		return h
 	}
 
-	renderCamera, filmShape, err := h.selectRenderCamera(config.CameraIndex, config.Width, config.Height)
+	renderCamera, filmShape, err := h.selectRenderCamera(context.CameraIndex, context.Width, context.Height)
 	if err != nil {
 		h.err = err
 		return h
 	}
 
 	if len(filmShape) > 0 {
-		config.Width = filmShape[0]
+		context.Width = filmShape[0]
 	}
 	if len(filmShape) > 1 {
-		config.Height = filmShape[1]
+		context.Height = filmShape[1]
 	}
-	normalizedWindows, err := camera.NormalizePixelWindows(config.PixelWindows, filmShape)
+	normalizedWindows, err := camera.NormalizePixelWindows(context.PixelWindows, filmShape)
 	if err != nil {
 		h.err = err
 		return h
 	}
-	config.PixelWindows = normalizedWindows
-	h.Config = config
+	context.PixelWindows = normalizedWindows
+	h.Context = context
 	h.Camera = renderCamera
 	h.Film = camera.NewFilm(filmShape...)
 	return h
 }
 
-func (h *Handler) RenderJobs(overrides RenderOverrides) *Handler {
+func (h *Handler) RenderJobs() *Handler {
 	if h.err != nil {
 		return h
 	}
 
-	jobs := ResolveRenderConfigs(h.Script, overrides)
-	for idx, config := range jobs {
+	jobs := ResolveRenderContexts(h.Script, h.Context)
+	for idx, context := range jobs {
 		if len(jobs) > 1 {
 			fmt.Printf("Starting render job %d/%d\n", idx+1, len(jobs))
 		}
-		h.ConfigureRenderConfig(config).
+		h.ConfigureRenderContext(context).
 			Render().
-			SaveFilm(h.Config.OutputFilm)
+			SaveFilm(h.Context.OutputFilm)
 		if h.err != nil {
 			return h
 		}
@@ -200,23 +190,23 @@ func (h *Handler) Render() *Handler {
 	start := time.Now()
 
 	renderHandler := ray_tracing.NewHandler()
-	integratorKind, err := ray_tracing.ParseIntegratorKind(h.Config.Integrator)
+	integratorKind, err := ray_tracing.ParseIntegratorKind(h.Context.Integrator)
 	if err != nil {
 		h.err = err
 		return h
 	}
 	renderHandler.IntegratorKind = integratorKind
-	renderHandler.ThreadNum = h.Config.ThreadNum
-	renderHandler.SpectrumMode = renderSpectrumMode(h.Config.SpectrumMode)
-	renderHandler.WavelengthSamples = h.Config.WavelengthSamples
+	renderHandler.ThreadNum = h.Context.ThreadNum
+	renderHandler.SpectrumMode = renderSpectrumMode(h.Context.SpectrumMode)
+	renderHandler.WavelengthSamples = h.Context.WavelengthSamples
 	renderHandler.SceneGeometry = h.Scene.Geometry
 	renderHandler.MaxArc = h.Scene.MaxArc
 	if err := renderHandler.TraceScene(
 		h.Camera,
 		h.Scene.ObjectTree,
 		h.Film,
-		h.Config.Samples,
-		h.Config.PixelWindows,
+		h.Context.Samples,
+		h.Context.PixelWindows,
 	); err != nil {
 		h.err = err
 		return h
