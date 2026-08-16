@@ -98,23 +98,54 @@ go -C studio run . --script ../examples/scenes/default.json \
 If `output_film` is omitted, studio uses the engine default Film path. If
 `output_image` is omitted, studio uses the default image path.
 
+### Films
+
+Films own the image grid, camera association, Film path, and image presentation
+options. A render selects one with `film_id`; `camera_id` is resolved to the
+corresponding camera when Studio emits canonical Engine JSON. In that Engine
+JSON the Film is embedded directly in the Camera, and Render selects the
+Camera with `camera_id`; Engine has no top-level `films` or `film_id`.
+
+```json
+{
+  "cameras": [{ "id": "main", "position": [0, 0, 0] }],
+  "films": [{
+    "id": "main-film",
+    "camera_id": "main",
+    "shape": [960, 800],
+    "output_image": "../outputs/geometry-benchmark-matrix.png",
+    "output_film": "../outputs/geometry-benchmark-matrix.bin",
+    "exposure": 1,
+    "tone_mapping": "aces",
+    "gamma": 2.2,
+    "color_space": "linear_srgb"
+  }],
+  "render": { "dimension": 3, "samples": 100, "film_id": "main-film" }
+}
+```
+
+`render.width`, `render.height`, `camera_index`, output fields, display fields,
+and `pixel_windows` are not part of the Studio source format.
+
 ### Pixel Windows
 
-Studio accepts engine-compatible `pixel_windows` in `render` and `renders`, and
-passes them through to the generated engine JSON. The output Film and image keep
+Studio accepts engine-compatible `pixel_windows` in a Film definition and passes
+them through to the generated engine JSON. The output Film and image keep
 their configured dimensions; pixels outside the requested windows remain zero.
 
 Ranges are half-open: `min` is included and `max` is excluded.
 
 ```json
 {
-  "render": {
-    "width": 800,
-    "height": 800,
+  "films": [{
+    "id": "main-film",
+    "camera_id": "main",
+    "shape": [800, 800],
     "pixel_windows": [
       { "min": [100, 600], "max": [150, 650] }
     ]
-  }
+  }],
+  "render": { "film_id": "main-film" }
 }
 ```
 
@@ -187,14 +218,15 @@ Studio input starts from the same top-level shape as engine:
   "materials": [],
   "objects": [],
   "cameras": [],
-  "render": {},
+  "films": [],
+  "render": { "film_id": "main-film" },
   "renders": []
 }
 ```
 
-Materials, media, render settings, includes, and multi-render jobs use the same
-fields as [`engine-json-protocol.md`](engine-json-protocol.md). Cameras also
-support the defaulting conveniences described below.
+Materials, media, objects, and includes follow the Engine protocol. Studio
+Camera, Film, Render, and multi-render job fields follow the stricter authoring
+model documented here; Studio converts them to canonical Engine fields.
 
 ## Cameras
 

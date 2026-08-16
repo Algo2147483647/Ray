@@ -17,8 +17,6 @@ var (
 const (
 	defaultStudioFieldOfView = 100.0
 	defaultStudioAspectRatio = 1.0
-	defaultStudioFilmWidth   = 400
-	defaultStudioFilmHeight  = 400
 )
 
 func adaptCameras(cameraDefs []schema.StudioCameraScript, dimension int) ([]schema.EngineCameraScript, error) {
@@ -179,7 +177,7 @@ func nDimFieldOfViews(def schema.StudioCameraScript) []float64 {
 	if len(def.FieldOfViews) > 0 || def.FieldOfView <= 0 {
 		return append([]float64(nil), def.FieldOfViews...)
 	}
-	fieldOfViews := make([]float64, len(def.Widths))
+	fieldOfViews := make([]float64, max(0, len(def.Coordinates)-1))
 	for i := range fieldOfViews {
 		fieldOfViews[i] = def.FieldOfView
 	}

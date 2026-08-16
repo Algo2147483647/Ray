@@ -13,11 +13,11 @@ type Camera struct {
 
 type RayCamera interface {
 	GenerateRay(res *renderray.Ray, index ...int) *renderray.Ray
-	SetFilm(*Film)
+	GetFilm() *Film
 }
 
-func (c *Camera) SetFilm(film *Film) {
-	c.Film = film
+func (c Camera) GetFilm() *Film {
+	return c.Film
 }
 
 // FilmProjection describes the pinhole-camera mapping of a scene point.

@@ -52,8 +52,8 @@ engine execution.
 resumed, merged, converted through CIE XYZ to a color image, tone-mapped, or
 checkpointed over multiple runs.
 
-Unknown fields are ignored unless a parser explicitly reads them, but canonical
-engine JSON should omit authoring-only fields such as `includes`.
+Unknown top-level, Camera, Film, and Render fields are rejected. Canonical
+Engine JSON must omit authoring-only fields such as `includes` and `films`.
 
 ## Objects
 
@@ -321,12 +321,16 @@ features.
 
 ```json
 {
+	"id": "main-camera",
   "type": "3d",
   "position": [-4, 0, 1],
   "coordinates": [[4, 0, -1], [0, -4, 0], [0, 0, 1]],
-  "widths": [800, 800],
   "field_of_views": [60, 60],
-  "ortho": false
+	"ortho": false,
+	"film": {
+		"shape": [800, 800],
+		"output_film": "../outputs/main.bin"
+	}
 }
 ```
 
@@ -354,12 +358,16 @@ renders `x = 100..149` and `y = 600..649`:
 
 ```json
 {
-  "render": {
-    "widths": [800, 800],
+	"cameras": [{
+		"id": "main-camera",
+		"film": {
+			"shape": [800, 800],
     "pixel_windows": [
       { "min": [100, 600], "max": [150, 650] }
     ]
-  }
+		}
+	}],
+	"render": { "camera_id": "main-camera" }
 }
 ```
 

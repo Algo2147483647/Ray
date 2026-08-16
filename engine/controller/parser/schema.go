@@ -21,20 +21,17 @@ type CameraScript struct {
 	FieldOfViews []float64              `json:"field_of_views"` // Per-frame field-of-view values.
 	Coordinates  [][]float64            `json:"coordinates"`    // Camera path or sampled positions.
 	Ortho        bool                   `json:"ortho"`          // Enables orthographic projection.
+	Film         *modelcamera.Film      `json:"film"`           // Film owned by this camera.
 }
 
 type RenderScript struct {
-	Integrator        string                    `json:"integrator"`
-	Dimension         int                       `json:"dimension"`
-	Samples           int64                     `json:"samples"`
-	ThreadNum         int                       `json:"thread_num"`
-	CameraIndex       int                       `json:"camera_index"`
-	CameraIndexSet    bool                      `json:"-"`
-	Width             []int                     `json:"widths"`
-	OutputFilm        string                    `json:"output_film"`
-	SpectrumMode      string                    `json:"spectrum_mode"`
-	WavelengthSamples int                       `json:"wavelength_samples"`
-	PixelWindows      []modelcamera.PixelWindow `json:"pixel_windows"`
+	Integrator        string `json:"integrator"`
+	Dimension         int    `json:"dimension"`
+	Samples           int64  `json:"samples"`
+	ThreadNum         int    `json:"thread_num"`
+	CameraID          string `json:"camera_id"`
+	SpectrumMode      string `json:"spectrum_mode"`
+	WavelengthSamples int    `json:"wavelength_samples"`
 }
 
 type GeometryScript struct {

@@ -20,12 +20,12 @@ func TestCamera3DProjectPointMapsViewCenter(t *testing.T) {
 	if !ok {
 		t.Fatal("view-center point did not project")
 	}
-	pixel, ok := projection.Raster.PixelIndex(100, 50)
+	pixel, ok := PixelIndex(projection.Position[0], projection.Position[1], 100, 50)
 	if !ok || pixel != 25*100+50 {
 		t.Fatalf("center pixel = %d (valid=%v), want %d", pixel, ok, 25*100+50)
 	}
-	if math.Abs(projection.Raster.X-49.5) > 1e-12 || math.Abs(projection.Raster.Y-24.5) > 1e-12 {
-		t.Fatalf("center raster position = (%g, %g), want (49.5, 24.5)", projection.Raster.X, projection.Raster.Y)
+	if math.Abs(projection.Position[0]-49.5) > 1e-12 || math.Abs(projection.Position[1]-24.5) > 1e-12 {
+		t.Fatalf("center raster position = (%g, %g), want (49.5, 24.5)", projection.Position[0], projection.Position[1])
 	}
 	if math.Abs(projection.Distance-2) > 1e-12 {
 		t.Fatalf("distance = %g, want 2", projection.Distance)
@@ -100,7 +100,7 @@ func TestCamera3DProjectPointMapsOpticalAxisToCenterWithWorldUp(t *testing.T) {
 		t.Fatal("point on optical axis did not project")
 	}
 	want := (800/2)*800 + 800/2
-	pixel, ok := projection.Raster.PixelIndex(800, 800)
+	pixel, ok := PixelIndex(projection.Position[0], projection.Position[1], 800, 800)
 	if !ok || pixel != want {
 		t.Fatalf("optical-axis pixel = %d (valid=%v), want %d", pixel, ok, want)
 	}
@@ -129,7 +129,7 @@ func TestCamera3DGenerateRayProjectPointRoundTripWithWorldUp(t *testing.T) {
 				t.Fatalf("ray from pixel (%d, %d) did not project", x, y)
 			}
 			want := y*80 + x
-			projectedPixel, ok := projection.Raster.PixelIndex(80, 80)
+			projectedPixel, ok := PixelIndex(projection.Position[0], projection.Position[1], 80, 80)
 			if !ok || projectedPixel != want {
 				t.Fatalf("ray from pixel (%d, %d) projected to %d (valid=%v), want %d", x, y, projectedPixel, ok, want)
 			}
@@ -143,25 +143,25 @@ func testCameraCoordinates(direction, up []float64) []*mat.VecDense {
 	return []*mat.VecDense{forward, right, mat.NewVecDense(3, up)}
 }
 
-func TestRasterPositionDerivesPixelsFromCenterCoordinates(t *testing.T) {
+func TestPixelIndexDerivesPixelsFromCenterCoordinates(t *testing.T) {
 	for _, test := range []struct {
-		name   string
-		raster RasterPosition
-		want   int
+		name     string
+		position [2]float64
+		want     int
 	}{
-		{name: "left top boundary", raster: RasterPosition{X: -0.5, Y: -0.5}, want: 0},
-		{name: "first center", raster: RasterPosition{X: 0, Y: 0}, want: 0},
-		{name: "even film center", raster: RasterPosition{X: 49.5, Y: 24.5}, want: 25*100 + 50},
-		{name: "last center", raster: RasterPosition{X: 99, Y: 49}, want: 49*100 + 99},
+		{name: "left top boundary", position: [2]float64{-0.5, -0.5}, want: 0},
+		{name: "first center", position: [2]float64{0, 0}, want: 0},
+		{name: "even film center", position: [2]float64{49.5, 24.5}, want: 25*100 + 50},
+		{name: "last center", position: [2]float64{99, 49}, want: 49*100 + 99},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			got, ok := test.raster.PixelIndex(100, 50)
+			got, ok := PixelIndex(test.position[0], test.position[1], 100, 50)
 			if !ok || got != test.want {
 				t.Fatalf("PixelIndex = %d (valid=%v), want %d", got, ok, test.want)
 			}
 		})
 	}
-	if _, ok := (RasterPosition{X: 99.5, Y: 0}).PixelIndex(100, 50); ok {
+	if _, ok := PixelIndex(99.5, 0, 100, 50); ok {
 		t.Fatal("right Film boundary must be outside")
 	}
 }

@@ -90,7 +90,7 @@ func TestParseRenderArgsAcceptsWidths(t *testing.T) {
 	if err != nil {
 		t.Fatalf("parse widths: %v", err)
 	}
-	assertIntSlice(t, context.Width, []int{1920, 1080})
+	assertIntSlice(t, context.FilmShape, []int{1920, 1080})
 }
 
 func TestParseRenderArgsRejectsLegacyWidthFlag(t *testing.T) {
@@ -114,34 +114,39 @@ func parseRenderArgs(args []string) (RenderContext, error) {
 func TestResolveRenderContextsExpandsRenderJobs(t *testing.T) {
 	contexts := ResolveRenderContexts(&parser.Script{
 		Render: parser.RenderScript{
-			Samples:    8,
-			Width:      []int{320, 200},
-			OutputFilm: "base.bin",
+			Samples:  8,
+			CameraID: "front",
 		},
 		Renders: []parser.RenderScript{
-			{OutputFilm: "front.bin"},
-			{Samples: 32, OutputFilm: "detail.bin"},
+			{},
+			{Samples: 32, CameraID: "detail"},
+		},
+		Cameras: []parser.CameraScript{
+			{ID: "front", Film: &camera.Film{Shape: []int{320, 200}, OutputFilm: "front.bin"}},
+			{ID: "detail", Film: &camera.Film{Shape: []int{640, 400}, OutputFilm: "detail.bin"}},
 		},
 	}, RenderContext{CameraIndex: -1})
 
 	if len(contexts) != 2 {
 		t.Fatalf("expected two render contexts, got %d", len(contexts))
 	}
-	if contexts[0].Samples != 8 || contexts[0].Width[0] != 320 || contexts[0].OutputFilm != "front.bin" {
+	if contexts[0].Samples != 8 || contexts[0].FilmShape[0] != 320 || contexts[0].OutputFilm != "front.bin" {
 		t.Fatalf("unexpected first render context: %+v", contexts[0])
 	}
-	if contexts[1].Samples != 32 || contexts[1].Width[0] != 320 || contexts[1].OutputFilm != "detail.bin" {
+	if contexts[1].Samples != 32 || contexts[1].FilmShape[0] != 640 || contexts[1].OutputFilm != "detail.bin" {
 		t.Fatalf("unexpected second render context: %+v", contexts[1])
 	}
 }
 
 func TestResolveRenderContextPrefersRequestedPixelWindows(t *testing.T) {
 	context := ResolveRenderContext(&parser.Script{
-		Render: parser.RenderScript{
+		Render: parser.RenderScript{CameraID: "main"},
+		Cameras: []parser.CameraScript{{ID: "main", Film: &camera.Film{
+			Shape: []int{10, 10},
 			PixelWindows: []camera.PixelWindow{
 				{Min: []int{1, 1}, Max: []int{2, 2}},
 			},
-		},
+		}}},
 	}, RenderContext{
 		CameraIndex: -1,
 		PixelWindows: []camera.PixelWindow{
@@ -156,15 +161,17 @@ func TestResolveRenderContextPrefersRequestedPixelWindows(t *testing.T) {
 	assertIntSlice(t, context.PixelWindows[0].Max, []int{4, 4})
 }
 
-func TestResolveRenderContextsRenderJobInheritsCameraIndexWhenOmitted(t *testing.T) {
+func TestResolveRenderContextsRenderJobInheritsCameraIDWhenOmitted(t *testing.T) {
 	contexts := ResolveRenderContexts(&parser.Script{
-		Render: parser.RenderScript{
-			CameraIndex:    2,
-			CameraIndexSet: true,
-		},
+		Render: parser.RenderScript{CameraID: "inherited"},
 		Renders: []parser.RenderScript{
-			{OutputFilm: "inherited.bin"},
-			{CameraIndex: 0, CameraIndexSet: true, OutputFilm: "requested.bin"},
+			{},
+			{CameraID: "requested"},
+		},
+		Cameras: []parser.CameraScript{
+			{ID: "requested", Film: &camera.Film{Shape: []int{10, 10}}},
+			{ID: "unused", Film: &camera.Film{Shape: []int{10, 10}}},
+			{ID: "inherited", Film: &camera.Film{Shape: []int{10, 10}}},
 		},
 	}, RenderContext{CameraIndex: -1})
 
@@ -204,6 +211,7 @@ func TestSelectRenderCameraRequiresCamera(t *testing.T) {
 
 func TestSelectRenderCameraPreparesSphericalCamera(t *testing.T) {
 	cam := &camera.SphericalCamera{
+		Camera:       camera.Camera{Film: camera.NewFilm(10, 10)},
 		Position:     mat.NewVecDense(4, []float64{1, 0, 0, 0}),
 		Coordinates:  []*mat.VecDense{mat.NewVecDense(4, []float64{0, 1, 0, 0}), mat.NewVecDense(4, []float64{0, 0, 0, 1}), mat.NewVecDense(4, []float64{0, 0, 1, 0})},
 		FieldOfViews: []float64{70, 70},
@@ -231,7 +239,7 @@ func TestConfigureRenderContextRejectsOutOfBoundsPixelWindow(t *testing.T) {
 
 	h.ConfigureRenderContext(RenderContext{
 		CameraIndex:  0,
-		Width:        []int{10, 10},
+		FilmShape:    []int{10, 10},
 		PixelWindows: []camera.PixelWindow{{Min: []int{9, 0}, Max: []int{11, 1}}},
 	})
 

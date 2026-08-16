@@ -111,11 +111,35 @@ func mergeStudioScripts(dst, src *schema.StudioScript, source string) error {
 	if err := appendUniqueStudioCameras(&dst.Cameras, src.Cameras, source); err != nil {
 		return err
 	}
+	if err := appendUniqueStudioFilms(&dst.Films, src.Films, source); err != nil {
+		return err
+	}
 	dst.Render = mergeStudioRenderScript(dst.Render, src.Render)
 	if len(src.Geometry) > 0 {
 		dst.Geometry = cloneMap(src.Geometry)
 	}
 	dst.Renders = append(dst.Renders, src.Renders...)
+	return nil
+}
+
+func appendUniqueStudioFilms(dst *[]schema.StudioFilmScript, src []schema.StudioFilmScript, source string) error {
+	ids := map[string]bool{}
+	for _, film := range *dst {
+		if film.ID != "" {
+			ids[film.ID] = true
+		}
+	}
+	for _, film := range src {
+		if film.ID != "" && ids[film.ID] {
+			return fmt.Errorf("duplicate film id %q from %s", film.ID, source)
+		}
+		if film.ID != "" {
+			ids[film.ID] = true
+		}
+		film.Shape = append([]int(nil), film.Shape...)
+		film.PixelWindows = cloneStudioPixelWindows(film.PixelWindows)
+		*dst = append(*dst, film)
+	}
 	return nil
 }
 
@@ -418,7 +442,6 @@ func cloneStudioCamera(def schema.StudioCameraScript) schema.StudioCameraScript 
 	camera.LookAt = append([]float64(nil), def.LookAt...)
 	camera.Direction = append([]float64(nil), def.Direction...)
 	camera.Up = append([]float64(nil), def.Up...)
-	camera.Widths = append([]int(nil), def.Widths...)
 	camera.FieldOfViews = append([]float64(nil), def.FieldOfViews...)
 	if len(def.Coordinates) > 0 {
 		camera.Coordinates = make([][]float64, len(def.Coordinates))
@@ -462,45 +485,14 @@ func mergeStudioRenderScript(base, override schema.StudioRenderScript) schema.St
 	if override.ThreadNum > 0 {
 		result.ThreadNum = override.ThreadNum
 	}
-	if override.CameraIndexSet {
-		result.CameraIndex = override.CameraIndex
-		result.CameraIndexSet = true
-	}
-	if override.Width > 0 {
-		result.Width = override.Width
-	}
-	if override.Height > 0 {
-		result.Height = override.Height
-	}
-	if override.OutputImage != "" {
-		result.OutputImage = override.OutputImage
-	}
-	if override.OutputFilm != "" {
-		result.OutputFilm = override.OutputFilm
-	}
-	if override.ResumeFilm != "" {
-		result.ResumeFilm = override.ResumeFilm
-	}
-	if override.Exposure > 0 {
-		result.Exposure = override.Exposure
-	}
-	if override.ToneMapping != "" {
-		result.ToneMapping = override.ToneMapping
-	}
-	if override.Gamma > 0 {
-		result.Gamma = override.Gamma
+	if override.FilmID != "" {
+		result.FilmID = override.FilmID
 	}
 	if override.SpectrumMode != "" {
 		result.SpectrumMode = override.SpectrumMode
 	}
 	if override.WavelengthSamples > 0 {
 		result.WavelengthSamples = override.WavelengthSamples
-	}
-	if override.ColorSpace != "" {
-		result.ColorSpace = override.ColorSpace
-	}
-	if len(override.PixelWindows) > 0 {
-		result.PixelWindows = cloneStudioPixelWindows(override.PixelWindows)
 	}
 	return result
 }

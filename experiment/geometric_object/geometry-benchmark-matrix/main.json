@@ -10,19 +10,24 @@
       "aspect_ratio": 1.2
     }
   ],
+  "films": [
+    {
+      "id": "geometry-benchmark-film",
+      "camera_id": "geometry-benchmark-stage-wide",
+      "shape": [960, 800],
+      "output_image": "../outputs/geometry-benchmark-matrix.png",
+      "output_film": "../outputs/geometry-benchmark-matrix.bin",
+      "exposure": 1,
+      "tone_mapping": "aces",
+      "gamma": 2.2,
+      "color_space": "linear_srgb"
+    }
+  ],
   "render": {
+    "film_id": "geometry-benchmark-film",
     "dimension": 3,
     "samples": 100,
     "thread_num": 0,
-    "width": 960,
-    "height": 800,
-    "camera_index": 0,
-    "output_image": "../outputs/geometry-benchmark-matrix.png",
-    "output_film": "../outputs/geometry-benchmark-matrix.bin",
-    "exposure": 1,
-    "tone_mapping": "aces",
-    "gamma": 2.2,
-    "spectrum_mode": "rgb",
-    "color_space": "linear_srgb"
+    "spectrum_mode": "rgb"
   }
 }

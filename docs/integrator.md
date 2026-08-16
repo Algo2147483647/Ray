@@ -711,14 +711,17 @@ Integrator selection is part of `render`, or of each entry in `renders` for mult
     "integrator": "path",
     "samples": 20,
     "thread_num": 8,
-    "camera_index": 0,
-    "widths": [400, 400],
+		"camera_id": "main-camera",
     "spectrum_mode": "hero_wavelength",
-    "wavelength_samples": 1,
-    "pixel_windows": [
-      { "min": [0, 0], "max": [400, 400] }
-    ]
+		"wavelength_samples": 1
   },
+	"cameras": [{
+		"id": "main-camera",
+		"film": {
+			"shape": [400, 400],
+			"pixel_windows": [{ "min": [0, 0], "max": [400, 400] }]
+		}
+	}],
   "geometry": {
     "type": "euclidean",
     "max_arc": 0
@@ -746,9 +749,9 @@ The same `RenderScript` schema is accepted in:
 | `thread_num`         | Positive worker count                                        | `runtime.NumCPU()`                                           | Non-positive values from script do not override the default  |
 | `spectrum_mode`      | `hero_wavelength`, `sampled`                                 | `hero_wavelength`                                            | Changes wavelength sampling; Film accumulation is always spectral |
 | `wavelength_samples` | Positive integer                                             | `1`; promoted to `4` when resolved sampled mode is at most one | Used by path and BDPT sampled mode; not used to multiply light-tracing work |
-| `pixel_windows`      | Array of half-open `{min,max}` coordinate boxes              | Entire film                                                  | Restricts active pixels; overlapping windows are de-duplicated |
-| `camera_index`       | Camera selected for the render                               | `0`                                                          | Light tracing additionally requires the selected camera to be projective |
-| `widths`             | Film dimensions as an integer array                          | Selected camera dimensions                                   | Affect active-pixel count and splat normalization            |
+| `camera_id`          | ID of the camera selected for the render                     | Required by canonical Engine JSON                            | The selected camera already owns its Film                    |
+| `camera.film.shape`  | Film dimensions as an integer array                          | Required                                                     | Affect active-pixel count and splat normalization            |
+| `camera.film.pixel_windows` | Array of half-open `{min,max}` coordinate boxes       | Entire film                                                  | Restricts active pixels; overlapping windows are de-duplicated |
 | `geometry.type`      | `euclidean`, `klein`, or `spherical`                         | Engine scene default                                         | Determines path-geodesic behavior and BDPT fallback          |
 | `geometry.max_arc`   | Non-negative geodesic distance budget                        | `0` except spherical defaults to $2\pi$                      | Enforced by regular path tracing; BDPT only runs in Euclidean geometry |
 

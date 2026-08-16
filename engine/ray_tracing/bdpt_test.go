@@ -20,8 +20,6 @@ import (
 
 type fixedCamera struct{ camera.Camera }
 
-func (fixedCamera) SetFilm(*camera.Film) {}
-
 func (fixedCamera) GenerateRay(ray *optics.Ray, _ ...int) *optics.Ray {
 	ray.Init()
 	ray.Origin.CloneFromVec(mat.NewVecDense(3, []float64{0, 0, 0}))
@@ -301,7 +299,7 @@ func TestBDPTDeltaReconstructionFilterPreservesEnergy(t *testing.T) {
 	}
 	splat := FilmSplat{
 		Pixel: 5, Value: optics.ConstantSpectrum(8),
-		projection: camera.FilmProjection{Raster: camera.RasterPosition{X: 1.25, Y: 1.75}},
+		projection: camera.FilmProjection{Position: []float64{1.25, 1.75}},
 	}
 	filtered := filterBDPTDeltaSplat(splat, 4, 4, mask)
 	if len(filtered) != 4 {

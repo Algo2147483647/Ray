@@ -720,7 +720,7 @@ Factories register Shape, Material, Camera, and IOR types through explicit switc
 
 The Scene is built before CLI overrides are merged, while Dimension changes Shape, Camera, and BVH construction. `--dimension` and per-job dimension therefore cannot behave like sample count after model construction. Geometry and dimension should be classified as SceneBuildConfig, or the Scene should be rebuilt when either changes.
 
-`RenderScript.CameraIndexSet` is intended to distinguish an omitted `camera_index` from an explicit zero, but standard JSON deserialization does not currently set this sentinel. The CLI camera override is reliable. Complete inheritance semantics in `renders[]` require a custom unmarshal path or pointer-valued field.
+Canonical Engine JSON selects a camera by `camera_id`. Each Camera owns its Film, so render-job inheritance no longer needs a camera-index sentinel or duplicated Film dimensions. CLI overrides remain operational controls applied after the selected camera and Film are resolved.
 
 ### Capability Metadata Is Distributed
 

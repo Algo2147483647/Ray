@@ -25,6 +25,22 @@ func TestReadScriptFilePreservesGeometry(t *testing.T) {
 	}
 }
 
+func TestReadScriptFileAcceptsCameraOwnedFilm(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "main.json")
+	writeTestScript(t, path, `{
+		"cameras":[{"id":"main","film":{"shape":[800,600],"output_film":"main.bin"}}],
+		"render":{"camera_id":"main"}
+	}`)
+	script, err := ReadScriptFile(path)
+	if err != nil {
+		t.Fatalf("read script: %v", err)
+	}
+	if script.Render.CameraID != "main" || len(script.Cameras) != 1 || script.Cameras[0].Film.Shape[0] != 800 {
+		t.Fatalf("unexpected camera-owned film: %+v", script)
+	}
+}
+
 func writeTestScript(t *testing.T, path, data string) {
 	t.Helper()
 	if err := os.WriteFile(path, []byte(data), 0o644); err != nil {

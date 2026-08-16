@@ -1,17 +1,133 @@
 package main
 
 import (
+	"encoding/json"
 	"math"
 	"os"
 	"path/filepath"
 	"testing"
 
+	enginefactory "github.com/Algo2147483647/ray/engine/controller/factory"
+	engineparser "github.com/Algo2147483647/ray/engine/controller/parser"
+	enginemodel "github.com/Algo2147483647/ray/engine/model"
 	modelshape "github.com/Algo2147483647/ray/engine/model/shape"
 	"github.com/Algo2147483647/ray/studio/adapt"
 	"github.com/Algo2147483647/ray/studio/schema"
 	"github.com/Algo2147483647/ray/studio/storage"
 	"gonum.org/v1/gonum/mat"
 )
+
+func TestStudioSchemaRejectsRemovedFields(t *testing.T) {
+	for name, source := range map[string]string{
+		"render width":  `{"render":{"film_id":"main","width":800}}`,
+		"render output": `{"render":{"film_id":"main","output_film":"old.bin"}}`,
+		"film width":    `{"films":[{"id":"main","camera_id":"camera","width":800}]}`,
+		"camera widths": `{"cameras":[{"id":"camera","widths":[800,600]}]}`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			var script schema.StudioScript
+			if err := json.Unmarshal([]byte(source), &script); err == nil {
+				t.Fatal("expected removed field to be rejected")
+			}
+		})
+	}
+}
+
+func TestIntermediateScriptUsesCameraOwnedFilm(t *testing.T) {
+	adapted, err := adaptTestScript(&schema.StudioScript{
+		Cameras: []schema.StudioCameraScript{{ID: "main", Type: "3d"}},
+		Films:   []schema.StudioFilmScript{{ID: "main-film", CameraID: "main", Shape: []int{800, 600}, OutputFilm: "main.bin"}},
+		Render:  schema.StudioRenderScript{FilmID: "main-film"},
+	}, []string{"scene.json"}, 3)
+	if err != nil {
+		t.Fatalf("adapt script: %v", err)
+	}
+	data, err := json.Marshal(adapted)
+	if err != nil {
+		t.Fatalf("marshal intermediate script: %v", err)
+	}
+	var engineScript engineparser.Script
+	if err := json.Unmarshal(data, &engineScript); err != nil {
+		t.Fatalf("Engine rejected Studio intermediate script: %v", err)
+	}
+	if engineScript.Render.CameraID != "main" || engineScript.Cameras[0].Film.Shape[0] != 800 {
+		t.Fatalf("unexpected Engine script: %+v", engineScript)
+	}
+	scene := enginemodel.NewScene()
+	if err := enginefactory.LoadSceneFromScript(&engineScript, scene); err != nil {
+		t.Fatalf("load Engine scene: %v", err)
+	}
+	if len(scene.Cameras) != 1 || scene.Cameras[0].GetFilm() == nil || scene.Cameras[0].GetFilm().Shape[1] != 600 {
+		t.Fatalf("Film was not loaded into Camera: %+v", scene.Cameras)
+	}
+}
+
+func TestStudioRequiresExplicitFilmSelection(t *testing.T) {
+	script := &schema.StudioScript{
+		Cameras: []schema.StudioCameraScript{{ID: "camera", Type: "3d"}},
+		Films:   []schema.StudioFilmScript{{ID: "film", CameraID: "camera", Shape: []int{400, 400}}},
+	}
+	if _, err := adapt.AdaptScript(script, []string{"scene.json"}, 3); err == nil {
+		t.Fatal("expected missing render.film_id to fail")
+	}
+}
+
+func TestExperimentScriptsUseCurrentStudioSchema(t *testing.T) {
+	root := filepath.Join("..", "experiment")
+	err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if entry.IsDir() || filepath.Ext(path) != ".json" {
+			return nil
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		var script schema.StudioScript
+		if err := json.Unmarshal(data, &script); err != nil {
+			t.Errorf("%s: %v", path, err)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestTriangularPrismScriptCompositionsAdapt(t *testing.T) {
+	root := filepath.Join("..", "experiment", "material", "triangular_prism_dispersion")
+	for name, files := range map[string][]string{
+		"beauty": {
+			filepath.Join(root, "scene.json"),
+			filepath.Join(root, "prism-absorbing.json"),
+			filepath.Join(root, "beauty.json"),
+		},
+		"control verification": {
+			filepath.Join(root, "scene.json"),
+			filepath.Join(root, "prism-control.json"),
+			filepath.Join(root, "diagnostic.json"),
+			filepath.Join(root, "verify-control.json"),
+		},
+		"absorbing verification": {
+			filepath.Join(root, "scene.json"),
+			filepath.Join(root, "prism-absorbing.json"),
+			filepath.Join(root, "diagnostic.json"),
+			filepath.Join(root, "verify-absorbing.json"),
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			script, err := storage.ReadStudioScriptFiles(files)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := adapt.AdaptScript(script, files, 3); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}
 
 func TestFlattenNestedGroupAndInheritFields(t *testing.T) {
 	script := &schema.StudioScript{
@@ -48,7 +164,7 @@ func TestFlattenNestedGroupAndInheritFields(t *testing.T) {
 		},
 	}
 
-	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adaptTestScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt script: %v", err)
 	}
@@ -108,7 +224,7 @@ func TestChildFieldOverridesGroupInheritance(t *testing.T) {
 		},
 	}
 
-	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adaptTestScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt script: %v", err)
 	}
@@ -137,7 +253,7 @@ func TestGroupDoesNotRequireMaterialID(t *testing.T) {
 		},
 	}
 
-	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adaptTestScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt group without material_id: %v", err)
 	}
@@ -185,7 +301,7 @@ func TestStudioAdaptsArrayCells(t *testing.T) {
 		},
 	}
 
-	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adaptTestScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt array: %v", err)
 	}
@@ -256,7 +372,7 @@ func TestStudioMergesArrayObjectsAcrossFiles(t *testing.T) {
 		t.Fatalf("expected one merged array, got %d", len(script.Objects))
 	}
 
-	adapted, err := adapt.AdaptScript(script, []string{firstPath, secondPath}, 3)
+	adapted, err := adaptTestScript(script, []string{firstPath, secondPath}, 3)
 	if err != nil {
 		t.Fatalf("adapt merged array: %v", err)
 	}
@@ -306,7 +422,7 @@ func TestStudioMergesGroupObjectsAcrossFiles(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read merged group scripts: %v", err)
 	}
-	adapted, err := adapt.AdaptScript(script, []string{firstPath, secondPath}, 3)
+	adapted, err := adaptTestScript(script, []string{firstPath, secondPath}, 3)
 	if err != nil {
 		t.Fatalf("adapt merged group: %v", err)
 	}
@@ -342,7 +458,7 @@ func TestStudioAdaptsTriangleCenterAndGroupPlacement(t *testing.T) {
 		},
 	}
 
-	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adaptTestScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt triangle: %v", err)
 	}
@@ -390,7 +506,7 @@ func TestStudioAdaptsBasicShapesWithGroupPlacement(t *testing.T) {
 		},
 	}
 
-	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adaptTestScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt basic shapes: %v", err)
 	}
@@ -432,7 +548,7 @@ func TestStudioAdaptsCuboidPositionSizeToMinMax(t *testing.T) {
 		},
 	}
 
-	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adaptTestScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt cuboid: %v", err)
 	}
@@ -459,7 +575,7 @@ func TestStudioAdaptsHypercubeToCuboid(t *testing.T) {
 		},
 	}
 
-	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 4)
+	adapted, err := adaptTestScript(script, []string{"scene.json"}, 4)
 	if err != nil {
 		t.Fatalf("adapt hypercube: %v", err)
 	}
@@ -489,7 +605,7 @@ func TestStudioAdaptsBoundsCenterSizeToMinMax(t *testing.T) {
 		},
 	}
 
-	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adaptTestScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt bounds: %v", err)
 	}
@@ -533,7 +649,7 @@ func TestStudioAdaptsImplicitEquationCenterScaleBasisToTransform(t *testing.T) {
 		},
 	}
 
-	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adaptTestScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt implicit equation: %v", err)
 	}
@@ -576,7 +692,7 @@ func TestStudioNormalizesImplicitEquationFieldAlias(t *testing.T) {
 		},
 	}
 
-	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adaptTestScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt implicit equation alias: %v", err)
 	}
@@ -602,7 +718,7 @@ func TestStudioAdaptsCameraLookAtFromRawFields(t *testing.T) {
 	}
 
 	script.Cameras = cameras
-	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adaptTestScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt camera: %v", err)
 	}
@@ -615,14 +731,14 @@ func TestStudioAdaptsCameraLookAtFromRawFields(t *testing.T) {
 
 func TestStudioDoesNotEmitResumeFilmToIntermediateScript(t *testing.T) {
 	script := &schema.StudioScript{
-		Render: schema.StudioRenderScript{
-			OutputFilm:  "final.bin",
-			OutputImage: "final.png",
-			ResumeFilm:  "existing.bin",
-		},
+		Render: schema.StudioRenderScript{FilmID: "test-film"},
+		Films: []schema.StudioFilmScript{{
+			ID: "test-film", CameraID: "test-camera", Shape: []int{400, 400},
+			OutputFilm: "final.bin", OutputImage: "final.png", ResumeFilm: "existing.bin",
+		}},
 	}
 
-	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adaptTestScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt script: %v", err)
 	}
@@ -632,19 +748,20 @@ func TestStudioDoesNotEmitResumeFilmToIntermediateScript(t *testing.T) {
 	if _, ok := adapted.Render["output_image"]; ok {
 		t.Fatal("output_image must stay in studio and not be emitted to engine intermediate scripts")
 	}
-	if adapted.Render["output_film"] != "final.bin" {
-		t.Fatalf("expected output_film to remain in intermediate render config, got %v", adapted.Render["output_film"])
+	if adapted.Cameras[0].Film.OutputFilm != "final.bin" {
+		t.Fatalf("expected output_film on the Engine camera film, got %v", adapted.Cameras[0].Film.OutputFilm)
 	}
 }
 
 func TestStudioKeepsColorPipelineOutOfEngineIntermediateScript(t *testing.T) {
-	script := &schema.StudioScript{Render: schema.StudioRenderScript{
-		Exposure:    0.75,
-		ToneMapping: "aces",
-		Gamma:       2.2,
-		ColorSpace:  "acescg",
-	}}
-	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
+	script := &schema.StudioScript{
+		Render: schema.StudioRenderScript{FilmID: "test-film"},
+		Films: []schema.StudioFilmScript{{
+			ID: "test-film", CameraID: "test-camera", Shape: []int{400, 400},
+			Exposure: 0.75, ToneMapping: "aces", Gamma: 2.2, ColorSpace: "acescg",
+		}},
+	}
+	adapted, err := adaptTestScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt script: %v", err)
 	}
@@ -659,7 +776,7 @@ func TestStudioEmitsIntegratorToIntermediateScript(t *testing.T) {
 	script := &schema.StudioScript{
 		Render: schema.StudioRenderScript{Integrator: "bdpt"},
 	}
-	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adaptTestScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt script: %v", err)
 	}
@@ -670,22 +787,21 @@ func TestStudioEmitsIntegratorToIntermediateScript(t *testing.T) {
 
 func TestStudioEmitsPixelWindowsToIntermediateScript(t *testing.T) {
 	script := &schema.StudioScript{
-		Render: schema.StudioRenderScript{
+		Render: schema.StudioRenderScript{FilmID: "test-film"},
+		Films: []schema.StudioFilmScript{{
+			ID: "test-film", CameraID: "test-camera", Shape: []int{400, 400},
 			PixelWindows: []schema.PixelWindowScript{
 				{Min: []int{100, 600}, Max: []int{150, 650}},
 			},
-		},
+		}},
 	}
 
-	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adaptTestScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt script: %v", err)
 	}
 
-	windows, ok := adapted.Render["pixel_windows"].([]schema.PixelWindowScript)
-	if !ok {
-		t.Fatalf("expected pixel_windows in intermediate render config, got %T", adapted.Render["pixel_windows"])
-	}
+	windows := adapted.Cameras[0].Film.PixelWindows
 	if len(windows) != 1 {
 		t.Fatalf("expected one pixel window, got %d", len(windows))
 	}
@@ -745,24 +861,42 @@ func TestStudioEngineArgsConvertsDimensionsToWidths(t *testing.T) {
 	}
 }
 
-func TestStudioAdaptConvertsDimensionsToCanonicalWidths(t *testing.T) {
-	adapted, err := adapt.AdaptScript(&schema.StudioScript{
-		Render: schema.StudioRenderScript{Width: 1280, Height: 720},
+func TestStudioAdaptAttachesFilmShapeToCamera(t *testing.T) {
+	adapted, err := adaptTestScript(&schema.StudioScript{
+		Render:  schema.StudioRenderScript{FilmID: "test-film"},
+		Films:   []schema.StudioFilmScript{{ID: "test-film", CameraID: "test-camera", Shape: []int{1280, 720}}},
+		Cameras: []schema.StudioCameraScript{{ID: "test-camera"}},
 	}, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt script: %v", err)
 	}
-	widths, ok := adapted.Render["widths"].([]int)
-	if !ok {
-		t.Fatalf("canonical render widths have type %T", adapted.Render["widths"])
+	assertIntSlice(t, adapted.Cameras[0].Film.Shape, []int{1280, 720})
+	if adapted.Render["camera_id"] != "test-camera" {
+		t.Fatalf("render camera_id = %v, want test-camera", adapted.Render["camera_id"])
 	}
-	assertIntSlice(t, widths, []int{1280, 720})
 	if _, exists := adapted.Render["width"]; exists {
 		t.Fatal("legacy width leaked into canonical Engine script")
 	}
 	if _, exists := adapted.Render["height"]; exists {
 		t.Fatal("legacy height leaked into canonical Engine script")
 	}
+}
+
+func adaptTestScript(script *schema.StudioScript, source []string, dimension int) (*schema.IntermediateScript, error) {
+	if len(script.Cameras) == 0 {
+		script.Cameras = []schema.StudioCameraScript{{ID: "test-camera", Type: "n_dim"}}
+	} else if script.Cameras[0].ID == "" {
+		script.Cameras[0].ID = "test-camera"
+	}
+	if len(script.Films) == 0 {
+		script.Films = []schema.StudioFilmScript{{
+			ID: "test-film", CameraID: script.Cameras[0].ID, Shape: []int{400, 400},
+		}}
+	}
+	if script.Render.FilmID == "" {
+		script.Render.FilmID = script.Films[0].ID
+	}
+	return adapt.AdaptScript(script, source, dimension)
 }
 
 func TestStudioOwnsLatestColorAndSpectrumCLI(t *testing.T) {
@@ -782,12 +916,10 @@ func TestStudioOwnsLatestColorAndSpectrumCLI(t *testing.T) {
 }
 
 func TestStudioResolvesPerRenderColorPipeline(t *testing.T) {
-	base := schema.StudioRenderScript{ColorSpace: "linear_srgb"}
-	override := schema.StudioRenderScript{
+	film := schema.StudioFilmScript{
 		Exposure: 0.5, ToneMapping: "reinhard", Gamma: 2.4, ColorSpace: "acescg",
 	}
-	merged := applyStudioRenderOverride(base, override)
-	output := studioRenderOutputFromScript(merged, studioConfig{provided: map[string]bool{}}, "")
+	output := studioRenderOutputFromFilm(film, studioConfig{provided: map[string]bool{}}, "")
 	if output.Options.Exposure != 0.5 || output.Options.Gamma != 2.4 ||
 		string(output.Options.ToneMapping) != "reinhard" || string(output.Options.ColorSpace) != "acescg" {
 		t.Fatalf("unexpected Studio color pipeline: %+v", output.Options)
@@ -894,7 +1026,7 @@ func TestStudioRejectsUnequalHypercubeExtents(t *testing.T) {
 		},
 	}
 
-	if _, err := adapt.AdaptScript(script, []string{"scene.json"}, 3); err == nil {
+	if _, err := adaptTestScript(script, []string{"scene.json"}, 3); err == nil {
 		t.Fatal("expected unequal hypercube extents to fail")
 	}
 }
@@ -914,7 +1046,7 @@ func TestStudioAdaptsQuadraticCenterScaleToWorldCoefficients(t *testing.T) {
 		},
 	}
 
-	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adaptTestScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt quadratic: %v", err)
 	}
@@ -957,7 +1089,7 @@ func TestStudioAdaptsFourOrderCenterScaleBasisToWorldCoefficients(t *testing.T) 
 		},
 	}
 
-	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adaptTestScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt four-order equation: %v", err)
 	}
@@ -1013,7 +1145,7 @@ func TestStudioAdaptsPolynomialSurfaceCenterScaleBasisToTransform(t *testing.T) 
 		},
 	}
 
-	adapted, err := adapt.AdaptScript(script, []string{"scene.json"}, 3)
+	adapted, err := adaptTestScript(script, []string{"scene.json"}, 3)
 	if err != nil {
 		t.Fatalf("adapt polynomial surface: %v", err)
 	}

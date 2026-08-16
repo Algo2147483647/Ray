@@ -32,7 +32,7 @@ func (k *bdptKernel) Prepare(session *RenderSession) error {
 	if k == nil || session == nil {
 		return fmt.Errorf("BDPT kernel or render session is nil")
 	}
-	shape := session.Context.Film.Shape
+	shape := session.Context.Camera.GetFilm().Shape
 	mask := make([]bool, shapeElementCount(shape))
 	if len(session.Context.PixelWindows) == 0 {
 		for pixel := range mask {
@@ -81,7 +81,7 @@ func (k *bdptKernel) TraceSample(session *RenderSession, workIndex int64) []Film
 	}
 	activeCount := len(k.prepared.activePixels)
 	pixel := k.prepared.activePixels[int(workIndex%int64(activeCount))]
-	coords := session.Context.Film.SpectralBins[0].GetCoordinates(pixel)
+	coords := session.Context.Camera.GetFilm().SpectralBins[0].GetCoordinates(pixel)
 
 	u := rand.Float64()
 	if session.Handler.SpectrumMode == optics.SpectrumModeSampledWavelengths {

@@ -83,9 +83,8 @@ func TestLightTracingRejectsNonProjectiveCamera(t *testing.T) {
 		t.Fatalf("NewSceneIntegrator: %v", err)
 	}
 	err = integrator.Render(RenderContext{
-		Camera:     fixedCamera{},
+		Camera:     fixedCamera{Camera: camera.Camera{Film: camera.NewFilm(1, 1)}},
 		ObjectTree: &object.ObjectTree{},
-		Film:       camera.NewFilm(1, 1),
 		Samples:    1,
 	})
 	if err == nil {
@@ -102,8 +101,8 @@ func TestBDPTWorkCountIncludesSampledWavelengthStrata(t *testing.T) {
 	handler.SpectrumMode = optics.SpectrumModeSampledWavelengths
 	handler.WavelengthSamples = 4
 	session, err := newRenderSession(handler, RenderContext{
-		Camera: fixedCamera{}, ObjectTree: (&object.ObjectTree{}).Build(),
-		Film: camera.NewFilm(2, 1), Samples: 3,
+		Camera: fixedCamera{Camera: camera.Camera{Film: camera.NewFilm(2, 1)}}, ObjectTree: (&object.ObjectTree{}).Build(),
+		Samples: 3,
 	}, true)
 	if err != nil {
 		t.Fatalf("newRenderSession: %v", err)
@@ -120,7 +119,7 @@ func TestBDPTWorkCountIncludesSampledWavelengthStrata(t *testing.T) {
 func TestTraceSceneRejectsUnknownIntegrator(t *testing.T) {
 	handler := NewHandler()
 	handler.IntegratorKind = IntegratorKind("unknown")
-	err := handler.TraceScene(fixedCamera{}, nil, camera.NewFilm(1, 1), 1, nil)
+	err := handler.TraceScene(fixedCamera{Camera: camera.Camera{Film: camera.NewFilm(1, 1)}}, nil, 1, nil)
 	if err == nil {
 		t.Fatal("TraceScene accepted an unknown integrator")
 	}

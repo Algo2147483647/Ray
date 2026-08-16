@@ -134,7 +134,7 @@ func runEndless(scriptPath string, script *schema.StudioScript, config studioCon
 			return err
 		}
 
-		output := studioRenderOutputFromScript(baseStudioRender(script), config, checkpointFilm)
+		output := studioRenderOutputFromFilm(resolveFilm(script, script.Render), config, checkpointFilm)
 		output.ImagePath = checkpointImage
 		if err := writeStudioImages([]studioRenderOutput{output}); err != nil {
 			return err
@@ -186,7 +186,7 @@ func resolveResumeFilm(script *schema.StudioScript, config studioConfig) string 
 		return config.resumeFilm
 	}
 	if script != nil {
-		return script.Render.ResumeFilm
+		return resolveFilm(script, script.Render).ResumeFilm
 	}
 	return ""
 }
@@ -203,8 +203,7 @@ func resolvePixelWindows(script *schema.StudioScript, config studioConfig) []mod
 	if config.provided["pixel-window"] {
 		return studioPixelWindowsToEngine(config.pixelWindows)
 	}
-	render := baseStudioRender(script)
-	return studioPixelWindowsToEngine(render.PixelWindows)
+	return studioPixelWindowsToEngine(resolveFilm(script, script.Render).PixelWindows)
 }
 
 func studioPixelWindowsToEngine(windows []schema.PixelWindowScript) []modelcamera.PixelWindow {
@@ -222,50 +221,36 @@ func studioPixelWindowsToEngine(windows []schema.PixelWindowScript) []modelcamer
 }
 
 func resolveRenderOutputs(script *schema.StudioScript, config studioConfig, outputFilmOverride string) []studioRenderOutput {
-	base := baseStudioRender(script)
-
 	if script != nil && len(script.Renders) > 0 {
 		outputs := make([]studioRenderOutput, 0, len(script.Renders))
 		for _, render := range script.Renders {
-			outputs = append(outputs, studioRenderOutputFromScript(applyStudioRenderOverride(base, render), config, outputFilmOverride))
+			if render.FilmID == "" {
+				render.FilmID = script.Render.FilmID
+			}
+			outputs = append(outputs, studioRenderOutputFromFilm(resolveFilm(script, render), config, outputFilmOverride))
 		}
 		return outputs
 	}
-	return []studioRenderOutput{studioRenderOutputFromScript(base, config, outputFilmOverride)}
+	if script == nil {
+		return nil
+	}
+	return []studioRenderOutput{studioRenderOutputFromFilm(resolveFilm(script, script.Render), config, outputFilmOverride)}
 }
 
-func baseStudioRender(script *schema.StudioScript) schema.StudioRenderScript {
-	if script != nil {
-		return script.Render
+func resolveFilm(script *schema.StudioScript, render schema.StudioRenderScript) schema.StudioFilmScript {
+	if script == nil {
+		return schema.StudioFilmScript{}
 	}
-	return schema.StudioRenderScript{}
+	for _, film := range script.Films {
+		if film.ID == render.FilmID {
+			return film
+		}
+	}
+	return schema.StudioFilmScript{}
 }
 
-func applyStudioRenderOverride(base, override schema.StudioRenderScript) schema.StudioRenderScript {
-	result := base
-	if override.OutputFilm != "" {
-		result.OutputFilm = override.OutputFilm
-	}
-	if override.OutputImage != "" {
-		result.OutputImage = override.OutputImage
-	}
-	if override.Exposure > 0 {
-		result.Exposure = override.Exposure
-	}
-	if override.ToneMapping != "" {
-		result.ToneMapping = override.ToneMapping
-	}
-	if override.Gamma > 0 {
-		result.Gamma = override.Gamma
-	}
-	if override.ColorSpace != "" {
-		result.ColorSpace = override.ColorSpace
-	}
-	return result
-}
-
-func studioRenderOutputFromScript(render schema.StudioRenderScript, config studioConfig, outputFilmOverride string) studioRenderOutput {
-	filmPath := render.OutputFilm
+func studioRenderOutputFromFilm(film schema.StudioFilmScript, config studioConfig, outputFilmOverride string) studioRenderOutput {
+	filmPath := film.OutputFilm
 	if filmPath == "" {
 		filmPath = defaultOutputFilm
 	}
@@ -276,7 +261,7 @@ func studioRenderOutputFromScript(render schema.StudioRenderScript, config studi
 		filmPath = outputFilmOverride
 	}
 
-	imagePath := render.OutputImage
+	imagePath := film.OutputImage
 	if imagePath == "" {
 		imagePath = defaultOutputImage
 	}
@@ -290,17 +275,17 @@ func studioRenderOutputFromScript(render schema.StudioRenderScript, config studi
 		Gamma:       1,
 		ColorSpace:  studiofilm.ColorSpaceLinearSRGB,
 	}
-	if render.Exposure > 0 {
-		options.Exposure = render.Exposure
+	if film.Exposure > 0 {
+		options.Exposure = film.Exposure
 	}
-	if render.ToneMapping != "" {
-		options.ToneMapping = studiofilm.ToneMapping(render.ToneMapping)
+	if film.ToneMapping != "" {
+		options.ToneMapping = studiofilm.ToneMapping(film.ToneMapping)
 	}
-	if render.Gamma > 0 {
-		options.Gamma = render.Gamma
+	if film.Gamma > 0 {
+		options.Gamma = film.Gamma
 	}
-	if render.ColorSpace != "" {
-		options.ColorSpace = studiofilm.ColorSpace(render.ColorSpace)
+	if film.ColorSpace != "" {
+		options.ColorSpace = studiofilm.ColorSpace(film.ColorSpace)
 	}
 	if config.provided["exposure"] {
 		options.Exposure = config.exposure

@@ -10,14 +10,20 @@
             "weight": 0.5,
             "surface": {
               "type": "lambert",
-              "albedo": {"type": "constant", "value": 0.78}
+              "albedo": {
+                "type": "constant",
+                "value": 0.78
+              }
             }
           },
           {
             "weight": 0.5,
             "surface": {
               "type": "rough_dielectric_reflection",
-              "reflectance": {"type": "constant", "value": 1},
+              "reflectance": {
+                "type": "constant",
+                "value": 1
+              },
               "eta_outside": 1,
               "eta_inside": 1.5,
               "roughness": 0.14
@@ -30,21 +36,39 @@
       "id": "art-vermilion-enamel",
       "surface": {
         "type": "lambert",
-        "albedo": {"type": "rgb", "value": [0.52, 0.055, 0.018]}
+        "albedo": {
+          "type": "rgb",
+          "value": [
+            0.52,
+            0.055,
+            0.018
+          ]
+        }
       }
     },
     {
       "id": "art-jade-enamel",
       "surface": {
         "type": "lambert",
-        "albedo": {"type": "rgb", "value": [0.08, 0.48, 0.18]}
+        "albedo": {
+          "type": "rgb",
+          "value": [
+            0.08,
+            0.48,
+            0.18
+          ]
+        }
       }
     },
     {
       "id": "art-warm-key",
       "emission": {
         "type": "constant",
-        "radiance": {"type": "blackbody", "temperature": 2350, "scale": 12}
+        "radiance": {
+          "type": "blackbody",
+          "temperature": 2350,
+          "scale": 12
+        }
       }
     }
   ],
@@ -52,74 +76,150 @@
     {
       "id": "white-room-floor",
       "shape": "cuboid",
-      "pmin": [-4.45, -6, -0.12],
-      "pmax": [2.35, 1.7, 0],
+      "pmin": [
+        -4.45,
+        -6,
+        -0.12
+      ],
+      "pmax": [
+        2.35,
+        1.7,
+        0
+      ],
       "material_id": "art-gallery-white"
     },
     {
       "id": "white-room-back-wall",
       "shape": "cuboid",
-      "pmin": [-4.5, 1.62, 0],
-      "pmax": [2.4, 1.68, 3.1],
+      "pmin": [
+        -4.5,
+        1.62,
+        0
+      ],
+      "pmax": [
+        2.4,
+        1.68,
+        3.1
+      ],
       "material_id": "art-gallery-white"
     },
     {
       "id": "art-source-housing-enamel-front",
       "_comment": "Camera-facing vermilion enamel skin; the optical cavity remains matte black in scene.json.",
       "shape": "cuboid",
-      "pmin": [1.9, -0.592, 0.26],
-      "pmax": [2.19, -0.583, 1.74],
+      "pmin": [
+        1.9,
+        -0.592,
+        0.26
+      ],
+      "pmax": [
+        2.19,
+        -0.583,
+        1.74
+      ],
       "material_id": "art-vermilion-enamel"
     },
     {
       "id": "art-source-housing-enamel-side",
       "_comment": "Right-side enamel skin on the slit lamp housing.",
       "shape": "cuboid",
-      "pmin": [2.181, -0.54, 0.26],
-      "pmax": [2.19, 0.24, 1.74],
+      "pmin": [
+        2.181,
+        -0.54,
+        0.26
+      ],
+      "pmax": [
+        2.19,
+        0.24,
+        1.74
+      ],
       "material_id": "art-vermilion-enamel"
     },
     {
       "id": "art-aperture-enamel-near-cheek",
       "_comment": "Jade enamel casing outside the matte-black optical plates.",
       "shape": "cuboid",
-      "pmin": [0.12, -0.54, 0.27],
-      "pmax": [0.28, -0.455, 1.73],
+      "pmin": [
+        0.12,
+        -0.54,
+        0.27
+      ],
+      "pmax": [
+        0.28,
+        -0.455,
+        1.73
+      ],
       "material_id": "art-jade-enamel"
     },
     {
       "id": "art-aperture-enamel-far-cheek",
       "shape": "cuboid",
-      "pmin": [0.12, 0.455, 0.27],
-      "pmax": [0.28, 0.54, 1.73],
+      "pmin": [
+        0.12,
+        0.455,
+        0.27
+      ],
+      "pmax": [
+        0.28,
+        0.54,
+        1.73
+      ],
       "material_id": "art-jade-enamel"
     },
     {
       "id": "art-aperture-enamel-bottom-sill",
       "shape": "cuboid",
-      "pmin": [0.12, -0.54, 0.22],
-      "pmax": [0.28, 0.54, 0.3],
+      "pmin": [
+        0.12,
+        -0.54,
+        0.22
+      ],
+      "pmax": [
+        0.28,
+        0.54,
+        0.3
+      ],
       "material_id": "art-jade-enamel"
     },
     {
       "id": "art-aperture-enamel-top-brow",
       "shape": "cuboid",
-      "pmin": [0.12, -0.54, 1.7],
-      "pmax": [0.28, 0.54, 1.78],
+      "pmin": [
+        0.12,
+        -0.54,
+        1.7
+      ],
+      "pmax": [
+        0.28,
+        0.54,
+        1.78
+      ],
       "material_id": "art-jade-enamel"
     },
     {
       "id": "art-fill-key",
       "shape": "sphere",
-      "center": [3.4, -4, 3.2],
+      "center": [
+        3.4,
+        -4,
+        3.2
+      ],
       "r": 0.24,
       "material_id": "art-warm-key"
     },
     {
       "id": "screen-frame-left",
       "shape": "cylinder",
-      "center": [-3.99, -0.76, 1.46],
-      "axis": [0, 0, 1],
+      "center": [
+        -3.99,
+        -0.76,
+        1.46
+      ],
+      "axis": [
+        0,
+        0,
+        1
+      ],
       "r": 0.018,
       "height": 2.76,
       "material_id": "aged-brass"
@@ -127,8 +227,16 @@
     {
       "id": "screen-frame-right",
       "shape": "cylinder",
-      "center": [-3.99, 0.76, 1.46],
-      "axis": [0, 0, 1],
+      "center": [
+        -3.99,
+        0.76,
+        1.46
+      ],
+      "axis": [
+        0,
+        0,
+        1
+      ],
       "r": 0.018,
       "height": 2.76,
       "material_id": "aged-brass"
@@ -136,8 +244,16 @@
     {
       "id": "screen-frame-bottom",
       "shape": "cylinder",
-      "center": [-3.99, 0, 0.08],
-      "axis": [0, 1, 0],
+      "center": [
+        -3.99,
+        0,
+        0.08
+      ],
+      "axis": [
+        0,
+        1,
+        0
+      ],
       "r": 0.018,
       "height": 1.52,
       "material_id": "aged-brass"
@@ -145,8 +261,16 @@
     {
       "id": "screen-frame-top",
       "shape": "cylinder",
-      "center": [-3.99, 0, 2.84],
-      "axis": [0, 1, 0],
+      "center": [
+        -3.99,
+        0,
+        2.84
+      ],
+      "axis": [
+        0,
+        1,
+        0
+      ],
       "r": 0.018,
       "height": 1.52,
       "material_id": "aged-brass"
@@ -155,32 +279,56 @@
   "cameras": [
     {
       "id": "prism-lab-camera",
-      "position": [3.35, -5.65, 2.25],
-      "look_at": [-0.75, 0.05, 0.62],
-      "up": [0, 0, 1],
-      "field_of_views": [48, 48],
+      "position": [
+        3.35,
+        -5.65,
+        2.25
+      ],
+      "look_at": [
+        -0.75,
+        0.05,
+        0.62
+      ],
+      "up": [
+        0,
+        0,
+        1
+      ],
+      "field_of_views": [
+        48,
+        48
+      ],
       "aspect_ratio": 1
     }
   ],
+  "films": [
+    {
+      "id": "prism-beauty-film",
+      "camera_id": "prism-lab-camera",
+      "shape": [
+        1000,
+        1000
+      ],
+      "output_image": "../outputs/newton-prism-wall.png",
+      "output_film": "../outputs/newton-prism-wall.bin",
+      "exposure": 0.62,
+      "tone_mapping": "aces",
+      "gamma": 2.2,
+      "color_space": "linear_srgb"
+    }
+  ],
   "render": {
+    "film_id": "prism-beauty-film",
     "dimension": 3,
     "samples": 20,
     "thread_num": 0,
-    "width": 1000,
-    "height": 1000,
-    "camera_index": 0,
-    "exposure": 0.62,
-    "tone_mapping": "aces",
-    "gamma": 2.2,
     "spectrum_mode": "sampled",
-    "wavelength_samples": 4,
-    "color_space": "linear_srgb"
+    "wavelength_samples": 4
   },
   "renders": [
     {
       "integrator": "bdpt",
-      "output_image": "../outputs/newton-prism-wall.png",
-      "output_film": "../outputs/newton-prism-wall.bin"
+      "film_id": "prism-beauty-film"
     }
   ]
 }

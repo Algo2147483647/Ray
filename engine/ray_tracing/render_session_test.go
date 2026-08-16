@@ -61,8 +61,8 @@ func TestSplatDriverNormalizesByGlobalWorkCount(t *testing.T) {
 	film := camera.NewFilm(1, 1)
 	film.InitSpectralBins(8, optics.WavelengthMin, optics.WavelengthMax)
 	session, err := newRenderSession(handler, RenderContext{
-		Camera: fixedCamera{}, ObjectTree: &object.ObjectTree{},
-		Film: film, Samples: 7,
+		Camera: fixedCamera{Camera: camera.Camera{Film: film}}, ObjectTree: &object.ObjectTree{},
+		Samples: 7,
 	}, true)
 	if err != nil {
 		t.Fatalf("newRenderSession: %v", err)
@@ -101,8 +101,8 @@ func TestSplatDriverBatchAcquisitionVisitsTailExactlyOnce(t *testing.T) {
 	handler.ThreadNum = 8
 	film := camera.NewFilm(1, 1)
 	session, err := newRenderSession(handler, RenderContext{
-		Camera: fixedCamera{}, ObjectTree: &object.ObjectTree{},
-		Film: film, Samples: 1,
+		Camera: fixedCamera{Camera: camera.Camera{Film: film}}, ObjectTree: &object.ObjectTree{},
+		Samples: 1,
 	}, true)
 	if err != nil {
 		t.Fatalf("newRenderSession: %v", err)

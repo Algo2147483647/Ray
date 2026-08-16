@@ -5,10 +5,10 @@
       "id": "klein-uv",
       "emission": {
         "type": "uv_klein",
-        "saturation": 1.0,
+        "saturation": 1,
         "lightness": 0.55,
         "v_stripes": 1,
-        "intensity": 1.0
+        "intensity": 1
       }
     }
   ],
@@ -16,7 +16,12 @@
     {
       "id": "klein",
       "shape": "klein_bottle",
-      "center": [0, 0, 0, 0],
+      "center": [
+        0,
+        0,
+        0,
+        0
+      ],
       "r_major": 1.5,
       "r_minor": 0.5,
       "thickness": 0.06,
@@ -27,27 +32,67 @@
     {
       "id": "klein-loop-perpendicular",
       "type": "n_dim",
-      "position": [0.0, 0.0, 6.0, 0.0],
-      "coordinates": [
-        [0.0, 0.0, -1.0, 0.0],
-        [1.0, 0.0,  0.0, 0.0],
-        [0.0, 1.0,  0.0, 0.0],
-        [0.0, 0.0,  0.0, 1.0]
+      "position": [
+        0,
+        0,
+        6,
+        0
       ],
-      "widths": [100, 100, 100],
-      "field_of_views": [140, 140, 140],
+      "coordinates": [
+        [
+          0,
+          0,
+          -1,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1
+        ]
+      ],
+      "field_of_views": [
+        140,
+        140,
+        140
+      ],
       "ortho": true
     }
   ],
+  "films": [
+    {
+      "id": "klein-film",
+      "camera_id": "klein-loop-perpendicular",
+      "shape": [
+        100,
+        100,
+        100
+      ],
+      "output_image": "../outputs/4d-klein-bottle.png",
+      "output_film": "../outputs/4d-klein-bottle.bin",
+      "exposure": 1,
+      "tone_mapping": "linear",
+      "gamma": 1
+    }
+  ],
   "render": {
+    "film_id": "klein-film",
     "dimension": 4,
     "samples": 16,
     "thread_num": 8,
-    "spectrum_mode": "rgb",
-    "exposure": 1.0,
-    "tone_mapping": "linear",
-    "gamma": 1.0,
-    "output_image": "../outputs/4d-klein-bottle.png",
-    "output_film": "../outputs/4d-klein-bottle.bin"
+    "spectrum_mode": "rgb"
   }
 }

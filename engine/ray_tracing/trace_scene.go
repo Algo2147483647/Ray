@@ -16,7 +16,6 @@ const (
 func (h *Handler) TraceScene(
 	renderCamera camera.RayCamera,
 	objectTree *object.ObjectTree,
-	film *camera.Film,
 	samples int64,
 	pixelWindows []camera.PixelWindow,
 ) error {
@@ -25,7 +24,7 @@ func (h *Handler) TraceScene(
 		return err
 	}
 	return integrator.Render(RenderContext{
-		Camera: renderCamera, ObjectTree: objectTree, Film: film,
+		Camera: renderCamera, ObjectTree: objectTree,
 		Samples: samples, PixelWindows: pixelWindows,
 	})
 }

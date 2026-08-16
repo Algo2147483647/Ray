@@ -11,7 +11,15 @@ import (
 
 func ParseCameras(script *parser.Script) ([]modelcamera.RayCamera, error) {
 	cameras := make([]modelcamera.RayCamera, 0, len(script.Cameras))
+	ids := make(map[string]bool, len(script.Cameras))
 	for idx, cameraDef := range script.Cameras {
+		if cameraDef.ID == "" {
+			return nil, fmt.Errorf("parse camera[%d]: id is required", idx)
+		}
+		if ids[cameraDef.ID] {
+			return nil, fmt.Errorf("parse camera[%d]: duplicate id %q", idx, cameraDef.ID)
+		}
+		ids[cameraDef.ID] = true
 		parsedCamera, err := BuildCameraFromScript(cameraDef)
 		if err != nil {
 			return nil, fmt.Errorf("parse camera[%d]: %w", idx, err)
@@ -23,6 +31,13 @@ func ParseCameras(script *parser.Script) ([]modelcamera.RayCamera, error) {
 }
 
 func BuildCameraFromScript(def parser.CameraScript) (modelcamera.RayCamera, error) {
+	if def.Film == nil {
+		return nil, fmt.Errorf("film is required")
+	}
+	if _, err := modelcamera.NormalizePixelWindows(def.Film.PixelWindows, def.Film.Shape); err != nil {
+		return nil, err
+	}
+
 	switch def.Type {
 	case "", modelcamera.CameraType3D:
 		return BuildCamera3DFromScript(def)
@@ -42,6 +57,7 @@ func BuildCamera3DFromScript(def parser.CameraScript) (*modelcamera.Camera3D, er
 		return nil, err
 	}
 	return &modelcamera.Camera3D{
+		Camera:       modelcamera.Camera{Film: def.Film},
 		Position:     utils.NewVec(def.Position),
 		Coordinates:  buildCameraCoordinates(def.Coordinates, 3),
 		FieldOfViews: append([]float64(nil), def.FieldOfViews...),
@@ -73,6 +89,7 @@ func BuildCameraNDimFromScript(def parser.CameraScript) (*modelcamera.CameraNDim
 	}
 
 	cameraNDim := &modelcamera.CameraNDim{
+		Camera:       modelcamera.Camera{Film: def.Film},
 		Position:     utils.NewVec(def.Position),
 		Coordinates:  coordinates,
 		FieldOfViews: fieldOfViews,
@@ -97,6 +114,7 @@ func BuildSphericalCameraFromScript(def parser.CameraScript) (*modelcamera.Spher
 		return nil, err
 	}
 	cam := &modelcamera.SphericalCamera{
+		Camera:       modelcamera.Camera{Film: def.Film},
 		Position:     utils.NewVec(def.Position),
 		Coordinates:  buildCameraCoordinates(def.Coordinates, 4),
 		FieldOfViews: append([]float64(nil), def.FieldOfViews...),

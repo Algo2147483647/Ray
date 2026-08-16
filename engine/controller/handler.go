@@ -18,7 +18,6 @@ type Handler struct {
 	err     error
 	Scene   *model.Scene
 	Script  *parser.Script
-	Film    *camera.Film
 	Camera  camera.RayCamera
 	Context RenderContext
 }
@@ -69,16 +68,25 @@ func (h *Handler) ConfigureRenderContext(context RenderContext) *Handler {
 	if h.err != nil {
 		return h
 	}
+	if context.CameraIndex < 0 {
+		h.err = fmt.Errorf("render camera_id %q does not exist", context.CameraID)
+		return h
+	}
 
 	renderCamera, err := h.selectRenderCamera(context.CameraIndex)
 	if err != nil {
 		h.err = err
 		return h
 	}
+	film := renderCamera.GetFilm()
+	if film == nil {
+		h.err = fmt.Errorf("camera %q has no film", context.CameraID)
+		return h
+	}
 
-	filmShape := append([]int(nil), context.Width...)
+	filmShape := append([]int(nil), context.FilmShape...)
 	if len(filmShape) == 0 {
-		h.err = fmt.Errorf("render film widths are not configured")
+		h.err = fmt.Errorf("camera %q film shape is not configured", context.CameraID)
 		return h
 	}
 
@@ -87,10 +95,10 @@ func (h *Handler) ConfigureRenderContext(context RenderContext) *Handler {
 		h.err = err
 		return h
 	}
+
 	context.PixelWindows = normalizedWindows
 	h.Context = context
-	h.Film = camera.NewFilm(filmShape...)
-	renderCamera.SetFilm(h.Film)
+	film.Shape = append(film.Shape[:0], filmShape...)
 	h.Camera = renderCamera
 	return h
 }
@@ -145,10 +153,13 @@ func (h *Handler) Render() *Handler {
 	if h.Camera == nil {
 		h.err = fmt.Errorf("render camera is not configured")
 		return h
-	} else if h.Film == nil {
+	}
+	film := h.Camera.GetFilm()
+	if film == nil {
 		h.err = fmt.Errorf("film is not initialized")
 		return h
 	}
+	film.Reset()
 
 	fmt.Println("Starting rendering...")
 	start := time.Now()
@@ -168,7 +179,6 @@ func (h *Handler) Render() *Handler {
 	if err := renderHandler.TraceScene(
 		h.Camera,
 		h.Scene.ObjectTree,
-		h.Film,
 		h.Context.Samples,
 		h.Context.PixelWindows,
 	); err != nil {
@@ -199,7 +209,11 @@ func (h *Handler) SaveFilm(filename string) *Handler {
 		return h
 	}
 
-	if err := h.Film.SaveToFile(filename); err != nil {
+	if h.Camera == nil || h.Camera.GetFilm() == nil {
+		h.err = fmt.Errorf("film is not initialized")
+		return h
+	}
+	if err := h.Camera.GetFilm().SaveToFile(filename); err != nil {
 		h.err = err
 		return h
 	}

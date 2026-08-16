@@ -88,10 +88,12 @@ func TestLoadSceneFromScriptRejectsKleinCameraMismatch(t *testing.T) {
 		Render:   parser.RenderScript{Dimension: 3},
 		Geometry: &parser.GeometryScript{Type: "klein"},
 		Cameras: []parser.CameraScript{{
+			ID:           "main",
 			Type:         camera.CameraType3D,
 			Position:     []float64{0, 0, 0},
 			Coordinates:  [][]float64{{1, 0, 0}, {0, -1, 0}, {0, 0, 1}},
 			FieldOfViews: []float64{60, 60},
+			Film:         &camera.Film{Shape: []int{400, 400}},
 		}},
 	}
 

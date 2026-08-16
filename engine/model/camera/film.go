@@ -11,6 +11,8 @@ import (
 // tristimulus working space, display transform, or image-encoding policy.
 type Film struct {
 	Shape         []int                   `json:"shape"`
+	OutputFilm    string                  `json:"output_film,omitempty"`
+	PixelWindows  []PixelWindow           `json:"pixel_windows,omitempty"`
 	Samples       int64                   `json:"samples"`
 	SpectralBins  []maths.Tensor[float64] `json:"spectral_bins"`
 	SpectralMinNM float64                 `json:"spectral_min_nm"`
@@ -36,6 +38,17 @@ func (f *Film) Init(shape ...int) *Film {
 	f.SpectralMinNM = 0
 	f.SpectralMaxNM = 0
 	return f
+}
+
+// Reset clears accumulated radiance while preserving the Film configuration.
+func (f *Film) Reset() {
+	if f == nil {
+		return
+	}
+	f.Samples = 0
+	f.SpectralBins = nil
+	f.SpectralMinNM = 0
+	f.SpectralMaxNM = 0
 }
 
 func (f *Film) ElementCount() int {

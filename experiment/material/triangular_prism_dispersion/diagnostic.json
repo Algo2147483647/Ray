@@ -4,8 +4,16 @@
     {
       "id": "screen-frame-left",
       "shape": "cylinder",
-      "center": [-3.99, -0.76, 1],
-      "axis": [0, 0, 1],
+      "center": [
+        -3.99,
+        -0.76,
+        1
+      ],
+      "axis": [
+        0,
+        0,
+        1
+      ],
       "r": 0.018,
       "height": 1.84,
       "material_id": "apparatus-dark"
@@ -13,8 +21,16 @@
     {
       "id": "screen-frame-right",
       "shape": "cylinder",
-      "center": [-3.99, 0.76, 1],
-      "axis": [0, 0, 1],
+      "center": [
+        -3.99,
+        0.76,
+        1
+      ],
+      "axis": [
+        0,
+        0,
+        1
+      ],
       "r": 0.018,
       "height": 1.84,
       "material_id": "apparatus-dark"
@@ -22,8 +38,16 @@
     {
       "id": "screen-frame-bottom",
       "shape": "cylinder",
-      "center": [-3.99, 0, 0.08],
-      "axis": [0, 1, 0],
+      "center": [
+        -3.99,
+        0,
+        0.08
+      ],
+      "axis": [
+        0,
+        1,
+        0
+      ],
       "r": 0.018,
       "height": 1.52,
       "material_id": "apparatus-dark"
@@ -31,8 +55,16 @@
     {
       "id": "screen-frame-top",
       "shape": "cylinder",
-      "center": [-3.99, 0, 1.92],
-      "axis": [0, 1, 0],
+      "center": [
+        -3.99,
+        0,
+        1.92
+      ],
+      "axis": [
+        0,
+        1,
+        0
+      ],
       "r": 0.018,
       "height": 1.52,
       "material_id": "apparatus-dark"
@@ -41,26 +73,49 @@
   "cameras": [
     {
       "id": "prism-diagnostic-camera",
-      "position": [-2.55, 0.03, 1],
-      "look_at": [-4, 0.03, 1],
-      "up": [0, 0, 1],
+      "position": [
+        -2.55,
+        0.03,
+        1
+      ],
+      "look_at": [
+        -4,
+        0.03,
+        1
+      ],
+      "up": [
+        0,
+        0,
+        1
+      ],
       "field_of_view": 64,
-      "field_of_views": [64, 48],
+      "field_of_views": [
+        64,
+        48
+      ],
       "aspect_ratio": 1.5
     }
   ],
+  "films": [
+    {
+      "id": "prism-diagnostic-film",
+      "camera_id": "prism-diagnostic-camera",
+      "shape": [
+        120,
+        80
+      ],
+      "exposure": 1.18,
+      "tone_mapping": "aces",
+      "gamma": 2.2,
+      "color_space": "linear_srgb"
+    }
+  ],
   "render": {
+    "film_id": "prism-diagnostic-film",
     "dimension": 3,
     "samples": 512,
     "thread_num": 0,
-    "width": 120,
-    "height": 80,
-    "camera_index": 0,
-    "exposure": 1.18,
-    "tone_mapping": "aces",
-    "gamma": 2.2,
     "spectrum_mode": "sampled",
-    "wavelength_samples": 4,
-    "color_space": "linear_srgb"
+    "wavelength_samples": 4
   }
 }

@@ -23,9 +23,10 @@ type RenderContext struct {
 	ScriptPath        string
 	Integrator        string
 	Dimension         int
+	CameraID          string
 	CameraIndex       int
 	ThreadNum         int
-	Width             []int
+	FilmShape         []int
 	Samples           int64
 	OutputFilm        string
 	SpectrumMode      string
@@ -55,7 +56,7 @@ func (h *Handler) ParseRenderArgs(args []string) *Handler {
 	flagSet.Func("widths", "film dimensions, for example 1920,1080", func(value string) error {
 		width, err := parseWidths(value)
 		if err == nil {
-			context.Width = width
+			context.FilmShape = width
 		}
 		return err
 	})
@@ -130,7 +131,7 @@ func ResolveRenderContext(script *parser.Script, requested RenderContext) Render
 		ScriptPath:        requested.ScriptPath,
 		Integrator:        "path",
 		Dimension:         3,
-		CameraIndex:       0,
+		CameraIndex:       -1,
 		ThreadNum:         runtime.NumCPU(),
 		Samples:           defaultSamples,
 		OutputFilm:        defaultOutputFilm,
@@ -145,62 +146,22 @@ func ResolveRenderContext(script *parser.Script, requested RenderContext) Render
 		if script.Render.Dimension > 0 {
 			context.Dimension = script.Render.Dimension
 		}
-		if script.Render.CameraIndexSet {
-			context.CameraIndex = script.Render.CameraIndex
-		}
 		if script.Render.ThreadNum > 0 {
 			context.ThreadNum = script.Render.ThreadNum
-		}
-		if len(script.Render.Width) > 0 {
-			context.Width = append([]int(nil), script.Render.Width...)
 		}
 		if script.Render.Samples > 0 {
 			context.Samples = script.Render.Samples
 		}
-		if script.Render.OutputFilm != "" {
-			context.OutputFilm = script.Render.OutputFilm
-		}
+		context.CameraID = script.Render.CameraID
 		if script.Render.SpectrumMode != "" {
 			context.SpectrumMode = script.Render.SpectrumMode
 		}
 		if script.Render.WavelengthSamples > 0 {
 			context.WavelengthSamples = script.Render.WavelengthSamples
 		}
-		if len(script.Render.PixelWindows) > 0 {
-			context.PixelWindows = clonePixelWindows(script.Render.PixelWindows)
-		}
 	}
-
-	if requested.CameraIndex >= 0 {
-		context.CameraIndex = requested.CameraIndex
-	}
-	if requested.Integrator != "" {
-		context.Integrator = requested.Integrator
-	}
-	if requested.Dimension > 0 {
-		context.Dimension = requested.Dimension
-	}
-	if requested.ThreadNum > 0 {
-		context.ThreadNum = requested.ThreadNum
-	}
-	if len(requested.Width) > 0 {
-		context.Width = append([]int(nil), requested.Width...)
-	}
-	if requested.Samples > 0 {
-		context.Samples = requested.Samples
-	}
-	if requested.OutputFilm != "" {
-		context.OutputFilm = requested.OutputFilm
-	}
-	if requested.SpectrumMode != "" {
-		context.SpectrumMode = requested.SpectrumMode
-	}
-	if requested.WavelengthSamples > 0 {
-		context.WavelengthSamples = requested.WavelengthSamples
-	}
-	if len(requested.PixelWindows) > 0 {
-		context.PixelWindows = clonePixelWindows(requested.PixelWindows)
-	}
+	context = resolveCameraContext(script, context, requested.CameraIndex)
+	context = applyRequestedContext(context, requested)
 	if context.SpectrumMode == "sampled" && context.WavelengthSamples <= 1 {
 		context.WavelengthSamples = 4
 	}
@@ -219,11 +180,13 @@ func ResolveRenderContexts(script *parser.Script, requested RenderContext) []Ren
 		jobs = make([]RenderContext, 0, len(script.Renders))
 		for _, render := range script.Renders {
 			context := applyRenderScriptToContext(base, render)
+			context = resolveCameraContext(script, context, requested.CameraIndex)
 			jobs = append(jobs, applyRequestedContext(context, requested))
 		}
 		return jobs
 	}
 
+	jobs[0] = resolveCameraContext(script, jobs[0], requested.CameraIndex)
 	jobs[0] = applyRequestedContext(jobs[0], requested)
 	return jobs
 }
@@ -235,29 +198,20 @@ func applyRenderScriptToContext(context RenderContext, render parser.RenderScrip
 	if render.Dimension > 0 {
 		context.Dimension = render.Dimension
 	}
-	if render.CameraIndexSet {
-		context.CameraIndex = render.CameraIndex
+	if render.CameraID != "" {
+		context.CameraID = render.CameraID
 	}
 	if render.ThreadNum > 0 {
 		context.ThreadNum = render.ThreadNum
 	}
-	if len(render.Width) > 0 {
-		context.Width = append([]int(nil), render.Width...)
-	}
 	if render.Samples > 0 {
 		context.Samples = render.Samples
-	}
-	if render.OutputFilm != "" {
-		context.OutputFilm = render.OutputFilm
 	}
 	if render.SpectrumMode != "" {
 		context.SpectrumMode = render.SpectrumMode
 	}
 	if render.WavelengthSamples > 0 {
 		context.WavelengthSamples = render.WavelengthSamples
-	}
-	if len(render.PixelWindows) > 0 {
-		context.PixelWindows = clonePixelWindows(render.PixelWindows)
 	}
 	if context.SpectrumMode == "sampled" && context.WavelengthSamples <= 1 {
 		context.WavelengthSamples = 4
@@ -278,8 +232,8 @@ func applyRequestedContext(context RenderContext, requested RenderContext) Rende
 	if requested.ThreadNum > 0 {
 		context.ThreadNum = requested.ThreadNum
 	}
-	if len(requested.Width) > 0 {
-		context.Width = append([]int(nil), requested.Width...)
+	if len(requested.FilmShape) > 0 {
+		context.FilmShape = append([]int(nil), requested.FilmShape...)
 	}
 	if requested.Samples > 0 {
 		context.Samples = requested.Samples
@@ -298,6 +252,37 @@ func applyRequestedContext(context RenderContext, requested RenderContext) Rende
 	}
 	if context.SpectrumMode == "sampled" && context.WavelengthSamples <= 1 {
 		context.WavelengthSamples = 4
+	}
+	return context
+}
+
+func resolveCameraContext(script *parser.Script, context RenderContext, requestedIndex int) RenderContext {
+	if script == nil {
+		return context
+	}
+	index := -1
+	if requestedIndex >= 0 {
+		index = requestedIndex
+	} else {
+		for i := range script.Cameras {
+			if script.Cameras[i].ID == context.CameraID {
+				index = i
+				break
+			}
+		}
+	}
+	if index < 0 || index >= len(script.Cameras) {
+		return context
+	}
+	def := script.Cameras[index]
+	context.CameraIndex = index
+	context.CameraID = def.ID
+	if def.Film != nil {
+		context.FilmShape = append([]int(nil), def.Film.Shape...)
+		context.PixelWindows = clonePixelWindows(def.Film.PixelWindows)
+		if def.Film.OutputFilm != "" {
+			context.OutputFilm = def.Film.OutputFilm
+		}
 	}
 	return context
 }

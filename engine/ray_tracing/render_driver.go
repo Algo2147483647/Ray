@@ -27,9 +27,8 @@ func (d *pixelDriver) Run(session *RenderSession) error {
 		return nil
 	}
 
-	shape := session.Context.Film.Shape
 	tiles, totalPixels := buildTileCoordinatesForWindows(
-		shape,
+		session.Context.Camera.GetFilm().Shape,
 		session.Context.PixelWindows,
 		session.Handler.BlockCols,
 		session.Handler.BlockRows,

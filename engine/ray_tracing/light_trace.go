@@ -31,12 +31,13 @@ func (k *lightTracingKernel) Prepare(session *RenderSession) error {
 	}
 	k.projective = projective
 	k.lights, k.totalWeight = collectAreaLights(session.Context.ObjectTree)
-	if len(session.Context.Film.Shape) != 2 {
+	film := session.Context.Camera.GetFilm()
+	if len(film.Shape) != 2 {
 		return fmt.Errorf("light tracing requires a 2D Film")
 	}
-	k.width = session.Context.Film.Shape[0]
-	k.height = session.Context.Film.Shape[1]
-	k.pixelCount = session.Context.Film.ElementCount()
+	k.width = film.Shape[0]
+	k.height = film.Shape[1]
+	k.pixelCount = film.ElementCount()
 	k.activeMask = make([]bool, k.pixelCount)
 	activePixels := int64(k.pixelCount)
 	if len(session.Context.PixelWindows) == 0 {
@@ -45,7 +46,7 @@ func (k *lightTracingKernel) Prepare(session *RenderSession) error {
 		}
 	} else {
 		k.activeMask, activePixels = buildPixelWindowMask(
-			session.Context.Film.Shape,
+			film.Shape,
 			session.Context.PixelWindows,
 		)
 	}

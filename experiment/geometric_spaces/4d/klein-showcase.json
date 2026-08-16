@@ -16,7 +16,12 @@
     {
       "id": "klein-bottle-4d-showcase",
       "shape": "klein_bottle",
-      "center": [0, 0, 0, 0],
+      "center": [
+        0,
+        0,
+        0,
+        0
+      ],
       "r_major": 1.35,
       "r_minor": 0.62,
       "thickness": 0.075,
@@ -27,27 +32,67 @@
     {
       "id": "complete-x0-x2-x3-volume",
       "type": "n_dim",
-      "position": [0, -5, 0, 0],
-      "coordinates": [
-        [0, 1, 0, 0],
-        [1, 0, 0, 0],
-        [0, 0, 1, 0],
-        [0, 0, 0, 1]
+      "position": [
+        0,
+        -5,
+        0,
+        0
       ],
-      "widths": [96, 36, 36],
-      "field_of_views": [131, 76, 76],
+      "coordinates": [
+        [
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1
+        ]
+      ],
+      "field_of_views": [
+        131,
+        76,
+        76
+      ],
       "ortho": true
     }
   ],
+  "films": [
+    {
+      "id": "klein-showcase-film",
+      "camera_id": "complete-x0-x2-x3-volume",
+      "shape": [
+        96,
+        36,
+        36
+      ],
+      "output_film": "../outputs/klein-bottle-4d-showcase-96x36x36-128spp.bin",
+      "exposure": 1,
+      "tone_mapping": "aces",
+      "gamma": 2.2,
+      "color_space": "linear_srgb"
+    }
+  ],
   "render": {
+    "film_id": "klein-showcase-film",
     "dimension": 4,
     "samples": 128,
     "thread_num": 16,
-    "spectrum_mode": "rgb",
-    "color_space": "linear_srgb",
-    "exposure": 1,
-    "tone_mapping": "aces",
-    "gamma": 2.2,
-    "output_film": "../outputs/klein-bottle-4d-showcase-96x36x36-128spp.bin"
+    "spectrum_mode": "rgb"
   }
 }

@@ -152,6 +152,7 @@ func renderDirectAreaLight(t *testing.T, sigmaA float64, samples int64) float64 
 	tree.Build()
 
 	renderCamera := &camera.Camera3D{
+		Camera:       camera.Camera{Film: camera.NewFilm(1, 1)},
 		Position:     mat.NewVecDense(3, []float64{0, 0, 0}),
 		Coordinates:  []*mat.VecDense{mat.NewVecDense(3, []float64{0, 0, 1}), mat.NewVecDense(3, []float64{-1, 0, 0}), mat.NewVecDense(3, []float64{0, 1, 0})},
 		FieldOfViews: []float64{60, 60},
@@ -162,9 +163,9 @@ func renderDirectAreaLight(t *testing.T, sigmaA float64, samples int64) float64 
 	handler.SpectrumMode = optics.SpectrumModeHeroWavelength
 	handler.ThreadNum = 1
 	handler.MaxRayLevel = 0
-	film := camera.NewFilm(1, 1)
+	film := renderCamera.Film
 
-	if err := handler.TraceScene(renderCamera, tree, film, samples, nil); err != nil {
+	if err := handler.TraceScene(renderCamera, tree, samples, nil); err != nil {
 		t.Fatalf("light-tracing render: %v", err)
 	}
 	if film.Samples != samples {

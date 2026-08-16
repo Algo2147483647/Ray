@@ -5,7 +5,7 @@
       "emission": {
         "type": "cell_palette",
         "shading": "solid",
-        "intensity": 1.0
+        "intensity": 1
       }
     }
   ],
@@ -13,8 +13,18 @@
     {
       "id": "main-hypercube",
       "shape": "cuboid",
-      "pmin": [-0.825, -0.825, -0.825, -0.825],
-      "pmax": [0.825, 0.825, 0.825, 0.825],
+      "pmin": [
+        -0.825,
+        -0.825,
+        -0.825,
+        -0.825
+      ],
+      "pmax": [
+        0.825,
+        0.825,
+        0.825,
+        0.825
+      ],
       "material_id": "cell-palette-debug"
     }
   ],
@@ -22,27 +32,67 @@
     {
       "id": "outside-4d-orthographic-geometry-camera",
       "type": "n_dim",
-      "position": [-3.97836, -0.716105, 0.477403, -1.67091],
-      "coordinates": [
-        [1.0, 0.18, -0.12, 0.42],
-        [0.24, 1.0, 0.12, -0.58],
-        [-0.32, 0.08, 1.0, 0.36],
-        [0.42, -0.50, 0.34, 1.0]
+      "position": [
+        -3.97836,
+        -0.716105,
+        0.477403,
+        -1.67091
       ],
-      "widths": [100, 100, 100],
-      "field_of_views": [120, 120, 120],
+      "coordinates": [
+        [
+          1,
+          0.18,
+          -0.12,
+          0.42
+        ],
+        [
+          0.24,
+          1,
+          0.12,
+          -0.58
+        ],
+        [
+          -0.32,
+          0.08,
+          1,
+          0.36
+        ],
+        [
+          0.42,
+          -0.5,
+          0.34,
+          1
+        ]
+      ],
+      "field_of_views": [
+        120,
+        120,
+        120
+      ],
       "ortho": true
     }
   ],
+  "films": [
+    {
+      "id": "hypercube-direct-film",
+      "camera_id": "outside-4d-orthographic-geometry-camera",
+      "shape": [
+        100,
+        100,
+        100
+      ],
+      "output_image": "../outputs/4d-hypercube-cell-palette.png",
+      "output_film": "../outputs/4d-hypercube-cell-palette.bin",
+      "exposure": 1,
+      "tone_mapping": "linear",
+      "gamma": 1
+    }
+  ],
   "render": {
+    "film_id": "hypercube-direct-film",
     "dimension": 4,
     "samples": 64,
     "thread_num": 8,
-    "spectrum_mode": "rgb",
-    "exposure": 1.0,
-    "tone_mapping": "linear",
-    "gamma": 1.0,
-    "output_image": "../outputs/4d-hypercube-cell-palette.png",
-    "output_film": "../outputs/4d-hypercube-cell-palette.bin"
+    "spectrum_mode": "rgb"
   }
 }

@@ -23,20 +23,20 @@ func newRenderSession(handler *Handler, ctx RenderContext, concurrentFilmWrites 
 	if err := ctx.validate(); err != nil {
 		return nil, err
 	}
-	ctx.Camera.SetFilm(ctx.Film)
-	handler.prepareFilm(ctx.Film)
+	film := ctx.Camera.GetFilm()
+	handler.prepareFilm(film)
 	return &RenderSession{
 		Context:     ctx,
 		Handler:     handler,
-		Accumulator: newFilmAccumulator(ctx.Film, concurrentFilmWrites),
+		Accumulator: newFilmAccumulator(film, concurrentFilmWrites),
 	}, nil
 }
 
 func (s *RenderSession) Finalize(samples int64) {
-	if s == nil || s.Context.Film == nil {
+	if s == nil || s.Context.Camera == nil || s.Context.Camera.GetFilm() == nil {
 		return
 	}
-	s.Context.Film.Samples = samples
+	s.Context.Camera.GetFilm().Samples = samples
 }
 
 // FilmAccumulator hides the distinct synchronization requirements of

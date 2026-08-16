@@ -38,7 +38,6 @@ func ParseIntegratorKind(value string) (IntegratorKind, error) {
 type RenderContext struct {
 	Camera       camera.RayCamera
 	ObjectTree   *object.ObjectTree
-	Film         *camera.Film
 	Samples      int64
 	PixelWindows []camera.PixelWindow
 }
@@ -50,7 +49,7 @@ func (ctx RenderContext) validate() error {
 	if ctx.ObjectTree == nil {
 		return fmt.Errorf("render object tree is nil")
 	}
-	if ctx.Film == nil {
+	if ctx.Camera.GetFilm() == nil {
 		return fmt.Errorf("render film is nil")
 	}
 	if ctx.Samples < 0 {

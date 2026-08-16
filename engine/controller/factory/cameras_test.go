@@ -53,3 +53,21 @@ func TestBuildCamera3DUsesFieldOfViews(t *testing.T) {
 		t.Fatalf("expected copied field_of_views [60 90], got %v", cam.FieldOfViews)
 	}
 }
+
+func TestBuildCameraFromScriptAttachesFilm(t *testing.T) {
+	utils.SetDimension(3)
+
+	cam, err := BuildCameraFromScript(parser.CameraScript{
+		ID:           "main",
+		Position:     []float64{0, -3, 1},
+		Coordinates:  [][]float64{{0, 3, -1}, {3, 0, 0}, {0, 0, 1}},
+		FieldOfViews: []float64{60, 60},
+		Film:         &modelcamera.Film{Shape: []int{800, 600}},
+	})
+	if err != nil {
+		t.Fatalf("build camera: %v", err)
+	}
+	if cam.GetFilm() == nil || len(cam.GetFilm().Shape) != 2 || cam.GetFilm().Shape[0] != 800 {
+		t.Fatalf("camera Film was not attached: %#v", cam.GetFilm())
+	}
+}

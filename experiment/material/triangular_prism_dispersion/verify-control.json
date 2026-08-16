@@ -1,9 +1,19 @@
 {
+  "films": [{
+    "id": "prism-control-film",
+    "camera_id": "prism-diagnostic-camera",
+    "shape": [120, 80],
+    "output_image": "../outputs/prism-spectrum-verify/control.png",
+    "output_film": "../outputs/prism-spectrum-verify/control.bin",
+    "exposure": 1.18,
+    "tone_mapping": "aces",
+    "gamma": 2.2,
+    "color_space": "linear_srgb"
+  }],
   "renders": [
     {
       "integrator": "light_tracing",
-      "output_image": "../outputs/prism-spectrum-verify/control.png",
-      "output_film": "../outputs/prism-spectrum-verify/control.bin"
+      "film_id": "prism-control-film"
     }
   ]
 }
