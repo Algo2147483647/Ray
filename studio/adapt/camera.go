@@ -17,6 +17,8 @@ var (
 const (
 	defaultStudioFieldOfView = 100.0
 	defaultStudioAspectRatio = 1.0
+	defaultStudioFilmWidth   = 400
+	defaultStudioFilmHeight  = 400
 )
 
 func adaptCameras(cameraDefs []schema.StudioCameraScript, dimension int) ([]schema.EngineCameraScript, error) {
@@ -91,8 +93,10 @@ func adaptCamera3D(def schema.StudioCameraScript, dimension int) (schema.EngineC
 		camera.Type = string(modelcamera.CameraType3D)
 	}
 	camera.Position = position
-	camera.Direction = direction
-	camera.Up = up
+	camera.Coordinates, err = frameCoordinates(direction, up)
+	if err != nil {
+		return schema.EngineCameraScript{}, err
+	}
 	fieldOfViews, err := frameFieldOfViews(def)
 	if err != nil {
 		return schema.EngineCameraScript{}, err
@@ -106,6 +110,23 @@ func adaptSphericalCamera(def schema.StudioCameraScript, dimension int) (schema.
 		return schema.EngineCameraScript{}, fmt.Errorf("spherical camera requires render dimension 4, got %d", dimension)
 	}
 	camera := cloneCamera(def)
+	position, err := cameraVector("position", def.Position, []float64{1, 0, 0, 0}, dimension)
+	if err != nil {
+		return schema.EngineCameraScript{}, err
+	}
+	direction, err := cameraVector("direction", def.Direction, []float64{0, 1, 0, 0}, dimension)
+	if err != nil {
+		return schema.EngineCameraScript{}, err
+	}
+	up, err := cameraVector("up", def.Up, []float64{0, 0, 1, 0}, dimension)
+	if err != nil {
+		return schema.EngineCameraScript{}, err
+	}
+	camera.Position = position
+	camera.Coordinates, err = frameCoordinates(direction, up)
+	if err != nil {
+		return schema.EngineCameraScript{}, err
+	}
 	fieldOfViews, err := frameFieldOfViews(def)
 	if err != nil {
 		return schema.EngineCameraScript{}, err
@@ -181,6 +202,68 @@ func vectorNorm(values []float64) float64 {
 	return math.Sqrt(sum)
 }
 
+func frameCoordinates(direction, up []float64) ([][]float64, error) {
+	if len(direction) != len(up) || len(direction) < 3 {
+		return nil, fmt.Errorf("direction and up must have the same dimension of at least 3")
+	}
+	forward := normalizeVector(direction)
+	if forward == nil {
+		return nil, fmt.Errorf("direction must not be zero")
+	}
+	vertical := orthogonalizeVector(up, forward)
+	vertical = normalizeVector(vertical)
+	if vertical == nil {
+		return nil, fmt.Errorf("direction and up must not be parallel")
+	}
+	if len(forward) == 3 {
+		right := normalizeVector([]float64{
+			forward[1]*vertical[2] - forward[2]*vertical[1],
+			forward[2]*vertical[0] - forward[0]*vertical[2],
+			forward[0]*vertical[1] - forward[1]*vertical[0],
+		})
+		if right == nil {
+			return nil, fmt.Errorf("could not construct a camera right vector")
+		}
+		return [][]float64{forward, right, vertical}, nil
+	}
+	for axis := range forward {
+		right := make([]float64, len(forward))
+		right[axis] = 1
+		right = orthogonalizeVector(right, forward, vertical)
+		right = normalizeVector(right)
+		if right != nil {
+			return [][]float64{forward, right, vertical}, nil
+		}
+	}
+	return nil, fmt.Errorf("could not construct a camera right vector")
+}
+
+func orthogonalizeVector(vector []float64, bases ...[]float64) []float64 {
+	result := append([]float64(nil), vector...)
+	for _, base := range bases {
+		dot := 0.0
+		for i := range result {
+			dot += result[i] * base[i]
+		}
+		for i := range result {
+			result[i] -= dot * base[i]
+		}
+	}
+	return result
+}
+
+func normalizeVector(vector []float64) []float64 {
+	norm := vectorNorm(vector)
+	if norm == 0 {
+		return nil
+	}
+	result := append([]float64(nil), vector...)
+	for i := range result {
+		result[i] /= norm
+	}
+	return result
+}
+
 func cloneCamera(def schema.StudioCameraScript) schema.EngineCameraScript {
 	camera := schema.EngineCameraScript{
 		ID:    def.ID,
@@ -188,9 +271,6 @@ func cloneCamera(def schema.StudioCameraScript) schema.EngineCameraScript {
 		Ortho: def.Ortho,
 	}
 	camera.Position = append([]float64(nil), def.Position...)
-	camera.Direction = append([]float64(nil), def.Direction...)
-	camera.Up = append([]float64(nil), def.Up...)
-	camera.Widths = append([]int(nil), def.Widths...)
 	if modelcamera.CameraType(def.Type) == modelcamera.CameraTypeNDim {
 		camera.FieldOfViews = nDimFieldOfViews(def)
 	} else {

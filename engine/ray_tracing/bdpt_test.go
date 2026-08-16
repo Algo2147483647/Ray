@@ -20,7 +20,7 @@ import (
 
 type fixedCamera struct{}
 
-func (fixedCamera) GenerateRay(ray *optics.Ray, _ ...int) *optics.Ray {
+func (fixedCamera) GenerateRay(ray *optics.Ray, _ *camera.Film, _ ...int) *optics.Ray {
 	ray.Init()
 	ray.Origin.CloneFromVec(mat.NewVecDense(3, []float64{0, 0, 0}))
 	ray.Direction.CloneFromVec(mat.NewVecDense(3, []float64{0, 0, 1}))
@@ -59,7 +59,7 @@ func TestBDPTConnectsAreaLightToCameraVertex(t *testing.T) {
 	h.SpectrumMode = optics.SpectrumModeRGB
 	h.MaxRayLevel = 2
 
-	value := h.traceBidirectionalSample(fixedCamera{}, tree, 0, 0, 0, 0)
+	value := h.traceBidirectionalSample(fixedCamera{}, camera.NewFilm(1, 1), tree, 0, 0, 0, 0)
 	if !value.IsFinite() || !value.IsNonNegative() {
 		t.Fatalf("invalid BDPT contribution: %+v", value)
 	}
@@ -86,7 +86,7 @@ func TestBDPTFallsBackToPathTracingWithoutSampleableLights(t *testing.T) {
 	h.IntegratorKind = IntegratorBDPT
 	h.SceneGeometry = geometry.Euclidean()
 	h.SpectrumMode = optics.SpectrumModeRGB
-	value := h.traceBidirectionalSample(fixedCamera{}, tree, 0, 0, 0, 0)
+	value := h.traceBidirectionalSample(fixedCamera{}, camera.NewFilm(1, 1), tree, 0, 0, 0, 0)
 	if value.IsZero() {
 		t.Fatal("fallback path tracer should see the unsupported infinite emitter")
 	}
@@ -260,10 +260,7 @@ func TestBDPTCapabilityGateAllowsDeltaAndHomogeneousAbsorption(t *testing.T) {
 func TestBDPTProjectsDeltaCausticWithT1Strategy(t *testing.T) {
 	renderCamera := camera.NewCamera3D()
 	renderCamera.Position = mat.NewVecDense(3, []float64{0, 0, 0})
-	renderCamera.Direction = mat.NewVecDense(3, []float64{0, 0, 1})
-	renderCamera.Up = mat.NewVecDense(3, []float64{0, 1, 0})
-	renderCamera.Width = 1
-	renderCamera.Height = 1
+	renderCamera.Coordinates = []*mat.VecDense{mat.NewVecDense(3, []float64{0, 0, 1}), mat.NewVecDense(3, []float64{-1, 0, 0}), mat.NewVecDense(3, []float64{0, 1, 0})}
 	renderCamera.FieldOfViews = []float64{60, 60}
 	if err := renderCamera.Prepare(); err != nil {
 		t.Fatalf("prepare camera: %v", err)
@@ -285,7 +282,7 @@ func TestBDPTProjectsDeltaCausticWithT1Strategy(t *testing.T) {
 			Beta: optics.ConstantSpectrum(1), MediumStack: medium.NewStack(medium.MediumAir),
 		},
 	}
-	splats := NewHandler().projectBDPTDeltaCaustics(renderCamera, nil, path, 0, 0)
+	splats := NewHandler().projectBDPTDeltaCaustics(renderCamera, camera.NewFilm(1, 1), nil, path, 0, 0)
 	if len(splats) != 1 {
 		t.Fatalf("delta t=1 splat count = %d, want 1", len(splats))
 	}

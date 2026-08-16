@@ -14,6 +14,8 @@ const (
 	defaultScriptPath  = "../examples/scenes/default.json"
 	defaultOutputImage = "../../outputs/output.png"
 	defaultOutputFilm  = "../../outputs/img.bin"
+	defaultFilmWidth   = 400
+	defaultFilmHeight  = 400
 )
 
 type studioConfig struct {
@@ -171,10 +173,22 @@ func (c studioConfig) engineArgs(scriptPath, outputFilmOverride string, samplesO
 		args = append(args, "--threads", strconv.Itoa(c.threadNum))
 	}
 	if c.provided["width"] {
-		args = append(args, "--width", strconv.Itoa(c.width))
-	}
-	if c.provided["height"] {
-		args = append(args, "--height", strconv.Itoa(c.height))
+		width := c.width
+		if width <= 0 {
+			width = defaultFilmWidth
+		}
+		height := c.height
+		if height <= 0 {
+			height = defaultFilmHeight
+		}
+		args = append(args, "--widths", strconv.Itoa(width)+","+strconv.Itoa(height))
+	} else if c.provided["height"] {
+		width := defaultFilmWidth
+		height := c.height
+		if height <= 0 {
+			height = defaultFilmHeight
+		}
+		args = append(args, "--widths", strconv.Itoa(width)+","+strconv.Itoa(height))
 	}
 	if samplesOverride > 0 {
 		args = append(args, "--samples", strconv.FormatInt(samplesOverride, 10))

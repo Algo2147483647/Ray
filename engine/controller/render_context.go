@@ -14,11 +14,9 @@ import (
 )
 
 const (
-	defaultScriptPath   = "../../examples/scenes/default.json"
-	defaultRenderWidth  = 400
-	defaultRenderHeight = 400
-	defaultSamples      = int64(20)
-	defaultOutputFilm   = "../../outputs/img.bin"
+	defaultScriptPath = "../../examples/scenes/default.json"
+	defaultSamples    = int64(20)
+	defaultOutputFilm = "../../outputs/img.bin"
 )
 
 type RenderContext struct {
@@ -27,8 +25,7 @@ type RenderContext struct {
 	Dimension         int
 	CameraIndex       int
 	ThreadNum         int
-	Width             int
-	Height            int
+	Width             []int
 	Samples           int64
 	OutputFilm        string
 	SpectrumMode      string
@@ -55,8 +52,13 @@ func (h *Handler) ParseRenderArgs(args []string) *Handler {
 	flagSet.IntVar(&context.Dimension, "dimension", 0, "scene dimension")
 	flagSet.IntVar(&context.CameraIndex, "camera-index", -1, "camera index to render")
 	flagSet.IntVar(&context.ThreadNum, "threads", 0, "worker thread count")
-	flagSet.IntVar(&context.Width, "width", 0, "output width")
-	flagSet.IntVar(&context.Height, "height", 0, "output height")
+	flagSet.Func("widths", "film dimensions, for example 1920,1080", func(value string) error {
+		width, err := parseWidths(value)
+		if err == nil {
+			context.Width = width
+		}
+		return err
+	})
 	flagSet.Int64Var(&context.Samples, "samples", 0, "samples per pixel")
 	flagSet.StringVar(&context.OutputFilm, "output-film", "", "output film path")
 	flagSet.StringVar(&context.SpectrumMode, "spectrum-mode", "", "spectral sampling mode: hero_wavelength, sampled")
@@ -95,10 +97,6 @@ func (h *Handler) ParseRenderArgs(args []string) *Handler {
 	}
 	if context.ThreadNum < 0 {
 		h.err = fmt.Errorf("threads must be >= 0")
-		return h
-	}
-	if context.Width < 0 || context.Height < 0 {
-		h.err = fmt.Errorf("width and height must be >= 0")
 		return h
 	}
 	if context.Samples < 0 {
@@ -153,11 +151,8 @@ func ResolveRenderContext(script *parser.Script, requested RenderContext) Render
 		if script.Render.ThreadNum > 0 {
 			context.ThreadNum = script.Render.ThreadNum
 		}
-		if script.Render.Width > 0 {
-			context.Width = script.Render.Width
-		}
-		if script.Render.Height > 0 {
-			context.Height = script.Render.Height
+		if len(script.Render.Width) > 0 {
+			context.Width = append([]int(nil), script.Render.Width...)
 		}
 		if script.Render.Samples > 0 {
 			context.Samples = script.Render.Samples
@@ -188,11 +183,8 @@ func ResolveRenderContext(script *parser.Script, requested RenderContext) Render
 	if requested.ThreadNum > 0 {
 		context.ThreadNum = requested.ThreadNum
 	}
-	if requested.Width > 0 {
-		context.Width = requested.Width
-	}
-	if requested.Height > 0 {
-		context.Height = requested.Height
+	if len(requested.Width) > 0 {
+		context.Width = append([]int(nil), requested.Width...)
 	}
 	if requested.Samples > 0 {
 		context.Samples = requested.Samples
@@ -249,11 +241,8 @@ func applyRenderScriptToContext(context RenderContext, render parser.RenderScrip
 	if render.ThreadNum > 0 {
 		context.ThreadNum = render.ThreadNum
 	}
-	if render.Width > 0 {
-		context.Width = render.Width
-	}
-	if render.Height > 0 {
-		context.Height = render.Height
+	if len(render.Width) > 0 {
+		context.Width = append([]int(nil), render.Width...)
 	}
 	if render.Samples > 0 {
 		context.Samples = render.Samples
@@ -289,11 +278,8 @@ func applyRequestedContext(context RenderContext, requested RenderContext) Rende
 	if requested.ThreadNum > 0 {
 		context.ThreadNum = requested.ThreadNum
 	}
-	if requested.Width > 0 {
-		context.Width = requested.Width
-	}
-	if requested.Height > 0 {
-		context.Height = requested.Height
+	if len(requested.Width) > 0 {
+		context.Width = append([]int(nil), requested.Width...)
 	}
 	if requested.Samples > 0 {
 		context.Samples = requested.Samples
@@ -326,6 +312,19 @@ func parsePixelWindowFlags(values []string) ([]camera.PixelWindow, error) {
 		windows = append(windows, window)
 	}
 	return windows, nil
+}
+
+func parseWidths(value string) ([]int, error) {
+	parts := strings.Split(value, ",")
+	width := make([]int, len(parts))
+	for i, part := range parts {
+		parsed, err := strconv.Atoi(strings.TrimSpace(part))
+		if err != nil || parsed <= 0 {
+			return nil, fmt.Errorf("widths[%d] must be a positive integer", i)
+		}
+		width[i] = parsed
+	}
+	return width, nil
 }
 
 func parsePixelWindowFlag(value string) (camera.PixelWindow, error) {
@@ -416,13 +415,4 @@ func isSupportedSpectrumMode(value string) bool {
 	default:
 		return false
 	}
-}
-
-func firstPositiveInt(values ...int) int {
-	for _, value := range values {
-		if value > 0 {
-			return value
-		}
-	}
-	return 0
 }

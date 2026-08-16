@@ -18,9 +18,6 @@ type CameraScript struct {
 	ID           string                 `json:"id"`             // Unique camera identifier.
 	Type         modelcamera.CameraType `json:"type"`           // Camera model type.
 	Position     []float64              `json:"position"`       // Camera origin in scene space.
-	Direction    []float64              `json:"direction"`      // Forward viewing direction.
-	Up           []float64              `json:"up"`             // Up vector defining camera roll.
-	Widths       []int                  `json:"widths"`         // Per-frame image widths.
 	FieldOfViews []float64              `json:"field_of_views"` // Per-frame field-of-view values.
 	Coordinates  [][]float64            `json:"coordinates"`    // Camera path or sampled positions.
 	Ortho        bool                   `json:"ortho"`          // Enables orthographic projection.
@@ -33,8 +30,7 @@ type RenderScript struct {
 	ThreadNum         int                       `json:"thread_num"`
 	CameraIndex       int                       `json:"camera_index"`
 	CameraIndexSet    bool                      `json:"-"`
-	Width             int                       `json:"width"`
-	Height            int                       `json:"height"`
+	Width             []int                     `json:"widths"`
 	OutputFilm        string                    `json:"output_film"`
 	SpectrumMode      string                    `json:"spectrum_mode"`
 	WavelengthSamples int                       `json:"wavelength_samples"`

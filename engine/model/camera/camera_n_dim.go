@@ -10,10 +10,8 @@ import (
 )
 
 type CameraNDim struct {
-	CameraBase
 	Position               *mat.VecDense   // Camera origin in N-dimensional space.
 	Coordinates            []*mat.VecDense // Camera basis vectors.
-	Width                  []int           // Film resolution per dimension.
 	FieldOfViews           []float64       // Field-of-view angle per dimension.
 	Ortho                  bool            // Uses orthographic projection when true.
 	orthonormalCoordinates []*mat.VecDense // Orthonormalized camera basis vectors.
@@ -33,12 +31,10 @@ func (c *CameraNDim) Prepare() error {
 	// Check configuration
 	if len(c.Coordinates) == 0 {
 		return fmt.Errorf("camera coordinates are not configured")
-	} else if len(c.Width) == 0 {
-		return fmt.Errorf("camera width is not configured")
-	} else if len(c.Width) != len(c.FieldOfViews) {
-		return fmt.Errorf("width count %d does not match field of views count %d", len(c.Width), len(c.FieldOfViews))
-	} else if len(c.Coordinates) != len(c.Width)+1 {
-		return fmt.Errorf("coordinate count %d must equal width count + 1 (%d)", len(c.Coordinates), len(c.Width)+1)
+	} else if len(c.FieldOfViews) == 0 {
+		return fmt.Errorf("camera field of views are not configured")
+	} else if len(c.Coordinates) != len(c.FieldOfViews)+1 {
+		return fmt.Errorf("coordinate count %d must equal field of views count + 1 (%d)", len(c.Coordinates), len(c.FieldOfViews)+1)
 	}
 
 	// Compute
@@ -51,7 +47,7 @@ func (c *CameraNDim) Prepare() error {
 	return nil
 }
 
-func (c *CameraNDim) GenerateRay(res *renderray.Ray, x ...int) *renderray.Ray {
+func (c *CameraNDim) GenerateRay(res *renderray.Ray, film *Film, x ...int) *renderray.Ray {
 	if res == nil {
 		res = &renderray.Ray{}
 	}
@@ -60,10 +56,13 @@ func (c *CameraNDim) GenerateRay(res *renderray.Ray, x ...int) *renderray.Ray {
 	if err := c.Prepare(); err != nil {
 		panic(err)
 	}
+	if film == nil || len(film.Shape) != len(c.FieldOfViews) {
+		panic(fmt.Errorf("film dimensions must match camera field of views"))
+	}
 
 	u := make([]float64, len(x))
 	for i := 0; i < len(x); i++ {
-		u[i] = 2*(float64(x[i])+rand.Float64())/float64(c.Width[i]) - 1
+		u[i] = 2*(float64(x[i])+rand.Float64())/float64(film.Shape[i]) - 1
 	}
 
 	res.Origin.CloneFromVec(c.Position)

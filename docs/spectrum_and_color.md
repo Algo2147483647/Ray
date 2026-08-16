@@ -761,6 +761,6 @@ These are boundaries, not additional hidden categories. Within them, the rendere
 | Pixel wavelength scheduling and normalization | `engine/ray_tracing/trace_pixel.go` |
 | Film bins, film-space transforms, tone mapping, and gamma | `engine/model/camera/film.go` |
 | Spectral film preparation and finalization | `engine/ray_tracing/trace_scene.go`, `engine/ray_tracing/render_session.go` |
-| Public render schema and defaults | `engine/controller/parser/schema.go`, `engine/controller/render_config.go` |
+| Public render schema and defaults | `engine/controller/parser/schema.go`, `engine/controller/render_context.go` |
 | Public spectral-parameter parser | `engine/controller/factory/materials.go` |
 | Cauchy dispersion and homogeneous media | `engine/model/material/medium/` |

@@ -11,10 +11,7 @@ import (
 func TestHyperbolicCameraPrepareBuildsKleinOrthonormalFrame(t *testing.T) {
 	camera := NewHyperbolicCamera()
 	camera.Position = mat.NewVecDense(3, []float64{-0.88, 0, 0.10})
-	camera.Direction = mat.NewVecDense(3, []float64{1.8, 0, -0.02})
-	camera.Up = mat.NewVecDense(3, []float64{0, 0, 1})
-	camera.Width = 100
-	camera.Height = 100
+	camera.Coordinates = testCameraCoordinates([]float64{1.8, 0, -0.02}, []float64{0, 0, 1})
 	camera.FieldOfViews = []float64{80, 80}
 
 	if err := camera.Prepare(); err != nil {
@@ -22,24 +19,21 @@ func TestHyperbolicCameraPrepareBuildsKleinOrthonormalFrame(t *testing.T) {
 	}
 
 	g := geometry.Klein()
-	assertKleinInnerApprox(t, g, camera.Position, camera.dir, camera.dir, 1, 1e-12)
-	assertKleinInnerApprox(t, g, camera.Position, camera.up, camera.up, 1, 1e-12)
-	assertKleinInnerApprox(t, g, camera.Position, camera.right, camera.right, 1, 1e-12)
-	assertKleinInnerApprox(t, g, camera.Position, camera.dir, camera.up, 0, 1e-12)
-	assertKleinInnerApprox(t, g, camera.Position, camera.dir, camera.right, 0, 1e-12)
-	assertKleinInnerApprox(t, g, camera.Position, camera.up, camera.right, 0, 1e-12)
+	assertKleinInnerApprox(t, g, camera.Position, camera.orthonormalCoordinates[0], camera.orthonormalCoordinates[0], 1, 1e-12)
+	assertKleinInnerApprox(t, g, camera.Position, camera.orthonormalCoordinates[2], camera.orthonormalCoordinates[2], 1, 1e-12)
+	assertKleinInnerApprox(t, g, camera.Position, camera.orthonormalCoordinates[1], camera.orthonormalCoordinates[1], 1, 1e-12)
+	assertKleinInnerApprox(t, g, camera.Position, camera.orthonormalCoordinates[0], camera.orthonormalCoordinates[2], 0, 1e-12)
+	assertKleinInnerApprox(t, g, camera.Position, camera.orthonormalCoordinates[0], camera.orthonormalCoordinates[1], 0, 1e-12)
+	assertKleinInnerApprox(t, g, camera.Position, camera.orthonormalCoordinates[2], camera.orthonormalCoordinates[1], 0, 1e-12)
 }
 
 func TestHyperbolicCameraGenerateRayUsesKleinUnitDirection(t *testing.T) {
 	camera := NewHyperbolicCamera()
 	camera.Position = mat.NewVecDense(3, []float64{-0.7, 0.2, 0.1})
-	camera.Direction = mat.NewVecDense(3, []float64{1, -0.1, 0})
-	camera.Up = mat.NewVecDense(3, []float64{0, 0, 1})
-	camera.Width = 64
-	camera.Height = 64
+	camera.Coordinates = testCameraCoordinates([]float64{1, -0.1, 0}, []float64{0, 0, 1})
 	camera.FieldOfViews = []float64{70, 70}
 
-	ray := camera.GenerateRay(nil, 32, 32)
+	ray := camera.GenerateRay(nil, NewFilm(64, 64), 32, 32)
 
 	if ray.Geometry != geometry.Klein() {
 		t.Fatal("expected generated ray to carry Klein geometry")
@@ -50,10 +44,7 @@ func TestHyperbolicCameraGenerateRayUsesKleinUnitDirection(t *testing.T) {
 func TestHyperbolicCameraRejectsPositionOutsideKleinBall(t *testing.T) {
 	camera := NewHyperbolicCamera()
 	camera.Position = mat.NewVecDense(3, []float64{1.1, 0, 0})
-	camera.Direction = mat.NewVecDense(3, []float64{1, 0, 0})
-	camera.Up = mat.NewVecDense(3, []float64{0, 0, 1})
-	camera.Width = 64
-	camera.Height = 64
+	camera.Coordinates = testCameraCoordinates([]float64{1, 0, 0}, []float64{0, 0, 1})
 	camera.FieldOfViews = []float64{70, 70}
 
 	if err := camera.Prepare(); err == nil {

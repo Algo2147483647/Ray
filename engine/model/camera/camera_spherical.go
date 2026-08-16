@@ -2,6 +2,7 @@ package camera
 
 import (
 	"fmt"
+	"math"
 	"math/rand/v2"
 
 	"github.com/Algo2147483647/ray/engine/maths"
@@ -11,40 +12,27 @@ import (
 )
 
 // SphericalCamera lives on S^3 embedded in R^4. Position is a unit vector;
-// Forward and Up are R^4 vectors interpreted as tangent vectors at Position
-// (they are projected into T_p and orthonormalized at Prepare time).
+// Coordinates are R^4 basis vectors projected into T_p and orthonormalized at
+// Prepare time.
 type SphericalCamera struct {
-	CameraBase
 	Position     *mat.VecDense
-	Forward      *mat.VecDense
-	Up           *mat.VecDense
-	Width        int
-	Height       int
-	FieldOfViews []float64 // Vertical and horizontal field-of-view angles in degrees.
+	Coordinates  []*mat.VecDense // Camera basis vectors: forward, right, up.
+	FieldOfViews []float64       // Vertical and horizontal field-of-view angles in degrees.
 
-	forward    *mat.VecDense
-	up         *mat.VecDense
-	right      *mat.VecDense
-	halfWidth  float64
-	halfHeight float64
-	invWidth2  float64
-	invHeight2 float64
-	prepared   bool
+	orthonormalCoordinates []*mat.VecDense
+	halfWidth              float64
+	halfHeight             float64
+	prepared               bool
 }
 
 func NewSphericalCamera() *SphericalCamera { return &SphericalCamera{} }
 
 func (c *SphericalCamera) Prepare() error {
-	if c.Position == nil || c.Forward == nil || c.Up == nil {
-		return fmt.Errorf("spherical camera requires position, forward, up")
+	if c.Position == nil || len(c.Coordinates) != 3 {
+		return fmt.Errorf("spherical camera requires position and three basis vectors")
 	}
-	if c.Width <= 0 || c.Height <= 0 {
-		return fmt.Errorf("spherical camera requires positive width and height")
-	}
-	halfHeight, halfWidth, err := frameHalfExtents(c.FieldOfViews)
-	if err != nil {
-		return err
-	}
+	halfHeight := math.Tan(c.FieldOfViews[0] * math.Pi / 180 / 2)
+	halfWidth := math.Tan(c.FieldOfViews[1] * math.Pi / 180 / 2)
 
 	g := geometry.Spherical()
 
@@ -53,35 +41,34 @@ func (c *SphericalCamera) Prepare() error {
 	maths.Normalize(pos)
 	c.Position = pos
 
-	// Project Forward and Up into T_p, then orthonormalize.
+	// Project the authored basis into T_p, then orthonormalize.
 	fwd := mat.NewVecDense(4, nil)
-	g.ProjectTangent(c.Position, c.Forward, fwd)
+	g.ProjectTangent(c.Position, c.Coordinates[0], fwd)
 	if mat.Norm(fwd, 2) == 0 {
 		return fmt.Errorf("forward direction collapses in T_p")
 	}
 	maths.Normalize(fwd)
 
+	right := mat.NewVecDense(4, nil)
+	g.ProjectTangent(c.Position, c.Coordinates[1], right)
+	right.AddScaledVec(right, -mat.Dot(right, fwd), fwd)
+	if mat.Norm(right, 2) == 0 {
+		return fmt.Errorf("right direction collapses after orthogonalization")
+	}
+	maths.Normalize(right)
+
 	up := mat.NewVecDense(4, nil)
-	g.ProjectTangent(c.Position, c.Up, up)
+	g.ProjectTangent(c.Position, c.Coordinates[2], up)
 	up.AddScaledVec(up, -mat.Dot(up, fwd), fwd)
+	up.AddScaledVec(up, -mat.Dot(up, right), right)
 	if mat.Norm(up, 2) == 0 {
 		return fmt.Errorf("up direction collapses after orthogonalization")
 	}
 	maths.Normalize(up)
-
-	// Right = the third tangent direction: orthogonal in T_p to both fwd and up
-	// and to Position. Find a coordinate axis with the smallest projection and
-	// Gram-Schmidt against (Position, fwd, up).
-	right := orthogonalInTangent(c.Position, fwd, up)
-	if right == nil {
-		return fmt.Errorf("could not construct right vector in T_p")
-	}
-	c.forward, c.up, c.right = fwd, up, right
+	c.orthonormalCoordinates = []*mat.VecDense{fwd, right, up}
 
 	c.halfHeight = halfHeight
 	c.halfWidth = halfWidth
-	c.invWidth2 = 2 / float64(c.Width)
-	c.invHeight2 = 2 / float64(c.Height)
 	c.prepared = true
 	return nil
 }
@@ -105,7 +92,7 @@ func orthogonalInTangent(p, a, b *mat.VecDense) *mat.VecDense {
 	return nil
 }
 
-func (c *SphericalCamera) GenerateRay(res *renderray.Ray, index ...int) *renderray.Ray {
+func (c *SphericalCamera) GenerateRay(res *renderray.Ray, film *Film, index ...int) *renderray.Ray {
 	if res == nil {
 		res = &renderray.Ray{}
 	}
@@ -115,10 +102,11 @@ func (c *SphericalCamera) GenerateRay(res *renderray.Ray, index ...int) *renderr
 			panic(err)
 		}
 	}
+	width, height := film.Shape[0], film.Shape[1]
 
 	row, col := index[0], index[1]
-	u := (float64(row)+rand.Float64())*c.invWidth2 - 1
-	v := (float64(col)+rand.Float64())*c.invHeight2 - 1
+	u := 2*(float64(row)+rand.Float64())/float64(width) - 1
+	v := 2*(float64(col)+rand.Float64())/float64(height) - 1
 
 	if res.Origin.Len() != 4 {
 		res.Origin = mat.NewVecDense(4, nil)
@@ -128,9 +116,9 @@ func (c *SphericalCamera) GenerateRay(res *renderray.Ray, index ...int) *renderr
 	}
 
 	res.Origin.CopyVec(c.Position)
-	res.Direction.CopyVec(c.forward)
-	res.Direction.AddScaledVec(res.Direction, u*c.halfWidth, c.right)
-	res.Direction.AddScaledVec(res.Direction, -v*c.halfHeight, c.up)
+	res.Direction.CopyVec(c.orthonormalCoordinates[0])
+	res.Direction.AddScaledVec(res.Direction, u*c.halfWidth, c.orthonormalCoordinates[1])
+	res.Direction.AddScaledVec(res.Direction, -v*c.halfHeight, c.orthonormalCoordinates[2])
 	// Direction already lives in T_p (sum of T_p vectors). Normalize.
 	maths.Normalize(res.Direction)
 

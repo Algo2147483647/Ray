@@ -153,10 +153,7 @@ func renderDirectAreaLight(t *testing.T, sigmaA float64, samples int64) float64 
 
 	renderCamera := &camera.Camera3D{
 		Position:     mat.NewVecDense(3, []float64{0, 0, 0}),
-		Direction:    mat.NewVecDense(3, []float64{0, 0, 1}),
-		Up:           mat.NewVecDense(3, []float64{0, 1, 0}),
-		Width:        1,
-		Height:       1,
+		Coordinates:  []*mat.VecDense{mat.NewVecDense(3, []float64{0, 0, 1}), mat.NewVecDense(3, []float64{-1, 0, 0}), mat.NewVecDense(3, []float64{0, 1, 0})},
 		FieldOfViews: []float64{60, 60},
 	}
 	handler := NewHandler()

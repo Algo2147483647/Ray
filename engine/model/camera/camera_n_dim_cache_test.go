@@ -15,7 +15,6 @@ func TestCameraNDimPrepareCachesDerivedData(t *testing.T) {
 		mat.NewVecDense(4, []float64{0, 0, 1, 0}),
 		mat.NewVecDense(4, []float64{0, 0, 0, 1}),
 	}
-	camera.Width = []int{10, 10, 10}
 	camera.FieldOfViews = []float64{45, 60, 90}
 
 	if err := camera.Prepare(); err != nil {
@@ -34,7 +33,7 @@ func TestCameraNDimPrepareCachesDerivedData(t *testing.T) {
 	cachedBasis := camera.orthonormalCoordinates
 	cachedTangents := camera.fovTangents
 
-	ray := camera.GenerateRay(nil, 5, 5, 5)
+	ray := camera.GenerateRay(nil, NewFilm(10, 10, 10), 5, 5, 5)
 	if ray == nil {
 		t.Fatal("expected ray to be generated")
 	}

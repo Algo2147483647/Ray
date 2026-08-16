@@ -85,6 +85,20 @@ func TestParseRenderArgsAcceptsPixelWindows(t *testing.T) {
 	assertIntSlice(t, context.PixelWindows[1].Max, []int{4, 8})
 }
 
+func TestParseRenderArgsAcceptsWidths(t *testing.T) {
+	context, err := parseRenderArgs([]string{"--widths", "1920,1080"})
+	if err != nil {
+		t.Fatalf("parse widths: %v", err)
+	}
+	assertIntSlice(t, context.Width, []int{1920, 1080})
+}
+
+func TestParseRenderArgsRejectsLegacyWidthFlag(t *testing.T) {
+	if _, err := parseRenderArgs([]string{"--width", "1920"}); err == nil {
+		t.Fatal("expected Engine to reject Studio-only width compatibility flag")
+	}
+}
+
 func TestParseRenderArgsRejectsInvalidPixelWindow(t *testing.T) {
 	_, err := parseRenderArgs([]string{"--pixel-window", "10:10,0:1"})
 	if err == nil {
@@ -101,7 +115,7 @@ func TestResolveRenderContextsExpandsRenderJobs(t *testing.T) {
 	contexts := ResolveRenderContexts(&parser.Script{
 		Render: parser.RenderScript{
 			Samples:    8,
-			Width:      320,
+			Width:      []int{320, 200},
 			OutputFilm: "base.bin",
 		},
 		Renders: []parser.RenderScript{
@@ -113,10 +127,10 @@ func TestResolveRenderContextsExpandsRenderJobs(t *testing.T) {
 	if len(contexts) != 2 {
 		t.Fatalf("expected two render contexts, got %d", len(contexts))
 	}
-	if contexts[0].Samples != 8 || contexts[0].Width != 320 || contexts[0].OutputFilm != "front.bin" {
+	if contexts[0].Samples != 8 || contexts[0].Width[0] != 320 || contexts[0].OutputFilm != "front.bin" {
 		t.Fatalf("unexpected first render context: %+v", contexts[0])
 	}
-	if contexts[1].Samples != 32 || contexts[1].Width != 320 || contexts[1].OutputFilm != "detail.bin" {
+	if contexts[1].Samples != 32 || contexts[1].Width[0] != 320 || contexts[1].OutputFilm != "detail.bin" {
 		t.Fatalf("unexpected second render context: %+v", contexts[1])
 	}
 }
@@ -162,63 +176,54 @@ func TestResolveRenderContextsRenderJobInheritsCameraIndexWhenOmitted(t *testing
 	}
 }
 
-func TestSelectRenderCameraAppliesRequestedDimensionsToHyperbolicCamera(t *testing.T) {
+func TestSelectRenderCameraPreparesHyperbolicCamera(t *testing.T) {
 	cam := &camera.HyperbolicCamera{Camera3D: camera.Camera3D{
 		Position:     mat.NewVecDense(3, []float64{0, 0, 0}),
-		Direction:    mat.NewVecDense(3, []float64{1, 0, 0}),
-		Up:           mat.NewVecDense(3, []float64{0, 0, 1}),
-		Width:        400,
-		Height:       400,
+		Coordinates:  []*mat.VecDense{mat.NewVecDense(3, []float64{1, 0, 0}), mat.NewVecDense(3, []float64{0, -1, 0}), mat.NewVecDense(3, []float64{0, 0, 1})},
 		FieldOfViews: []float64{70, 70},
 	}}
 	h := NewHandler()
 	h.Scene.Cameras = []camera.Camera{cam}
 
-	_, shape, err := h.selectRenderCamera(0, 120, 80)
+	selected, err := h.selectRenderCamera(0)
 	if err != nil {
 		t.Fatalf("select camera: %v", err)
 	}
-	if cam.Width != 120 || cam.Height != 80 || shape[0] != 120 || shape[1] != 80 {
-		t.Fatalf("expected hyperbolic camera dimensions to update, got camera=%dx%d shape=%v", cam.Width, cam.Height, shape)
+	if selected != cam {
+		t.Fatal("expected selected hyperbolic camera")
 	}
 }
 
 func TestSelectRenderCameraRequiresCamera(t *testing.T) {
 	h := NewHandler()
-	_, _, err := h.selectRenderCamera(0, 120, 80)
+	_, err := h.selectRenderCamera(0)
 	if err == nil {
 		t.Fatal("expected selecting without cameras to fail")
 	}
 }
 
-func TestSelectRenderCameraAppliesRequestedDimensionsToSphericalCamera(t *testing.T) {
+func TestSelectRenderCameraPreparesSphericalCamera(t *testing.T) {
 	cam := &camera.SphericalCamera{
 		Position:     mat.NewVecDense(4, []float64{1, 0, 0, 0}),
-		Forward:      mat.NewVecDense(4, []float64{0, 1, 0, 0}),
-		Up:           mat.NewVecDense(4, []float64{0, 0, 1, 0}),
-		Width:        400,
-		Height:       400,
+		Coordinates:  []*mat.VecDense{mat.NewVecDense(4, []float64{0, 1, 0, 0}), mat.NewVecDense(4, []float64{0, 0, 0, 1}), mat.NewVecDense(4, []float64{0, 0, 1, 0})},
 		FieldOfViews: []float64{70, 70},
 	}
 	h := NewHandler()
 	h.Scene.Cameras = []camera.Camera{cam}
 
-	_, shape, err := h.selectRenderCamera(0, 160, 100)
+	selected, err := h.selectRenderCamera(0)
 	if err != nil {
 		t.Fatalf("select camera: %v", err)
 	}
-	if cam.Width != 160 || cam.Height != 100 || shape[0] != 160 || shape[1] != 100 {
-		t.Fatalf("expected spherical camera dimensions to update, got camera=%dx%d shape=%v", cam.Width, cam.Height, shape)
+	if selected != cam {
+		t.Fatal("expected selected spherical camera")
 	}
 }
 
 func TestConfigureRenderContextRejectsOutOfBoundsPixelWindow(t *testing.T) {
 	cam := &camera.SphericalCamera{
 		Position:     mat.NewVecDense(4, []float64{1, 0, 0, 0}),
-		Forward:      mat.NewVecDense(4, []float64{0, 1, 0, 0}),
-		Up:           mat.NewVecDense(4, []float64{0, 0, 1, 0}),
-		Width:        400,
-		Height:       400,
+		Coordinates:  []*mat.VecDense{mat.NewVecDense(4, []float64{0, 1, 0, 0}), mat.NewVecDense(4, []float64{0, 0, 0, 1}), mat.NewVecDense(4, []float64{0, 0, 1, 0})},
 		FieldOfViews: []float64{70, 70},
 	}
 	h := NewHandler()
@@ -226,8 +231,7 @@ func TestConfigureRenderContextRejectsOutOfBoundsPixelWindow(t *testing.T) {
 
 	h.ConfigureRenderContext(RenderContext{
 		CameraIndex:  0,
-		Width:        10,
-		Height:       10,
+		Width:        []int{10, 10},
 		PixelWindows: []camera.PixelWindow{{Min: []int{9, 0}, Max: []int{11, 1}}},
 	})
 

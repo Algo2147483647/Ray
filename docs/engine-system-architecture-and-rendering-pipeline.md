@@ -304,7 +304,7 @@ The minimum Camera contract is `GenerateRay`. Current camera models are:
 | `Camera3D` | Three-dimensional perspective camera implementing `ProjectiveCamera`; its `Ortho` field is parsed but does not currently change ray generation |
 | `CameraNDim` | N-dimensional Film coordinates with N+1 camera basis vectors; its orthographic branch is implemented |
 | `HyperbolicCamera` | Constructs a camera tangent frame under the Klein $H^3$ metric |
-| `SphericalCamera` | Places a camera on $S^3\subset\mathbb{R}^4$ with tangent forward and up vectors |
+| `SphericalCamera` | Places a camera on $S^3\subset\mathbb{R}^4$ with three tangent camera-basis vectors |
 
 `Prepare` turns authored parameters into cached orthonormal bases, FOV tangents, and reciprocal resolutions. `GenerateRay` jitters within the pixel, initializes the Ray, and writes its origin and direction. Ordinary cameras preserve the Geometry supplied by the renderer, while non-Euclidean cameras explicitly confirm their own Geometry.
 
@@ -409,7 +409,7 @@ The pixel driver forms its average within a pixel. The splat driver divides all 
 
 `LoadSceneFromScript` resets the Scene and resolves Geometry first. Scene dimension comes from `script.render.dimension`, with a default of three, and is written through `utils.SetDimension`. Shape and Camera factories subsequently use it to validate vector lengths and construct bounds.
 
-Dimension is therefore a **scene-construction parameter**, not merely a sampling option. Changing `RenderConfig.Dimension` after model construction does not rebuild Shapes, Cameras, or the BVH.
+Dimension is therefore a **scene-construction parameter**, not merely a sampling option. Changing `RenderContext.Dimension` after model construction does not rebuild Shapes, Cameras, or the BVH.
 
 ### Resource Model Construction
 
@@ -591,7 +591,7 @@ For an N-dimensional Film, the first two dimensions become each atlas tile's wid
 | Process | `utils.Dimension`, global random source | Dimension is set while building a Scene; the process is not suited to concurrent Scenes with different dimensions |
 | Script | `parser.Script` | Read-only after loading; retains protocol shape |
 | Scene | Geometry, ObjectTree, Materials, Media, Cameras | Constructed once and reused by sequential Render Jobs |
-| Render Job | `RenderConfig`, ActiveCamera, Film, ray-tracing Handler | New or re-prepared for every job |
+| Render Job | `RenderContext`, Camera, Film, ray-tracing Handler | New or re-prepared for every job |
 | Render Session | Driver, prepared Kernel state, Accumulator, active mask | Created at render start and discarded after Finalize |
 | Worker | Tile/work index and local path/subpath | Goroutine-local where possible |
 | Path | Ray, MediumStack, throughput, wavelength, arc | Initialized per sample, changed per bounce, and pool-reused |
@@ -613,7 +613,7 @@ These lifetimes are architecturally significant. Storing hit state in Material w
 | RGB and spectral rendering | Spectrum, SpectralParameter, WavelengthContext, spectral Film | Materials return RGB or sampled values through the same context contract | RGB uplift and parts of color management are approximate |
 | Multiple Integrators | SceneIntegrator, Driver/Kernel, shared Session | Estimator algorithm is separate from scheduling and accumulation | Some combinations require an explicit capability gate or fallback |
 | Pixel windows and concurrency | N-dimensional window normalization, tiles/masks, atomic work allocation | Work domains are independent of transport kernels | No public random seed; strict reproducibility is limited |
-| Multiple Render Jobs | Scene/RenderConfig separation and a new Film per job | Heavy models are reused while output and sampling policy remain local | Jobs run sequentially; Scene-level dimension cannot truly change per job |
+| Multiple Render Jobs | Scene/RenderContext separation and a new Film per job | Heavy models are reused while output and sampling policy remain local | Jobs run sequentially; Scene-level dimension cannot truly change per job |
 | Linear post-processing workflow | Film working space, sample-weighted merge, binary persistence | Display transforms are separate from transport results | The Engine CLI does not directly emit PNG |
 
 ## Design Principles and Engineering Tradeoffs
@@ -775,7 +775,7 @@ Future extension depends less on adding another switch case than on preserving t
 | Material mathematics and implementation | [Collection of Materials](collection_of_materials.md) |
 | Integrator mathematics and unbiasedness | [Integrator](integrator.md) |
 | Spectra and color spaces | [Spectra and Color Spaces](spectrum_and_color.md) |
-| Application entry and Render Jobs | `engine/main.go`, `engine/controller/handler.go`, `engine/controller/render_config.go` |
+| Application entry and Render Jobs | `engine/main.go`, `engine/controller/handler.go`, `engine/controller/render_context.go` |
 | Script and factories | `engine/controller/parser/`, `engine/controller/factory/` |
 | Scene and domain models | `engine/model/` |
 | Geometry metrics | `engine/maths/geometry/` |

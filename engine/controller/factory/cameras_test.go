@@ -13,15 +13,14 @@ func TestBuildCamera3DAcceptsCanonicalDirection(t *testing.T) {
 
 	cam, err := BuildCamera3DFromScript(parser.CameraScript{
 		Position:     []float64{0, -3, 1},
-		Direction:    []float64{0, 3, -1},
-		Up:           []float64{0, 0, 1},
+		Coordinates:  [][]float64{{0, 3, -1}, {3, 0, 0}, {0, 0, 1}},
 		FieldOfViews: []float64{60, 60},
 	})
 	if err != nil {
 		t.Fatalf("build canonical camera: %v", err)
 	}
-	if cam.Direction == nil || cam.Direction.Len() != 3 {
-		t.Fatalf("expected normalized 3D direction, got %#v", cam.Direction)
+	if len(cam.Coordinates) != 3 || cam.Coordinates[0].Len() != 3 {
+		t.Fatalf("expected three 3D coordinates, got %#v", cam.Coordinates)
 	}
 }
 
@@ -31,8 +30,7 @@ func TestBuildCameraFromScriptRejectsNonStandardCameraType(t *testing.T) {
 	_, err := BuildCameraFromScript(parser.CameraScript{
 		Type:         modelcamera.CameraType("camera3d"),
 		Position:     []float64{0, -3, 1},
-		Direction:    []float64{0, 3, -1},
-		Up:           []float64{0, 0, 1},
+		Coordinates:  [][]float64{{0, 3, -1}, {3, 0, 0}, {0, 0, 1}},
 		FieldOfViews: []float64{60, 60},
 	})
 	if err == nil {
@@ -45,8 +43,7 @@ func TestBuildCamera3DUsesFieldOfViews(t *testing.T) {
 
 	cam, err := BuildCamera3DFromScript(parser.CameraScript{
 		Position:     []float64{0, -3, 1},
-		Direction:    []float64{0, 3, -1},
-		Up:           []float64{0, 0, 1},
+		Coordinates:  [][]float64{{0, 3, -1}, {3, 0, 0}, {0, 0, 1}},
 		FieldOfViews: []float64{60, 90},
 	})
 	if err != nil {

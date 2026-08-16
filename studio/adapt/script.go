@@ -55,12 +55,15 @@ func renderToMap(render schema.StudioRenderScript) map[string]interface{} {
 	if render.CameraIndexSet {
 		result["camera_index"] = render.CameraIndex
 	}
-	if render.Width > 0 {
-		result["width"] = render.Width
+	width := render.Width
+	if width <= 0 {
+		width = defaultStudioFilmWidth
 	}
-	if render.Height > 0 {
-		result["height"] = render.Height
+	height := render.Height
+	if height <= 0 {
+		height = defaultStudioFilmHeight
 	}
+	result["widths"] = []int{width, height}
 	if render.OutputFilm != "" {
 		result["output_film"] = render.OutputFilm
 	}

@@ -22,8 +22,7 @@ the CLI:
 --dimension
 --camera-index
 --threads
---width
---height
+--widths
 --samples
 --output-film
 --spectrum-mode
@@ -316,15 +315,16 @@ earliest hit.
 ## Materials, Media, Cameras, Render
 
 Engine camera JSON must already be normalized. A 3D, hyperbolic, or Klein
-camera requires an explicit `direction`; default camera values are studio
-authoring features.
+camera requires three explicit `coordinates` representing forward, right, and
+up; default camera values and direction/up compatibility are studio authoring
+features.
 
 ```json
 {
   "type": "3d",
   "position": [-4, 0, 1],
-  "direction": [4, 0, -1],
-  "up": [0, 0, 1],
+  "coordinates": [[4, 0, -1], [0, -4, 0], [0, 0, 1]],
+  "widths": [800, 800],
   "field_of_views": [60, 60],
   "ortho": false
 }
@@ -340,7 +340,7 @@ They are parsed by:
 engine/controller/factory/materials.go
 engine/controller/factory/media.go
 engine/controller/factory/cameras.go
-engine/controller/render_config.go
+engine/controller/render_context.go
 ```
 
 ### Pixel Windows
@@ -355,8 +355,7 @@ renders `x = 100..149` and `y = 600..649`:
 ```json
 {
   "render": {
-    "width": 800,
-    "height": 800,
+    "widths": [800, 800],
     "pixel_windows": [
       { "min": [100, 600], "max": [150, 650] }
     ]

@@ -91,9 +91,6 @@ type EngineCameraScript struct {
 	ID           string      `json:"id,omitempty"`
 	Type         string      `json:"type,omitempty"`
 	Position     []float64   `json:"position,omitempty"`
-	Direction    []float64   `json:"direction,omitempty"`
-	Up           []float64   `json:"up,omitempty"`
-	Widths       []int       `json:"widths,omitempty"`
 	FieldOfViews []float64   `json:"field_of_views,omitempty"`
 	Coordinates  [][]float64 `json:"coordinates,omitempty"`
 	Ortho        bool        `json:"ortho,omitempty"`

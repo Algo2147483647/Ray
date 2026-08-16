@@ -712,8 +712,7 @@ Integrator selection is part of `render`, or of each entry in `renders` for mult
     "samples": 20,
     "thread_num": 8,
     "camera_index": 0,
-    "width": 400,
-    "height": 400,
+    "widths": [400, 400],
     "spectrum_mode": "hero_wavelength",
     "wavelength_samples": 1,
     "pixel_windows": [
@@ -749,7 +748,7 @@ The same `RenderScript` schema is accepted in:
 | `wavelength_samples` | Positive integer                                             | `1`; promoted to `4` when resolved sampled mode is at most one | Used by path and BDPT sampled mode; not used to multiply light-tracing work |
 | `pixel_windows`      | Array of half-open `{min,max}` coordinate boxes              | Entire film                                                  | Restricts active pixels; overlapping windows are de-duplicated |
 | `camera_index`       | Camera selected for the render                               | `0`                                                          | Light tracing additionally requires the selected camera to be projective |
-| `width`, `height`    | Output dimensions for supported camera types                 | `400`, `400` when not supplied by the camera                 | Affect active-pixel count and splat normalization            |
+| `widths`             | Film dimensions as an integer array                          | Selected camera dimensions                                   | Affect active-pixel count and splat normalization            |
 | `geometry.type`      | `euclidean`, `klein`, or `spherical`                         | Engine scene default                                         | Determines path-geodesic behavior and BDPT fallback          |
 | `geometry.max_arc`   | Non-negative geodesic distance budget                        | `0` except spherical defaults to $2\pi$                      | Enforced by regular path tracing; BDPT only runs in Euclidean geometry |
 
@@ -767,8 +766,7 @@ The Engine CLI exposes these relevant flags:
 --wavelength-samples N
 --pixel-window min:max,min:max
 --camera-index N
---width N
---height N
+--widths N,N
 ```
 
 `--pixel-window` may be repeated. Both `light_tracing` and `light_trace` pass integrator validation even though only the canonical name is listed in the help string.
@@ -870,5 +868,5 @@ This field is therefore driver-defined metadata, not a uniform count of every tr
 | Camera projection contract | `engine/model/camera/camera.go`, `camera_3d.go` |
 | Handler defaults | `engine/ray_tracing/handler.go` |
 | Scene JSON schema | `engine/controller/parser/schema.go` |
-| Defaults, CLI flags, override resolution | `engine/controller/render_config.go` |
+| Defaults, CLI flags, override resolution | `engine/controller/render_context.go` |
 | Controller-to-render-handler wiring | `engine/controller/handler.go` |

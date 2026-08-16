@@ -607,7 +607,10 @@ func TestStudioAdaptsCameraLookAtFromRawFields(t *testing.T) {
 		t.Fatalf("adapt camera: %v", err)
 	}
 	camera := adapted.Cameras[0]
-	assertDirectFloatSlice(t, camera.Direction, []float64{4, 0, -1})
+	if len(camera.Coordinates) != 3 {
+		t.Fatalf("expected three canonical camera coordinates, got %v", camera.Coordinates)
+	}
+	assertDirectFloatSlice(t, camera.Coordinates[0], []float64{4 / math.Sqrt(17), 0, -1 / math.Sqrt(17)})
 }
 
 func TestStudioDoesNotEmitResumeFilmToIntermediateScript(t *testing.T) {
@@ -724,6 +727,41 @@ func TestStudioEngineArgsDoNotForwardColorPipeline(t *testing.T) {
 		if containsString(args, flag) {
 			t.Fatalf("Studio-only flag %q leaked into Engine args: %v", flag, args)
 		}
+	}
+}
+
+func TestStudioEngineArgsConvertsDimensionsToWidths(t *testing.T) {
+	config := studioConfig{
+		provided: map[string]bool{"width": true, "height": true},
+		width:    1920,
+		height:   1080,
+	}
+	args := config.engineArgs("intermediate.json", "", 0)
+	if !containsString(args, "--widths") || !containsString(args, "1920,1080") {
+		t.Fatalf("expected canonical widths argument, got %v", args)
+	}
+	if containsString(args, "--width") || containsString(args, "--height") {
+		t.Fatalf("legacy dimensions leaked into Engine arguments: %v", args)
+	}
+}
+
+func TestStudioAdaptConvertsDimensionsToCanonicalWidths(t *testing.T) {
+	adapted, err := adapt.AdaptScript(&schema.StudioScript{
+		Render: schema.StudioRenderScript{Width: 1280, Height: 720},
+	}, []string{"scene.json"}, 3)
+	if err != nil {
+		t.Fatalf("adapt script: %v", err)
+	}
+	widths, ok := adapted.Render["widths"].([]int)
+	if !ok {
+		t.Fatalf("canonical render widths have type %T", adapted.Render["widths"])
+	}
+	assertIntSlice(t, widths, []int{1280, 720})
+	if _, exists := adapted.Render["width"]; exists {
+		t.Fatal("legacy width leaked into canonical Engine script")
+	}
+	if _, exists := adapted.Render["height"]; exists {
+		t.Fatal("legacy height leaked into canonical Engine script")
 	}
 }
 

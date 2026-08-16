@@ -4,23 +4,22 @@ import (
 	"math"
 	"testing"
 
+	"github.com/Algo2147483647/ray/engine/maths"
 	"gonum.org/v1/gonum/mat"
 )
 
 func TestCamera3DProjectPointMapsViewCenter(t *testing.T) {
 	camera := &Camera3D{
 		Position:     mat.NewVecDense(3, []float64{0, 0, 0}),
-		Direction:    mat.NewVecDense(3, []float64{0, 0, -1}),
-		Up:           mat.NewVecDense(3, []float64{0, 1, 0}),
-		Width:        100,
-		Height:       50,
+		Coordinates:  testCameraCoordinates([]float64{0, 0, -1}, []float64{0, 1, 0}),
 		FieldOfViews: []float64{60, 90},
 	}
-	projection, ok := camera.ProjectPoint(mat.NewVecDense(3, []float64{0, 0, -2}))
+	film := NewFilm(100, 50)
+	projection, ok := camera.ProjectPoint(mat.NewVecDense(3, []float64{0, 0, -2}), film)
 	if !ok {
 		t.Fatal("view-center point did not project")
 	}
-	pixel, ok := projection.Raster.PixelIndex(camera.Width, camera.Height)
+	pixel, ok := projection.Raster.PixelIndex(100, 50)
 	if !ok || pixel != 25*100+50 {
 		t.Fatalf("center pixel = %d (valid=%v), want %d", pixel, ok, 25*100+50)
 	}
@@ -38,16 +37,14 @@ func TestCamera3DProjectPointMapsViewCenter(t *testing.T) {
 func TestCamera3DProjectPointRejectsOutsideFilm(t *testing.T) {
 	camera := &Camera3D{
 		Position:     mat.NewVecDense(3, []float64{0, 0, 0}),
-		Direction:    mat.NewVecDense(3, []float64{0, 0, -1}),
-		Up:           mat.NewVecDense(3, []float64{0, 1, 0}),
-		Width:        100,
-		Height:       50,
+		Coordinates:  testCameraCoordinates([]float64{0, 0, -1}, []float64{0, 1, 0}),
 		FieldOfViews: []float64{60, 90},
 	}
-	if _, ok := camera.ProjectPoint(mat.NewVecDense(3, []float64{3, 0, -2})); ok {
+	film := NewFilm(100, 50)
+	if _, ok := camera.ProjectPoint(mat.NewVecDense(3, []float64{3, 0, -2}), film); ok {
 		t.Fatal("point outside horizontal FOV projected onto film")
 	}
-	if _, ok := camera.ProjectPoint(mat.NewVecDense(3, []float64{0, 0, 1})); ok {
+	if _, ok := camera.ProjectPoint(mat.NewVecDense(3, []float64{0, 0, 1}), film); ok {
 		t.Fatal("point behind camera projected onto film")
 	}
 }
@@ -55,10 +52,7 @@ func TestCamera3DProjectPointRejectsOutsideFilm(t *testing.T) {
 func TestCamera3DPrepareOrthogonalizesWorldUp(t *testing.T) {
 	camera := &Camera3D{
 		Position:     mat.NewVecDense(3, []float64{3.35, -5.65, 2.25}),
-		Direction:    mat.NewVecDense(3, []float64{-4.1, 5.7, -1.63}),
-		Up:           mat.NewVecDense(3, []float64{0, 0, 1}),
-		Width:        800,
-		Height:       800,
+		Coordinates:  testCameraCoordinates([]float64{-4.1, 5.7, -1.63}, []float64{0, 0, 1}),
 		FieldOfViews: []float64{48, 60},
 	}
 
@@ -66,18 +60,18 @@ func TestCamera3DPrepareOrthogonalizesWorldUp(t *testing.T) {
 		t.Fatalf("Prepare returned error: %v", err)
 	}
 	for name, axis := range map[string]*mat.VecDense{
-		"direction": camera.dir,
-		"up":        camera.up,
-		"right":     camera.right,
+		"direction": camera.orthonormalCoordinates[0],
+		"right":     camera.orthonormalCoordinates[1],
+		"up":        camera.orthonormalCoordinates[2],
 	} {
 		if got := mat.Norm(axis, 2); math.Abs(got-1) > 1e-12 {
 			t.Errorf("%s norm = %g, want 1", name, got)
 		}
 	}
 	for name, got := range map[string]float64{
-		"direction dot up":    mat.Dot(camera.dir, camera.up),
-		"direction dot right": mat.Dot(camera.dir, camera.right),
-		"up dot right":        mat.Dot(camera.up, camera.right),
+		"direction dot up":    mat.Dot(camera.orthonormalCoordinates[0], camera.orthonormalCoordinates[2]),
+		"direction dot right": mat.Dot(camera.orthonormalCoordinates[0], camera.orthonormalCoordinates[1]),
+		"up dot right":        mat.Dot(camera.orthonormalCoordinates[2], camera.orthonormalCoordinates[1]),
 	} {
 		if math.Abs(got) > 1e-12 {
 			t.Errorf("%s = %g, want 0", name, got)
@@ -88,10 +82,7 @@ func TestCamera3DPrepareOrthogonalizesWorldUp(t *testing.T) {
 func TestCamera3DProjectPointMapsOpticalAxisToCenterWithWorldUp(t *testing.T) {
 	camera := &Camera3D{
 		Position:     mat.NewVecDense(3, []float64{3.35, -5.65, 2.25}),
-		Direction:    mat.NewVecDense(3, []float64{-4.1, 5.7, -1.63}),
-		Up:           mat.NewVecDense(3, []float64{0, 0, 1}),
-		Width:        800,
-		Height:       800,
+		Coordinates:  testCameraCoordinates([]float64{-4.1, 5.7, -1.63}, []float64{0, 0, 1}),
 		FieldOfViews: []float64{48, 60},
 	}
 	if err := camera.Prepare(); err != nil {
@@ -99,13 +90,14 @@ func TestCamera3DProjectPointMapsOpticalAxisToCenterWithWorldUp(t *testing.T) {
 	}
 
 	point := mat.VecDenseCopyOf(camera.Position)
-	point.AddScaledVec(point, 4, camera.dir)
-	projection, ok := camera.ProjectPoint(point)
+	point.AddScaledVec(point, 4, camera.orthonormalCoordinates[0])
+	film := NewFilm(800, 800)
+	projection, ok := camera.ProjectPoint(point, film)
 	if !ok {
 		t.Fatal("point on optical axis did not project")
 	}
-	want := (camera.Height/2)*camera.Width + camera.Width/2
-	pixel, ok := projection.Raster.PixelIndex(camera.Width, camera.Height)
+	want := (800/2)*800 + 800/2
+	pixel, ok := projection.Raster.PixelIndex(800, 800)
 	if !ok || pixel != want {
 		t.Fatalf("optical-axis pixel = %d (valid=%v), want %d", pixel, ok, want)
 	}
@@ -114,33 +106,37 @@ func TestCamera3DProjectPointMapsOpticalAxisToCenterWithWorldUp(t *testing.T) {
 func TestCamera3DGenerateRayProjectPointRoundTripWithWorldUp(t *testing.T) {
 	camera := &Camera3D{
 		Position:     mat.NewVecDense(3, []float64{3.35, -5.65, 2.25}),
-		Direction:    mat.NewVecDense(3, []float64{-4.1, 5.7, -1.63}),
-		Up:           mat.NewVecDense(3, []float64{0, 0, 1}),
-		Width:        80,
-		Height:       80,
+		Coordinates:  testCameraCoordinates([]float64{-4.1, 5.7, -1.63}, []float64{0, 0, 1}),
 		FieldOfViews: []float64{48, 60},
 	}
 	if err := camera.Prepare(); err != nil {
 		t.Fatalf("Prepare returned error: %v", err)
 	}
+	film := NewFilm(80, 80)
 
 	for _, pixel := range [][2]int{{0, 0}, {79, 0}, {0, 79}, {79, 79}, {40, 40}, {17, 63}} {
 		x, y := pixel[0], pixel[1]
 		for sample := 0; sample < 16; sample++ {
-			ray := camera.GenerateRay(nil, x, y)
+			ray := camera.GenerateRay(nil, film, x, y)
 			point := mat.VecDenseCopyOf(ray.Origin)
 			point.AddScaledVec(point, 3, ray.Direction)
-			projection, ok := camera.ProjectPoint(point)
+			projection, ok := camera.ProjectPoint(point, film)
 			if !ok {
 				t.Fatalf("ray from pixel (%d, %d) did not project", x, y)
 			}
-			want := y*camera.Width + x
-			projectedPixel, ok := projection.Raster.PixelIndex(camera.Width, camera.Height)
+			want := y*80 + x
+			projectedPixel, ok := projection.Raster.PixelIndex(80, 80)
 			if !ok || projectedPixel != want {
 				t.Fatalf("ray from pixel (%d, %d) projected to %d (valid=%v), want %d", x, y, projectedPixel, ok, want)
 			}
 		}
 	}
+}
+
+func testCameraCoordinates(direction, up []float64) []*mat.VecDense {
+	forward := mat.NewVecDense(3, direction)
+	right := maths.Cross2(forward, mat.NewVecDense(3, up))
+	return []*mat.VecDense{forward, right, mat.NewVecDense(3, up)}
 }
 
 func TestRasterPositionDerivesPixelsFromCenterCoordinates(t *testing.T) {

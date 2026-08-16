@@ -75,6 +75,7 @@ func (k *lightTracingKernel) TraceSample(session *RenderSession, _ int64) []Film
 	for vertexIndex := range path {
 		value, projection, valid := session.Handler.projectLightVertex(
 			k.projective,
+			session.Context.Film,
 			session.Context.ObjectTree,
 			&path[vertexIndex],
 		)
@@ -95,13 +96,14 @@ func (k *lightTracingKernel) TraceSample(session *RenderSession, _ int64) []Film
 
 func (h *Handler) projectLightVertex(
 	renderCamera camera.ProjectiveCamera,
+	film *camera.Film,
 	tree *object.ObjectTree,
 	vertex *bdptVertex,
 ) (optics.Spectrum, camera.FilmProjection, bool) {
 	if vertex == nil || vertex.Point == nil || vertex.GeometricNormal == nil || vertex.Object == nil || vertex.Object.Material == nil {
 		return optics.Spectrum{}, camera.FilmProjection{}, false
 	}
-	projection, ok := renderCamera.ProjectPoint(vertex.Point)
+	projection, ok := renderCamera.ProjectPoint(vertex.Point, film)
 	if !ok {
 		return optics.Spectrum{}, camera.FilmProjection{}, false
 	}

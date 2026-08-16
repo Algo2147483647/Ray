@@ -70,18 +70,18 @@ func (h *Handler) ConfigureRenderContext(context RenderContext) *Handler {
 		return h
 	}
 
-	renderCamera, filmShape, err := h.selectRenderCamera(context.CameraIndex, context.Width, context.Height)
+	renderCamera, err := h.selectRenderCamera(context.CameraIndex)
 	if err != nil {
 		h.err = err
 		return h
 	}
 
-	if len(filmShape) > 0 {
-		context.Width = filmShape[0]
+	filmShape := append([]int(nil), context.Width...)
+	if len(filmShape) == 0 {
+		h.err = fmt.Errorf("render film widths are not configured")
+		return h
 	}
-	if len(filmShape) > 1 {
-		context.Height = filmShape[1]
-	}
+
 	normalizedWindows, err := camera.NormalizePixelWindows(context.PixelWindows, filmShape)
 	if err != nil {
 		h.err = err
@@ -114,63 +114,26 @@ func (h *Handler) RenderJobs() *Handler {
 	return h
 }
 
-func (h *Handler) selectRenderCamera(cameraIndex, width, height int) (camera.Camera, []int, error) {
+func (h *Handler) selectRenderCamera(cameraIndex int) (camera.Camera, error) {
 	if len(h.Scene.Cameras) == 0 {
-		return nil, nil, fmt.Errorf("scene has no cameras; use studio to generate a default camera")
+		return nil, fmt.Errorf("scene has no cameras; use studio to generate a default camera")
 	}
-
 	if cameraIndex < 0 || cameraIndex >= len(h.Scene.Cameras) {
-		return nil, nil, fmt.Errorf("camera index %d out of range (available: %d)", cameraIndex, len(h.Scene.Cameras))
+		return nil, fmt.Errorf("camera index %d out of range (available: %d)", cameraIndex, len(h.Scene.Cameras))
 	}
 
 	selectedCamera := h.Scene.Cameras[cameraIndex]
-	switch c := selectedCamera.(type) {
-	case *camera.Camera3D:
-		resolvedWidth := firstPositiveInt(width, defaultRenderWidth)
-		resolvedHeight := firstPositiveInt(height, defaultRenderHeight)
-		c.Width = resolvedWidth
-		c.Height = resolvedHeight
-		if err := c.Prepare(); err != nil {
-			return nil, nil, err
-		}
-		return c, []int{resolvedWidth, resolvedHeight}, nil
-	case *camera.HyperbolicCamera:
-		resolvedWidth := firstPositiveInt(width, defaultRenderWidth)
-		resolvedHeight := firstPositiveInt(height, defaultRenderHeight)
-		c.Width = resolvedWidth
-		c.Height = resolvedHeight
-		if err := c.Prepare(); err != nil {
-			return nil, nil, err
-		}
-		return c, []int{resolvedWidth, resolvedHeight}, nil
-	case *camera.SphericalCamera:
-		resolvedWidth := firstPositiveInt(width, defaultRenderWidth)
-		resolvedHeight := firstPositiveInt(height, defaultRenderHeight)
-		c.Width = resolvedWidth
-		c.Height = resolvedHeight
-		if err := c.Prepare(); err != nil {
-			return nil, nil, err
-		}
-		return c, []int{resolvedWidth, resolvedHeight}, nil
-	case *camera.CameraNDim:
-		if len(c.Width) == 0 {
-			return nil, nil, fmt.Errorf("n_dim camera has no film widths")
-		}
-		filmShape := append([]int(nil), c.Width...)
-		if width > 0 {
-			filmShape[0] = width
-		}
-		if height > 0 && len(filmShape) > 1 {
-			filmShape[1] = height
-		}
-		c.Width = append([]int(nil), filmShape...)
-		if err := c.Prepare(); err != nil {
-			return nil, nil, err
-		}
-		return c, filmShape, nil
-	default:
-		return selectedCamera, []int{firstPositiveInt(width, defaultRenderWidth), firstPositiveInt(height, defaultRenderHeight)}, nil
+	preparedCamera, ok := selectedCamera.(interface {
+		camera.Camera
+		Prepare() error
+	})
+	if !ok {
+		return nil, fmt.Errorf("camera does not support preparation")
 	}
+	if err := preparedCamera.Prepare(); err != nil {
+		return nil, err
+	}
+	return selectedCamera, nil
 }
 
 func (h *Handler) Render() *Handler {
