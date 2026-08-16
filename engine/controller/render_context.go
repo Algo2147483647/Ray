@@ -1,9 +1,8 @@
 package controller
 
 import (
-	"flag"
 	"fmt"
-	"io"
+	"github.com/Algo2147483647/ray/engine/model/optics"
 	"runtime"
 
 	"github.com/Algo2147483647/ray/engine/controller/parser"
@@ -26,34 +25,6 @@ type RenderContext struct {
 	SpectrumMode      string
 	WavelengthSamples int
 	PixelWindows      []camera.PixelWindow
-}
-
-func (h *Handler) ParseArgs(args []string) *Handler {
-	if h.err != nil {
-		return h
-	}
-
-	scriptPaths := stringListFlag{}
-
-	flagSet := flag.NewFlagSet("ray", flag.ContinueOnError)
-	flagSet.SetOutput(io.Discard)
-	flagSet.Var(&scriptPaths, "script", "path to a canonical scene script")
-
-	if err := flagSet.Parse(args); err != nil {
-		h.err = err
-		return h
-	}
-
-	scriptPaths = append(scriptPaths, flagSet.Args()...)
-	if len(scriptPaths) == 0 {
-		scriptPaths = append(scriptPaths, defaultScriptPath)
-	}
-	if len(scriptPaths) != 1 {
-		h.err = fmt.Errorf("engine accepts exactly one --script; use studio to merge multiple scripts")
-		return h
-	}
-	h.ScriptPath = scriptPaths[0]
-	return h
 }
 
 func defaultRenderContext() RenderContext {
@@ -106,13 +77,43 @@ func mergeRenderContext(base, override RenderContext) RenderContext {
 	return base
 }
 
-type stringListFlag []string
+func (h *Handler) ConfigureRenderContext(context RenderContext) *Handler {
+	if h.err != nil {
+		return h
+	}
+	if context.CameraID == "" {
+		h.err = fmt.Errorf("render camera_id %q does not exist", context.CameraID)
+		return h
+	}
 
-func (s *stringListFlag) String() string {
-	return fmt.Sprint([]string(*s))
+	var exists bool
+	h.Camera, exists = h.Scene.Cameras[context.CameraID]
+	if !exists {
+		h.err = fmt.Errorf("camera %q does not exist", context.CameraID)
+		return h
+	}
+
+	film := h.Camera.GetFilm()
+	normalizedWindows, err := camera.NormalizePixelWindows(film.PixelWindows, film.Shape)
+	if err != nil {
+		h.err = err
+		return h
+	}
+
+	context.PixelWindows = normalizedWindows
+	context.OutputFilm = film.OutputFilm
+	if context.OutputFilm == "" {
+		context.OutputFilm = defaultOutputFilm
+	}
+	h.Context = context
+	return h
 }
 
-func (s *stringListFlag) Set(value string) error {
-	*s = append(*s, value)
-	return nil
+func renderSpectrumMode(value string) optics.SpectrumMode {
+	switch value {
+	case "sampled":
+		return optics.SpectrumModeSampledWavelengths
+	default:
+		return optics.SpectrumModeHeroWavelength
+	}
 }

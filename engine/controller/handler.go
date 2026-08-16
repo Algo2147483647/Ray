@@ -4,11 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Algo2147483647/ray/engine/controller/factory"
 	"github.com/Algo2147483647/ray/engine/controller/parser"
 	"github.com/Algo2147483647/ray/engine/model"
 	"github.com/Algo2147483647/ray/engine/model/camera"
-	"github.com/Algo2147483647/ray/engine/model/optics"
 	"github.com/Algo2147483647/ray/engine/ray_tracing"
 )
 
@@ -31,7 +29,7 @@ func Run(args []string) int {
 	h := NewHandler().
 		ParseArgs(args).
 		LoadScript().
-		RenderJobs()
+		Renders()
 	if h.err != nil {
 		fmt.Printf("Error: %v\n", h.err)
 		return 1
@@ -41,61 +39,7 @@ func Run(args []string) int {
 	return 0
 }
 
-func (h *Handler) LoadScript() *Handler {
-	if h.err != nil {
-		return h
-	}
-
-	fmt.Printf("Loading scene from: %s\n", h.ScriptPath)
-
-	script, err := parser.ReadScriptFile(h.ScriptPath)
-	if err != nil {
-		h.err = err
-		return h
-	}
-
-	h.Script = script
-	if err := factory.LoadSceneFromScript(script, h.Scene); err != nil {
-		h.err = err
-		return h
-	}
-
-	return h
-}
-
-func (h *Handler) ConfigureRenderContext(context RenderContext) *Handler {
-	if h.err != nil {
-		return h
-	}
-	if context.CameraID == "" {
-		h.err = fmt.Errorf("render camera_id %q does not exist", context.CameraID)
-		return h
-	}
-
-	var exists bool
-	h.Camera, exists = h.Scene.Cameras[context.CameraID]
-	if !exists {
-		h.err = fmt.Errorf("camera %q does not exist", context.CameraID)
-		return h
-	}
-
-	film := h.Camera.GetFilm()
-	normalizedWindows, err := camera.NormalizePixelWindows(film.PixelWindows, film.Shape)
-	if err != nil {
-		h.err = err
-		return h
-	}
-
-	context.PixelWindows = normalizedWindows
-	context.OutputFilm = film.OutputFilm
-	if context.OutputFilm == "" {
-		context.OutputFilm = defaultOutputFilm
-	}
-	h.Context = context
-	return h
-}
-
-func (h *Handler) RenderJobs() *Handler {
+func (h *Handler) Renders() *Handler {
 	if h.err != nil {
 		return h
 	}
@@ -164,15 +108,6 @@ func (h *Handler) Render() *Handler {
 
 	fmt.Printf("Rendering completed in %v\n", time.Since(start))
 	return h
-}
-
-func renderSpectrumMode(value string) optics.SpectrumMode {
-	switch value {
-	case "sampled":
-		return optics.SpectrumModeSampledWavelengths
-	default:
-		return optics.SpectrumModeHeroWavelength
-	}
 }
 
 func (h *Handler) SaveFilm(filename string) *Handler {
