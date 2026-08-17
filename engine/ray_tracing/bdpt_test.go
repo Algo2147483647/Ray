@@ -192,7 +192,6 @@ func TestBDPTStrategyDensitiesNormalizeAcrossSameCompletePath(t *testing.T) {
 		GeometricNormal: mat.NewVecDense(3, []float64{0, 0, 1}),
 		Frame:           lightFrame,
 		PDFFwdArea:      0.25,
-		LightAreaPDF:    0.25,
 		LightEndpoint:   true,
 		Object: &object.Object{Shape: shape.NewTriangle(
 			mat.NewVecDense(3, []float64{-1, 0, 2}),
@@ -210,7 +209,6 @@ func TestBDPTStrategyDensitiesNormalizeAcrossSameCompletePath(t *testing.T) {
 		bdptMISWeight(lightPath[:1], cameraPath, 0, 2),
 		bdptMISWeight(lightPath[:2], cameraPath[:2], 1, 1),
 		bdptMISWeight(lightPath, cameraPath[:1], 2, 0),
-		bdptMISWeightReferenceDirect(lightPath[:1], cameraPath, 2),
 	}
 	sum := 0.0
 	for strategy, weight := range weights {
