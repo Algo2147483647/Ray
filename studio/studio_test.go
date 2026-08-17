@@ -103,9 +103,10 @@ func TestIntermediateScriptUsesCameraOwnedFilm(t *testing.T) {
 func TestStudioExpandsLegacyRenderDefaultsIntoEveryEngineJob(t *testing.T) {
 	adapted, err := adaptTestScript(&schema.StudioScript{
 		Render: schema.StudioRenderScript{
-			Integrator: "bdpt",
-			Samples:    8,
-			FilmID:     "test-film",
+			Integrator:         "bdpt",
+			BDPTFallbackPolicy: "path",
+			Samples:            8,
+			FilmID:             "test-film",
 		},
 		Renders: []schema.StudioRenderScript{
 			{Samples: 32},
@@ -118,10 +119,10 @@ func TestStudioExpandsLegacyRenderDefaultsIntoEveryEngineJob(t *testing.T) {
 	if len(adapted.Renders) != 2 {
 		t.Fatalf("expected two Engine jobs, got %d", len(adapted.Renders))
 	}
-	if adapted.Renders[0]["integrator"] != "bdpt" || adapted.Renders[0]["samples"] != int64(32) {
+	if adapted.Renders[0]["integrator"] != "bdpt" || adapted.Renders[0]["bdpt_fallback_policy"] != "path" || adapted.Renders[0]["samples"] != int64(32) {
 		t.Fatalf("unexpected first Engine job: %v", adapted.Renders[0])
 	}
-	if adapted.Renders[1]["integrator"] != "bdpt" || adapted.Renders[1]["samples"] != int64(8) {
+	if adapted.Renders[1]["integrator"] != "bdpt" || adapted.Renders[1]["bdpt_fallback_policy"] != "path" || adapted.Renders[1]["samples"] != int64(8) {
 		t.Fatalf("unexpected second Engine job: %v", adapted.Renders[1])
 	}
 }

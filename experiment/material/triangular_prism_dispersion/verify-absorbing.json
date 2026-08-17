@@ -12,7 +12,7 @@
   }],
   "renders": [
     {
-      "integrator": "light_tracing",
+      "integrator": "bdpt",
       "film_id": "prism-absorbing-film"
     }
   ]

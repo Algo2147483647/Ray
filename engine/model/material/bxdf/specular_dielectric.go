@@ -91,9 +91,13 @@ func (s SpecularDielectric) Sample(ctx ShadingContext, wo maths.Direction, u mat
 	}
 
 	cos := maths.AbsCosTheta(wi)
+	transportScale := 1.0
+	if ctx.TransportMode == TransportRadiance {
+		transportScale = etaI / etaT
+	}
 	sample := BxDFSample{
 		Wi:             wi,
-		F:              s.Transmittance.Eval(ctx).MulScalar(1 - fresnel).DivScalar(cos),
+		F:              s.Transmittance.Eval(ctx).MulScalar((1 - fresnel) * transportScale * transportScale).DivScalar(cos),
 		PDF:            1 - fresnel,
 		Flags:          DeltaTransmission | TransmissionEvent,
 		Eta:            etaT,

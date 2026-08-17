@@ -2,12 +2,9 @@ package ray_tracing
 
 import (
 	"fmt"
-	"math"
 	"math/rand/v2"
-	"os"
 
 	"github.com/Algo2147483647/ray/engine/model/camera"
-	"github.com/Algo2147483647/ray/engine/model/object"
 	"github.com/Algo2147483647/ray/engine/model/optics"
 )
 
@@ -15,7 +12,6 @@ import (
 // pixel other than the camera pixel selected for the remaining strategies.
 type bdptPreparedState struct {
 	scene        *bdptSceneState
-	projective   camera.ProjectiveCamera
 	activeMask   []bool
 	activePixels []int
 	width        int
@@ -31,6 +27,10 @@ type bdptKernel struct {
 func (k *bdptKernel) Prepare(context *RenderContext) error {
 	if k == nil || context == nil {
 		return fmt.Errorf("BDPT kernel or render context is nil")
+	}
+	scene, err := context.Handler.prepareBDPT(context.Camera, context.ObjectTree)
+	if err != nil {
+		return err
 	}
 	film := context.Camera.GetFilm()
 	shape := film.Shape
@@ -50,7 +50,7 @@ func (k *bdptKernel) Prepare(context *RenderContext) error {
 	}
 
 	state := &bdptPreparedState{
-		scene:        prepareBDPTScene(context.Handler.SceneGeometry, context.ObjectTree),
+		scene:        scene,
 		activeMask:   mask,
 		activePixels: activePixels,
 		width:        shape[0],
@@ -60,12 +60,8 @@ func (k *bdptKernel) Prepare(context *RenderContext) error {
 	if context.Handler.SpectrumMode == optics.SpectrumModeSampledWavelengths {
 		state.wavelengths = int64(context.Handler.wavelengthSampleCount())
 	}
-	state.projective, _ = context.Camera.(camera.ProjectiveCamera)
 	state.totalWork = context.Samples * int64(len(activePixels)) * state.wavelengths
 	k.prepared = state
-	if state.scene.FallbackReason != "" {
-		fmt.Fprintf(os.Stderr, "BDPT fallback: requested=bdpt effective=path reason=%s\n", state.scene.FallbackReason)
-	}
 	return nil
 }
 
@@ -91,7 +87,7 @@ func (k *bdptKernel) TraceSample(context *RenderContext, workIndex int64) []Film
 	}
 	wavelength := context.Handler.wavelengthSampler().Sample(u)
 	wavelengthNM, wavelengthPDF := wavelength.LambdaNM, wavelength.PDF
-	local, lightPath := context.Handler.traceBidirectionalPrepared(
+	local, remoteSplats := context.Handler.traceBidirectionalPrepared(
 		k.prepared.scene,
 		context.Camera,
 		context.ObjectTree,
@@ -100,7 +96,7 @@ func (k *bdptKernel) TraceSample(context *RenderContext, workIndex int64) []Film
 		coords...,
 	)
 
-	splats := make([]FilmSplat, 0, 1+len(lightPath))
+	splats := make([]FilmSplat, 0, 1+len(remoteSplats))
 	if validSpectrum(local) {
 		splats = append(splats, FilmSplat{
 			Pixel: pixel, WavelengthNM: wavelengthNM, WavelengthPDF: wavelengthPDF,
@@ -111,102 +107,27 @@ func (k *bdptKernel) TraceSample(context *RenderContext, workIndex int64) []Film
 		})
 	}
 
-	// Delta-caustic t=1 strategies form a disjoint path family from the
-	// continuous strategies currently handled by BDPT MIS. This is the path
-	// family needed by light -> specular chain -> diffuse screen -> camera.
-	if k.prepared.projective == nil {
-		return splats
-	}
-	deltaSplats := context.Handler.projectBDPTDeltaCaustics(
-		k.prepared.projective,
-		context.ObjectTree,
-		lightPath,
-		wavelengthNM,
-		wavelengthPDF,
-	)
-	for _, splat := range deltaSplats {
-		splats = append(splats, filterBDPTDeltaSplat(
+	for _, splat := range remoteSplats {
+		splats = append(splats, filterBDPTSplat(
 			splat, k.prepared.width, k.prepared.height, k.prepared.activeMask,
 		)...)
 	}
 	return splats
 }
 
-func (h *Handler) projectBDPTDeltaCaustics(
-	projective camera.ProjectiveCamera,
-	tree *object.ObjectTree,
-	lightPath []bdptVertex,
-	wavelengthNM, wavelengthPDF float64,
-) []FilmSplat {
-	if projective == nil {
-		return nil
-	}
-	result := make([]FilmSplat, 0, len(lightPath))
-	seenDelta := false
-	for vertexIndex := range lightPath {
-		if vertexIndex > 0 && lightPath[vertexIndex-1].SampledDelta {
-			seenDelta = true
-		}
-		if !seenDelta {
-			continue
-		}
-		value, projection, ok := projectLightVertex(projective, tree, &lightPath[vertexIndex])
-		if !ok {
-			continue
-		}
-		result = append(result, FilmSplat{
-			WavelengthNM: wavelengthNM, WavelengthPDF: wavelengthPDF, Value: value,
-			projection: projection,
-		})
-	}
-	return result
-}
-
-func filterBDPTDeltaSplat(splat FilmSplat, width, height int, activeMask []bool) []FilmSplat {
+func filterBDPTSplat(splat FilmSplat, width, height int, activeMask []bool) []FilmSplat {
 	if width <= 0 || height <= 0 || len(activeMask) != width*height {
 		return nil
 	}
-	x0 := int(math.Floor(splat.projection.Position[0]))
-	y0 := int(math.Floor(splat.projection.Position[1]))
-	fx := splat.projection.Position[0] - float64(x0)
-	fy := splat.projection.Position[1] - float64(y0)
-	type candidate struct {
-		x, y   int
-		weight float64
-	}
-	candidates := [4]candidate{
-		{x0, y0, (1 - fx) * (1 - fy)},
-		{x0 + 1, y0, fx * (1 - fy)},
-		{x0, y0 + 1, (1 - fx) * fy},
-		{x0 + 1, y0 + 1, fx * fy},
-	}
-	weightSum := 0.0
-	for _, candidate := range candidates {
-		if candidate.x < 0 || candidate.x >= width || candidate.y < 0 || candidate.y >= height {
-			continue
-		}
-		pixel := candidate.y*width + candidate.x
-		if activeMask[pixel] {
-			weightSum += candidate.weight
-		}
-	}
-	if weightSum <= 0 {
+	if len(splat.projection.Position) < 2 {
 		return nil
 	}
-	result := make([]FilmSplat, 0, 4)
-	for _, candidate := range candidates {
-		if candidate.weight <= 0 || candidate.x < 0 || candidate.x >= width ||
-			candidate.y < 0 || candidate.y >= height {
-			continue
-		}
-		pixel := candidate.y*width + candidate.x
-		if !activeMask[pixel] {
-			continue
-		}
-		filtered := splat
-		filtered.Pixel = pixel
-		filtered.Value = splat.Value.MulScalar(candidate.weight / weightSum)
-		result = append(result, filtered)
+	pixel, ok := camera.PixelIndex(
+		splat.projection.Position[0], splat.projection.Position[1], width, height,
+	)
+	if !ok || !activeMask[pixel] {
+		return nil
 	}
-	return result
+	splat.Pixel = pixel
+	return []FilmSplat{splat}
 }

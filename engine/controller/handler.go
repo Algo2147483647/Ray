@@ -94,6 +94,7 @@ func (h *Handler) Render() *Handler {
 	renderHandler.ThreadNum = h.Context.ThreadNum
 	renderHandler.SpectrumMode = renderSpectrumMode(h.Context.SpectrumMode)
 	renderHandler.WavelengthSamples = h.Context.WavelengthSamples
+	renderHandler.BDPTFallbackPolicy = ray_tracing.BDPTFallbackPolicy(h.Context.BDPTFallbackPolicy)
 	renderHandler.SceneGeometry = h.Scene.Geometry
 	renderHandler.MaxArc = h.Scene.MaxArc
 	if err := renderHandler.TraceScene(

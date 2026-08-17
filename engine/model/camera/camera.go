@@ -50,6 +50,17 @@ type ProjectiveCamera interface {
 	ProjectPoint(point *mat.VecDense) (FilmProjection, bool)
 }
 
+// BidirectionalCamera exposes the endpoint information and directional
+// density required to put camera sampling in the same path-space measure as
+// light and surface sampling.  The density is with respect to solid angle and
+// includes uniform sampling over the complete film, rather than conditioning
+// on one already-selected pixel.
+type BidirectionalCamera interface {
+	ProjectiveCamera
+	Endpoint() *mat.VecDense
+	PDFDirection(direction *mat.VecDense) float64
+}
+
 type CameraType string
 
 const (

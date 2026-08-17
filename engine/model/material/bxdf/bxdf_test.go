@@ -39,6 +39,34 @@ func TestSpecularReflectionSampleIsDeltaDiscrete(t *testing.T) {
 	}
 }
 
+func TestSpecularDielectricUsesAdjointEtaScale(t *testing.T) {
+	dielectric := bxdf.NewSpecularDielectricConstant(
+		optics.ConstantSpectrum(1), optics.ConstantSpectrum(1), 1, 1.5,
+	)
+	wo := maths.NewDirection(0.2, 0, 0.98).Normalize()
+	base := bxdf.ShadingContext{EtaIncident: 1, EtaTransmit: 1.5}
+	importanceContext := base
+	importanceContext.TransportMode = bxdf.TransportImportance
+	radianceContext := base
+	radianceContext.TransportMode = bxdf.TransportRadiance
+
+	importance := dielectric.Sample(importanceContext, wo, maths.Sample2D{U: 0.99, V: 0.5})
+	radiance := dielectric.Sample(radianceContext, wo, maths.Sample2D{U: 0.99, V: 0.5})
+	if importance.Flags&bxdf.DeltaTransmission == 0 || radiance.Flags&bxdf.DeltaTransmission == 0 {
+		t.Fatalf("expected transmission samples: importance=%+v radiance=%+v", importance, radiance)
+	}
+	if math.Abs(importance.PDF-radiance.PDF) > 1e-12 {
+		t.Fatalf("transport mode changed Fresnel sampling probability: importance=%g radiance=%g", importance.PDF, radiance.PDF)
+	}
+	wantRatio := (1.0 / 1.5) * (1.0 / 1.5)
+	for channel := 0; channel < 3; channel++ {
+		gotRatio := radiance.F.RGBChannel(channel) / importance.F.RGBChannel(channel)
+		if math.Abs(gotRatio-wantRatio) > 1e-12 {
+			t.Fatalf("channel %d eta scale = %g, want %g", channel, gotRatio, wantRatio)
+		}
+	}
+}
+
 func TestLambertSamples4DUpperHemisphere(t *testing.T) {
 	lambert := bxdf.NewLambert(optics.NewSpectrum(0.6, 0.4, 0.2))
 	wo := maths.NewDirectionFromComponents([]float64{0.1, -0.2, 0.3, 0.9}).Normalize()

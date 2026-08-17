@@ -74,6 +74,34 @@ func (c *Camera3D) GenerateRay(res *renderray.Ray, index ...int) *renderray.Ray 
 	return res
 }
 
+func (c *Camera3D) Endpoint() *mat.VecDense {
+	if c == nil || c.Position == nil || c.Ortho {
+		return nil
+	}
+	return mat.VecDenseCopyOf(c.Position)
+}
+
+func (c *Camera3D) PDFDirection(direction *mat.VecDense) float64 {
+	if c == nil || direction == nil || direction.Len() != 3 || c.Ortho {
+		return 0
+	}
+	if !c.prepared {
+		if err := c.Prepare(); err != nil {
+			return 0
+		}
+	}
+	length := mat.Norm(direction, 2)
+	if length <= 0 || math.IsNaN(length) || math.IsInf(length, 0) {
+		return 0
+	}
+	cosAxis := mat.Dot(direction, c.orthonormalCoordinates[0]) / length
+	if cosAxis <= 0 || c.halfWidth <= 0 || c.halfHeight <= 0 {
+		return 0
+	}
+	// Uniform film-area sampling transformed to solid angle.
+	return 1 / (4 * c.halfWidth * c.halfHeight * cosAxis * cosAxis * cosAxis)
+}
+
 // ProjectPoint maps a world-space point to the box-filtered pinhole film.
 // The returned Jacobian omits the receiving surface cosine because the camera
 // does not know that surface's normal.

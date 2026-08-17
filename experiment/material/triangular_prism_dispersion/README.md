@@ -15,11 +15,11 @@
 - 棱柱横截面顶点为 `(-0.5,-0.55)`、`(-0.5,0.55)`、`(-0.15,0)`。
 - 棱柱使用理想 `specular_dielectric`，折射率为
   `n(λ)=1.35+0.025/λ²`，其中 `λ` 以微米计。这里使用高色散玻璃参数，确保墙面投影在有限分辨率下仍可辨认。
-- 棱柱介质同时配置波长相关 `sigma_a`，在 400/500/600/700 nm 处分别为 `3.2/1.4/0.45/0.1`：蓝光吸收最强、红光最弱，用于验证 Light Tracing 在 delta 折射链内部正确累计 homogeneous Beer–Lambert 衰减。
+- 棱柱介质同时配置波长相关 `sigma_a`，在 400/500/600/700 nm 处分别为 `3.2/1.4/0.45/0.1`：蓝光吸收最强、红光最弱，用于验证 BDPT 在 delta 折射链内部正确累计 homogeneous Beer–Lambert 衰减。
 - 投影屏位于 `x≈-4`，Lambert 反射率为 `0.92`；屏卡高度由 `1.8` 增至 `2.7`，边框同步增高到原来的 1.5 倍。
 - 相机位于装置斜前方；画面从左到右依次是屏幕光谱、带冷色边缘高光的透明棱镜、黄铜光阑和狭缝灯箱。
 - 纯白釉面瓷质后墙与地板、木质光学台、黄铜导轨和屏幕支架负责空间叙事，均避开主光路。墙地以白色漫反射为基底，叠加低粗糙度无色微表面高光。
-- 棱镜的顶面和底面外侧使用极细的非发光轮廓杆，三条竖边使用 7 mm 半径的冷色轮廓杆。这是针对当前 `light_tracing(t=1)` 不直接投影 delta 表面的可读性辅助；验收相机只看屏幕，因此它们不进入统计画面。
+- 棱镜的顶面和底面外侧使用极细的非发光轮廓杆，三条竖边使用 7 mm 半径的冷色轮廓杆。这是针对 `BDPT(t=1)` 不直接投影 delta 表面的可读性辅助；验收相机只看屏幕，因此它们不进入统计画面。
 - 场景没有环境光；未命中物体的相机射线仍为黑色，暗房由明确建模的暖色摄影灯照明。
 
 中心光线的近似落点随波长单调变化：
@@ -82,7 +82,7 @@ run.cmd
 run.cmd --width 192 --height 192 --samples 128
 ```
 
-`light_tracing` 同时追踪狭缝与艺术补光的光源子路径：前者穿过棱柱后在屏幕漫反射顶点执行 `t=1` 胶片投影，后者负责照亮舞台几何。即使低样本预览也应形成连续色带；提高到默认采样数主要用于平滑光谱和暗房照明噪声。
+`bdpt` 同时构造相机与光源子路径：狭缝光穿过棱柱后可在屏幕漫反射顶点执行 `t=1` 胶片投影，普通表面路径则参与其余连接策略和 MIS。即使低样本预览也应形成连续色带；提高采样数主要用于平滑光谱和暗房照明噪声。
 
 ## 自动验收
 
@@ -90,7 +90,7 @@ run.cmd --width 192 --height 192 --samples 128
 verify.cmd
 ```
 
-`verify.cmd` 分别组合 control 与 absorbing JSON，并且两次都不加载 `beauty.json`。诊断相机保持 64° 垂直视场以覆盖屏幕高度，同时使用 48° 水平视场放大色带。命令完成两次 `light_tracing` 渲染后检查：
+`verify.cmd` 分别组合 control 与 absorbing JSON，并且两次都不加载 `beauty.json`。诊断相机保持 64° 垂直视场以覆盖屏幕高度，同时使用 48° 水平视场放大色带。命令完成两次 `bdpt` 渲染后检查：
 
 1. 蓝、绿、红波段都有有限正能量；
 2. 三个波段在墙面上的横向质心严格单调；
@@ -100,7 +100,7 @@ verify.cmd
 
 验收产物写入 `outputs/prism-spectrum-verify/`，其中包含 `control.*` 和 `absorbing.*` 两组结果，不会覆盖正式输出。
 
-在默认 `120×80 @ 512 spp` 下，典型吸收/对照能量比约为 `blue=0.65`、`green=0.84`、`red=0.96`。这是 Monte Carlo 统计量，测试只要求稳定的波段顺序、足够强的蓝光衰减和合理的红光能量上界，不要求逐次运行完全一致。
+当前 `120×80 @ 128 spp` BDPT 验收得到质心跨度 `control=12.50 px`、`absorbing=12.02 px`，吸收/对照能量比约为 `blue=0.691`、`green=0.862`、`red=0.899`。64 spp 单批次仍可能因方差造成相邻波段能量比乱序，不应用作最终验收。测试要求稳定的波段顺序、足够强的蓝光衰减和合理的红光能量上界，不要求逐次运行完全一致。
 
 ## 积分器说明
 
@@ -110,16 +110,9 @@ verify.cmd
 light → delta transmission → delta transmission → diffuse wall → camera
 ```
 
-普通 `bdpt` 目前仍会因为 `specular_dielectric` 和 `medium_boundary` 整场退回单向 path tracing。单向 PT 必须从墙面漫反射随机命中很窄的棱镜—光阑—狭缝方向域，因此即使 2048 spp 也主要表现为散粒噪声。
+该实验直接使用 `bdpt`，不配置 fallback。理想 `specular_dielectric` 和 homogeneous `medium_boundary` 由共享双向 random walk 处理：相机子路径使用 radiance transport，光源子路径使用 importance transport；折射事件更新介质栈，介质内线段累积 Beer–Lambert 衰减。棱镜焦散主要由穿过 Delta 折射链的光源子路径在漫反射屏幕处执行 `t=1` 相机投影得到。
 
-本场景改用独立的 `light_tracing` 积分器。它实现欧氏三维针孔相机的 `t=1` 策略：
-
-- 按面积采样发光狭缝及余弦发射方向；
-- 以光源传输模式穿过 Cauchy delta 折射链，并维护介质 IOR 栈；
-- 在白墙等非 delta 顶点计算 BSDF；
-- 使用针孔投影的面积到像素 Jacobian 将贡献 splat 到对应胶片像素。
-
-该估计器对它所覆盖的光源子路径使用其真实采样 PDF 和投影 Jacobian，不使用 photon kernel，因此不会引入 photon mapping 的核半径偏差。它目前不是完整的全策略 BDPT：仅支持 Euclidean `Camera3D`，也还没有与 `t≥2`/纯相机策略进行全局 MIS；本场景的墙面焦散正好属于它高效覆盖的路径族。
+该估计器对光源与相机子路径使用真实采样 PDF 和投影 Jacobian，不使用 photon kernel，因此不会引入 photon mapping 的核半径偏差。当前策略集合包含 `s=0`、`s=1`、内部连接和 `t=1`，并对连接缝两侧局部重算 PDF、应用 Delta 可连接规则与全策略 MIS。它仍仅支持有限面积光、Euclidean `Camera3D`、reciprocal 反射以及理想介质透射；环境光、Delta 发光体和非 reciprocal 透射仍由 preflight 拒绝。
 
 ### 积分器调度结构
 
@@ -129,10 +122,10 @@ light → delta transmission → delta transmission → diffuse wall → camera
 SceneIntegrator
   ├─ RenderSession：校验、Film 初始化、累积与最终光谱转换
   └─ RenderDriver
-       ├─ pixelDriver + pathTracingKernel / bdptKernel
-       └─ splatDriver + lightTracingKernel
+       ├─ pixelDriver + pathTracingKernel
+       └─ splatDriver + bdptKernel / lightTracingKernel
 ```
 
-Path Tracing 和 BDPT 复用 `pixelDriver` 的 tile 调度，只提供各自的逐像素 kernel；Light Tracing kernel 只生成未归一化 `FilmSplat`，并发调度、总样本归一化、进度报告和线程安全写入都由通用 `splatDriver` 与 `FilmAccumulator` 负责。逐像素 driver 使用无锁独占写入，splat driver 使用按像素同步写入。
+Path Tracing 使用 `pixelDriver`；BDPT 和 Light Tracing 使用 `splatDriver`。两个 splat kernel 只生成未归一化 `FilmSplat`，并发调度、总样本归一化、进度报告和线程安全写入由通用 `splatDriver` 与 `FilmAccumulator` 负责。逐像素 driver 使用无锁独占写入，splat driver 使用按像素同步写入。
 
 不支持投影的相机会返回明确错误，不会静默回退。旧配置字符串 `light_trace` 仅在解析边界作为兼容别名保留，运行时规范名称为 `light_tracing`。

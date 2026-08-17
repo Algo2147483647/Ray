@@ -56,6 +56,9 @@ func renderToMap(script *schema.StudioScript, render schema.StudioRenderScript, 
 	if render.Integrator != "" {
 		result["integrator"] = render.Integrator
 	}
+	if render.BDPTFallbackPolicy != "" {
+		result["bdpt_fallback_policy"] = render.BDPTFallbackPolicy
+	}
 	if render.Dimension > 0 {
 		result["dimension"] = render.Dimension
 	}

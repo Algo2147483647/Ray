@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/Algo2147483647/ray/engine/maths"
+	"github.com/Algo2147483647/ray/engine/model/camera"
 	"github.com/Algo2147483647/ray/engine/model/material"
 	"github.com/Algo2147483647/ray/engine/model/material/bsdf"
 	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
@@ -16,17 +17,17 @@ import (
 func BenchmarkBDPTMISByDepth(b *testing.B) {
 	for _, depth := range []int{4, 8, 12, 16} {
 		b.Run(fmt.Sprintf("depth_%d", depth), func(b *testing.B) {
-			light, cameraPath, li, ci := benchmarkBDPTPaths(b, depth)
+			light, cameraPath, renderCamera, li, ci := benchmarkBDPTPaths(b, depth)
 			b.ReportAllocs()
 			b.ResetTimer()
 			for range b.N {
-				_ = bdptMISWeight(light, cameraPath, li, ci)
+				_ = bdptMISWeight(nil, renderCamera, light, cameraPath, li+1, ci+1)
 			}
 		})
 	}
 }
 
-func benchmarkBDPTPaths(tb testing.TB, vertexCount int) ([]bdptVertex, []bdptVertex, int, int) {
+func benchmarkBDPTPaths(tb testing.TB, vertexCount int) ([]bdptVertex, []bdptVertex, *camera.Camera3D, int, int) {
 	tb.Helper()
 	if vertexCount < 4 {
 		vertexCount = 4
@@ -64,11 +65,12 @@ func benchmarkBDPTPaths(tb testing.TB, vertexCount int) ([]bdptVertex, []bdptVer
 			tb.Fatal("failed to build benchmark frame")
 		}
 		complete[i] = bdptVertex{
+			Kind:  bdptVertexSurface,
 			Point: points[i], GeometricNormal: normal, Frame: frame,
 			WoLocal: maths.NewDirection(0, 0, 1), Object: lambert,
 		}
 	}
-	complete[0].LightEndpoint = true
+	complete[0].Kind = bdptVertexLight
 	complete[0].PDFFwdArea = 0.25
 
 	split := vertexCount / 2
@@ -77,5 +79,15 @@ func benchmarkBDPTPaths(tb testing.TB, vertexCount int) ([]bdptVertex, []bdptVer
 	for i := range cameraPath {
 		cameraPath[i] = complete[vertexCount-1-i]
 	}
-	return lightPath, cameraPath, len(lightPath) - 1, len(cameraPath) - 1
+	renderCamera := newBDPTTestCamera(tb, 4, 4)
+	renderCamera.Position = mat.VecDenseCopyOf(cameraPath[0].Point)
+	renderCamera.Coordinates[0] = directionBetween(cameraPath[0].Point, cameraPath[1].Point)
+	if err := renderCamera.Prepare(); err != nil {
+		tb.Fatal(err)
+	}
+	cameraPath[0] = bdptVertex{
+		Kind: bdptVertexCamera, Point: renderCamera.Endpoint(), PDFFwdArea: 1,
+		Connectible: true, Camera: renderCamera,
+	}
+	return lightPath, cameraPath, renderCamera, len(lightPath) - 1, len(cameraPath) - 1
 }

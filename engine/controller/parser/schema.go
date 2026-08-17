@@ -24,13 +24,14 @@ type CameraScript struct {
 }
 
 type RenderScript struct {
-	Integrator        string `json:"integrator"`
-	Dimension         int    `json:"dimension"`
-	Samples           int64  `json:"samples"`
-	ThreadNum         int    `json:"thread_num"`
-	CameraID          string `json:"camera_id"`
-	SpectrumMode      string `json:"spectrum_mode"`
-	WavelengthSamples int    `json:"wavelength_samples"`
+	Integrator         string `json:"integrator"`
+	BDPTFallbackPolicy string `json:"bdpt_fallback_policy,omitempty"`
+	Dimension          int    `json:"dimension"`
+	Samples            int64  `json:"samples"`
+	ThreadNum          int    `json:"thread_num"`
+	CameraID           string `json:"camera_id"`
+	SpectrumMode       string `json:"spectrum_mode"`
+	WavelengthSamples  int    `json:"wavelength_samples"`
 }
 
 type GeometryScript struct {

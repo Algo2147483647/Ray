@@ -47,7 +47,7 @@ func (g GGX) Lambda(w maths.Direction) float64 {
 	sin2 := math.Max(0, 1-absCos*absCos)
 	tan2 := sin2 / (absCos * absCos)
 	if math.IsInf(tan2, 0) {
-		return 0
+		return math.Inf(1)
 	}
 
 	return (math.Sqrt(1+alpha*alpha*tan2) - 1) * 0.5

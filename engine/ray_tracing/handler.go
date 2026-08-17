@@ -10,18 +10,22 @@ import (
 )
 
 type Handler struct {
-	IntegratorKind       IntegratorKind           `json:"integrator"`
-	MaxRayLevel          int64                    `json:"max_ray_level"`
-	RussianRouletteDepth int64                    `json:"russian_roulette_depth"`
-	MaxArc               float64                  `json:"max_arc"` // total geodesic distance budget per ray (0 ⇒ unbounded)
-	SceneGeometry        geometry.Geometry        `json:"-"`
-	ThreadNum            int                      `json:"thread_num"`
-	BlockCols            int                      `json:"block_cols"`
-	BlockRows            int                      `json:"block_rows"`
-	SpectrumMode         optics.SpectrumMode      `json:"spectrum_mode"`
-	WavelengthSamples    int                      `json:"wavelength_samples"`
-	WavelengthSampler    optics.WavelengthSampler `json:"-"`
-	RayPool              sync.Pool                `json:"ray_pool"`
+	IntegratorKind          IntegratorKind           `json:"integrator"`
+	MaxRayLevel             int64                    `json:"max_ray_level"`
+	RussianRouletteDepth    int64                    `json:"russian_roulette_depth"`
+	MaxArc                  float64                  `json:"max_arc"` // total geodesic distance budget per ray (0 ⇒ unbounded)
+	SceneGeometry           geometry.Geometry        `json:"-"`
+	ThreadNum               int                      `json:"thread_num"`
+	BlockCols               int                      `json:"block_cols"`
+	BlockRows               int                      `json:"block_rows"`
+	SpectrumMode            optics.SpectrumMode      `json:"spectrum_mode"`
+	WavelengthSamples       int                      `json:"wavelength_samples"`
+	WavelengthSampler       optics.WavelengthSampler `json:"-"`
+	BDPTFallbackPolicy      BDPTFallbackPolicy       `json:"bdpt_fallback_policy,omitempty"`
+	LastRequestedIntegrator IntegratorKind           `json:"-"`
+	LastEffectiveIntegrator IntegratorKind           `json:"-"`
+	LastFallbackReason      string                   `json:"-"`
+	RayPool                 sync.Pool                `json:"ray_pool"`
 }
 
 func NewHandler() *Handler {

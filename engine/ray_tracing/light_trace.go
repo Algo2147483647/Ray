@@ -5,7 +5,6 @@ import (
 	"math/rand/v2"
 
 	"github.com/Algo2147483647/ray/engine/model/camera"
-	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
 	"github.com/Algo2147483647/ray/engine/model/object"
 	"github.com/Algo2147483647/ray/engine/model/optics"
 	"gonum.org/v1/gonum/mat"
@@ -119,20 +118,19 @@ func projectLightVertex(
 	factor := projection.Jacobian * cosCamera
 	transmittance := evaluateSegmentTransmittance(
 		getMediumRegistry(tree),
-		vertex.MediumStack.Current(),
+		bdptSegmentMedium(vertex, projection.ToCamera),
 		projection.Distance,
 		vertex.Context,
 	)
 
-	if vertex.LightEndpoint {
+	if vertex.Kind == bdptVertexLight {
 		wo := vertex.Frame.WorldToLocal(projection.ToCamera)
 		value := transmittance.ApplyToSpectrum(
 			vertex.Object.Material.Emission.Emit(vertex.Context, wo).Mul(vertex.Beta),
 		).MulScalar(factor)
 		return value, projection, validSpectrum(value)
 	}
-	if !vertex.Object.Material.HasSurface() || vertex.SampledDelta ||
-		vertex.Object.Material.Surface.DeltaFlags() != bxdf.DeltaNone {
+	if !vertex.Object.Material.HasSurface() || !vertex.Connectible {
 		return optics.Spectrum{}, camera.FilmProjection{}, false
 	}
 
