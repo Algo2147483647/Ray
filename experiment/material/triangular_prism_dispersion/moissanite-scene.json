@@ -1,281 +1,137 @@
 {
-  "_comment": "Foreground moissanite fire setup. Compose after scene.json, prism-absorbing.json, and moissanite.json.",
+  "_comment": "A self-contained moissanite fire rig. All children use local coordinates around the culet [0,0,0]; change only the enclosing Group placement to move or rotate the complete setup.",
   "materials": [
     {
-      "id": "moissanite-pin-light",
+      "id": "moissanite-core-light",
       "emission": {
         "type": "constant",
-        "radiance": {"type": "blackbody", "temperature": 6100, "scale": 80000}
+        "radiance": {
+          "type": "blackbody",
+          "temperature": 6100,
+          "scale": 1200000
+        }
       }
     },
     {
-      "id": "pin-light-baffle",
+      "id": "moissanite-collimator-black",
       "surface": {
         "type": "lambert",
-        "albedo": {"type": "constant", "value": 0.002}
-      }
-    },
-    {
-      "id": "soft-warm-room-light",
-      "emission": {
-        "type": "constant",
-        "radiance": {"type": "blackbody", "temperature": 2700, "scale": 5}
+        "albedo": {
+          "type": "constant",
+          "value": 0.001
+        }
       }
     }
   ],
   "objects": [
     {
-      "id": "moissanite-scene",
+      "id": "moissanite-fire-rig",
       "shape": "group",
-      "center": [
-        0,
-        0,
-        0
+      "_comment": "World placement for the entire local rig. The 17 degree yaw rotates gem, core source, and collimator together.",
+      "center": [0.62, -1.48, 0.012],
+      "scale": 0.62,
+      "basis": [
+        [0.95630476, -0.2923717, 0.0],
+        [0.2923717, 0.95630476, 0.0],
+        [0.0, 0.0, 1.0]
       ],
       "objects": [
         {
-          "ref": "moissanite"
+          "id": "core-light-0",
+          "_comment": "A 24 mm local emitter at the closed end of the collimator; it is the sole added moissanite light.",
+          "shape": "triangle",
+          "p1": [-0.012, -0.012, 2.57],
+          "p2": [0.012, -0.012, 2.57],
+          "p3": [0.012, 0.012, 2.57],
+          "material_id": "moissanite-core-light"
         },
         {
-          "id": "moissanite-key-0",
-          "_comment": "Compact, cool, off-axis source at the closed end of a matte-black snoot.",
+          "id": "core-light-1",
           "shape": "triangle",
-          "p1": [
-            1.479088,
-            -0.885862,
-            1.670295
-          ],
-          "p2": [
-            1.437364,
-            -0.829655,
-            1.670295
-          ],
-          "p3": [
-            1.390912,
-            -0.864138,
-            1.709705
-          ],
-          "material_id": "moissanite-pin-light"
+          "p1": [-0.012, -0.012, 2.57],
+          "p2": [0.012, 0.012, 2.57],
+          "p3": [-0.012, 0.012, 2.57],
+          "material_id": "moissanite-core-light"
         },
         {
-          "id": "moissanite-key-1",
+          "id": "collimator-back-0",
           "shape": "triangle",
-          "p1": [
-            1.479088,
-            -0.885862,
-            1.670295
-          ],
-          "p2": [
-            1.390912,
-            -0.864138,
-            1.709705
-          ],
-          "p3": [
-            1.432636,
-            -0.920345,
-            1.709705
-          ],
-          "material_id": "moissanite-pin-light"
+          "p1": [-0.04, -0.04, 2.60],
+          "p2": [0.04, 0.04, 2.60],
+          "p3": [0.04, -0.04, 2.60],
+          "material_id": "moissanite-collimator-black"
         },
         {
-          "id": "pin-snoot-side-0a",
+          "id": "collimator-back-1",
           "shape": "triangle",
-          "p1": [
-            1.479088,
-            -0.885862,
-            1.670295
-          ],
-          "p2": [
-            1.437364,
-            -0.829655,
-            1.670295
-          ],
-          "p3": [
-            1.357142,
-            -0.868035,
-            1.511962
-          ],
-          "material_id": "pin-light-baffle"
+          "p1": [-0.04, -0.04, 2.60],
+          "p2": [-0.04, 0.04, 2.60],
+          "p3": [0.04, 0.04, 2.60],
+          "material_id": "moissanite-collimator-black"
         },
         {
-          "id": "pin-snoot-side-0b",
+          "id": "collimator-wall-0a",
           "shape": "triangle",
-          "p1": [
-            1.479088,
-            -0.885862,
-            1.670295
-          ],
-          "p2": [
-            1.357142,
-            -0.868035,
-            1.511962
-          ],
-          "p3": [
-            1.419132,
-            -0.951541,
-            1.511962
-          ],
-          "material_id": "pin-light-baffle"
+          "p1": [-0.04, -0.04, 2.56],
+          "p2": [0.04, -0.04, 2.56],
+          "p3": [0.03, -0.03, 1.15],
+          "material_id": "moissanite-collimator-black"
         },
         {
-          "id": "pin-snoot-side-1a",
+          "id": "collimator-wall-0b",
           "shape": "triangle",
-          "p1": [
-            1.437364,
-            -0.829655,
-            1.670295
-          ],
-          "p2": [
-            1.390912,
-            -0.864138,
-            1.709705
-          ],
-          "p3": [
-            1.288128,
-            -0.919266,
-            1.570513
-          ],
-          "material_id": "pin-light-baffle"
+          "p1": [-0.04, -0.04, 2.56],
+          "p2": [0.03, -0.03, 1.15],
+          "p3": [-0.03, -0.03, 1.15],
+          "material_id": "moissanite-collimator-black"
         },
         {
-          "id": "pin-snoot-side-1b",
+          "id": "collimator-wall-1a",
           "shape": "triangle",
-          "p1": [
-            1.437364,
-            -0.829655,
-            1.670295
-          ],
-          "p2": [
-            1.288128,
-            -0.919266,
-            1.570513
-          ],
-          "p3": [
-            1.357142,
-            -0.868035,
-            1.511962
-          ],
-          "material_id": "pin-light-baffle"
+          "p1": [0.04, -0.04, 2.56],
+          "p2": [0.04, 0.04, 2.56],
+          "p3": [0.03, 0.03, 1.15],
+          "material_id": "moissanite-collimator-black"
         },
         {
-          "id": "pin-snoot-side-2a",
+          "id": "collimator-wall-1b",
           "shape": "triangle",
-          "p1": [
-            1.390912,
-            -0.864138,
-            1.709705
-          ],
-          "p2": [
-            1.432636,
-            -0.920345,
-            1.709705
-          ],
-          "p3": [
-            1.350117,
-            -1.002773,
-            1.570513
-          ],
-          "material_id": "pin-light-baffle"
+          "p1": [0.04, -0.04, 2.56],
+          "p2": [0.03, 0.03, 1.15],
+          "p3": [0.03, -0.03, 1.15],
+          "material_id": "moissanite-collimator-black"
         },
         {
-          "id": "pin-snoot-side-2b",
+          "id": "collimator-wall-2a",
           "shape": "triangle",
-          "p1": [
-            1.390912,
-            -0.864138,
-            1.709705
-          ],
-          "p2": [
-            1.350117,
-            -1.002773,
-            1.570513
-          ],
-          "p3": [
-            1.288128,
-            -0.919266,
-            1.570513
-          ],
-          "material_id": "pin-light-baffle"
+          "p1": [0.04, 0.04, 2.56],
+          "p2": [-0.04, 0.04, 2.56],
+          "p3": [-0.03, 0.03, 1.15],
+          "material_id": "moissanite-collimator-black"
         },
         {
-          "id": "pin-snoot-side-3a",
+          "id": "collimator-wall-2b",
           "shape": "triangle",
-          "p1": [
-            1.432636,
-            -0.920345,
-            1.709705
-          ],
-          "p2": [
-            1.479088,
-            -0.885862,
-            1.670295
-          ],
-          "p3": [
-            1.419132,
-            -0.951541,
-            1.511962
-          ],
-          "material_id": "pin-light-baffle"
+          "p1": [0.04, 0.04, 2.56],
+          "p2": [-0.03, 0.03, 1.15],
+          "p3": [0.03, 0.03, 1.15],
+          "material_id": "moissanite-collimator-black"
         },
         {
-          "id": "pin-snoot-side-3b",
+          "id": "collimator-wall-3a",
           "shape": "triangle",
-          "p1": [
-            1.432636,
-            -0.920345,
-            1.709705
-          ],
-          "p2": [
-            1.419132,
-            -0.951541,
-            1.511962
-          ],
-          "p3": [
-            1.350117,
-            -1.002773,
-            1.570513
-          ],
-          "material_id": "pin-light-baffle"
+          "p1": [-0.04, 0.04, 2.56],
+          "p2": [-0.04, -0.04, 2.56],
+          "p3": [-0.03, -0.03, 1.15],
+          "material_id": "moissanite-collimator-black"
         },
         {
-          "id": "moissanite-softbox-0",
+          "id": "collimator-wall-3b",
           "shape": "triangle",
-          "p1": [
-            -1.5,
-            -1.1,
-            2.65
-          ],
-          "p2": [
-            -0.5,
-            -1.1,
-            2.65
-          ],
-          "p3": [
-            -0.5,
-            -0.1,
-            2.65
-          ],
-          "material_id": "soft-warm-room-light"
-        },
-        {
-          "id": "moissanite-softbox-1",
-          "shape": "triangle",
-          "p1": [
-            -1.5,
-            -1.1,
-            2.65
-          ],
-          "p2": [
-            -0.5,
-            -0.1,
-            2.65
-          ],
-          "p3": [
-            -1.5,
-            -0.1,
-            2.65
-          ],
-          "material_id": "soft-warm-room-light"
+          "p1": [-0.04, 0.04, 2.56],
+          "p2": [-0.03, -0.03, 1.15],
+          "p3": [-0.03, 0.03, 1.15],
+          "material_id": "moissanite-collimator-black"
         }
       ]
     }

@@ -13,11 +13,7 @@ func AdaptScript(script *schema.StudioScript, source []string, dimension int) (*
 		return nil, errors.New("script is nil")
 	}
 
-	resolvedObjects, err := resolveInstances(script.Objects, script.Definitions)
-	if err != nil {
-		return nil, err
-	}
-	objects, err := flattenObjects(resolvedObjects, newRootContext(dimension), dimension)
+	objects, err := flattenObjects(script.Objects, newRootContext(dimension), dimension)
 	if err != nil {
 		return nil, err
 	}

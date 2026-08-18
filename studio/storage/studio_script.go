@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 
 	"github.com/Algo2147483647/ray/studio/schema"
@@ -99,13 +100,13 @@ func mergeStudioScripts(dst, src *schema.StudioScript, source string) error {
 	if dst == nil || src == nil {
 		return errors.New("cannot merge nil script")
 	}
+	if err := validateStudioObjectParents(dst.Objects, src.Objects, source); err != nil {
+		return err
+	}
 	if err := mergeStudioMedia(dst, src, source); err != nil {
 		return err
 	}
 	if err := appendUniqueStudioIDMaps(&dst.Materials, src.Materials, "material", source); err != nil {
-		return err
-	}
-	if err := appendUniqueStudioIDMaps(&dst.Definitions, src.Definitions, "definition", source); err != nil {
 		return err
 	}
 	if err := appendOrMergeStudioObjects(&dst.Objects, src.Objects, source); err != nil {
@@ -227,7 +228,21 @@ func mergeStudioObject(base, override map[string]interface{}, source string) (ma
 		if key == "objects" {
 			continue
 		}
-		merged[key] = value
+		existing, exists := merged[key]
+		if !exists {
+			merged[key] = value
+			continue
+		}
+		// Underscore-prefixed fields are authoring metadata, not render
+		// parameters. Keep the first description when fragments differ.
+		if strings.HasPrefix(key, "_") || reflect.DeepEqual(existing, value) {
+			continue
+		}
+		id, _ := stringField(base, "id")
+		return nil, fmt.Errorf(
+			"object id %q has conflicting field %q while merging %s: %s != %s",
+			id, key, source, formatStudioValue(existing), formatStudioValue(value),
+		)
 	}
 
 	switch baseShape {
@@ -245,6 +260,135 @@ func mergeStudioObject(base, override map[string]interface{}, source string) (ma
 		}
 	}
 	return merged, nil
+}
+
+type studioObjectLocation struct {
+	parent     string
+	comparable bool
+}
+
+func validateStudioObjectParents(base, incoming []map[string]interface{}, source string) error {
+	baseLocations := map[string]studioObjectLocation{}
+	if err := collectStudioObjectLocations(base, "$", true, baseLocations, "merged scripts"); err != nil {
+		return err
+	}
+	incomingLocations := map[string]studioObjectLocation{}
+	if err := collectStudioObjectLocations(incoming, "$", true, incomingLocations, source); err != nil {
+		return err
+	}
+	for id, incomingLocation := range incomingLocations {
+		baseLocation, exists := baseLocations[id]
+		if !exists {
+			continue
+		}
+		if !baseLocation.comparable || !incomingLocation.comparable || baseLocation.parent != incomingLocation.parent {
+			return fmt.Errorf(
+				"object id %q has conflicting parents while merging %s: %q != %q",
+				id, source, baseLocation.parent, incomingLocation.parent,
+			)
+		}
+	}
+	return nil
+}
+
+func collectStudioObjectLocations(
+	objects []map[string]interface{},
+	parent string,
+	parentComparable bool,
+	locations map[string]studioObjectLocation,
+	source string,
+) error {
+	for index, object := range objects {
+		if err := collectStudioObjectLocation(object, index, parent, parentComparable, locations, source); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func collectStudioObjectLocation(
+	object map[string]interface{},
+	index int,
+	parent string,
+	parentComparable bool,
+	locations map[string]studioObjectLocation,
+	source string,
+) error {
+	id, hasID := stringField(object, "id")
+	if hasID {
+		location := studioObjectLocation{parent: parent, comparable: parentComparable}
+		if existing, exists := locations[id]; exists &&
+			(!existing.comparable || !location.comparable || existing.parent != location.parent) {
+			return fmt.Errorf(
+				"object id %q has conflicting parents in %s: %q != %q",
+				id, source, existing.parent, location.parent,
+			)
+		}
+		locations[id] = location
+	}
+
+	segment := id
+	childParentsComparable := parentComparable && hasID
+	if !hasID {
+		segment = fmt.Sprintf("<anonymous:%d>", index)
+	}
+	objectPath := parent + "/" + segment
+	shape, _ := stringField(object, "shape")
+	switch strings.ToLower(shape) {
+	case "group":
+		raw, exists := object["objects"]
+		if !exists || raw == nil {
+			return nil
+		}
+		items, err := objectListRaw(raw, "objects")
+		if err != nil {
+			return err
+		}
+		children := make([]map[string]interface{}, 0, len(items))
+		for _, item := range items {
+			child, ok := item.(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("field %q: expected object, got %T", "objects", item)
+			}
+			children = append(children, child)
+		}
+		return collectStudioObjectLocations(children, objectPath, childParentsComparable, locations, source)
+	case "array":
+		raw, exists := object["objects"]
+		if !exists || raw == nil {
+			return nil
+		}
+		cells, err := objectMapRaw(raw, "objects")
+		if err != nil {
+			return err
+		}
+		for cell, cellRaw := range cells {
+			items, err := objectListRaw(cellRaw, "objects."+cell)
+			if err != nil {
+				return err
+			}
+			for childIndex, item := range items {
+				child, ok := item.(map[string]interface{})
+				if !ok {
+					return fmt.Errorf("field %q: expected object, got %T", "objects."+cell, item)
+				}
+				if err := collectStudioObjectLocation(
+					child, childIndex, objectPath+"["+cell+"]", childParentsComparable, locations, source,
+				); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func formatStudioValue(value interface{}) string {
+	data, err := json.Marshal(value)
+	if err != nil {
+		return fmt.Sprintf("%#v", value)
+	}
+	return string(data)
 }
 
 func mergeableContainerShape(shape string) bool {

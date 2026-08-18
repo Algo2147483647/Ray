@@ -51,10 +51,14 @@ npm run studio -- --script studio.json --script geometry.json --script render.js
 Top-level object ids must normally be unique. The exception is authoring-only
 containers: if repeated files define the same `id` with `shape: "group"` or the
 same `id` with `shape: "array"`, studio merges those containers instead of
-raising a duplicate-id error. Later files override container-level fields, while
-child objects are merged by id recursively for nested groups and arrays. This
-allows a scene grid or group scaffold to live in one file and individual cells
-or children to live in other files.
+raising a duplicate-id error. Container parameters are combined directly: a
+fragment may add a missing field or repeat the same value, but conflicting values
+are errors. Underscore-prefixed authoring metadata such as `_comment` is ignored
+for conflict purposes. Child objects are merged by id recursively for nested
+groups and arrays. A repeated object id must also have the same parent path;
+placing that id beneath different groups or array cells is an error. This allows
+a scene grid or group scaffold to live in one file and individual cells or
+children to live in other files without order-dependent overrides.
 
 After adaptation, studio writes the generated engine script to:
 
@@ -318,41 +322,6 @@ finite cylinders. Spheres are rotation invariant. Axis-aligned cuboids cannot
 represent a rotated result and are rejected; author an oriented box as triangles.
 Combining a rotated nested group with a non-uniform parent scale is rejected to
 avoid silently introducing shear.
-
-## Definitions and Instances
-
-Reusable object implementations can live in the top-level `definitions` array.
-Definitions are not rendered by themselves. A scene embeds a complete
-implementation by referencing only its ID:
-
-```json
-{
-  "definitions": [
-    {
-      "id": "cut-stone",
-      "shape": "group",
-      "center": [2, 0, 0],
-      "scale": 0.5,
-      "basis": [[1,0,0], [0,1,0], [0,0,1]],
-      "material_id": "glass",
-      "objects": [
-        {"id": "facet", "shape": "triangle", "p1": [0,0,0], "p2": [1,0,0], "p3": [0,1,0]}
-      ]
-    }
-  ],
-  "objects": [
-    {"ref": "cut-stone"}
-  ]
-}
-```
-
-The compact `{ "ref": "id" }` form copies the complete definition into that
-position in the object tree. `shape: "instance"` remains available as an
-explicit form when an instance needs field overrides, but is not required for
-embedding. Definitions merge across `includes` and repeated `--script` inputs
-in their own ID namespace. References may appear inside Groups and Arrays and
-may target definitions that contain other references. Unknown references and
-reference cycles are errors.
 
 ## Array Objects
 

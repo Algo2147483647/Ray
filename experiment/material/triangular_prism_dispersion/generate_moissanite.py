@@ -72,10 +72,8 @@ def build_mesh() -> list[dict]:
 
 
 def document() -> dict:
-    yaw = math.radians(17.0)
-    c, s = round(math.cos(yaw), 8), round(math.sin(yaw), 8)
     return {
-        "_comment": "Generated round-brilliant moissanite definition, including placement. Scene files embed it with only ref=moissanite.",
+        "_comment": "Generated round-brilliant moissanite in local coordinates. The scene rig owns placement and lighting.",
         "media": {
             "moissanite-crystal": {
                 "type": "homogeneous",
@@ -94,16 +92,20 @@ def document() -> dict:
                 },
             }
         ],
-        "definitions": [
+        "objects": [
             {
-                "id": "moissanite",
+                "id": "moissanite-fire-rig",
                 "shape": "group",
-                "_comment": "Complete reusable implementation. It is not rendered until embedded by a ref object.",
-                "center": [0.62, -1.48, 0.012],
-                "scale": 0.62,
-                "basis": [[c, -s, 0.0], [s, c, 0.0], [0.0, 0.0, 1.0]],
-                "material_id": "faceted-moissanite",
-                "objects": build_mesh(),
+                "_comment": "Model layer of the shared rig. The scene layer with the same Group id supplies placement and the collimated light.",
+                "objects": [
+                    {
+                        "id": "moissanite",
+                        "shape": "group",
+                        "_comment": "Local cut: culet is [0, 0, 0], table is centred on the local z axis.",
+                        "material_id": "faceted-moissanite",
+                        "objects": build_mesh(),
+                    }
+                ],
             }
         ],
     }

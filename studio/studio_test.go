@@ -341,51 +341,6 @@ func TestGroupBasisRotatesTriangleAndComposesCenter(t *testing.T) {
 	}
 }
 
-func TestDefinitionInstanceSeparatesGeometryFromPlacement(t *testing.T) {
-	script := &schema.StudioScript{
-		Definitions: []map[string]interface{}{
-			{
-				"id": "stone", "shape": "group", "material_id": "glass",
-				"center": []interface{}{2, 3, 4}, "scale": 2,
-				"objects": []interface{}{
-					map[string]interface{}{
-						"id": "facet", "shape": "triangle",
-						"p1": []interface{}{0, 0, 0},
-						"p2": []interface{}{1, 0, 0},
-						"p3": []interface{}{0, 1, 0},
-					},
-				},
-			},
-		},
-		Objects: []map[string]interface{}{
-			{"ref": "stone"},
-		},
-	}
-
-	adapted, err := adaptTestScript(script, []string{"model.json", "scene.json"}, 3)
-	if err != nil {
-		t.Fatalf("adapt script: %v", err)
-	}
-	if len(adapted.Objects) != 1 {
-		t.Fatalf("expected one instanced facet, got %d", len(adapted.Objects))
-	}
-	facet := adapted.Objects[0]
-	if facet["id"] != "stone/facet" || facet["material_id"] != "glass" {
-		t.Fatalf("unexpected resolved instance: %v", facet)
-	}
-	if got := facet["p2"].([]float64); math.Abs(got[0]-4) > 1e-10 || math.Abs(got[1]-3) > 1e-10 || math.Abs(got[2]-4) > 1e-10 {
-		t.Fatalf("unexpected placed point: %v", got)
-	}
-}
-
-func TestDefinitionInstanceReportsUnknownReference(t *testing.T) {
-	script := &schema.StudioScript{Objects: []map[string]interface{}{{"id": "bad", "shape": "instance", "ref": "missing"}}}
-	_, err := adaptTestScript(script, []string{"scene.json"}, 3)
-	if err == nil || !strings.Contains(err.Error(), `unknown definition "missing"`) {
-		t.Fatalf("expected unknown definition error, got %v", err)
-	}
-}
-
 func TestChildFieldOverridesGroupInheritance(t *testing.T) {
 	script := &schema.StudioScript{
 		Objects: []map[string]interface{}{
@@ -590,6 +545,7 @@ func TestStudioMergesGroupObjectsAcrossFiles(t *testing.T) {
 	    {
 	      "id": "cluster",
 	      "shape": "group",
+	      "center": [2, 0, 0],
 	      "objects": [
 	        { "id": "right", "shape": "sphere", "center": [1, 0, 0], "r": 0.25, "material_id": "mat" }
 	      ]
@@ -615,6 +571,75 @@ func TestStudioMergesGroupObjectsAcrossFiles(t *testing.T) {
 	}
 	assertFloatSlice(t, adapted.Objects[0]["center"], []float64{2, 0, 0})
 	assertFloatSlice(t, adapted.Objects[1]["center"], []float64{3, 0, 0})
+}
+
+func TestStudioRejectsConflictingGroupParametersAcrossFiles(t *testing.T) {
+	dir := t.TempDir()
+	firstPath := filepath.Join(dir, "group-a.json")
+	secondPath := filepath.Join(dir, "group-b.json")
+	if err := os.WriteFile(firstPath, []byte(`{
+	  "objects": [{ "id": "rig", "shape": "group", "center": [0, 0, 0] }]
+	}`), 0o644); err != nil {
+		t.Fatalf("write first group script: %v", err)
+	}
+	if err := os.WriteFile(secondPath, []byte(`{
+	  "objects": [{ "id": "rig", "shape": "group", "center": [1, 0, 0] }]
+	}`), 0o644); err != nil {
+		t.Fatalf("write second group script: %v", err)
+	}
+
+	_, err := storage.ReadStudioScriptFiles([]string{firstPath, secondPath})
+	if err == nil || !strings.Contains(err.Error(), `object id "rig" has conflicting field "center"`) {
+		t.Fatalf("expected group parameter conflict, got %v", err)
+	}
+}
+
+func TestStudioRejectsConflictingArrayParametersAcrossFiles(t *testing.T) {
+	dir := t.TempDir()
+	firstPath := filepath.Join(dir, "array-a.json")
+	secondPath := filepath.Join(dir, "array-b.json")
+	if err := os.WriteFile(firstPath, []byte(`{
+	  "objects": [{ "id": "grid", "shape": "array", "counts": [2] }]
+	}`), 0o644); err != nil {
+		t.Fatalf("write first array script: %v", err)
+	}
+	if err := os.WriteFile(secondPath, []byte(`{
+	  "objects": [{ "id": "grid", "shape": "array", "counts": [3] }]
+	}`), 0o644); err != nil {
+		t.Fatalf("write second array script: %v", err)
+	}
+
+	_, err := storage.ReadStudioScriptFiles([]string{firstPath, secondPath})
+	if err == nil || !strings.Contains(err.Error(), `object id "grid" has conflicting field "counts"`) {
+		t.Fatalf("expected array parameter conflict, got %v", err)
+	}
+}
+
+func TestStudioRejectsObjectIDWithConflictingParents(t *testing.T) {
+	dir := t.TempDir()
+	firstPath := filepath.Join(dir, "parent-a.json")
+	secondPath := filepath.Join(dir, "parent-b.json")
+	if err := os.WriteFile(firstPath, []byte(`{
+	  "objects": [{
+	    "id": "parent-a", "shape": "group",
+	    "objects": [{ "id": "shared", "shape": "sphere", "center": [0, 0, 0], "r": 1 }]
+	  }]
+	}`), 0o644); err != nil {
+		t.Fatalf("write first parent script: %v", err)
+	}
+	if err := os.WriteFile(secondPath, []byte(`{
+	  "objects": [{
+	    "id": "parent-b", "shape": "group",
+	    "objects": [{ "id": "shared", "shape": "sphere", "center": [0, 0, 0], "r": 1 }]
+	  }]
+	}`), 0o644); err != nil {
+		t.Fatalf("write second parent script: %v", err)
+	}
+
+	_, err := storage.ReadStudioScriptFiles([]string{firstPath, secondPath})
+	if err == nil || !strings.Contains(err.Error(), `object id "shared" has conflicting parents`) {
+		t.Fatalf("expected parent conflict, got %v", err)
+	}
 }
 
 func TestStudioAdaptsTriangleCenterAndGroupPlacement(t *testing.T) {
