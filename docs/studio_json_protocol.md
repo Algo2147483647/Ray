@@ -319,6 +319,41 @@ represent a rotated result and are rejected; author an oriented box as triangles
 Combining a rotated nested group with a non-uniform parent scale is rejected to
 avoid silently introducing shear.
 
+## Definitions and Instances
+
+Reusable object implementations can live in the top-level `definitions` array.
+Definitions are not rendered by themselves. A scene embeds a complete
+implementation by referencing only its ID:
+
+```json
+{
+  "definitions": [
+    {
+      "id": "cut-stone",
+      "shape": "group",
+      "center": [2, 0, 0],
+      "scale": 0.5,
+      "basis": [[1,0,0], [0,1,0], [0,0,1]],
+      "material_id": "glass",
+      "objects": [
+        {"id": "facet", "shape": "triangle", "p1": [0,0,0], "p2": [1,0,0], "p3": [0,1,0]}
+      ]
+    }
+  ],
+  "objects": [
+    {"ref": "cut-stone"}
+  ]
+}
+```
+
+The compact `{ "ref": "id" }` form copies the complete definition into that
+position in the object tree. `shape: "instance"` remains available as an
+explicit form when an instance needs field overrides, but is not required for
+embedding. Definitions merge across `includes` and repeated `--script` inputs
+in their own ID namespace. References may appear inside Groups and Arrays and
+may target definitions that contain other references. Unknown references and
+reference cycles are errors.
+
 ## Array Objects
 
 Studio adds `shape: "array"` as an authoring-only object for sparse 1D, 2D, or

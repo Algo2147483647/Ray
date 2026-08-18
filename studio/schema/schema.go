@@ -9,15 +9,16 @@ import (
 )
 
 type StudioScript struct {
-	Includes  []string                          `json:"includes"`
-	Materials []map[string]interface{}          `json:"materials"`
-	Media     map[string]map[string]interface{} `json:"media"`
-	Objects   []map[string]interface{}          `json:"objects"`
-	Cameras   []StudioCameraScript              `json:"cameras"`
-	Films     []StudioFilmScript                `json:"films"`
-	Render    StudioRenderScript                `json:"render"`
-	Geometry  map[string]interface{}            `json:"geometry"`
-	Renders   []StudioRenderScript              `json:"renders"`
+	Includes    []string                          `json:"includes"`
+	Definitions []map[string]interface{}          `json:"definitions"`
+	Materials   []map[string]interface{}          `json:"materials"`
+	Media       map[string]map[string]interface{} `json:"media"`
+	Objects     []map[string]interface{}          `json:"objects"`
+	Cameras     []StudioCameraScript              `json:"cameras"`
+	Films       []StudioFilmScript                `json:"films"`
+	Render      StudioRenderScript                `json:"render"`
+	Geometry    map[string]interface{}            `json:"geometry"`
+	Renders     []StudioRenderScript              `json:"renders"`
 }
 
 type StudioRenderScript struct {

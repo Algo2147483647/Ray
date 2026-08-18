@@ -75,7 +75,7 @@ def document() -> dict:
     yaw = math.radians(17.0)
     c, s = round(math.cos(yaw), 8), round(math.sin(yaw), 8)
     return {
-        "_comment": "Generated round-brilliant moissanite. Edit only the enclosing Group center/scale/basis for placement; rerun generate_moissanite.py to change the cut.",
+        "_comment": "Generated round-brilliant moissanite definition, including placement. Scene files embed it with only ref=moissanite.",
         "media": {
             "moissanite-crystal": {
                 "type": "homogeneous",
@@ -94,11 +94,11 @@ def document() -> dict:
                 },
             }
         ],
-        "objects": [
+        "definitions": [
             {
-                "id": "moissanite-placement",
+                "id": "moissanite",
                 "shape": "group",
-                "_comment": "Local-to-world placement: center moves the culet, scale sets diameter, and basis rotates the complete cut. This basis is a 17 degree yaw.",
+                "_comment": "Complete reusable implementation. It is not rendered until embedded by a ref object.",
                 "center": [0.62, -1.48, 0.012],
                 "scale": 0.62,
                 "basis": [[c, -s, 0.0], [s, c, 0.0], [0.0, 0.0, 1.0]],

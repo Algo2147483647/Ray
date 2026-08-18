@@ -5,6 +5,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	enginefactory "github.com/Algo2147483647/ray/engine/controller/factory"
@@ -197,22 +198,12 @@ func TestExperimentScriptsUseCurrentStudioSchema(t *testing.T) {
 func TestTriangularPrismScriptCompositionsAdapt(t *testing.T) {
 	root := filepath.Join("..", "experiment", "material", "triangular_prism_dispersion")
 	for name, files := range map[string][]string{
-		"beauty": {
-			filepath.Join(root, "scene.json"),
-			filepath.Join(root, "prism-absorbing.json"),
-			filepath.Join(root, "beauty.json"),
-		},
-		"control verification": {
-			filepath.Join(root, "scene.json"),
-			filepath.Join(root, "prism-control.json"),
-			filepath.Join(root, "diagnostic.json"),
-			filepath.Join(root, "verify-control.json"),
-		},
-		"absorbing verification": {
-			filepath.Join(root, "scene.json"),
-			filepath.Join(root, "prism-absorbing.json"),
-			filepath.Join(root, "diagnostic.json"),
-			filepath.Join(root, "verify-absorbing.json"),
+		"complete scene": {
+			filepath.Join(root, "main.json"),
+			filepath.Join(root, "prism.json"),
+			filepath.Join(root, "prism-scene.json"),
+			filepath.Join(root, "moissanite.json"),
+			filepath.Join(root, "moissanite-scene.json"),
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -347,6 +338,51 @@ func TestGroupBasisRotatesTriangleAndComposesCenter(t *testing.T) {
 				t.Fatalf("%s[%d]: expected %g, got %g", key, axis, want[axis], got[axis])
 			}
 		}
+	}
+}
+
+func TestDefinitionInstanceSeparatesGeometryFromPlacement(t *testing.T) {
+	script := &schema.StudioScript{
+		Definitions: []map[string]interface{}{
+			{
+				"id": "stone", "shape": "group", "material_id": "glass",
+				"center": []interface{}{2, 3, 4}, "scale": 2,
+				"objects": []interface{}{
+					map[string]interface{}{
+						"id": "facet", "shape": "triangle",
+						"p1": []interface{}{0, 0, 0},
+						"p2": []interface{}{1, 0, 0},
+						"p3": []interface{}{0, 1, 0},
+					},
+				},
+			},
+		},
+		Objects: []map[string]interface{}{
+			{"ref": "stone"},
+		},
+	}
+
+	adapted, err := adaptTestScript(script, []string{"model.json", "scene.json"}, 3)
+	if err != nil {
+		t.Fatalf("adapt script: %v", err)
+	}
+	if len(adapted.Objects) != 1 {
+		t.Fatalf("expected one instanced facet, got %d", len(adapted.Objects))
+	}
+	facet := adapted.Objects[0]
+	if facet["id"] != "stone/facet" || facet["material_id"] != "glass" {
+		t.Fatalf("unexpected resolved instance: %v", facet)
+	}
+	if got := facet["p2"].([]float64); math.Abs(got[0]-4) > 1e-10 || math.Abs(got[1]-3) > 1e-10 || math.Abs(got[2]-4) > 1e-10 {
+		t.Fatalf("unexpected placed point: %v", got)
+	}
+}
+
+func TestDefinitionInstanceReportsUnknownReference(t *testing.T) {
+	script := &schema.StudioScript{Objects: []map[string]interface{}{{"id": "bad", "shape": "instance", "ref": "missing"}}}
+	_, err := adaptTestScript(script, []string{"scene.json"}, 3)
+	if err == nil || !strings.Contains(err.Error(), `unknown definition "missing"`) {
+		t.Fatalf("expected unknown definition error, got %v", err)
 	}
 }
 

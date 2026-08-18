@@ -105,6 +105,9 @@ func mergeStudioScripts(dst, src *schema.StudioScript, source string) error {
 	if err := appendUniqueStudioIDMaps(&dst.Materials, src.Materials, "material", source); err != nil {
 		return err
 	}
+	if err := appendUniqueStudioIDMaps(&dst.Definitions, src.Definitions, "definition", source); err != nil {
+		return err
+	}
 	if err := appendOrMergeStudioObjects(&dst.Objects, src.Objects, source); err != nil {
 		return err
 	}

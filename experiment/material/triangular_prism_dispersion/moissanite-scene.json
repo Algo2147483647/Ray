@@ -34,8 +34,7 @@
       ],
       "objects": [
         {
-          "id": "moissanite",
-          "shape": "group"
+          "ref": "moissanite"
         },
         {
           "id": "moissanite-key-0",
