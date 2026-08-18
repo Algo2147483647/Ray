@@ -104,10 +104,60 @@ func optionalScale(object map[string]interface{}, key string, dimension int, fal
 
 func applyPlacement(ctx groupContext, point []float64) []float64 {
 	result := make([]float64, len(point))
-	for i := range point {
-		result[i] = ctx.center[i] + ctx.scale[i]*point[i]
+	for worldAxis := range point {
+		result[worldAxis] = ctx.center[worldAxis]
+		for localAxis := range point {
+			result[worldAxis] += ctx.basis[worldAxis][localAxis] * ctx.scale[localAxis] * point[localAxis]
+		}
 	}
 	return result
+}
+
+func applyDirection(ctx groupContext, direction []float64) []float64 {
+	result := make([]float64, len(direction))
+	for worldAxis := range direction {
+		for localAxis := range direction {
+			result[worldAxis] += ctx.basis[worldAxis][localAxis] * direction[localAxis]
+		}
+	}
+	return result
+}
+
+func multiplyBasis(a, b [][]float64) [][]float64 {
+	result := make([][]float64, len(a))
+	for row := range result {
+		result[row] = make([]float64, len(a))
+		for col := range result[row] {
+			for k := range a[row] {
+				result[row][col] += a[row][k] * b[k][col]
+			}
+		}
+	}
+	return result
+}
+
+func basisIsIdentity(basis [][]float64) bool {
+	for row := range basis {
+		for col := range basis[row] {
+			expected := 0.0
+			if row == col {
+				expected = 1
+			}
+			if !nearlyEqual(basis[row][col], expected) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func uniformScaleVector(scale []float64) bool {
+	for axis := 1; axis < len(scale); axis++ {
+		if !nearlyEqual(scale[axis], scale[0]) {
+			return false
+		}
+	}
+	return true
 }
 
 func addVectors(a, b []float64) []float64 {
@@ -124,5 +174,5 @@ func groupPlacementIsIdentity(ctx groupContext) bool {
 			return false
 		}
 	}
-	return true
+	return basisIsIdentity(ctx.basis)
 }

@@ -303,6 +303,53 @@ func TestFlattenNestedGroupAndInheritFields(t *testing.T) {
 	}
 }
 
+func TestGroupBasisRotatesTriangleAndComposesCenter(t *testing.T) {
+	script := &schema.StudioScript{
+		Objects: []map[string]interface{}{
+			{
+				"id":     "rotated",
+				"shape":  "group",
+				"center": []interface{}{2, 3, 4},
+				"basis": []interface{}{
+					[]interface{}{0, -1, 0},
+					[]interface{}{1, 0, 0},
+					[]interface{}{0, 0, 1},
+				},
+				"objects": []interface{}{
+					map[string]interface{}{
+						"id": "facet", "shape": "triangle",
+						"p1":          []interface{}{1, 0, 0},
+						"p2":          []interface{}{0, 1, 0},
+						"p3":          []interface{}{0, 0, 1},
+						"material_id": "glass",
+					},
+				},
+			},
+		},
+	}
+
+	adapted, err := adaptTestScript(script, []string{"scene.json"}, 3)
+	if err != nil {
+		t.Fatalf("adapt script: %v", err)
+	}
+	facet := adapted.Objects[0]
+	for key, want := range map[string][]float64{
+		"p1": {2, 4, 4},
+		"p2": {1, 3, 4},
+		"p3": {2, 3, 5},
+	} {
+		got, ok := facet[key].([]float64)
+		if !ok || len(got) != len(want) {
+			t.Fatalf("%s: expected vector, got %T %v", key, facet[key], facet[key])
+		}
+		for axis := range want {
+			if math.Abs(got[axis]-want[axis]) > 1e-10 {
+				t.Fatalf("%s[%d]: expected %g, got %g", key, axis, want[axis], got[axis])
+			}
+		}
+	}
+}
+
 func TestChildFieldOverridesGroupInheritance(t *testing.T) {
 	script := &schema.StudioScript{
 		Objects: []map[string]interface{}{

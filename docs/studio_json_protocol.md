@@ -274,6 +274,7 @@ group objects.
   "shape": "group",
   "center": [2, 0, 0],
   "scale": 2,
+  "basis": [[1, 0, 0], [0, 0, -1], [0, 1, 0]],
   "objects": [
     {
       "id": "ball",
@@ -291,6 +292,7 @@ Group behavior:
 ```text
 center: inherited placement offset
 scale: scalar or vector placement scale
+basis: optional orthonormal local-to-parent rotation matrix (rows are world axes)
 objects: required child object list
 id: prefixes child ids as group/child
 material_id, medium_id, emission_id, bounds: inherited by children unless overridden
@@ -306,9 +308,16 @@ converted to an equivalent `quadratic equation` ellipsoid.
 Placement composition:
 
 ```text
-world_center = parent.center + parent.scale * local.center
+world_center = parent.center + parent.basis * (parent.scale * local.center)
 world_scale = parent.scale * local.scale
+world_basis = parent.basis * local.basis
 ```
+
+Rotated groups support triangles directly and rotate the axes of circles and
+finite cylinders. Spheres are rotation invariant. Axis-aligned cuboids cannot
+represent a rotated result and are rejected; author an oriented box as triangles.
+Combining a rotated nested group with a non-uniform parent scale is rejected to
+avoid silently introducing shear.
 
 ## Array Objects
 

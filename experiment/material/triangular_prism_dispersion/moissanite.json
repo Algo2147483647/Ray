@@ -1,0 +1,8070 @@
+{
+  "_comment": "Generated round-brilliant moissanite. Edit only the enclosing Group center/scale/basis for placement; rerun generate_moissanite.py to change the cut.",
+  "media": {
+    "moissanite-crystal": {
+      "type": "homogeneous",
+      "ior": {
+        "type": "cauchy",
+        "a": 2.41,
+        "b": 0.083,
+        "c": 0.0
+      }
+    }
+  },
+  "materials": [
+    {
+      "id": "faceted-moissanite",
+      "surface": {
+        "type": "specular_dielectric",
+        "reflectance": {
+          "type": "constant",
+          "value": 1.0
+        },
+        "transmittance": {
+          "type": "constant",
+          "value": 0.995
+        },
+        "eta_outside": 1.0,
+        "ior": {
+          "type": "cauchy",
+          "a": 2.41,
+          "b": 0.083,
+          "c": 0.0
+        }
+      }
+    }
+  ],
+  "objects": [
+    {
+      "id": "moissanite",
+      "shape": "group",
+      "_comment": "Local-to-world placement: center moves the culet, scale sets diameter, and basis rotates the complete cut. This basis is a 17 degree yaw.",
+      "center": [
+        0.62,
+        -1.48,
+        0.012
+      ],
+      "scale": 0.62,
+      "basis": [
+        [
+          0.95630476,
+          -0.2923717,
+          0.0
+        ],
+        [
+          0.2923717,
+          0.95630476,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "material_id": "faceted-moissanite",
+      "objects": [
+        {
+          "id": "culet-main-00",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            0.2966515,
+            0.08998825,
+            0.155
+          ],
+          "p3": [
+            0.30850727,
+            0.03038531,
+            0.155
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "culet-main-01",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            0.27339559,
+            0.14613299,
+            0.155
+          ],
+          "p3": [
+            0.2966515,
+            0.08998825,
+            0.155
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "culet-main-02",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            0.23963324,
+            0.19666192,
+            0.155
+          ],
+          "p3": [
+            0.27339559,
+            0.14613299,
+            0.155
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "culet-main-03",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            0.19666192,
+            0.23963324,
+            0.155
+          ],
+          "p3": [
+            0.23963324,
+            0.19666192,
+            0.155
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "culet-main-04",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            0.14613299,
+            0.27339559,
+            0.155
+          ],
+          "p3": [
+            0.19666192,
+            0.23963324,
+            0.155
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "culet-main-05",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            0.08998825,
+            0.2966515,
+            0.155
+          ],
+          "p3": [
+            0.14613299,
+            0.27339559,
+            0.155
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "culet-main-06",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            0.03038531,
+            0.30850727,
+            0.155
+          ],
+          "p3": [
+            0.08998825,
+            0.2966515,
+            0.155
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "culet-main-07",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            -0.03038531,
+            0.30850727,
+            0.155
+          ],
+          "p3": [
+            0.03038531,
+            0.30850727,
+            0.155
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "culet-main-08",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            -0.08998825,
+            0.2966515,
+            0.155
+          ],
+          "p3": [
+            -0.03038531,
+            0.30850727,
+            0.155
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "culet-main-09",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            -0.14613299,
+            0.27339559,
+            0.155
+          ],
+          "p3": [
+            -0.08998825,
+            0.2966515,
+            0.155
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "culet-main-10",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            -0.19666192,
+            0.23963324,
+            0.155
+          ],
+          "p3": [
+            -0.14613299,
+            0.27339559,
+            0.155
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "culet-main-11",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            -0.23963324,
+            0.19666192,
+            0.155
+          ],
+          "p3": [
+            -0.19666192,
+            0.23963324,
+            0.155
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "culet-main-12",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            -0.27339559,
+            0.14613299,
+            0.155
+          ],
+          "p3": [
+            -0.23963324,
+            0.19666192,
+            0.155
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "culet-main-13",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            -0.2966515,
+            0.08998825,
+            0.155
+          ],
+          "p3": [
+            -0.27339559,
+            0.14613299,
+            0.155
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "culet-main-14",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            -0.30850727,
+            0.03038531,
+            0.155
+          ],
+          "p3": [
+            -0.2966515,
+            0.08998825,
+            0.155
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "culet-main-15",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            -0.30850727,
+            -0.03038531,
+            0.155
+          ],
+          "p3": [
+            -0.30850727,
+            0.03038531,
+            0.155
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "culet-main-16",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            -0.2966515,
+            -0.08998825,
+            0.155
+          ],
+          "p3": [
+            -0.30850727,
+            -0.03038531,
+            0.155
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "culet-main-17",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            -0.27339559,
+            -0.14613299,
+            0.155
+          ],
+          "p3": [
+            -0.2966515,
+            -0.08998825,
+            0.155
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "culet-main-18",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            -0.23963324,
+            -0.19666192,
+            0.155
+          ],
+          "p3": [
+            -0.27339559,
+            -0.14613299,
+            0.155
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "culet-main-19",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            -0.19666192,
+            -0.23963324,
+            0.155
+          ],
+          "p3": [
+            -0.23963324,
+            -0.19666192,
+            0.155
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "culet-main-20",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            -0.14613299,
+            -0.27339559,
+            0.155
+          ],
+          "p3": [
+            -0.19666192,
+            -0.23963324,
+            0.155
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "culet-main-21",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            -0.08998825,
+            -0.2966515,
+            0.155
+          ],
+          "p3": [
+            -0.14613299,
+            -0.27339559,
+            0.155
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "culet-main-22",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            -0.03038531,
+            -0.30850727,
+            0.155
+          ],
+          "p3": [
+            -0.08998825,
+            -0.2966515,
+            0.155
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "culet-main-23",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            0.03038531,
+            -0.30850727,
+            0.155
+          ],
+          "p3": [
+            -0.03038531,
+            -0.30850727,
+            0.155
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "culet-main-24",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            0.08998825,
+            -0.2966515,
+            0.155
+          ],
+          "p3": [
+            0.03038531,
+            -0.30850727,
+            0.155
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "culet-main-25",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            0.14613299,
+            -0.27339559,
+            0.155
+          ],
+          "p3": [
+            0.08998825,
+            -0.2966515,
+            0.155
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "culet-main-26",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            0.19666192,
+            -0.23963324,
+            0.155
+          ],
+          "p3": [
+            0.14613299,
+            -0.27339559,
+            0.155
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "culet-main-27",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            0.23963324,
+            -0.19666192,
+            0.155
+          ],
+          "p3": [
+            0.19666192,
+            -0.23963324,
+            0.155
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "culet-main-28",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            0.27339559,
+            -0.14613299,
+            0.155
+          ],
+          "p3": [
+            0.23963324,
+            -0.19666192,
+            0.155
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "culet-main-29",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            0.2966515,
+            -0.08998825,
+            0.155
+          ],
+          "p3": [
+            0.27339559,
+            -0.14613299,
+            0.155
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "culet-main-30",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            0.30850727,
+            -0.03038531,
+            0.155
+          ],
+          "p3": [
+            0.2966515,
+            -0.08998825,
+            0.155
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "culet-main-31",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "p2": [
+            0.30850727,
+            0.03038531,
+            0.155
+          ],
+          "p3": [
+            0.30850727,
+            -0.03038531,
+            0.155
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-00-a",
+          "shape": "triangle",
+          "p1": [
+            0.30850727,
+            0.03038531,
+            0.155
+          ],
+          "p2": [
+            0.2966515,
+            0.08998825,
+            0.155
+          ],
+          "p3": [
+            0.49039264,
+            0.09754516,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-00-b",
+          "shape": "triangle",
+          "p1": [
+            0.30850727,
+            0.03038531,
+            0.155
+          ],
+          "p2": [
+            0.49039264,
+            0.09754516,
+            0.39
+          ],
+          "p3": [
+            0.5,
+            0.0,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-01-a",
+          "shape": "triangle",
+          "p1": [
+            0.2966515,
+            0.08998825,
+            0.155
+          ],
+          "p2": [
+            0.27339559,
+            0.14613299,
+            0.155
+          ],
+          "p3": [
+            0.46193977,
+            0.19134172,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-01-b",
+          "shape": "triangle",
+          "p1": [
+            0.2966515,
+            0.08998825,
+            0.155
+          ],
+          "p2": [
+            0.46193977,
+            0.19134172,
+            0.39
+          ],
+          "p3": [
+            0.49039264,
+            0.09754516,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-02-a",
+          "shape": "triangle",
+          "p1": [
+            0.27339559,
+            0.14613299,
+            0.155
+          ],
+          "p2": [
+            0.23963324,
+            0.19666192,
+            0.155
+          ],
+          "p3": [
+            0.41573481,
+            0.27778512,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-02-b",
+          "shape": "triangle",
+          "p1": [
+            0.27339559,
+            0.14613299,
+            0.155
+          ],
+          "p2": [
+            0.41573481,
+            0.27778512,
+            0.39
+          ],
+          "p3": [
+            0.46193977,
+            0.19134172,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-03-a",
+          "shape": "triangle",
+          "p1": [
+            0.23963324,
+            0.19666192,
+            0.155
+          ],
+          "p2": [
+            0.19666192,
+            0.23963324,
+            0.155
+          ],
+          "p3": [
+            0.35355339,
+            0.35355339,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-03-b",
+          "shape": "triangle",
+          "p1": [
+            0.23963324,
+            0.19666192,
+            0.155
+          ],
+          "p2": [
+            0.35355339,
+            0.35355339,
+            0.39
+          ],
+          "p3": [
+            0.41573481,
+            0.27778512,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-04-a",
+          "shape": "triangle",
+          "p1": [
+            0.19666192,
+            0.23963324,
+            0.155
+          ],
+          "p2": [
+            0.14613299,
+            0.27339559,
+            0.155
+          ],
+          "p3": [
+            0.27778512,
+            0.41573481,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-04-b",
+          "shape": "triangle",
+          "p1": [
+            0.19666192,
+            0.23963324,
+            0.155
+          ],
+          "p2": [
+            0.27778512,
+            0.41573481,
+            0.39
+          ],
+          "p3": [
+            0.35355339,
+            0.35355339,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-05-a",
+          "shape": "triangle",
+          "p1": [
+            0.14613299,
+            0.27339559,
+            0.155
+          ],
+          "p2": [
+            0.08998825,
+            0.2966515,
+            0.155
+          ],
+          "p3": [
+            0.19134172,
+            0.46193977,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-05-b",
+          "shape": "triangle",
+          "p1": [
+            0.14613299,
+            0.27339559,
+            0.155
+          ],
+          "p2": [
+            0.19134172,
+            0.46193977,
+            0.39
+          ],
+          "p3": [
+            0.27778512,
+            0.41573481,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-06-a",
+          "shape": "triangle",
+          "p1": [
+            0.08998825,
+            0.2966515,
+            0.155
+          ],
+          "p2": [
+            0.03038531,
+            0.30850727,
+            0.155
+          ],
+          "p3": [
+            0.09754516,
+            0.49039264,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-06-b",
+          "shape": "triangle",
+          "p1": [
+            0.08998825,
+            0.2966515,
+            0.155
+          ],
+          "p2": [
+            0.09754516,
+            0.49039264,
+            0.39
+          ],
+          "p3": [
+            0.19134172,
+            0.46193977,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-07-a",
+          "shape": "triangle",
+          "p1": [
+            0.03038531,
+            0.30850727,
+            0.155
+          ],
+          "p2": [
+            -0.03038531,
+            0.30850727,
+            0.155
+          ],
+          "p3": [
+            0.0,
+            0.5,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-07-b",
+          "shape": "triangle",
+          "p1": [
+            0.03038531,
+            0.30850727,
+            0.155
+          ],
+          "p2": [
+            0.0,
+            0.5,
+            0.39
+          ],
+          "p3": [
+            0.09754516,
+            0.49039264,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-08-a",
+          "shape": "triangle",
+          "p1": [
+            -0.03038531,
+            0.30850727,
+            0.155
+          ],
+          "p2": [
+            -0.08998825,
+            0.2966515,
+            0.155
+          ],
+          "p3": [
+            -0.09754516,
+            0.49039264,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-08-b",
+          "shape": "triangle",
+          "p1": [
+            -0.03038531,
+            0.30850727,
+            0.155
+          ],
+          "p2": [
+            -0.09754516,
+            0.49039264,
+            0.39
+          ],
+          "p3": [
+            0.0,
+            0.5,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-09-a",
+          "shape": "triangle",
+          "p1": [
+            -0.08998825,
+            0.2966515,
+            0.155
+          ],
+          "p2": [
+            -0.14613299,
+            0.27339559,
+            0.155
+          ],
+          "p3": [
+            -0.19134172,
+            0.46193977,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-09-b",
+          "shape": "triangle",
+          "p1": [
+            -0.08998825,
+            0.2966515,
+            0.155
+          ],
+          "p2": [
+            -0.19134172,
+            0.46193977,
+            0.39
+          ],
+          "p3": [
+            -0.09754516,
+            0.49039264,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-10-a",
+          "shape": "triangle",
+          "p1": [
+            -0.14613299,
+            0.27339559,
+            0.155
+          ],
+          "p2": [
+            -0.19666192,
+            0.23963324,
+            0.155
+          ],
+          "p3": [
+            -0.27778512,
+            0.41573481,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-10-b",
+          "shape": "triangle",
+          "p1": [
+            -0.14613299,
+            0.27339559,
+            0.155
+          ],
+          "p2": [
+            -0.27778512,
+            0.41573481,
+            0.39
+          ],
+          "p3": [
+            -0.19134172,
+            0.46193977,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-11-a",
+          "shape": "triangle",
+          "p1": [
+            -0.19666192,
+            0.23963324,
+            0.155
+          ],
+          "p2": [
+            -0.23963324,
+            0.19666192,
+            0.155
+          ],
+          "p3": [
+            -0.35355339,
+            0.35355339,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-11-b",
+          "shape": "triangle",
+          "p1": [
+            -0.19666192,
+            0.23963324,
+            0.155
+          ],
+          "p2": [
+            -0.35355339,
+            0.35355339,
+            0.39
+          ],
+          "p3": [
+            -0.27778512,
+            0.41573481,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-12-a",
+          "shape": "triangle",
+          "p1": [
+            -0.23963324,
+            0.19666192,
+            0.155
+          ],
+          "p2": [
+            -0.27339559,
+            0.14613299,
+            0.155
+          ],
+          "p3": [
+            -0.41573481,
+            0.27778512,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-12-b",
+          "shape": "triangle",
+          "p1": [
+            -0.23963324,
+            0.19666192,
+            0.155
+          ],
+          "p2": [
+            -0.41573481,
+            0.27778512,
+            0.39
+          ],
+          "p3": [
+            -0.35355339,
+            0.35355339,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-13-a",
+          "shape": "triangle",
+          "p1": [
+            -0.27339559,
+            0.14613299,
+            0.155
+          ],
+          "p2": [
+            -0.2966515,
+            0.08998825,
+            0.155
+          ],
+          "p3": [
+            -0.46193977,
+            0.19134172,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-13-b",
+          "shape": "triangle",
+          "p1": [
+            -0.27339559,
+            0.14613299,
+            0.155
+          ],
+          "p2": [
+            -0.46193977,
+            0.19134172,
+            0.39
+          ],
+          "p3": [
+            -0.41573481,
+            0.27778512,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-14-a",
+          "shape": "triangle",
+          "p1": [
+            -0.2966515,
+            0.08998825,
+            0.155
+          ],
+          "p2": [
+            -0.30850727,
+            0.03038531,
+            0.155
+          ],
+          "p3": [
+            -0.49039264,
+            0.09754516,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-14-b",
+          "shape": "triangle",
+          "p1": [
+            -0.2966515,
+            0.08998825,
+            0.155
+          ],
+          "p2": [
+            -0.49039264,
+            0.09754516,
+            0.39
+          ],
+          "p3": [
+            -0.46193977,
+            0.19134172,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-15-a",
+          "shape": "triangle",
+          "p1": [
+            -0.30850727,
+            0.03038531,
+            0.155
+          ],
+          "p2": [
+            -0.30850727,
+            -0.03038531,
+            0.155
+          ],
+          "p3": [
+            -0.5,
+            0.0,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-15-b",
+          "shape": "triangle",
+          "p1": [
+            -0.30850727,
+            0.03038531,
+            0.155
+          ],
+          "p2": [
+            -0.5,
+            0.0,
+            0.39
+          ],
+          "p3": [
+            -0.49039264,
+            0.09754516,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-16-a",
+          "shape": "triangle",
+          "p1": [
+            -0.30850727,
+            -0.03038531,
+            0.155
+          ],
+          "p2": [
+            -0.2966515,
+            -0.08998825,
+            0.155
+          ],
+          "p3": [
+            -0.49039264,
+            -0.09754516,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-16-b",
+          "shape": "triangle",
+          "p1": [
+            -0.30850727,
+            -0.03038531,
+            0.155
+          ],
+          "p2": [
+            -0.49039264,
+            -0.09754516,
+            0.39
+          ],
+          "p3": [
+            -0.5,
+            0.0,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-17-a",
+          "shape": "triangle",
+          "p1": [
+            -0.2966515,
+            -0.08998825,
+            0.155
+          ],
+          "p2": [
+            -0.27339559,
+            -0.14613299,
+            0.155
+          ],
+          "p3": [
+            -0.46193977,
+            -0.19134172,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-17-b",
+          "shape": "triangle",
+          "p1": [
+            -0.2966515,
+            -0.08998825,
+            0.155
+          ],
+          "p2": [
+            -0.46193977,
+            -0.19134172,
+            0.39
+          ],
+          "p3": [
+            -0.49039264,
+            -0.09754516,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-18-a",
+          "shape": "triangle",
+          "p1": [
+            -0.27339559,
+            -0.14613299,
+            0.155
+          ],
+          "p2": [
+            -0.23963324,
+            -0.19666192,
+            0.155
+          ],
+          "p3": [
+            -0.41573481,
+            -0.27778512,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-18-b",
+          "shape": "triangle",
+          "p1": [
+            -0.27339559,
+            -0.14613299,
+            0.155
+          ],
+          "p2": [
+            -0.41573481,
+            -0.27778512,
+            0.39
+          ],
+          "p3": [
+            -0.46193977,
+            -0.19134172,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-19-a",
+          "shape": "triangle",
+          "p1": [
+            -0.23963324,
+            -0.19666192,
+            0.155
+          ],
+          "p2": [
+            -0.19666192,
+            -0.23963324,
+            0.155
+          ],
+          "p3": [
+            -0.35355339,
+            -0.35355339,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-19-b",
+          "shape": "triangle",
+          "p1": [
+            -0.23963324,
+            -0.19666192,
+            0.155
+          ],
+          "p2": [
+            -0.35355339,
+            -0.35355339,
+            0.39
+          ],
+          "p3": [
+            -0.41573481,
+            -0.27778512,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-20-a",
+          "shape": "triangle",
+          "p1": [
+            -0.19666192,
+            -0.23963324,
+            0.155
+          ],
+          "p2": [
+            -0.14613299,
+            -0.27339559,
+            0.155
+          ],
+          "p3": [
+            -0.27778512,
+            -0.41573481,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-20-b",
+          "shape": "triangle",
+          "p1": [
+            -0.19666192,
+            -0.23963324,
+            0.155
+          ],
+          "p2": [
+            -0.27778512,
+            -0.41573481,
+            0.39
+          ],
+          "p3": [
+            -0.35355339,
+            -0.35355339,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-21-a",
+          "shape": "triangle",
+          "p1": [
+            -0.14613299,
+            -0.27339559,
+            0.155
+          ],
+          "p2": [
+            -0.08998825,
+            -0.2966515,
+            0.155
+          ],
+          "p3": [
+            -0.19134172,
+            -0.46193977,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-21-b",
+          "shape": "triangle",
+          "p1": [
+            -0.14613299,
+            -0.27339559,
+            0.155
+          ],
+          "p2": [
+            -0.19134172,
+            -0.46193977,
+            0.39
+          ],
+          "p3": [
+            -0.27778512,
+            -0.41573481,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-22-a",
+          "shape": "triangle",
+          "p1": [
+            -0.08998825,
+            -0.2966515,
+            0.155
+          ],
+          "p2": [
+            -0.03038531,
+            -0.30850727,
+            0.155
+          ],
+          "p3": [
+            -0.09754516,
+            -0.49039264,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-22-b",
+          "shape": "triangle",
+          "p1": [
+            -0.08998825,
+            -0.2966515,
+            0.155
+          ],
+          "p2": [
+            -0.09754516,
+            -0.49039264,
+            0.39
+          ],
+          "p3": [
+            -0.19134172,
+            -0.46193977,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-23-a",
+          "shape": "triangle",
+          "p1": [
+            -0.03038531,
+            -0.30850727,
+            0.155
+          ],
+          "p2": [
+            0.03038531,
+            -0.30850727,
+            0.155
+          ],
+          "p3": [
+            -0.0,
+            -0.5,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-23-b",
+          "shape": "triangle",
+          "p1": [
+            -0.03038531,
+            -0.30850727,
+            0.155
+          ],
+          "p2": [
+            -0.0,
+            -0.5,
+            0.39
+          ],
+          "p3": [
+            -0.09754516,
+            -0.49039264,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-24-a",
+          "shape": "triangle",
+          "p1": [
+            0.03038531,
+            -0.30850727,
+            0.155
+          ],
+          "p2": [
+            0.08998825,
+            -0.2966515,
+            0.155
+          ],
+          "p3": [
+            0.09754516,
+            -0.49039264,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-24-b",
+          "shape": "triangle",
+          "p1": [
+            0.03038531,
+            -0.30850727,
+            0.155
+          ],
+          "p2": [
+            0.09754516,
+            -0.49039264,
+            0.39
+          ],
+          "p3": [
+            -0.0,
+            -0.5,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-25-a",
+          "shape": "triangle",
+          "p1": [
+            0.08998825,
+            -0.2966515,
+            0.155
+          ],
+          "p2": [
+            0.14613299,
+            -0.27339559,
+            0.155
+          ],
+          "p3": [
+            0.19134172,
+            -0.46193977,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-25-b",
+          "shape": "triangle",
+          "p1": [
+            0.08998825,
+            -0.2966515,
+            0.155
+          ],
+          "p2": [
+            0.19134172,
+            -0.46193977,
+            0.39
+          ],
+          "p3": [
+            0.09754516,
+            -0.49039264,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-26-a",
+          "shape": "triangle",
+          "p1": [
+            0.14613299,
+            -0.27339559,
+            0.155
+          ],
+          "p2": [
+            0.19666192,
+            -0.23963324,
+            0.155
+          ],
+          "p3": [
+            0.27778512,
+            -0.41573481,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-26-b",
+          "shape": "triangle",
+          "p1": [
+            0.14613299,
+            -0.27339559,
+            0.155
+          ],
+          "p2": [
+            0.27778512,
+            -0.41573481,
+            0.39
+          ],
+          "p3": [
+            0.19134172,
+            -0.46193977,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-27-a",
+          "shape": "triangle",
+          "p1": [
+            0.19666192,
+            -0.23963324,
+            0.155
+          ],
+          "p2": [
+            0.23963324,
+            -0.19666192,
+            0.155
+          ],
+          "p3": [
+            0.35355339,
+            -0.35355339,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-27-b",
+          "shape": "triangle",
+          "p1": [
+            0.19666192,
+            -0.23963324,
+            0.155
+          ],
+          "p2": [
+            0.35355339,
+            -0.35355339,
+            0.39
+          ],
+          "p3": [
+            0.27778512,
+            -0.41573481,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-28-a",
+          "shape": "triangle",
+          "p1": [
+            0.23963324,
+            -0.19666192,
+            0.155
+          ],
+          "p2": [
+            0.27339559,
+            -0.14613299,
+            0.155
+          ],
+          "p3": [
+            0.41573481,
+            -0.27778512,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-28-b",
+          "shape": "triangle",
+          "p1": [
+            0.23963324,
+            -0.19666192,
+            0.155
+          ],
+          "p2": [
+            0.41573481,
+            -0.27778512,
+            0.39
+          ],
+          "p3": [
+            0.35355339,
+            -0.35355339,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-29-a",
+          "shape": "triangle",
+          "p1": [
+            0.27339559,
+            -0.14613299,
+            0.155
+          ],
+          "p2": [
+            0.2966515,
+            -0.08998825,
+            0.155
+          ],
+          "p3": [
+            0.46193977,
+            -0.19134172,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-29-b",
+          "shape": "triangle",
+          "p1": [
+            0.27339559,
+            -0.14613299,
+            0.155
+          ],
+          "p2": [
+            0.46193977,
+            -0.19134172,
+            0.39
+          ],
+          "p3": [
+            0.41573481,
+            -0.27778512,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-30-a",
+          "shape": "triangle",
+          "p1": [
+            0.2966515,
+            -0.08998825,
+            0.155
+          ],
+          "p2": [
+            0.30850727,
+            -0.03038531,
+            0.155
+          ],
+          "p3": [
+            0.49039264,
+            -0.09754516,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-30-b",
+          "shape": "triangle",
+          "p1": [
+            0.2966515,
+            -0.08998825,
+            0.155
+          ],
+          "p2": [
+            0.49039264,
+            -0.09754516,
+            0.39
+          ],
+          "p3": [
+            0.46193977,
+            -0.19134172,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-31-a",
+          "shape": "triangle",
+          "p1": [
+            0.30850727,
+            -0.03038531,
+            0.155
+          ],
+          "p2": [
+            0.30850727,
+            0.03038531,
+            0.155
+          ],
+          "p3": [
+            0.5,
+            0.0,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "pavilion-lower-31-b",
+          "shape": "triangle",
+          "p1": [
+            0.30850727,
+            -0.03038531,
+            0.155
+          ],
+          "p2": [
+            0.5,
+            0.0,
+            0.39
+          ],
+          "p3": [
+            0.49039264,
+            -0.09754516,
+            0.39
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-00-a",
+          "shape": "triangle",
+          "p1": [
+            0.5,
+            0.0,
+            0.39
+          ],
+          "p2": [
+            0.49039264,
+            0.09754516,
+            0.39
+          ],
+          "p3": [
+            0.49039264,
+            0.09754516,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-00-b",
+          "shape": "triangle",
+          "p1": [
+            0.5,
+            0.0,
+            0.39
+          ],
+          "p2": [
+            0.49039264,
+            0.09754516,
+            0.42
+          ],
+          "p3": [
+            0.5,
+            0.0,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-01-a",
+          "shape": "triangle",
+          "p1": [
+            0.49039264,
+            0.09754516,
+            0.39
+          ],
+          "p2": [
+            0.46193977,
+            0.19134172,
+            0.39
+          ],
+          "p3": [
+            0.46193977,
+            0.19134172,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-01-b",
+          "shape": "triangle",
+          "p1": [
+            0.49039264,
+            0.09754516,
+            0.39
+          ],
+          "p2": [
+            0.46193977,
+            0.19134172,
+            0.42
+          ],
+          "p3": [
+            0.49039264,
+            0.09754516,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-02-a",
+          "shape": "triangle",
+          "p1": [
+            0.46193977,
+            0.19134172,
+            0.39
+          ],
+          "p2": [
+            0.41573481,
+            0.27778512,
+            0.39
+          ],
+          "p3": [
+            0.41573481,
+            0.27778512,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-02-b",
+          "shape": "triangle",
+          "p1": [
+            0.46193977,
+            0.19134172,
+            0.39
+          ],
+          "p2": [
+            0.41573481,
+            0.27778512,
+            0.42
+          ],
+          "p3": [
+            0.46193977,
+            0.19134172,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-03-a",
+          "shape": "triangle",
+          "p1": [
+            0.41573481,
+            0.27778512,
+            0.39
+          ],
+          "p2": [
+            0.35355339,
+            0.35355339,
+            0.39
+          ],
+          "p3": [
+            0.35355339,
+            0.35355339,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-03-b",
+          "shape": "triangle",
+          "p1": [
+            0.41573481,
+            0.27778512,
+            0.39
+          ],
+          "p2": [
+            0.35355339,
+            0.35355339,
+            0.42
+          ],
+          "p3": [
+            0.41573481,
+            0.27778512,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-04-a",
+          "shape": "triangle",
+          "p1": [
+            0.35355339,
+            0.35355339,
+            0.39
+          ],
+          "p2": [
+            0.27778512,
+            0.41573481,
+            0.39
+          ],
+          "p3": [
+            0.27778512,
+            0.41573481,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-04-b",
+          "shape": "triangle",
+          "p1": [
+            0.35355339,
+            0.35355339,
+            0.39
+          ],
+          "p2": [
+            0.27778512,
+            0.41573481,
+            0.42
+          ],
+          "p3": [
+            0.35355339,
+            0.35355339,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-05-a",
+          "shape": "triangle",
+          "p1": [
+            0.27778512,
+            0.41573481,
+            0.39
+          ],
+          "p2": [
+            0.19134172,
+            0.46193977,
+            0.39
+          ],
+          "p3": [
+            0.19134172,
+            0.46193977,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-05-b",
+          "shape": "triangle",
+          "p1": [
+            0.27778512,
+            0.41573481,
+            0.39
+          ],
+          "p2": [
+            0.19134172,
+            0.46193977,
+            0.42
+          ],
+          "p3": [
+            0.27778512,
+            0.41573481,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-06-a",
+          "shape": "triangle",
+          "p1": [
+            0.19134172,
+            0.46193977,
+            0.39
+          ],
+          "p2": [
+            0.09754516,
+            0.49039264,
+            0.39
+          ],
+          "p3": [
+            0.09754516,
+            0.49039264,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-06-b",
+          "shape": "triangle",
+          "p1": [
+            0.19134172,
+            0.46193977,
+            0.39
+          ],
+          "p2": [
+            0.09754516,
+            0.49039264,
+            0.42
+          ],
+          "p3": [
+            0.19134172,
+            0.46193977,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-07-a",
+          "shape": "triangle",
+          "p1": [
+            0.09754516,
+            0.49039264,
+            0.39
+          ],
+          "p2": [
+            0.0,
+            0.5,
+            0.39
+          ],
+          "p3": [
+            0.0,
+            0.5,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-07-b",
+          "shape": "triangle",
+          "p1": [
+            0.09754516,
+            0.49039264,
+            0.39
+          ],
+          "p2": [
+            0.0,
+            0.5,
+            0.42
+          ],
+          "p3": [
+            0.09754516,
+            0.49039264,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-08-a",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.5,
+            0.39
+          ],
+          "p2": [
+            -0.09754516,
+            0.49039264,
+            0.39
+          ],
+          "p3": [
+            -0.09754516,
+            0.49039264,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-08-b",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.5,
+            0.39
+          ],
+          "p2": [
+            -0.09754516,
+            0.49039264,
+            0.42
+          ],
+          "p3": [
+            0.0,
+            0.5,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-09-a",
+          "shape": "triangle",
+          "p1": [
+            -0.09754516,
+            0.49039264,
+            0.39
+          ],
+          "p2": [
+            -0.19134172,
+            0.46193977,
+            0.39
+          ],
+          "p3": [
+            -0.19134172,
+            0.46193977,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-09-b",
+          "shape": "triangle",
+          "p1": [
+            -0.09754516,
+            0.49039264,
+            0.39
+          ],
+          "p2": [
+            -0.19134172,
+            0.46193977,
+            0.42
+          ],
+          "p3": [
+            -0.09754516,
+            0.49039264,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-10-a",
+          "shape": "triangle",
+          "p1": [
+            -0.19134172,
+            0.46193977,
+            0.39
+          ],
+          "p2": [
+            -0.27778512,
+            0.41573481,
+            0.39
+          ],
+          "p3": [
+            -0.27778512,
+            0.41573481,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-10-b",
+          "shape": "triangle",
+          "p1": [
+            -0.19134172,
+            0.46193977,
+            0.39
+          ],
+          "p2": [
+            -0.27778512,
+            0.41573481,
+            0.42
+          ],
+          "p3": [
+            -0.19134172,
+            0.46193977,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-11-a",
+          "shape": "triangle",
+          "p1": [
+            -0.27778512,
+            0.41573481,
+            0.39
+          ],
+          "p2": [
+            -0.35355339,
+            0.35355339,
+            0.39
+          ],
+          "p3": [
+            -0.35355339,
+            0.35355339,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-11-b",
+          "shape": "triangle",
+          "p1": [
+            -0.27778512,
+            0.41573481,
+            0.39
+          ],
+          "p2": [
+            -0.35355339,
+            0.35355339,
+            0.42
+          ],
+          "p3": [
+            -0.27778512,
+            0.41573481,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-12-a",
+          "shape": "triangle",
+          "p1": [
+            -0.35355339,
+            0.35355339,
+            0.39
+          ],
+          "p2": [
+            -0.41573481,
+            0.27778512,
+            0.39
+          ],
+          "p3": [
+            -0.41573481,
+            0.27778512,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-12-b",
+          "shape": "triangle",
+          "p1": [
+            -0.35355339,
+            0.35355339,
+            0.39
+          ],
+          "p2": [
+            -0.41573481,
+            0.27778512,
+            0.42
+          ],
+          "p3": [
+            -0.35355339,
+            0.35355339,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-13-a",
+          "shape": "triangle",
+          "p1": [
+            -0.41573481,
+            0.27778512,
+            0.39
+          ],
+          "p2": [
+            -0.46193977,
+            0.19134172,
+            0.39
+          ],
+          "p3": [
+            -0.46193977,
+            0.19134172,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-13-b",
+          "shape": "triangle",
+          "p1": [
+            -0.41573481,
+            0.27778512,
+            0.39
+          ],
+          "p2": [
+            -0.46193977,
+            0.19134172,
+            0.42
+          ],
+          "p3": [
+            -0.41573481,
+            0.27778512,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-14-a",
+          "shape": "triangle",
+          "p1": [
+            -0.46193977,
+            0.19134172,
+            0.39
+          ],
+          "p2": [
+            -0.49039264,
+            0.09754516,
+            0.39
+          ],
+          "p3": [
+            -0.49039264,
+            0.09754516,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-14-b",
+          "shape": "triangle",
+          "p1": [
+            -0.46193977,
+            0.19134172,
+            0.39
+          ],
+          "p2": [
+            -0.49039264,
+            0.09754516,
+            0.42
+          ],
+          "p3": [
+            -0.46193977,
+            0.19134172,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-15-a",
+          "shape": "triangle",
+          "p1": [
+            -0.49039264,
+            0.09754516,
+            0.39
+          ],
+          "p2": [
+            -0.5,
+            0.0,
+            0.39
+          ],
+          "p3": [
+            -0.5,
+            0.0,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-15-b",
+          "shape": "triangle",
+          "p1": [
+            -0.49039264,
+            0.09754516,
+            0.39
+          ],
+          "p2": [
+            -0.5,
+            0.0,
+            0.42
+          ],
+          "p3": [
+            -0.49039264,
+            0.09754516,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-16-a",
+          "shape": "triangle",
+          "p1": [
+            -0.5,
+            0.0,
+            0.39
+          ],
+          "p2": [
+            -0.49039264,
+            -0.09754516,
+            0.39
+          ],
+          "p3": [
+            -0.49039264,
+            -0.09754516,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-16-b",
+          "shape": "triangle",
+          "p1": [
+            -0.5,
+            0.0,
+            0.39
+          ],
+          "p2": [
+            -0.49039264,
+            -0.09754516,
+            0.42
+          ],
+          "p3": [
+            -0.5,
+            0.0,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-17-a",
+          "shape": "triangle",
+          "p1": [
+            -0.49039264,
+            -0.09754516,
+            0.39
+          ],
+          "p2": [
+            -0.46193977,
+            -0.19134172,
+            0.39
+          ],
+          "p3": [
+            -0.46193977,
+            -0.19134172,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-17-b",
+          "shape": "triangle",
+          "p1": [
+            -0.49039264,
+            -0.09754516,
+            0.39
+          ],
+          "p2": [
+            -0.46193977,
+            -0.19134172,
+            0.42
+          ],
+          "p3": [
+            -0.49039264,
+            -0.09754516,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-18-a",
+          "shape": "triangle",
+          "p1": [
+            -0.46193977,
+            -0.19134172,
+            0.39
+          ],
+          "p2": [
+            -0.41573481,
+            -0.27778512,
+            0.39
+          ],
+          "p3": [
+            -0.41573481,
+            -0.27778512,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-18-b",
+          "shape": "triangle",
+          "p1": [
+            -0.46193977,
+            -0.19134172,
+            0.39
+          ],
+          "p2": [
+            -0.41573481,
+            -0.27778512,
+            0.42
+          ],
+          "p3": [
+            -0.46193977,
+            -0.19134172,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-19-a",
+          "shape": "triangle",
+          "p1": [
+            -0.41573481,
+            -0.27778512,
+            0.39
+          ],
+          "p2": [
+            -0.35355339,
+            -0.35355339,
+            0.39
+          ],
+          "p3": [
+            -0.35355339,
+            -0.35355339,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-19-b",
+          "shape": "triangle",
+          "p1": [
+            -0.41573481,
+            -0.27778512,
+            0.39
+          ],
+          "p2": [
+            -0.35355339,
+            -0.35355339,
+            0.42
+          ],
+          "p3": [
+            -0.41573481,
+            -0.27778512,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-20-a",
+          "shape": "triangle",
+          "p1": [
+            -0.35355339,
+            -0.35355339,
+            0.39
+          ],
+          "p2": [
+            -0.27778512,
+            -0.41573481,
+            0.39
+          ],
+          "p3": [
+            -0.27778512,
+            -0.41573481,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-20-b",
+          "shape": "triangle",
+          "p1": [
+            -0.35355339,
+            -0.35355339,
+            0.39
+          ],
+          "p2": [
+            -0.27778512,
+            -0.41573481,
+            0.42
+          ],
+          "p3": [
+            -0.35355339,
+            -0.35355339,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-21-a",
+          "shape": "triangle",
+          "p1": [
+            -0.27778512,
+            -0.41573481,
+            0.39
+          ],
+          "p2": [
+            -0.19134172,
+            -0.46193977,
+            0.39
+          ],
+          "p3": [
+            -0.19134172,
+            -0.46193977,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-21-b",
+          "shape": "triangle",
+          "p1": [
+            -0.27778512,
+            -0.41573481,
+            0.39
+          ],
+          "p2": [
+            -0.19134172,
+            -0.46193977,
+            0.42
+          ],
+          "p3": [
+            -0.27778512,
+            -0.41573481,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-22-a",
+          "shape": "triangle",
+          "p1": [
+            -0.19134172,
+            -0.46193977,
+            0.39
+          ],
+          "p2": [
+            -0.09754516,
+            -0.49039264,
+            0.39
+          ],
+          "p3": [
+            -0.09754516,
+            -0.49039264,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-22-b",
+          "shape": "triangle",
+          "p1": [
+            -0.19134172,
+            -0.46193977,
+            0.39
+          ],
+          "p2": [
+            -0.09754516,
+            -0.49039264,
+            0.42
+          ],
+          "p3": [
+            -0.19134172,
+            -0.46193977,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-23-a",
+          "shape": "triangle",
+          "p1": [
+            -0.09754516,
+            -0.49039264,
+            0.39
+          ],
+          "p2": [
+            -0.0,
+            -0.5,
+            0.39
+          ],
+          "p3": [
+            -0.0,
+            -0.5,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-23-b",
+          "shape": "triangle",
+          "p1": [
+            -0.09754516,
+            -0.49039264,
+            0.39
+          ],
+          "p2": [
+            -0.0,
+            -0.5,
+            0.42
+          ],
+          "p3": [
+            -0.09754516,
+            -0.49039264,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-24-a",
+          "shape": "triangle",
+          "p1": [
+            -0.0,
+            -0.5,
+            0.39
+          ],
+          "p2": [
+            0.09754516,
+            -0.49039264,
+            0.39
+          ],
+          "p3": [
+            0.09754516,
+            -0.49039264,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-24-b",
+          "shape": "triangle",
+          "p1": [
+            -0.0,
+            -0.5,
+            0.39
+          ],
+          "p2": [
+            0.09754516,
+            -0.49039264,
+            0.42
+          ],
+          "p3": [
+            -0.0,
+            -0.5,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-25-a",
+          "shape": "triangle",
+          "p1": [
+            0.09754516,
+            -0.49039264,
+            0.39
+          ],
+          "p2": [
+            0.19134172,
+            -0.46193977,
+            0.39
+          ],
+          "p3": [
+            0.19134172,
+            -0.46193977,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-25-b",
+          "shape": "triangle",
+          "p1": [
+            0.09754516,
+            -0.49039264,
+            0.39
+          ],
+          "p2": [
+            0.19134172,
+            -0.46193977,
+            0.42
+          ],
+          "p3": [
+            0.09754516,
+            -0.49039264,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-26-a",
+          "shape": "triangle",
+          "p1": [
+            0.19134172,
+            -0.46193977,
+            0.39
+          ],
+          "p2": [
+            0.27778512,
+            -0.41573481,
+            0.39
+          ],
+          "p3": [
+            0.27778512,
+            -0.41573481,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-26-b",
+          "shape": "triangle",
+          "p1": [
+            0.19134172,
+            -0.46193977,
+            0.39
+          ],
+          "p2": [
+            0.27778512,
+            -0.41573481,
+            0.42
+          ],
+          "p3": [
+            0.19134172,
+            -0.46193977,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-27-a",
+          "shape": "triangle",
+          "p1": [
+            0.27778512,
+            -0.41573481,
+            0.39
+          ],
+          "p2": [
+            0.35355339,
+            -0.35355339,
+            0.39
+          ],
+          "p3": [
+            0.35355339,
+            -0.35355339,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-27-b",
+          "shape": "triangle",
+          "p1": [
+            0.27778512,
+            -0.41573481,
+            0.39
+          ],
+          "p2": [
+            0.35355339,
+            -0.35355339,
+            0.42
+          ],
+          "p3": [
+            0.27778512,
+            -0.41573481,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-28-a",
+          "shape": "triangle",
+          "p1": [
+            0.35355339,
+            -0.35355339,
+            0.39
+          ],
+          "p2": [
+            0.41573481,
+            -0.27778512,
+            0.39
+          ],
+          "p3": [
+            0.41573481,
+            -0.27778512,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-28-b",
+          "shape": "triangle",
+          "p1": [
+            0.35355339,
+            -0.35355339,
+            0.39
+          ],
+          "p2": [
+            0.41573481,
+            -0.27778512,
+            0.42
+          ],
+          "p3": [
+            0.35355339,
+            -0.35355339,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-29-a",
+          "shape": "triangle",
+          "p1": [
+            0.41573481,
+            -0.27778512,
+            0.39
+          ],
+          "p2": [
+            0.46193977,
+            -0.19134172,
+            0.39
+          ],
+          "p3": [
+            0.46193977,
+            -0.19134172,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-29-b",
+          "shape": "triangle",
+          "p1": [
+            0.41573481,
+            -0.27778512,
+            0.39
+          ],
+          "p2": [
+            0.46193977,
+            -0.19134172,
+            0.42
+          ],
+          "p3": [
+            0.41573481,
+            -0.27778512,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-30-a",
+          "shape": "triangle",
+          "p1": [
+            0.46193977,
+            -0.19134172,
+            0.39
+          ],
+          "p2": [
+            0.49039264,
+            -0.09754516,
+            0.39
+          ],
+          "p3": [
+            0.49039264,
+            -0.09754516,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-30-b",
+          "shape": "triangle",
+          "p1": [
+            0.46193977,
+            -0.19134172,
+            0.39
+          ],
+          "p2": [
+            0.49039264,
+            -0.09754516,
+            0.42
+          ],
+          "p3": [
+            0.46193977,
+            -0.19134172,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-31-a",
+          "shape": "triangle",
+          "p1": [
+            0.49039264,
+            -0.09754516,
+            0.39
+          ],
+          "p2": [
+            0.5,
+            0.0,
+            0.39
+          ],
+          "p3": [
+            0.5,
+            0.0,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "girdle-31-b",
+          "shape": "triangle",
+          "p1": [
+            0.49039264,
+            -0.09754516,
+            0.39
+          ],
+          "p2": [
+            0.5,
+            0.0,
+            0.42
+          ],
+          "p3": [
+            0.49039264,
+            -0.09754516,
+            0.42
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-00-a",
+          "shape": "triangle",
+          "p1": [
+            0.5,
+            0.0,
+            0.42
+          ],
+          "p2": [
+            0.49039264,
+            0.09754516,
+            0.42
+          ],
+          "p3": [
+            0.34928322,
+            0.10595391,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-00-b",
+          "shape": "triangle",
+          "p1": [
+            0.5,
+            0.0,
+            0.42
+          ],
+          "p2": [
+            0.34928322,
+            0.10595391,
+            0.525
+          ],
+          "p3": [
+            0.36324243,
+            0.03577626,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-01-a",
+          "shape": "triangle",
+          "p1": [
+            0.49039264,
+            0.09754516,
+            0.42
+          ],
+          "p2": [
+            0.46193977,
+            0.19134172,
+            0.42
+          ],
+          "p3": [
+            0.32190126,
+            0.17205981,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-01-b",
+          "shape": "triangle",
+          "p1": [
+            0.49039264,
+            0.09754516,
+            0.42
+          ],
+          "p2": [
+            0.32190126,
+            0.17205981,
+            0.525
+          ],
+          "p3": [
+            0.34928322,
+            0.10595391,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-02-a",
+          "shape": "triangle",
+          "p1": [
+            0.46193977,
+            0.19134172,
+            0.42
+          ],
+          "p2": [
+            0.41573481,
+            0.27778512,
+            0.42
+          ],
+          "p3": [
+            0.28214882,
+            0.23155355,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-02-b",
+          "shape": "triangle",
+          "p1": [
+            0.46193977,
+            0.19134172,
+            0.42
+          ],
+          "p2": [
+            0.28214882,
+            0.23155355,
+            0.525
+          ],
+          "p3": [
+            0.32190126,
+            0.17205981,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-03-a",
+          "shape": "triangle",
+          "p1": [
+            0.41573481,
+            0.27778512,
+            0.42
+          ],
+          "p2": [
+            0.35355339,
+            0.35355339,
+            0.42
+          ],
+          "p3": [
+            0.23155355,
+            0.28214882,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-03-b",
+          "shape": "triangle",
+          "p1": [
+            0.41573481,
+            0.27778512,
+            0.42
+          ],
+          "p2": [
+            0.23155355,
+            0.28214882,
+            0.525
+          ],
+          "p3": [
+            0.28214882,
+            0.23155355,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-04-a",
+          "shape": "triangle",
+          "p1": [
+            0.35355339,
+            0.35355339,
+            0.42
+          ],
+          "p2": [
+            0.27778512,
+            0.41573481,
+            0.42
+          ],
+          "p3": [
+            0.17205981,
+            0.32190126,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-04-b",
+          "shape": "triangle",
+          "p1": [
+            0.35355339,
+            0.35355339,
+            0.42
+          ],
+          "p2": [
+            0.17205981,
+            0.32190126,
+            0.525
+          ],
+          "p3": [
+            0.23155355,
+            0.28214882,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-05-a",
+          "shape": "triangle",
+          "p1": [
+            0.27778512,
+            0.41573481,
+            0.42
+          ],
+          "p2": [
+            0.19134172,
+            0.46193977,
+            0.42
+          ],
+          "p3": [
+            0.10595391,
+            0.34928322,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-05-b",
+          "shape": "triangle",
+          "p1": [
+            0.27778512,
+            0.41573481,
+            0.42
+          ],
+          "p2": [
+            0.10595391,
+            0.34928322,
+            0.525
+          ],
+          "p3": [
+            0.17205981,
+            0.32190126,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-06-a",
+          "shape": "triangle",
+          "p1": [
+            0.19134172,
+            0.46193977,
+            0.42
+          ],
+          "p2": [
+            0.09754516,
+            0.49039264,
+            0.42
+          ],
+          "p3": [
+            0.03577626,
+            0.36324243,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-06-b",
+          "shape": "triangle",
+          "p1": [
+            0.19134172,
+            0.46193977,
+            0.42
+          ],
+          "p2": [
+            0.03577626,
+            0.36324243,
+            0.525
+          ],
+          "p3": [
+            0.10595391,
+            0.34928322,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-07-a",
+          "shape": "triangle",
+          "p1": [
+            0.09754516,
+            0.49039264,
+            0.42
+          ],
+          "p2": [
+            0.0,
+            0.5,
+            0.42
+          ],
+          "p3": [
+            -0.03577626,
+            0.36324243,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-07-b",
+          "shape": "triangle",
+          "p1": [
+            0.09754516,
+            0.49039264,
+            0.42
+          ],
+          "p2": [
+            -0.03577626,
+            0.36324243,
+            0.525
+          ],
+          "p3": [
+            0.03577626,
+            0.36324243,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-08-a",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.5,
+            0.42
+          ],
+          "p2": [
+            -0.09754516,
+            0.49039264,
+            0.42
+          ],
+          "p3": [
+            -0.10595391,
+            0.34928322,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-08-b",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.5,
+            0.42
+          ],
+          "p2": [
+            -0.10595391,
+            0.34928322,
+            0.525
+          ],
+          "p3": [
+            -0.03577626,
+            0.36324243,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-09-a",
+          "shape": "triangle",
+          "p1": [
+            -0.09754516,
+            0.49039264,
+            0.42
+          ],
+          "p2": [
+            -0.19134172,
+            0.46193977,
+            0.42
+          ],
+          "p3": [
+            -0.17205981,
+            0.32190126,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-09-b",
+          "shape": "triangle",
+          "p1": [
+            -0.09754516,
+            0.49039264,
+            0.42
+          ],
+          "p2": [
+            -0.17205981,
+            0.32190126,
+            0.525
+          ],
+          "p3": [
+            -0.10595391,
+            0.34928322,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-10-a",
+          "shape": "triangle",
+          "p1": [
+            -0.19134172,
+            0.46193977,
+            0.42
+          ],
+          "p2": [
+            -0.27778512,
+            0.41573481,
+            0.42
+          ],
+          "p3": [
+            -0.23155355,
+            0.28214882,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-10-b",
+          "shape": "triangle",
+          "p1": [
+            -0.19134172,
+            0.46193977,
+            0.42
+          ],
+          "p2": [
+            -0.23155355,
+            0.28214882,
+            0.525
+          ],
+          "p3": [
+            -0.17205981,
+            0.32190126,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-11-a",
+          "shape": "triangle",
+          "p1": [
+            -0.27778512,
+            0.41573481,
+            0.42
+          ],
+          "p2": [
+            -0.35355339,
+            0.35355339,
+            0.42
+          ],
+          "p3": [
+            -0.28214882,
+            0.23155355,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-11-b",
+          "shape": "triangle",
+          "p1": [
+            -0.27778512,
+            0.41573481,
+            0.42
+          ],
+          "p2": [
+            -0.28214882,
+            0.23155355,
+            0.525
+          ],
+          "p3": [
+            -0.23155355,
+            0.28214882,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-12-a",
+          "shape": "triangle",
+          "p1": [
+            -0.35355339,
+            0.35355339,
+            0.42
+          ],
+          "p2": [
+            -0.41573481,
+            0.27778512,
+            0.42
+          ],
+          "p3": [
+            -0.32190126,
+            0.17205981,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-12-b",
+          "shape": "triangle",
+          "p1": [
+            -0.35355339,
+            0.35355339,
+            0.42
+          ],
+          "p2": [
+            -0.32190126,
+            0.17205981,
+            0.525
+          ],
+          "p3": [
+            -0.28214882,
+            0.23155355,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-13-a",
+          "shape": "triangle",
+          "p1": [
+            -0.41573481,
+            0.27778512,
+            0.42
+          ],
+          "p2": [
+            -0.46193977,
+            0.19134172,
+            0.42
+          ],
+          "p3": [
+            -0.34928322,
+            0.10595391,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-13-b",
+          "shape": "triangle",
+          "p1": [
+            -0.41573481,
+            0.27778512,
+            0.42
+          ],
+          "p2": [
+            -0.34928322,
+            0.10595391,
+            0.525
+          ],
+          "p3": [
+            -0.32190126,
+            0.17205981,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-14-a",
+          "shape": "triangle",
+          "p1": [
+            -0.46193977,
+            0.19134172,
+            0.42
+          ],
+          "p2": [
+            -0.49039264,
+            0.09754516,
+            0.42
+          ],
+          "p3": [
+            -0.36324243,
+            0.03577626,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-14-b",
+          "shape": "triangle",
+          "p1": [
+            -0.46193977,
+            0.19134172,
+            0.42
+          ],
+          "p2": [
+            -0.36324243,
+            0.03577626,
+            0.525
+          ],
+          "p3": [
+            -0.34928322,
+            0.10595391,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-15-a",
+          "shape": "triangle",
+          "p1": [
+            -0.49039264,
+            0.09754516,
+            0.42
+          ],
+          "p2": [
+            -0.5,
+            0.0,
+            0.42
+          ],
+          "p3": [
+            -0.36324243,
+            -0.03577626,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-15-b",
+          "shape": "triangle",
+          "p1": [
+            -0.49039264,
+            0.09754516,
+            0.42
+          ],
+          "p2": [
+            -0.36324243,
+            -0.03577626,
+            0.525
+          ],
+          "p3": [
+            -0.36324243,
+            0.03577626,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-16-a",
+          "shape": "triangle",
+          "p1": [
+            -0.5,
+            0.0,
+            0.42
+          ],
+          "p2": [
+            -0.49039264,
+            -0.09754516,
+            0.42
+          ],
+          "p3": [
+            -0.34928322,
+            -0.10595391,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-16-b",
+          "shape": "triangle",
+          "p1": [
+            -0.5,
+            0.0,
+            0.42
+          ],
+          "p2": [
+            -0.34928322,
+            -0.10595391,
+            0.525
+          ],
+          "p3": [
+            -0.36324243,
+            -0.03577626,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-17-a",
+          "shape": "triangle",
+          "p1": [
+            -0.49039264,
+            -0.09754516,
+            0.42
+          ],
+          "p2": [
+            -0.46193977,
+            -0.19134172,
+            0.42
+          ],
+          "p3": [
+            -0.32190126,
+            -0.17205981,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-17-b",
+          "shape": "triangle",
+          "p1": [
+            -0.49039264,
+            -0.09754516,
+            0.42
+          ],
+          "p2": [
+            -0.32190126,
+            -0.17205981,
+            0.525
+          ],
+          "p3": [
+            -0.34928322,
+            -0.10595391,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-18-a",
+          "shape": "triangle",
+          "p1": [
+            -0.46193977,
+            -0.19134172,
+            0.42
+          ],
+          "p2": [
+            -0.41573481,
+            -0.27778512,
+            0.42
+          ],
+          "p3": [
+            -0.28214882,
+            -0.23155355,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-18-b",
+          "shape": "triangle",
+          "p1": [
+            -0.46193977,
+            -0.19134172,
+            0.42
+          ],
+          "p2": [
+            -0.28214882,
+            -0.23155355,
+            0.525
+          ],
+          "p3": [
+            -0.32190126,
+            -0.17205981,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-19-a",
+          "shape": "triangle",
+          "p1": [
+            -0.41573481,
+            -0.27778512,
+            0.42
+          ],
+          "p2": [
+            -0.35355339,
+            -0.35355339,
+            0.42
+          ],
+          "p3": [
+            -0.23155355,
+            -0.28214882,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-19-b",
+          "shape": "triangle",
+          "p1": [
+            -0.41573481,
+            -0.27778512,
+            0.42
+          ],
+          "p2": [
+            -0.23155355,
+            -0.28214882,
+            0.525
+          ],
+          "p3": [
+            -0.28214882,
+            -0.23155355,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-20-a",
+          "shape": "triangle",
+          "p1": [
+            -0.35355339,
+            -0.35355339,
+            0.42
+          ],
+          "p2": [
+            -0.27778512,
+            -0.41573481,
+            0.42
+          ],
+          "p3": [
+            -0.17205981,
+            -0.32190126,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-20-b",
+          "shape": "triangle",
+          "p1": [
+            -0.35355339,
+            -0.35355339,
+            0.42
+          ],
+          "p2": [
+            -0.17205981,
+            -0.32190126,
+            0.525
+          ],
+          "p3": [
+            -0.23155355,
+            -0.28214882,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-21-a",
+          "shape": "triangle",
+          "p1": [
+            -0.27778512,
+            -0.41573481,
+            0.42
+          ],
+          "p2": [
+            -0.19134172,
+            -0.46193977,
+            0.42
+          ],
+          "p3": [
+            -0.10595391,
+            -0.34928322,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-21-b",
+          "shape": "triangle",
+          "p1": [
+            -0.27778512,
+            -0.41573481,
+            0.42
+          ],
+          "p2": [
+            -0.10595391,
+            -0.34928322,
+            0.525
+          ],
+          "p3": [
+            -0.17205981,
+            -0.32190126,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-22-a",
+          "shape": "triangle",
+          "p1": [
+            -0.19134172,
+            -0.46193977,
+            0.42
+          ],
+          "p2": [
+            -0.09754516,
+            -0.49039264,
+            0.42
+          ],
+          "p3": [
+            -0.03577626,
+            -0.36324243,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-22-b",
+          "shape": "triangle",
+          "p1": [
+            -0.19134172,
+            -0.46193977,
+            0.42
+          ],
+          "p2": [
+            -0.03577626,
+            -0.36324243,
+            0.525
+          ],
+          "p3": [
+            -0.10595391,
+            -0.34928322,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-23-a",
+          "shape": "triangle",
+          "p1": [
+            -0.09754516,
+            -0.49039264,
+            0.42
+          ],
+          "p2": [
+            -0.0,
+            -0.5,
+            0.42
+          ],
+          "p3": [
+            0.03577626,
+            -0.36324243,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-23-b",
+          "shape": "triangle",
+          "p1": [
+            -0.09754516,
+            -0.49039264,
+            0.42
+          ],
+          "p2": [
+            0.03577626,
+            -0.36324243,
+            0.525
+          ],
+          "p3": [
+            -0.03577626,
+            -0.36324243,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-24-a",
+          "shape": "triangle",
+          "p1": [
+            -0.0,
+            -0.5,
+            0.42
+          ],
+          "p2": [
+            0.09754516,
+            -0.49039264,
+            0.42
+          ],
+          "p3": [
+            0.10595391,
+            -0.34928322,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-24-b",
+          "shape": "triangle",
+          "p1": [
+            -0.0,
+            -0.5,
+            0.42
+          ],
+          "p2": [
+            0.10595391,
+            -0.34928322,
+            0.525
+          ],
+          "p3": [
+            0.03577626,
+            -0.36324243,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-25-a",
+          "shape": "triangle",
+          "p1": [
+            0.09754516,
+            -0.49039264,
+            0.42
+          ],
+          "p2": [
+            0.19134172,
+            -0.46193977,
+            0.42
+          ],
+          "p3": [
+            0.17205981,
+            -0.32190126,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-25-b",
+          "shape": "triangle",
+          "p1": [
+            0.09754516,
+            -0.49039264,
+            0.42
+          ],
+          "p2": [
+            0.17205981,
+            -0.32190126,
+            0.525
+          ],
+          "p3": [
+            0.10595391,
+            -0.34928322,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-26-a",
+          "shape": "triangle",
+          "p1": [
+            0.19134172,
+            -0.46193977,
+            0.42
+          ],
+          "p2": [
+            0.27778512,
+            -0.41573481,
+            0.42
+          ],
+          "p3": [
+            0.23155355,
+            -0.28214882,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-26-b",
+          "shape": "triangle",
+          "p1": [
+            0.19134172,
+            -0.46193977,
+            0.42
+          ],
+          "p2": [
+            0.23155355,
+            -0.28214882,
+            0.525
+          ],
+          "p3": [
+            0.17205981,
+            -0.32190126,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-27-a",
+          "shape": "triangle",
+          "p1": [
+            0.27778512,
+            -0.41573481,
+            0.42
+          ],
+          "p2": [
+            0.35355339,
+            -0.35355339,
+            0.42
+          ],
+          "p3": [
+            0.28214882,
+            -0.23155355,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-27-b",
+          "shape": "triangle",
+          "p1": [
+            0.27778512,
+            -0.41573481,
+            0.42
+          ],
+          "p2": [
+            0.28214882,
+            -0.23155355,
+            0.525
+          ],
+          "p3": [
+            0.23155355,
+            -0.28214882,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-28-a",
+          "shape": "triangle",
+          "p1": [
+            0.35355339,
+            -0.35355339,
+            0.42
+          ],
+          "p2": [
+            0.41573481,
+            -0.27778512,
+            0.42
+          ],
+          "p3": [
+            0.32190126,
+            -0.17205981,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-28-b",
+          "shape": "triangle",
+          "p1": [
+            0.35355339,
+            -0.35355339,
+            0.42
+          ],
+          "p2": [
+            0.32190126,
+            -0.17205981,
+            0.525
+          ],
+          "p3": [
+            0.28214882,
+            -0.23155355,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-29-a",
+          "shape": "triangle",
+          "p1": [
+            0.41573481,
+            -0.27778512,
+            0.42
+          ],
+          "p2": [
+            0.46193977,
+            -0.19134172,
+            0.42
+          ],
+          "p3": [
+            0.34928322,
+            -0.10595391,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-29-b",
+          "shape": "triangle",
+          "p1": [
+            0.41573481,
+            -0.27778512,
+            0.42
+          ],
+          "p2": [
+            0.34928322,
+            -0.10595391,
+            0.525
+          ],
+          "p3": [
+            0.32190126,
+            -0.17205981,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-30-a",
+          "shape": "triangle",
+          "p1": [
+            0.46193977,
+            -0.19134172,
+            0.42
+          ],
+          "p2": [
+            0.49039264,
+            -0.09754516,
+            0.42
+          ],
+          "p3": [
+            0.36324243,
+            -0.03577626,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-30-b",
+          "shape": "triangle",
+          "p1": [
+            0.46193977,
+            -0.19134172,
+            0.42
+          ],
+          "p2": [
+            0.36324243,
+            -0.03577626,
+            0.525
+          ],
+          "p3": [
+            0.34928322,
+            -0.10595391,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-31-a",
+          "shape": "triangle",
+          "p1": [
+            0.49039264,
+            -0.09754516,
+            0.42
+          ],
+          "p2": [
+            0.5,
+            0.0,
+            0.42
+          ],
+          "p3": [
+            0.36324243,
+            0.03577626,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-bezel-31-b",
+          "shape": "triangle",
+          "p1": [
+            0.49039264,
+            -0.09754516,
+            0.42
+          ],
+          "p2": [
+            0.36324243,
+            0.03577626,
+            0.525
+          ],
+          "p3": [
+            0.36324243,
+            -0.03577626,
+            0.525
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-00-a",
+          "shape": "triangle",
+          "p1": [
+            0.36324243,
+            0.03577626,
+            0.525
+          ],
+          "p2": [
+            0.34928322,
+            0.10595391,
+            0.525
+          ],
+          "p3": [
+            0.2599081,
+            0.05169894,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-00-b",
+          "shape": "triangle",
+          "p1": [
+            0.36324243,
+            0.03577626,
+            0.525
+          ],
+          "p2": [
+            0.2599081,
+            0.05169894,
+            0.59
+          ],
+          "p3": [
+            0.265,
+            0.0,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-01-a",
+          "shape": "triangle",
+          "p1": [
+            0.34928322,
+            0.10595391,
+            0.525
+          ],
+          "p2": [
+            0.32190126,
+            0.17205981,
+            0.525
+          ],
+          "p3": [
+            0.24482808,
+            0.10141111,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-01-b",
+          "shape": "triangle",
+          "p1": [
+            0.34928322,
+            0.10595391,
+            0.525
+          ],
+          "p2": [
+            0.24482808,
+            0.10141111,
+            0.59
+          ],
+          "p3": [
+            0.2599081,
+            0.05169894,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-02-a",
+          "shape": "triangle",
+          "p1": [
+            0.32190126,
+            0.17205981,
+            0.525
+          ],
+          "p2": [
+            0.28214882,
+            0.23155355,
+            0.525
+          ],
+          "p3": [
+            0.22033945,
+            0.14722611,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-02-b",
+          "shape": "triangle",
+          "p1": [
+            0.32190126,
+            0.17205981,
+            0.525
+          ],
+          "p2": [
+            0.22033945,
+            0.14722611,
+            0.59
+          ],
+          "p3": [
+            0.24482808,
+            0.10141111,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-03-a",
+          "shape": "triangle",
+          "p1": [
+            0.28214882,
+            0.23155355,
+            0.525
+          ],
+          "p2": [
+            0.23155355,
+            0.28214882,
+            0.525
+          ],
+          "p3": [
+            0.1873833,
+            0.1873833,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-03-b",
+          "shape": "triangle",
+          "p1": [
+            0.28214882,
+            0.23155355,
+            0.525
+          ],
+          "p2": [
+            0.1873833,
+            0.1873833,
+            0.59
+          ],
+          "p3": [
+            0.22033945,
+            0.14722611,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-04-a",
+          "shape": "triangle",
+          "p1": [
+            0.23155355,
+            0.28214882,
+            0.525
+          ],
+          "p2": [
+            0.17205981,
+            0.32190126,
+            0.525
+          ],
+          "p3": [
+            0.14722611,
+            0.22033945,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-04-b",
+          "shape": "triangle",
+          "p1": [
+            0.23155355,
+            0.28214882,
+            0.525
+          ],
+          "p2": [
+            0.14722611,
+            0.22033945,
+            0.59
+          ],
+          "p3": [
+            0.1873833,
+            0.1873833,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-05-a",
+          "shape": "triangle",
+          "p1": [
+            0.17205981,
+            0.32190126,
+            0.525
+          ],
+          "p2": [
+            0.10595391,
+            0.34928322,
+            0.525
+          ],
+          "p3": [
+            0.10141111,
+            0.24482808,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-05-b",
+          "shape": "triangle",
+          "p1": [
+            0.17205981,
+            0.32190126,
+            0.525
+          ],
+          "p2": [
+            0.10141111,
+            0.24482808,
+            0.59
+          ],
+          "p3": [
+            0.14722611,
+            0.22033945,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-06-a",
+          "shape": "triangle",
+          "p1": [
+            0.10595391,
+            0.34928322,
+            0.525
+          ],
+          "p2": [
+            0.03577626,
+            0.36324243,
+            0.525
+          ],
+          "p3": [
+            0.05169894,
+            0.2599081,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-06-b",
+          "shape": "triangle",
+          "p1": [
+            0.10595391,
+            0.34928322,
+            0.525
+          ],
+          "p2": [
+            0.05169894,
+            0.2599081,
+            0.59
+          ],
+          "p3": [
+            0.10141111,
+            0.24482808,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-07-a",
+          "shape": "triangle",
+          "p1": [
+            0.03577626,
+            0.36324243,
+            0.525
+          ],
+          "p2": [
+            -0.03577626,
+            0.36324243,
+            0.525
+          ],
+          "p3": [
+            0.0,
+            0.265,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-07-b",
+          "shape": "triangle",
+          "p1": [
+            0.03577626,
+            0.36324243,
+            0.525
+          ],
+          "p2": [
+            0.0,
+            0.265,
+            0.59
+          ],
+          "p3": [
+            0.05169894,
+            0.2599081,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-08-a",
+          "shape": "triangle",
+          "p1": [
+            -0.03577626,
+            0.36324243,
+            0.525
+          ],
+          "p2": [
+            -0.10595391,
+            0.34928322,
+            0.525
+          ],
+          "p3": [
+            -0.05169894,
+            0.2599081,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-08-b",
+          "shape": "triangle",
+          "p1": [
+            -0.03577626,
+            0.36324243,
+            0.525
+          ],
+          "p2": [
+            -0.05169894,
+            0.2599081,
+            0.59
+          ],
+          "p3": [
+            0.0,
+            0.265,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-09-a",
+          "shape": "triangle",
+          "p1": [
+            -0.10595391,
+            0.34928322,
+            0.525
+          ],
+          "p2": [
+            -0.17205981,
+            0.32190126,
+            0.525
+          ],
+          "p3": [
+            -0.10141111,
+            0.24482808,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-09-b",
+          "shape": "triangle",
+          "p1": [
+            -0.10595391,
+            0.34928322,
+            0.525
+          ],
+          "p2": [
+            -0.10141111,
+            0.24482808,
+            0.59
+          ],
+          "p3": [
+            -0.05169894,
+            0.2599081,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-10-a",
+          "shape": "triangle",
+          "p1": [
+            -0.17205981,
+            0.32190126,
+            0.525
+          ],
+          "p2": [
+            -0.23155355,
+            0.28214882,
+            0.525
+          ],
+          "p3": [
+            -0.14722611,
+            0.22033945,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-10-b",
+          "shape": "triangle",
+          "p1": [
+            -0.17205981,
+            0.32190126,
+            0.525
+          ],
+          "p2": [
+            -0.14722611,
+            0.22033945,
+            0.59
+          ],
+          "p3": [
+            -0.10141111,
+            0.24482808,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-11-a",
+          "shape": "triangle",
+          "p1": [
+            -0.23155355,
+            0.28214882,
+            0.525
+          ],
+          "p2": [
+            -0.28214882,
+            0.23155355,
+            0.525
+          ],
+          "p3": [
+            -0.1873833,
+            0.1873833,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-11-b",
+          "shape": "triangle",
+          "p1": [
+            -0.23155355,
+            0.28214882,
+            0.525
+          ],
+          "p2": [
+            -0.1873833,
+            0.1873833,
+            0.59
+          ],
+          "p3": [
+            -0.14722611,
+            0.22033945,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-12-a",
+          "shape": "triangle",
+          "p1": [
+            -0.28214882,
+            0.23155355,
+            0.525
+          ],
+          "p2": [
+            -0.32190126,
+            0.17205981,
+            0.525
+          ],
+          "p3": [
+            -0.22033945,
+            0.14722611,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-12-b",
+          "shape": "triangle",
+          "p1": [
+            -0.28214882,
+            0.23155355,
+            0.525
+          ],
+          "p2": [
+            -0.22033945,
+            0.14722611,
+            0.59
+          ],
+          "p3": [
+            -0.1873833,
+            0.1873833,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-13-a",
+          "shape": "triangle",
+          "p1": [
+            -0.32190126,
+            0.17205981,
+            0.525
+          ],
+          "p2": [
+            -0.34928322,
+            0.10595391,
+            0.525
+          ],
+          "p3": [
+            -0.24482808,
+            0.10141111,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-13-b",
+          "shape": "triangle",
+          "p1": [
+            -0.32190126,
+            0.17205981,
+            0.525
+          ],
+          "p2": [
+            -0.24482808,
+            0.10141111,
+            0.59
+          ],
+          "p3": [
+            -0.22033945,
+            0.14722611,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-14-a",
+          "shape": "triangle",
+          "p1": [
+            -0.34928322,
+            0.10595391,
+            0.525
+          ],
+          "p2": [
+            -0.36324243,
+            0.03577626,
+            0.525
+          ],
+          "p3": [
+            -0.2599081,
+            0.05169894,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-14-b",
+          "shape": "triangle",
+          "p1": [
+            -0.34928322,
+            0.10595391,
+            0.525
+          ],
+          "p2": [
+            -0.2599081,
+            0.05169894,
+            0.59
+          ],
+          "p3": [
+            -0.24482808,
+            0.10141111,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-15-a",
+          "shape": "triangle",
+          "p1": [
+            -0.36324243,
+            0.03577626,
+            0.525
+          ],
+          "p2": [
+            -0.36324243,
+            -0.03577626,
+            0.525
+          ],
+          "p3": [
+            -0.265,
+            0.0,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-15-b",
+          "shape": "triangle",
+          "p1": [
+            -0.36324243,
+            0.03577626,
+            0.525
+          ],
+          "p2": [
+            -0.265,
+            0.0,
+            0.59
+          ],
+          "p3": [
+            -0.2599081,
+            0.05169894,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-16-a",
+          "shape": "triangle",
+          "p1": [
+            -0.36324243,
+            -0.03577626,
+            0.525
+          ],
+          "p2": [
+            -0.34928322,
+            -0.10595391,
+            0.525
+          ],
+          "p3": [
+            -0.2599081,
+            -0.05169894,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-16-b",
+          "shape": "triangle",
+          "p1": [
+            -0.36324243,
+            -0.03577626,
+            0.525
+          ],
+          "p2": [
+            -0.2599081,
+            -0.05169894,
+            0.59
+          ],
+          "p3": [
+            -0.265,
+            0.0,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-17-a",
+          "shape": "triangle",
+          "p1": [
+            -0.34928322,
+            -0.10595391,
+            0.525
+          ],
+          "p2": [
+            -0.32190126,
+            -0.17205981,
+            0.525
+          ],
+          "p3": [
+            -0.24482808,
+            -0.10141111,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-17-b",
+          "shape": "triangle",
+          "p1": [
+            -0.34928322,
+            -0.10595391,
+            0.525
+          ],
+          "p2": [
+            -0.24482808,
+            -0.10141111,
+            0.59
+          ],
+          "p3": [
+            -0.2599081,
+            -0.05169894,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-18-a",
+          "shape": "triangle",
+          "p1": [
+            -0.32190126,
+            -0.17205981,
+            0.525
+          ],
+          "p2": [
+            -0.28214882,
+            -0.23155355,
+            0.525
+          ],
+          "p3": [
+            -0.22033945,
+            -0.14722611,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-18-b",
+          "shape": "triangle",
+          "p1": [
+            -0.32190126,
+            -0.17205981,
+            0.525
+          ],
+          "p2": [
+            -0.22033945,
+            -0.14722611,
+            0.59
+          ],
+          "p3": [
+            -0.24482808,
+            -0.10141111,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-19-a",
+          "shape": "triangle",
+          "p1": [
+            -0.28214882,
+            -0.23155355,
+            0.525
+          ],
+          "p2": [
+            -0.23155355,
+            -0.28214882,
+            0.525
+          ],
+          "p3": [
+            -0.1873833,
+            -0.1873833,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-19-b",
+          "shape": "triangle",
+          "p1": [
+            -0.28214882,
+            -0.23155355,
+            0.525
+          ],
+          "p2": [
+            -0.1873833,
+            -0.1873833,
+            0.59
+          ],
+          "p3": [
+            -0.22033945,
+            -0.14722611,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-20-a",
+          "shape": "triangle",
+          "p1": [
+            -0.23155355,
+            -0.28214882,
+            0.525
+          ],
+          "p2": [
+            -0.17205981,
+            -0.32190126,
+            0.525
+          ],
+          "p3": [
+            -0.14722611,
+            -0.22033945,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-20-b",
+          "shape": "triangle",
+          "p1": [
+            -0.23155355,
+            -0.28214882,
+            0.525
+          ],
+          "p2": [
+            -0.14722611,
+            -0.22033945,
+            0.59
+          ],
+          "p3": [
+            -0.1873833,
+            -0.1873833,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-21-a",
+          "shape": "triangle",
+          "p1": [
+            -0.17205981,
+            -0.32190126,
+            0.525
+          ],
+          "p2": [
+            -0.10595391,
+            -0.34928322,
+            0.525
+          ],
+          "p3": [
+            -0.10141111,
+            -0.24482808,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-21-b",
+          "shape": "triangle",
+          "p1": [
+            -0.17205981,
+            -0.32190126,
+            0.525
+          ],
+          "p2": [
+            -0.10141111,
+            -0.24482808,
+            0.59
+          ],
+          "p3": [
+            -0.14722611,
+            -0.22033945,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-22-a",
+          "shape": "triangle",
+          "p1": [
+            -0.10595391,
+            -0.34928322,
+            0.525
+          ],
+          "p2": [
+            -0.03577626,
+            -0.36324243,
+            0.525
+          ],
+          "p3": [
+            -0.05169894,
+            -0.2599081,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-22-b",
+          "shape": "triangle",
+          "p1": [
+            -0.10595391,
+            -0.34928322,
+            0.525
+          ],
+          "p2": [
+            -0.05169894,
+            -0.2599081,
+            0.59
+          ],
+          "p3": [
+            -0.10141111,
+            -0.24482808,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-23-a",
+          "shape": "triangle",
+          "p1": [
+            -0.03577626,
+            -0.36324243,
+            0.525
+          ],
+          "p2": [
+            0.03577626,
+            -0.36324243,
+            0.525
+          ],
+          "p3": [
+            -0.0,
+            -0.265,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-23-b",
+          "shape": "triangle",
+          "p1": [
+            -0.03577626,
+            -0.36324243,
+            0.525
+          ],
+          "p2": [
+            -0.0,
+            -0.265,
+            0.59
+          ],
+          "p3": [
+            -0.05169894,
+            -0.2599081,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-24-a",
+          "shape": "triangle",
+          "p1": [
+            0.03577626,
+            -0.36324243,
+            0.525
+          ],
+          "p2": [
+            0.10595391,
+            -0.34928322,
+            0.525
+          ],
+          "p3": [
+            0.05169894,
+            -0.2599081,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-24-b",
+          "shape": "triangle",
+          "p1": [
+            0.03577626,
+            -0.36324243,
+            0.525
+          ],
+          "p2": [
+            0.05169894,
+            -0.2599081,
+            0.59
+          ],
+          "p3": [
+            -0.0,
+            -0.265,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-25-a",
+          "shape": "triangle",
+          "p1": [
+            0.10595391,
+            -0.34928322,
+            0.525
+          ],
+          "p2": [
+            0.17205981,
+            -0.32190126,
+            0.525
+          ],
+          "p3": [
+            0.10141111,
+            -0.24482808,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-25-b",
+          "shape": "triangle",
+          "p1": [
+            0.10595391,
+            -0.34928322,
+            0.525
+          ],
+          "p2": [
+            0.10141111,
+            -0.24482808,
+            0.59
+          ],
+          "p3": [
+            0.05169894,
+            -0.2599081,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-26-a",
+          "shape": "triangle",
+          "p1": [
+            0.17205981,
+            -0.32190126,
+            0.525
+          ],
+          "p2": [
+            0.23155355,
+            -0.28214882,
+            0.525
+          ],
+          "p3": [
+            0.14722611,
+            -0.22033945,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-26-b",
+          "shape": "triangle",
+          "p1": [
+            0.17205981,
+            -0.32190126,
+            0.525
+          ],
+          "p2": [
+            0.14722611,
+            -0.22033945,
+            0.59
+          ],
+          "p3": [
+            0.10141111,
+            -0.24482808,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-27-a",
+          "shape": "triangle",
+          "p1": [
+            0.23155355,
+            -0.28214882,
+            0.525
+          ],
+          "p2": [
+            0.28214882,
+            -0.23155355,
+            0.525
+          ],
+          "p3": [
+            0.1873833,
+            -0.1873833,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-27-b",
+          "shape": "triangle",
+          "p1": [
+            0.23155355,
+            -0.28214882,
+            0.525
+          ],
+          "p2": [
+            0.1873833,
+            -0.1873833,
+            0.59
+          ],
+          "p3": [
+            0.14722611,
+            -0.22033945,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-28-a",
+          "shape": "triangle",
+          "p1": [
+            0.28214882,
+            -0.23155355,
+            0.525
+          ],
+          "p2": [
+            0.32190126,
+            -0.17205981,
+            0.525
+          ],
+          "p3": [
+            0.22033945,
+            -0.14722611,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-28-b",
+          "shape": "triangle",
+          "p1": [
+            0.28214882,
+            -0.23155355,
+            0.525
+          ],
+          "p2": [
+            0.22033945,
+            -0.14722611,
+            0.59
+          ],
+          "p3": [
+            0.1873833,
+            -0.1873833,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-29-a",
+          "shape": "triangle",
+          "p1": [
+            0.32190126,
+            -0.17205981,
+            0.525
+          ],
+          "p2": [
+            0.34928322,
+            -0.10595391,
+            0.525
+          ],
+          "p3": [
+            0.24482808,
+            -0.10141111,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-29-b",
+          "shape": "triangle",
+          "p1": [
+            0.32190126,
+            -0.17205981,
+            0.525
+          ],
+          "p2": [
+            0.24482808,
+            -0.10141111,
+            0.59
+          ],
+          "p3": [
+            0.22033945,
+            -0.14722611,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-30-a",
+          "shape": "triangle",
+          "p1": [
+            0.34928322,
+            -0.10595391,
+            0.525
+          ],
+          "p2": [
+            0.36324243,
+            -0.03577626,
+            0.525
+          ],
+          "p3": [
+            0.2599081,
+            -0.05169894,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-30-b",
+          "shape": "triangle",
+          "p1": [
+            0.34928322,
+            -0.10595391,
+            0.525
+          ],
+          "p2": [
+            0.2599081,
+            -0.05169894,
+            0.59
+          ],
+          "p3": [
+            0.24482808,
+            -0.10141111,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-31-a",
+          "shape": "triangle",
+          "p1": [
+            0.36324243,
+            -0.03577626,
+            0.525
+          ],
+          "p2": [
+            0.36324243,
+            0.03577626,
+            0.525
+          ],
+          "p3": [
+            0.265,
+            0.0,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "crown-star-31-b",
+          "shape": "triangle",
+          "p1": [
+            0.36324243,
+            -0.03577626,
+            0.525
+          ],
+          "p2": [
+            0.265,
+            0.0,
+            0.59
+          ],
+          "p3": [
+            0.2599081,
+            -0.05169894,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "table-00",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.59
+          ],
+          "p2": [
+            0.265,
+            0.0,
+            0.59
+          ],
+          "p3": [
+            0.2599081,
+            0.05169894,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "table-01",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.59
+          ],
+          "p2": [
+            0.2599081,
+            0.05169894,
+            0.59
+          ],
+          "p3": [
+            0.24482808,
+            0.10141111,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "table-02",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.59
+          ],
+          "p2": [
+            0.24482808,
+            0.10141111,
+            0.59
+          ],
+          "p3": [
+            0.22033945,
+            0.14722611,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "table-03",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.59
+          ],
+          "p2": [
+            0.22033945,
+            0.14722611,
+            0.59
+          ],
+          "p3": [
+            0.1873833,
+            0.1873833,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "table-04",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.59
+          ],
+          "p2": [
+            0.1873833,
+            0.1873833,
+            0.59
+          ],
+          "p3": [
+            0.14722611,
+            0.22033945,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "table-05",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.59
+          ],
+          "p2": [
+            0.14722611,
+            0.22033945,
+            0.59
+          ],
+          "p3": [
+            0.10141111,
+            0.24482808,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "table-06",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.59
+          ],
+          "p2": [
+            0.10141111,
+            0.24482808,
+            0.59
+          ],
+          "p3": [
+            0.05169894,
+            0.2599081,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "table-07",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.59
+          ],
+          "p2": [
+            0.05169894,
+            0.2599081,
+            0.59
+          ],
+          "p3": [
+            0.0,
+            0.265,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "table-08",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.59
+          ],
+          "p2": [
+            0.0,
+            0.265,
+            0.59
+          ],
+          "p3": [
+            -0.05169894,
+            0.2599081,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "table-09",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.59
+          ],
+          "p2": [
+            -0.05169894,
+            0.2599081,
+            0.59
+          ],
+          "p3": [
+            -0.10141111,
+            0.24482808,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "table-10",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.59
+          ],
+          "p2": [
+            -0.10141111,
+            0.24482808,
+            0.59
+          ],
+          "p3": [
+            -0.14722611,
+            0.22033945,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "table-11",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.59
+          ],
+          "p2": [
+            -0.14722611,
+            0.22033945,
+            0.59
+          ],
+          "p3": [
+            -0.1873833,
+            0.1873833,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "table-12",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.59
+          ],
+          "p2": [
+            -0.1873833,
+            0.1873833,
+            0.59
+          ],
+          "p3": [
+            -0.22033945,
+            0.14722611,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "table-13",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.59
+          ],
+          "p2": [
+            -0.22033945,
+            0.14722611,
+            0.59
+          ],
+          "p3": [
+            -0.24482808,
+            0.10141111,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "table-14",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.59
+          ],
+          "p2": [
+            -0.24482808,
+            0.10141111,
+            0.59
+          ],
+          "p3": [
+            -0.2599081,
+            0.05169894,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "table-15",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.59
+          ],
+          "p2": [
+            -0.2599081,
+            0.05169894,
+            0.59
+          ],
+          "p3": [
+            -0.265,
+            0.0,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "table-16",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.59
+          ],
+          "p2": [
+            -0.265,
+            0.0,
+            0.59
+          ],
+          "p3": [
+            -0.2599081,
+            -0.05169894,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "table-17",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.59
+          ],
+          "p2": [
+            -0.2599081,
+            -0.05169894,
+            0.59
+          ],
+          "p3": [
+            -0.24482808,
+            -0.10141111,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "table-18",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.59
+          ],
+          "p2": [
+            -0.24482808,
+            -0.10141111,
+            0.59
+          ],
+          "p3": [
+            -0.22033945,
+            -0.14722611,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "table-19",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.59
+          ],
+          "p2": [
+            -0.22033945,
+            -0.14722611,
+            0.59
+          ],
+          "p3": [
+            -0.1873833,
+            -0.1873833,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "table-20",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.59
+          ],
+          "p2": [
+            -0.1873833,
+            -0.1873833,
+            0.59
+          ],
+          "p3": [
+            -0.14722611,
+            -0.22033945,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "table-21",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.59
+          ],
+          "p2": [
+            -0.14722611,
+            -0.22033945,
+            0.59
+          ],
+          "p3": [
+            -0.10141111,
+            -0.24482808,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "table-22",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.59
+          ],
+          "p2": [
+            -0.10141111,
+            -0.24482808,
+            0.59
+          ],
+          "p3": [
+            -0.05169894,
+            -0.2599081,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "table-23",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.59
+          ],
+          "p2": [
+            -0.05169894,
+            -0.2599081,
+            0.59
+          ],
+          "p3": [
+            -0.0,
+            -0.265,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "table-24",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.59
+          ],
+          "p2": [
+            -0.0,
+            -0.265,
+            0.59
+          ],
+          "p3": [
+            0.05169894,
+            -0.2599081,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "table-25",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.59
+          ],
+          "p2": [
+            0.05169894,
+            -0.2599081,
+            0.59
+          ],
+          "p3": [
+            0.10141111,
+            -0.24482808,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "table-26",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.59
+          ],
+          "p2": [
+            0.10141111,
+            -0.24482808,
+            0.59
+          ],
+          "p3": [
+            0.14722611,
+            -0.22033945,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "table-27",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.59
+          ],
+          "p2": [
+            0.14722611,
+            -0.22033945,
+            0.59
+          ],
+          "p3": [
+            0.1873833,
+            -0.1873833,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "table-28",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.59
+          ],
+          "p2": [
+            0.1873833,
+            -0.1873833,
+            0.59
+          ],
+          "p3": [
+            0.22033945,
+            -0.14722611,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "table-29",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.59
+          ],
+          "p2": [
+            0.22033945,
+            -0.14722611,
+            0.59
+          ],
+          "p3": [
+            0.24482808,
+            -0.10141111,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "table-30",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.59
+          ],
+          "p2": [
+            0.24482808,
+            -0.10141111,
+            0.59
+          ],
+          "p3": [
+            0.2599081,
+            -0.05169894,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        },
+        {
+          "id": "table-31",
+          "shape": "triangle",
+          "p1": [
+            0.0,
+            0.0,
+            0.59
+          ],
+          "p2": [
+            0.2599081,
+            -0.05169894,
+            0.59
+          ],
+          "p3": [
+            0.265,
+            0.0,
+            0.59
+          ],
+          "medium_boundary": {
+            "outside": "air",
+            "inside": "moissanite-crystal",
+            "priority": 20,
+            "thin": false
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,284 @@
+{
+  "_comment": "Foreground moissanite fire setup. Compose after scene.json, prism-absorbing.json, and moissanite.json.",
+  "materials": [
+    {
+      "id": "moissanite-pin-light",
+      "emission": {
+        "type": "constant",
+        "radiance": {"type": "blackbody", "temperature": 6100, "scale": 80000}
+      }
+    },
+    {
+      "id": "pin-light-baffle",
+      "surface": {
+        "type": "lambert",
+        "albedo": {"type": "constant", "value": 0.002}
+      }
+    },
+    {
+      "id": "soft-warm-room-light",
+      "emission": {
+        "type": "constant",
+        "radiance": {"type": "blackbody", "temperature": 2700, "scale": 5}
+      }
+    }
+  ],
+  "objects": [
+    {
+      "id": "moissanite-scene",
+      "shape": "group",
+      "center": [
+        0,
+        0,
+        0
+      ],
+      "objects": [
+        {
+          "id": "moissanite",
+          "shape": "group"
+        },
+        {
+          "id": "moissanite-key-0",
+          "_comment": "Compact, cool, off-axis source at the closed end of a matte-black snoot.",
+          "shape": "triangle",
+          "p1": [
+            1.479088,
+            -0.885862,
+            1.670295
+          ],
+          "p2": [
+            1.437364,
+            -0.829655,
+            1.670295
+          ],
+          "p3": [
+            1.390912,
+            -0.864138,
+            1.709705
+          ],
+          "material_id": "moissanite-pin-light"
+        },
+        {
+          "id": "moissanite-key-1",
+          "shape": "triangle",
+          "p1": [
+            1.479088,
+            -0.885862,
+            1.670295
+          ],
+          "p2": [
+            1.390912,
+            -0.864138,
+            1.709705
+          ],
+          "p3": [
+            1.432636,
+            -0.920345,
+            1.709705
+          ],
+          "material_id": "moissanite-pin-light"
+        },
+        {
+          "id": "pin-snoot-side-0a",
+          "shape": "triangle",
+          "p1": [
+            1.479088,
+            -0.885862,
+            1.670295
+          ],
+          "p2": [
+            1.437364,
+            -0.829655,
+            1.670295
+          ],
+          "p3": [
+            1.357142,
+            -0.868035,
+            1.511962
+          ],
+          "material_id": "pin-light-baffle"
+        },
+        {
+          "id": "pin-snoot-side-0b",
+          "shape": "triangle",
+          "p1": [
+            1.479088,
+            -0.885862,
+            1.670295
+          ],
+          "p2": [
+            1.357142,
+            -0.868035,
+            1.511962
+          ],
+          "p3": [
+            1.419132,
+            -0.951541,
+            1.511962
+          ],
+          "material_id": "pin-light-baffle"
+        },
+        {
+          "id": "pin-snoot-side-1a",
+          "shape": "triangle",
+          "p1": [
+            1.437364,
+            -0.829655,
+            1.670295
+          ],
+          "p2": [
+            1.390912,
+            -0.864138,
+            1.709705
+          ],
+          "p3": [
+            1.288128,
+            -0.919266,
+            1.570513
+          ],
+          "material_id": "pin-light-baffle"
+        },
+        {
+          "id": "pin-snoot-side-1b",
+          "shape": "triangle",
+          "p1": [
+            1.437364,
+            -0.829655,
+            1.670295
+          ],
+          "p2": [
+            1.288128,
+            -0.919266,
+            1.570513
+          ],
+          "p3": [
+            1.357142,
+            -0.868035,
+            1.511962
+          ],
+          "material_id": "pin-light-baffle"
+        },
+        {
+          "id": "pin-snoot-side-2a",
+          "shape": "triangle",
+          "p1": [
+            1.390912,
+            -0.864138,
+            1.709705
+          ],
+          "p2": [
+            1.432636,
+            -0.920345,
+            1.709705
+          ],
+          "p3": [
+            1.350117,
+            -1.002773,
+            1.570513
+          ],
+          "material_id": "pin-light-baffle"
+        },
+        {
+          "id": "pin-snoot-side-2b",
+          "shape": "triangle",
+          "p1": [
+            1.390912,
+            -0.864138,
+            1.709705
+          ],
+          "p2": [
+            1.350117,
+            -1.002773,
+            1.570513
+          ],
+          "p3": [
+            1.288128,
+            -0.919266,
+            1.570513
+          ],
+          "material_id": "pin-light-baffle"
+        },
+        {
+          "id": "pin-snoot-side-3a",
+          "shape": "triangle",
+          "p1": [
+            1.432636,
+            -0.920345,
+            1.709705
+          ],
+          "p2": [
+            1.479088,
+            -0.885862,
+            1.670295
+          ],
+          "p3": [
+            1.419132,
+            -0.951541,
+            1.511962
+          ],
+          "material_id": "pin-light-baffle"
+        },
+        {
+          "id": "pin-snoot-side-3b",
+          "shape": "triangle",
+          "p1": [
+            1.432636,
+            -0.920345,
+            1.709705
+          ],
+          "p2": [
+            1.419132,
+            -0.951541,
+            1.511962
+          ],
+          "p3": [
+            1.350117,
+            -1.002773,
+            1.570513
+          ],
+          "material_id": "pin-light-baffle"
+        },
+        {
+          "id": "moissanite-softbox-0",
+          "shape": "triangle",
+          "p1": [
+            -1.5,
+            -1.1,
+            2.65
+          ],
+          "p2": [
+            -0.5,
+            -1.1,
+            2.65
+          ],
+          "p3": [
+            -0.5,
+            -0.1,
+            2.65
+          ],
+          "material_id": "soft-warm-room-light"
+        },
+        {
+          "id": "moissanite-softbox-1",
+          "shape": "triangle",
+          "p1": [
+            -1.5,
+            -1.1,
+            2.65
+          ],
+          "p2": [
+            -0.5,
+            -0.1,
+            2.65
+          ],
+          "p3": [
+            -1.5,
+            -0.1,
+            2.65
+          ],
+          "material_id": "soft-warm-room-light"
+        }
+      ]
+    }
+  ]
+}

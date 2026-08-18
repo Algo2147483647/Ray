@@ -16,27 +16,6 @@
       }
     },
     {
-      "id": "dispersive-prism",
-      "surface": {
-        "type": "specular_dielectric",
-        "reflectance": {
-          "type": "constant",
-          "value": 1
-        },
-        "transmittance": {
-          "type": "constant",
-          "value": 0.98
-        },
-        "eta_outside": 1,
-        "ior": {
-          "type": "cauchy",
-          "a": 1.35,
-          "b": 0.025,
-          "c": 0
-        }
-      }
-    },
-    {
       "id": "aperture-black",
       "surface": {
         "type": "lambert",

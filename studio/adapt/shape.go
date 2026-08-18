@@ -21,6 +21,9 @@ func adaptObject(object map[string]interface{}, ctx groupContext, index, dimensi
 	}
 
 	shapeName, _ := stringField(adapted, "shape")
+	if !basisIsIdentity(ctx.basis) && !rotationAwareShape(shapeName) {
+		return nil, fmt.Errorf("shape %q does not support rotated group placement", shapeName)
+	}
 	switch {
 	case strings.EqualFold(shapeName, "cuboid"),
 		strings.EqualFold(shapeName, "hypercuboid"),
@@ -54,6 +57,15 @@ func adaptObject(object map[string]interface{}, ctx groupContext, index, dimensi
 		return adaptSTL(adapted, ctx, dimension)
 	}
 	return adapted, nil
+}
+
+func rotationAwareShape(shapeName string) bool {
+	for _, supported := range []string{"triangle", "sphere", "hypersphere", "circle", "cylinder", "finite cylinder", "cuboid", "hypercuboid", "hypercube"} {
+		if strings.EqualFold(shapeName, supported) {
+			return true
+		}
+	}
+	return false
 }
 
 func adaptBounds(object map[string]interface{}, ctx groupContext, dimension int) error {
@@ -115,11 +127,24 @@ func adaptBounds(object map[string]interface{}, ctx groupContext, dimension int)
 }
 
 func placedMinMax(ctx groupContext, pmin, pmax []float64) ([]float64, []float64) {
-	worldPmin := applyPlacement(ctx, pmin)
-	worldPmax := applyPlacement(ctx, pmax)
-	for i := range worldPmin {
-		if worldPmin[i] > worldPmax[i] {
-			worldPmin[i], worldPmax[i] = worldPmax[i], worldPmin[i]
+	worldPmin := make([]float64, len(pmin))
+	worldPmax := make([]float64, len(pmin))
+	for axis := range worldPmin {
+		worldPmin[axis] = math.Inf(1)
+		worldPmax[axis] = math.Inf(-1)
+	}
+	for mask := 0; mask < 1<<len(pmin); mask++ {
+		corner := make([]float64, len(pmin))
+		for axis := range corner {
+			corner[axis] = pmin[axis]
+			if mask&(1<<axis) != 0 {
+				corner[axis] = pmax[axis]
+			}
+		}
+		world := applyPlacement(ctx, corner)
+		for axis, value := range world {
+			worldPmin[axis] = math.Min(worldPmin[axis], value)
+			worldPmax[axis] = math.Max(worldPmax[axis], value)
 		}
 	}
 	return worldPmin, worldPmax
@@ -145,6 +170,9 @@ func validateBoundsMinMax(pmin, pmax []float64) error {
 }
 
 func adaptCuboid(object map[string]interface{}, ctx groupContext, dimension int) (map[string]interface{}, error) {
+	if !basisIsIdentity(ctx.basis) {
+		return nil, fmt.Errorf("cuboid does not support rotated group placement; use triangles for an oriented box")
+	}
 	shapeName, _ := stringField(object, "shape")
 	isHypercube := strings.EqualFold(shapeName, "hypercube")
 
@@ -196,13 +224,7 @@ func adaptCuboid(object map[string]interface{}, ctx groupContext, dimension int)
 		}
 	}
 
-	worldPmin := applyPlacement(ctx, pmin)
-	worldPmax := applyPlacement(ctx, pmax)
-	for i := 0; i < dimension; i++ {
-		if worldPmin[i] > worldPmax[i] {
-			worldPmin[i], worldPmax[i] = worldPmax[i], worldPmin[i]
-		}
-	}
+	worldPmin, worldPmax := placedMinMax(ctx, pmin, pmax)
 
 	adapted := cloneMap(object)
 	if isHypercube {
@@ -307,7 +329,8 @@ func adaptCircle(object map[string]interface{}, ctx groupContext, dimension int)
 	if err != nil {
 		return nil, err
 	}
-	if _, err := vectorField(object, "normal", dimension); err != nil {
+	normal, err := vectorField(object, "normal", dimension)
+	if err != nil {
 		return nil, err
 	}
 	scale, ok := uniformPlacementScale(ctx)
@@ -317,6 +340,7 @@ func adaptCircle(object map[string]interface{}, ctx groupContext, dimension int)
 
 	adapted := cloneMap(object)
 	adapted["center"] = applyPlacement(ctx, center)
+	adapted["normal"] = applyDirection(ctx, normal)
 	adapted["r"] = radius * scale
 	delete(adapted, "position")
 	return adapted, nil
@@ -335,7 +359,8 @@ func adaptFiniteCylinder(object map[string]interface{}, ctx groupContext, dimens
 	if err != nil {
 		return nil, err
 	}
-	if _, err := vectorField(object, "axis", dimension); err != nil {
+	axis, err := vectorField(object, "axis", dimension)
+	if err != nil {
 		return nil, err
 	}
 	scale, ok := uniformPlacementScale(ctx)
@@ -345,6 +370,7 @@ func adaptFiniteCylinder(object map[string]interface{}, ctx groupContext, dimens
 
 	adapted := cloneMap(object)
 	adapted["center"] = applyPlacement(ctx, center)
+	adapted["axis"] = applyDirection(ctx, axis)
 	adapted["r"] = radius * scale
 	adapted["height"] = height * scale
 	delete(adapted, "position")

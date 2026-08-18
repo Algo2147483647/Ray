@@ -56,10 +56,12 @@ func deriveArrayCellContexts(parent groupContext, object map[string]interface{},
 		idPrefix:  joinID(parent.idPrefix, objectID(object, index)),
 		center:    make([]float64, dimension),
 		scale:     make([]float64, dimension),
+		basis:     parent.basis,
 		fields:    cloneMap(parent.fields),
 	}
+	placedOrigin := applyPlacement(parent, origin)
 	for axis := 0; axis < dimension; axis++ {
-		base.center[axis] = parent.center[axis] + parent.scale[axis]*origin[axis]
+		base.center[axis] = placedOrigin[axis]
 		base.scale[axis] = parent.scale[axis] * localScale[axis]
 	}
 	inheritGroupFields(base.fields, object)
@@ -75,12 +77,14 @@ func deriveArrayCellContexts(parent groupContext, object map[string]interface{},
 				idPrefix:  joinID(base.idPrefix, arrayCellID(indices)),
 				center:    append([]float64(nil), base.center...),
 				scale:     append([]float64(nil), base.scale...),
+				basis:     base.basis,
 				fields:    cloneMap(base.fields),
 			}
 			for dimAxis, indexValue := range indices {
 				offsetScale := float64(indexValue - 1)
+				offsetPoint := applyPlacement(base, delta[dimAxis])
 				for worldAxis := 0; worldAxis < dimension; worldAxis++ {
-					cell.center[worldAxis] += base.scale[worldAxis] * delta[dimAxis][worldAxis] * offsetScale
+					cell.center[worldAxis] += (offsetPoint[worldAxis] - base.center[worldAxis]) * offsetScale
 				}
 			}
 			result[cellKey] = cell

@@ -197,17 +197,6 @@
       "material_id": "art-jade-enamel"
     },
     {
-      "id": "art-fill-key",
-      "shape": "sphere",
-      "center": [
-        3.4,
-        -4,
-        3.2
-      ],
-      "r": 0.24,
-      "material_id": "art-warm-key"
-    },
-    {
       "id": "screen-frame-left",
       "shape": "cylinder",
       "center": [

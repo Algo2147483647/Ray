@@ -1,0 +1,38 @@
+{
+  "cameras": [
+    {
+      "id": "prism-lab-camera",
+      "type": "3d",
+      "position": [-4.9, 0, 2.7],
+      "look_at": [0, 0, 1.75],
+      "up": [0, 0, 1],
+      "field_of_view": 36,
+      "aspect_ratio": 1
+    }
+  ],
+  "films": [
+    {
+      "id": "prism-beauty-film",
+      "camera_id": "prism-lab-camera",
+      "shape": [
+        1000,
+        1000
+      ],
+      "output_image": "../outputs/newton-prism-wall.png",
+      "output_film": "../outputs/newton-prism-wall.bin",
+      "exposure": 1,
+      "tone_mapping": "aces",
+      "gamma": 2.2,
+      "color_space": "linear_srgb"
+    }
+  ],
+  "render": {
+    "film_id": "prism-beauty-film",
+    "dimension": 3,
+    "integrator": "bdpt",
+    "samples": 20,
+    "thread_num": 16,
+    "spectrum_mode": "sampled",
+    "wavelength_samples": 4
+  }
+}

@@ -10,6 +10,7 @@ type groupContext struct {
 	idPrefix  string
 	center    []float64
 	scale     []float64
+	basis     [][]float64
 	fields    map[string]interface{}
 }
 
@@ -22,6 +23,7 @@ func newRootContext(dimension int) groupContext {
 		dimension: dimension,
 		center:    make([]float64, dimension),
 		scale:     scale,
+		basis:     identityBasis(dimension),
 		fields:    map[string]interface{}{},
 	}
 }
@@ -73,16 +75,25 @@ func deriveGroupContext(parent groupContext, object map[string]interface{}, inde
 	if err != nil {
 		return groupContext{}, err
 	}
+	localBasis, err := optionalBasis(object, dimension)
+	if err != nil {
+		return groupContext{}, err
+	}
+	if !basisIsIdentity(localBasis) && !uniformScaleVector(parent.scale) {
+		return groupContext{}, fmt.Errorf("rotated nested groups require a uniform parent scale")
+	}
 
 	ctx := groupContext{
 		dimension: dimension,
 		idPrefix:  joinID(parent.idPrefix, objectID(object, index)),
 		center:    make([]float64, dimension),
 		scale:     make([]float64, dimension),
+		basis:     multiplyBasis(parent.basis, localBasis),
 		fields:    cloneMap(parent.fields),
 	}
+	placedCenter := applyPlacement(parent, localCenter)
 	for i := 0; i < dimension; i++ {
-		ctx.center[i] = parent.center[i] + parent.scale[i]*localCenter[i]
+		ctx.center[i] = placedCenter[i]
 		ctx.scale[i] = parent.scale[i] * localScale[i]
 	}
 	inheritGroupFields(ctx.fields, object)

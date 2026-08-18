@@ -17,11 +17,13 @@ echo Triangular prism dispersion endless stamp: %RUN_STAMP%
 echo Checkpoint dir: %CHECKPOINT_DIR%
 
 call npm --prefix "%REPO_ROOT%" run studio -- ^
-  --script "%SCENE_DIR%\scene.json" ^
-  --script "%SCENE_DIR%\prism-absorbing.json" ^
-  --script "%SCENE_DIR%\beauty.json" ^
+  --script "%SCENE_DIR%\main.json" ^
+  --script "%SCENE_DIR%\prism.json" ^
+  --script "%SCENE_DIR%\prism-scene.json" ^
+  --script "%SCENE_DIR%\moissanite.json" ^
+  --script "%SCENE_DIR%\moissanite-scene.json" ^
   --endless ^
-  --checkpoint-interval 50 ^
+  --checkpoint-interval 10 ^
   --checkpoint-dir "%CHECKPOINT_DIR%" ^
   %*
 
