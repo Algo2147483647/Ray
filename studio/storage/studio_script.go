@@ -100,7 +100,20 @@ func mergeStudioScripts(dst, src *schema.StudioScript, source string) error {
 	if dst == nil || src == nil {
 		return errors.New("cannot merge nil script")
 	}
-	if err := validateStudioObjectParents(dst.Objects, src.Objects, source); err != nil {
+	incomingObjects := cloneStudioObjectMaps(src.Objects)
+	var err error
+	dst.Objects, err = normalizeStudioObjectTree(dst.Objects, source)
+	if err != nil {
+		return err
+	}
+	incomingObjects, err = normalizeStudioObjectTree(incomingObjects, source)
+	if err != nil {
+		return err
+	}
+	if err := bindUnparentedStudioObjects(&dst.Objects, &incomingObjects, source); err != nil {
+		return err
+	}
+	if err := validateStudioObjectParents(dst.Objects, incomingObjects, source); err != nil {
 		return err
 	}
 	if err := mergeStudioMedia(dst, src, source); err != nil {
@@ -109,7 +122,7 @@ func mergeStudioScripts(dst, src *schema.StudioScript, source string) error {
 	if err := appendUniqueStudioIDMaps(&dst.Materials, src.Materials, "material", source); err != nil {
 		return err
 	}
-	if err := appendOrMergeStudioObjects(&dst.Objects, src.Objects, source); err != nil {
+	if err := appendOrMergeStudioObjects(&dst.Objects, incomingObjects, source); err != nil {
 		return err
 	}
 	if err := appendUniqueStudioCameras(&dst.Cameras, src.Cameras, source); err != nil {
@@ -265,15 +278,306 @@ func mergeStudioObject(base, override map[string]interface{}, source string) (ma
 type studioObjectLocation struct {
 	parent     string
 	comparable bool
+	unbound    bool
+}
+
+type nestedStudioObject struct {
+	object map[string]interface{}
+	parent string
+}
+
+func normalizeStudioObjectTree(objects []map[string]interface{}, source string) ([]map[string]interface{}, error) {
+	result := []map[string]interface{}{}
+	for _, object := range objects {
+		normalized, err := normalizeStudioObjectChildren(object, source)
+		if err != nil {
+			return nil, err
+		}
+		if err := appendOrMergeStudioObjects(&result, []map[string]interface{}{normalized}, source); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func normalizeStudioObjectChildren(object map[string]interface{}, source string) (map[string]interface{}, error) {
+	normalized := cloneMap(object)
+	shape, _ := stringField(normalized, "shape")
+	switch strings.ToLower(shape) {
+	case "group":
+		raw, exists := normalized["objects"]
+		if !exists || raw == nil {
+			return normalized, nil
+		}
+		items, err := objectListRaw(raw, "objects")
+		if err != nil {
+			return nil, err
+		}
+		children, err := studioObjectMapsFromInterfaces(items, "objects")
+		if err != nil {
+			return nil, err
+		}
+		children, err = normalizeStudioObjectTree(children, source)
+		if err != nil {
+			return nil, err
+		}
+		normalized["objects"] = studioObjectInterfaces(children)
+	case "array":
+		raw, exists := normalized["objects"]
+		if !exists || raw == nil {
+			return normalized, nil
+		}
+		cells, err := objectMapRaw(raw, "objects")
+		if err != nil {
+			return nil, err
+		}
+		normalizedCells := map[string]interface{}{}
+		for cell, cellRaw := range cells {
+			items, err := objectListRaw(cellRaw, "objects."+cell)
+			if err != nil {
+				return nil, err
+			}
+			children, err := studioObjectMapsFromInterfaces(items, "objects."+cell)
+			if err != nil {
+				return nil, err
+			}
+			children, err = normalizeStudioObjectTree(children, source)
+			if err != nil {
+				return nil, err
+			}
+			normalizedCells[cell] = studioObjectInterfaces(children)
+		}
+		normalized["objects"] = normalizedCells
+	}
+	return normalized, nil
+}
+
+func studioObjectMapsFromInterfaces(items []interface{}, field string) ([]map[string]interface{}, error) {
+	result := make([]map[string]interface{}, 0, len(items))
+	for _, item := range items {
+		object, ok := item.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("field %q: expected object, got %T", field, item)
+		}
+		result = append(result, object)
+	}
+	return result, nil
+}
+
+func studioObjectInterfaces(objects []map[string]interface{}) []interface{} {
+	result := make([]interface{}, len(objects))
+	for index, object := range objects {
+		result[index] = object
+	}
+	return result
+}
+
+func bindUnparentedStudioObjects(base, incoming *[]map[string]interface{}, source string) error {
+	if err := bindUnparentedStudioObjectsWithin(base, source); err != nil {
+		return err
+	}
+	if err := bindUnparentedStudioObjectsWithin(incoming, source); err != nil {
+		return err
+	}
+
+	baseRoots := topLevelStudioObjectIndices(*base)
+	incomingRoots := topLevelStudioObjectIndices(*incoming)
+	baseNested, err := nestedStudioObjects(*base, source)
+	if err != nil {
+		return err
+	}
+	incomingNested, err := nestedStudioObjects(*incoming, source)
+	if err != nil {
+		return err
+	}
+
+	removeBase := map[int]bool{}
+	removeIncoming := map[int]bool{}
+	for id, baseIndex := range baseRoots {
+		nested, exists := incomingNested[id]
+		if !exists {
+			continue
+		}
+		merged, err := mergeStudioObject((*base)[baseIndex], nested.object, source)
+		if err != nil {
+			return err
+		}
+		replaceStudioObject(nested.object, merged)
+		removeBase[baseIndex] = true
+	}
+	for id, incomingIndex := range incomingRoots {
+		nested, exists := baseNested[id]
+		if !exists {
+			continue
+		}
+		merged, err := mergeStudioObject(nested.object, (*incoming)[incomingIndex], source)
+		if err != nil {
+			return err
+		}
+		replaceStudioObject(nested.object, merged)
+		removeIncoming[incomingIndex] = true
+	}
+	*base = removeStudioObjectIndices(*base, removeBase)
+	*incoming = removeStudioObjectIndices(*incoming, removeIncoming)
+	return nil
+}
+
+func bindUnparentedStudioObjectsWithin(objects *[]map[string]interface{}, source string) error {
+	roots := topLevelStudioObjectIndices(*objects)
+	nested, err := nestedStudioObjects(*objects, source)
+	if err != nil {
+		return err
+	}
+	remove := map[int]bool{}
+	for id, rootIndex := range roots {
+		nestedObject, exists := nested[id]
+		if !exists {
+			continue
+		}
+		if strings.HasPrefix(nestedObject.parent, "$/"+id+"/") || nestedObject.parent == "$/"+id {
+			return fmt.Errorf("object id %q cannot bind to its own descendant in %s", id, source)
+		}
+		merged, err := mergeStudioObject((*objects)[rootIndex], nestedObject.object, source)
+		if err != nil {
+			return err
+		}
+		replaceStudioObject(nestedObject.object, merged)
+		remove[rootIndex] = true
+	}
+	*objects = removeStudioObjectIndices(*objects, remove)
+	return nil
+}
+
+func topLevelStudioObjectIndices(objects []map[string]interface{}) map[string]int {
+	result := map[string]int{}
+	for index, object := range objects {
+		if id, ok := stringField(object, "id"); ok {
+			result[id] = index
+		}
+	}
+	return result
+}
+
+func nestedStudioObjects(objects []map[string]interface{}, source string) (map[string]nestedStudioObject, error) {
+	result := map[string]nestedStudioObject{}
+	for index, object := range objects {
+		id, hasID := stringField(object, "id")
+		segment := id
+		if !hasID {
+			segment = fmt.Sprintf("<anonymous:%d>", index)
+		}
+		if err := collectNestedStudioObjects(object, "$/"+segment, result, source); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func collectNestedStudioObjects(
+	object map[string]interface{},
+	objectPath string,
+	result map[string]nestedStudioObject,
+	source string,
+) error {
+	shape, _ := stringField(object, "shape")
+	switch strings.ToLower(shape) {
+	case "group":
+		raw, exists := object["objects"]
+		if !exists || raw == nil {
+			return nil
+		}
+		items, err := objectListRaw(raw, "objects")
+		if err != nil {
+			return err
+		}
+		for index, item := range items {
+			child, ok := item.(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("field %q: expected object, got %T", "objects", item)
+			}
+			if err := addNestedStudioObject(child, index, objectPath, result, source); err != nil {
+				return err
+			}
+		}
+	case "array":
+		raw, exists := object["objects"]
+		if !exists || raw == nil {
+			return nil
+		}
+		cells, err := objectMapRaw(raw, "objects")
+		if err != nil {
+			return err
+		}
+		for cell, cellRaw := range cells {
+			items, err := objectListRaw(cellRaw, "objects."+cell)
+			if err != nil {
+				return err
+			}
+			for index, item := range items {
+				child, ok := item.(map[string]interface{})
+				if !ok {
+					return fmt.Errorf("field %q: expected object, got %T", "objects."+cell, item)
+				}
+				if err := addNestedStudioObject(child, index, objectPath+"["+cell+"]", result, source); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func addNestedStudioObject(
+	object map[string]interface{},
+	index int,
+	parent string,
+	result map[string]nestedStudioObject,
+	source string,
+) error {
+	id, hasID := stringField(object, "id")
+	segment := id
+	if !hasID {
+		segment = fmt.Sprintf("<anonymous:%d>", index)
+	} else if existing, exists := result[id]; exists {
+		if existing.parent != parent {
+			return fmt.Errorf("object id %q has conflicting parents in %s: %q != %q", id, source, existing.parent, parent)
+		}
+		return fmt.Errorf("duplicate object id %q under parent %q in %s", id, parent, source)
+	} else {
+		result[id] = nestedStudioObject{object: object, parent: parent}
+	}
+	return collectNestedStudioObjects(object, parent+"/"+segment, result, source)
+}
+
+func replaceStudioObject(target, replacement map[string]interface{}) {
+	for key := range target {
+		delete(target, key)
+	}
+	for key, value := range replacement {
+		target[key] = value
+	}
+}
+
+func removeStudioObjectIndices(objects []map[string]interface{}, remove map[int]bool) []map[string]interface{} {
+	if len(remove) == 0 {
+		return objects
+	}
+	result := make([]map[string]interface{}, 0, len(objects)-len(remove))
+	for index, object := range objects {
+		if !remove[index] {
+			result = append(result, object)
+		}
+	}
+	return result
 }
 
 func validateStudioObjectParents(base, incoming []map[string]interface{}, source string) error {
 	baseLocations := map[string]studioObjectLocation{}
-	if err := collectStudioObjectLocations(base, "$", true, baseLocations, "merged scripts"); err != nil {
+	if err := collectStudioObjectLocations(base, "$", false, baseLocations, "merged scripts"); err != nil {
 		return err
 	}
 	incomingLocations := map[string]studioObjectLocation{}
-	if err := collectStudioObjectLocations(incoming, "$", true, incomingLocations, source); err != nil {
+	if err := collectStudioObjectLocations(incoming, "$", false, incomingLocations, source); err != nil {
 		return err
 	}
 	for id, incomingLocation := range incomingLocations {
@@ -281,7 +585,7 @@ func validateStudioObjectParents(base, incoming []map[string]interface{}, source
 		if !exists {
 			continue
 		}
-		if !baseLocation.comparable || !incomingLocation.comparable || baseLocation.parent != incomingLocation.parent {
+		if studioObjectParentsConflict(baseLocation, incomingLocation) {
 			return fmt.Errorf(
 				"object id %q has conflicting parents while merging %s: %q != %q",
 				id, source, baseLocation.parent, incomingLocation.parent,
@@ -316,9 +620,9 @@ func collectStudioObjectLocation(
 ) error {
 	id, hasID := stringField(object, "id")
 	if hasID {
-		location := studioObjectLocation{parent: parent, comparable: parentComparable}
+		location := studioObjectLocation{parent: parent, comparable: parentComparable, unbound: parent == "$"}
 		if existing, exists := locations[id]; exists &&
-			(!existing.comparable || !location.comparable || existing.parent != location.parent) {
+			studioObjectParentsConflict(existing, location) {
 			return fmt.Errorf(
 				"object id %q has conflicting parents in %s: %q != %q",
 				id, source, existing.parent, location.parent,
@@ -328,7 +632,7 @@ func collectStudioObjectLocation(
 	}
 
 	segment := id
-	childParentsComparable := parentComparable && hasID
+	childParentsComparable := hasID
 	if !hasID {
 		segment = fmt.Sprintf("<anonymous:%d>", index)
 	}
@@ -381,6 +685,13 @@ func collectStudioObjectLocation(
 		}
 	}
 	return nil
+}
+
+func studioObjectParentsConflict(first, second studioObjectLocation) bool {
+	if first.unbound || second.unbound {
+		return false
+	}
+	return !first.comparable || !second.comparable || first.parent != second.parent
 }
 
 func formatStudioValue(value interface{}) string {
@@ -570,6 +881,14 @@ func cloneMap(value map[string]interface{}) map[string]interface{} {
 	result := make(map[string]interface{}, len(value))
 	for key, item := range value {
 		result[key] = cloneInterfaceValue(item)
+	}
+	return result
+}
+
+func cloneStudioObjectMaps(value []map[string]interface{}) []map[string]interface{} {
+	result := make([]map[string]interface{}, len(value))
+	for index, object := range value {
+		result[index] = cloneMap(object)
 	}
 	return result
 }

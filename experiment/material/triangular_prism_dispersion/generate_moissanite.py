@@ -94,18 +94,11 @@ def document() -> dict:
         ],
         "objects": [
             {
-                "id": "moissanite-fire-rig",
+                "id": "moissanite",
                 "shape": "group",
-                "_comment": "Model layer of the shared rig. The scene layer with the same Group id supplies placement and the collimated light.",
-                "objects": [
-                    {
-                        "id": "moissanite",
-                        "shape": "group",
-                        "_comment": "Local cut: culet is [0, 0, 0], table is centred on the local z axis.",
-                        "material_id": "faceted-moissanite",
-                        "objects": build_mesh(),
-                    }
-                ],
+                "_comment": "Unbound model fragment: culet is [0, 0, 0], table is centred on the local z axis. A scene may bind this id beneath any Group.",
+                "material_id": "faceted-moissanite",
+                "objects": build_mesh(),
             }
         ],
     }

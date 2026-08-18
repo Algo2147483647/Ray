@@ -37,6 +37,11 @@
       ],
       "objects": [
         {
+          "id": "moissanite",
+          "shape": "group",
+          "_comment": "Binding point for the unbound top-level moissanite model fragment."
+        },
+        {
           "id": "core-light-0",
           "_comment": "A 24 mm local emitter at the closed end of the collimator; it is the sole added moissanite light.",
           "shape": "triangle",

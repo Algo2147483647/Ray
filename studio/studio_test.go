@@ -573,6 +573,89 @@ func TestStudioMergesGroupObjectsAcrossFiles(t *testing.T) {
 	assertFloatSlice(t, adapted.Objects[1]["center"], []float64{3, 0, 0})
 }
 
+func TestStudioBindsTopLevelGroupFragmentToNestedObject(t *testing.T) {
+	dir := t.TempDir()
+	modelPath := filepath.Join(dir, "model.json")
+	scenePath := filepath.Join(dir, "scene.json")
+	if err := os.WriteFile(modelPath, []byte(`{
+	  "objects": [{
+	    "id": "stone", "shape": "group", "material_id": "glass",
+	    "objects": [{ "id": "facet", "shape": "sphere", "center": [0, 0, 0], "r": 0.25 }]
+	  }]
+	}`), 0o644); err != nil {
+		t.Fatalf("write model script: %v", err)
+	}
+	if err := os.WriteFile(scenePath, []byte(`{
+	  "objects": [{
+	    "id": "rig", "shape": "group", "center": [2, 0, 0],
+	    "objects": [
+	      { "id": "stone", "shape": "group" },
+	      { "id": "marker", "shape": "sphere", "center": [1, 0, 0], "r": 0.1 }
+	    ]
+	  }]
+	}`), 0o644); err != nil {
+		t.Fatalf("write scene script: %v", err)
+	}
+
+	for name, paths := range map[string][]string{
+		"model before scene": {modelPath, scenePath},
+		"scene before model": {scenePath, modelPath},
+	} {
+		t.Run(name, func(t *testing.T) {
+			script, err := storage.ReadStudioScriptFiles(paths)
+			if err != nil {
+				t.Fatalf("read scripts: %v", err)
+			}
+			if len(script.Objects) != 1 || script.Objects[0]["id"] != "rig" {
+				t.Fatalf("expected only the bound rig at top level, got %v", script.Objects)
+			}
+			adapted, err := adaptTestScript(script, paths, 3)
+			if err != nil {
+				t.Fatalf("adapt bound fragment: %v", err)
+			}
+			if len(adapted.Objects) != 2 {
+				t.Fatalf("expected bound facet and marker, got %d objects", len(adapted.Objects))
+			}
+			if adapted.Objects[0]["id"] != "rig/stone/facet" || adapted.Objects[1]["id"] != "rig/marker" {
+				t.Fatalf("unexpected bound ids: %v, %v", adapted.Objects[0]["id"], adapted.Objects[1]["id"])
+			}
+			assertFloatSlice(t, adapted.Objects[0]["center"], []float64{2, 0, 0})
+		})
+	}
+}
+
+func TestStudioMergesDuplicateNestedGroupsInOneObjectList(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "scene.json")
+	if err := os.WriteFile(path, []byte(`{
+	  "objects": [{
+	    "id": "rig", "shape": "group",
+	    "objects": [
+	      { "id": "part", "shape": "group", "objects": [
+	        { "id": "left", "shape": "sphere", "center": [0, 0, 0], "r": 0.1 }
+	      ]},
+	      { "id": "part", "shape": "group", "objects": [
+	        { "id": "right", "shape": "sphere", "center": [1, 0, 0], "r": 0.1 }
+	      ]}
+	    ]
+	  }]
+	}`), 0o644); err != nil {
+		t.Fatalf("write scene script: %v", err)
+	}
+
+	script, err := storage.ReadStudioScriptFiles([]string{path})
+	if err != nil {
+		t.Fatalf("read script: %v", err)
+	}
+	adapted, err := adaptTestScript(script, []string{path}, 3)
+	if err != nil {
+		t.Fatalf("adapt script: %v", err)
+	}
+	if len(adapted.Objects) != 2 || adapted.Objects[0]["id"] != "rig/part/left" || adapted.Objects[1]["id"] != "rig/part/right" {
+		t.Fatalf("unexpected normalized objects: %v", adapted.Objects)
+	}
+}
+
 func TestStudioRejectsConflictingGroupParametersAcrossFiles(t *testing.T) {
 	dir := t.TempDir()
 	firstPath := filepath.Join(dir, "group-a.json")

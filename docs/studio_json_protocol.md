@@ -56,9 +56,14 @@ fragment may add a missing field or repeat the same value, but conflicting value
 are errors. Underscore-prefixed authoring metadata such as `_comment` is ignored
 for conflict purposes. Child objects are merged by id recursively for nested
 groups and arrays. A repeated object id must also have the same parent path;
-placing that id beneath different groups or array cells is an error. This allows
-a scene grid or group scaffold to live in one file and individual cells or
-children to live in other files without order-dependent overrides.
+placing that id beneath different groups or array cells is an error. A top-level
+object has no bound parent: when one nested object with the same id exists, the
+top-level fragment is merged into and bound at that nested location. If no such
+location exists, it remains a normal top-level scene object. This lets model
+files stay independent of scene assembly Group ids. Binding is unique; two
+different nested parents for one id are still an error. Together these rules
+allow scene scaffolds and their children to live in separate files without
+order-dependent overrides.
 
 After adaptation, studio writes the generated engine script to:
 
