@@ -5,37 +5,6 @@
   },
   "materials": [
     {
-      "id": "art-gallery-white",
-      "surface": {
-        "type": "weighted_mixture",
-        "components": [
-          {
-            "weight": 0.5,
-            "surface": {
-              "type": "lambert",
-              "albedo": {
-                "type": "constant",
-                "value": 0.78
-              }
-            }
-          },
-          {
-            "weight": 0.5,
-            "surface": {
-              "type": "rough_dielectric_reflection",
-              "reflectance": {
-                "type": "constant",
-                "value": 1
-              },
-              "eta_outside": 1,
-              "eta_inside": 1.5,
-              "roughness": 0.14
-            }
-          }
-        ]
-      }
-    },
-    {
       "id": "art-vermilion-enamel",
       "surface": {
         "type": "lambert",
@@ -71,17 +40,6 @@
           "type": "blackbody",
           "temperature": 2350,
           "scale": 12
-        }
-      }
-    },
-    {
-      "id": "white-source",
-      "emission": {
-        "type": "constant",
-        "radiance": {
-          "type": "blackbody",
-          "temperature": 6500,
-          "scale": 1200
         }
       }
     },
@@ -167,377 +125,317 @@
   ],
   "objects": [
     {
-      "id": "spectral-slit-0",
-      "shape": "triangle",
-      "p1": [1.85, -0.2, 0.3],
-      "p2": [1.85, -0.2, 1.7],
-      "p3": [1.85, -0.1, 1.7],
-      "material_id": "white-source"
+      "id": "source-assembly",
+      "shape": "group",
+      "_comment": "Light-emitting slit, brass source frame, and dark source housing.",
+      "objects": [
+        {
+          "id": "spectral-slit-0",
+          "shape": "triangle",
+          "p1": [
+            1.85,
+            -0.2,
+            0.3
+          ],
+          "p2": [
+            1.85,
+            -0.2,
+            1.7
+          ],
+          "p3": [
+            1.85,
+            -0.1,
+            1.7
+          ],
+          "material_id": "white-source"
+        },
+        {
+          "id": "spectral-slit-1",
+          "shape": "triangle",
+          "p1": [
+            1.85,
+            -0.2,
+            0.3
+          ],
+          "p2": [
+            1.85,
+            -0.1,
+            1.7
+          ],
+          "p3": [
+            1.85,
+            -0.1,
+            0.3
+          ],
+          "material_id": "white-source"
+        },
+        {
+          "id": "source-frame-left",
+          "shape": "cuboid",
+          "pmin": [
+            1.86,
+            -0.55,
+            0.25
+          ],
+          "pmax": [
+            1.9,
+            -0.2,
+            1.75
+          ],
+          "material_id": "aged-brass"
+        },
+        {
+          "id": "source-frame-right",
+          "shape": "cuboid",
+          "pmin": [
+            1.86,
+            -0.1,
+            0.25
+          ],
+          "pmax": [
+            1.9,
+            0.25,
+            1.75
+          ],
+          "material_id": "aged-brass"
+        },
+        {
+          "id": "source-frame-bottom",
+          "shape": "cuboid",
+          "pmin": [
+            1.86,
+            -0.55,
+            0.21
+          ],
+          "pmax": [
+            1.9,
+            0.25,
+            0.25
+          ],
+          "material_id": "aged-brass"
+        },
+        {
+          "id": "source-frame-top",
+          "shape": "cuboid",
+          "pmin": [
+            1.86,
+            -0.55,
+            1.75
+          ],
+          "pmax": [
+            1.9,
+            0.25,
+            1.79
+          ],
+          "material_id": "aged-brass"
+        },
+        {
+          "id": "source-housing-back",
+          "shape": "cuboid",
+          "pmin": [
+            1.91,
+            -0.58,
+            0.18
+          ],
+          "pmax": [
+            2.18,
+            0.28,
+            1.82
+          ],
+          "material_id": "darkroom-blue"
+        },
+        {
+          "id": "source-housing-cap",
+          "shape": "cuboid",
+          "pmin": [
+            1.84,
+            -0.6,
+            1.79
+          ],
+          "pmax": [
+            2.2,
+            0.3,
+            1.86
+          ],
+          "material_id": "aged-brass"
+        },
+        {
+          "id": "source-housing-foot",
+          "shape": "cuboid",
+          "pmin": [
+            1.72,
+            -0.67,
+            0.14
+          ],
+          "pmax": [
+            2.25,
+            0.37,
+            0.22
+          ],
+          "material_id": "aged-brass"
+        }
+      ]
     },
     {
-      "id": "spectral-slit-1",
-      "shape": "triangle",
-      "p1": [1.85, -0.2, 0.3],
-      "p2": [1.85, -0.1, 1.7],
-      "p3": [1.85, -0.1, 0.3],
-      "material_id": "white-source"
+      "id": "collimator-assembly",
+      "shape": "group",
+      "_comment": "Black collimator baffles and their brass support frame.",
+      "objects": [
+        {
+          "id": "aperture-lower",
+          "_comment": "Matte-black negative-y collimator baffle; together with aperture-upper it leaves only y=[0.145,0.22] open.",
+          "shape": "cuboid",
+          "pmin": [
+            0.18,
+            -0.45,
+            0.3
+          ],
+          "pmax": [
+            0.22,
+            0.145,
+            1.7
+          ],
+          "material_id": "aperture-black"
+        },
+        {
+          "id": "aperture-upper",
+          "_comment": "Matte-black positive-y collimator baffle; it blocks off-axis slit rays before they reach the prism.",
+          "shape": "cuboid",
+          "pmin": [
+            0.18,
+            0.22,
+            0.3
+          ],
+          "pmax": [
+            0.22,
+            0.45,
+            1.7
+          ],
+          "material_id": "aperture-black"
+        }
+      ]
     },
     {
-      "id": "aperture-lower",
-      "_comment": "Matte-black negative-y collimator baffle; together with aperture-upper it leaves only y=[0.145,0.22] open.",
-      "shape": "cuboid",
-      "pmin": [0.18, -0.45, 0.3],
-      "pmax": [0.22, 0.145, 1.7],
-      "material_id": "aperture-black"
-    },
-    {
-      "id": "aperture-upper",
-      "_comment": "Matte-black positive-y collimator baffle; it blocks off-axis slit rays before they reach the prism.",
-      "shape": "cuboid",
-      "pmin": [0.18, 0.22, 0.3],
-      "pmax": [0.22, 0.45, 1.7],
-      "material_id": "aperture-black"
-    },
-
-    {
-      "id": "projection-screen",
-      "shape": "cuboid",
-      "pmin": [-4.02, -0.75, 0.1],
-      "pmax": [-4, 0.75, 2.8],
-      "material_id": "white-screen"
-    },
-    {
-      "id": "source-frame-left",
-      "shape": "cuboid",
-      "pmin": [1.86, -0.55, 0.25],
-      "pmax": [1.9, -0.2, 1.75],
-      "material_id": "aged-brass"
-    },
-    {
-      "id": "source-frame-right",
-      "shape": "cuboid",
-      "pmin": [1.86, -0.1, 0.25],
-      "pmax": [1.9, 0.25, 1.75],
-      "material_id": "aged-brass"
-    },
-    {
-      "id": "source-frame-bottom",
-      "shape": "cuboid",
-      "pmin": [1.86, -0.55, 0.21],
-      "pmax": [1.9, 0.25, 0.25],
-      "material_id": "aged-brass"
-    },
-    {
-      "id": "source-frame-top",
-      "shape": "cuboid",
-      "pmin": [1.86, -0.55, 1.75],
-      "pmax": [1.9, 0.25, 1.79],
-      "material_id": "aged-brass"
-    },
-    {
-      "id": "optical-bench-top",
-      "shape": "cuboid",
-      "pmin": [-1.15, -0.82, 0.04],
-      "pmax": [2.2, 0.82, 0.14],
-      "material_id": "aged-oak"
-    },
-    {
-      "id": "optical-rail-near",
-      "shape": "cylinder",
-      "center": [0.52, -0.69, 0.18],
-      "axis": [1, 0, 0],
-      "r": 0.026,
-      "height": 3.25,
-      "material_id": "aged-brass"
-    },
-    {
-      "id": "optical-rail-far",
-      "shape": "cylinder",
-      "center": [0.52, 0.69, 0.18],
-      "axis": [1, 0, 0],
-      "r": 0.026,
-      "height": 3.25,
-      "material_id": "aged-brass"
-    },
-    {
-      "id": "prism-plinth",
-      "shape": "cuboid",
-      "pmin": [-0.64, -0.67, 0.14],
-      "pmax": [-0.02, 0.67, 0.235],
-      "material_id": "aged-brass"
-    },
-    {
-      "id": "prism-clamp-near",
-      "shape": "cylinder",
-      "center": [-0.42, -0.64, 0.66],
-      "axis": [0, 0, 1],
-      "r": 0.024,
-      "height": 0.94,
-      "material_id": "aged-brass"
-    },
-    {
-      "id": "prism-clamp-far",
-      "shape": "cylinder",
-      "center": [-0.42, 0.64, 0.66],
-      "axis": [0, 0, 1],
-      "r": 0.024,
-      "height": 0.94,
-      "material_id": "aged-brass"
-    },
-    {
-      "id": "prism-rim-top-entry",
-      "shape": "cylinder",
-      "center": [-0.5, 0, 1.758],
-      "axis": [0, 1, 0],
-      "r": 0.015,
-      "height": 1.1,
-      "material_id": "glass-edge-highlight"
-    },
-    {
-      "id": "prism-rim-top-upper",
-      "shape": "cylinder",
-      "center": [-0.325, 0.275, 1.758],
-      "axis": [0.35, -0.55, 0],
-      "r": 0.015,
-      "height": 0.652,
-      "material_id": "glass-edge-highlight"
-    },
-    {
-      "id": "prism-rim-top-lower",
-      "shape": "cylinder",
-      "center": [-0.325, -0.275, 1.758],
-      "axis": [0.35, 0.55, 0],
-      "r": 0.015,
-      "height": 0.652,
-      "material_id": "glass-edge-highlight"
-    },
-    {
-      "id": "prism-rim-bottom-entry",
-      "shape": "cylinder",
-      "center": [-0.5, 0, 0.242],
-      "axis": [0, 1, 0],
-      "r": 0.015,
-      "height": 1.1,
-      "material_id": "glass-edge-highlight"
-    },
-    {
-      "id": "prism-rim-bottom-upper",
-      "shape": "cylinder",
-      "center": [-0.325, 0.275, 0.242],
-      "axis": [0.35, -0.55, 0],
-      "r": 0.015,
-      "height": 0.652,
-      "material_id": "glass-edge-highlight"
-    },
-    {
-      "id": "prism-rim-bottom-lower",
-      "shape": "cylinder",
-      "center": [-0.325, -0.275, 0.242],
-      "axis": [0.35, 0.55, 0],
-      "r": 0.015,
-      "height": 0.652,
-      "material_id": "glass-edge-highlight"
-    },
-    {
-      "id": "prism-rim-vertical-entry-near",
-      "shape": "cylinder",
-      "center": [-0.5, -0.55, 1],
-      "axis": [0, 0, 1],
-      "r": 0.007,
-      "height": 1.5,
-      "material_id": "glass-edge-highlight"
-    },
-    {
-      "id": "prism-rim-vertical-entry-far",
-      "shape": "cylinder",
-      "center": [-0.5, 0.55, 1],
-      "axis": [0, 0, 1],
-      "r": 0.007,
-      "height": 1.5,
-      "material_id": "glass-edge-highlight"
-    },
-    {
-      "id": "prism-rim-vertical-apex",
-      "shape": "cylinder",
-      "center": [-0.15, 0, 1],
-      "axis": [0, 0, 1],
-      "r": 0.007,
-      "height": 1.5,
-      "material_id": "glass-edge-highlight"
-    },
-    {
-      "id": "aperture-brass-bottom",
-      "shape": "cuboid",
-      "pmin": [0.15, -0.5, 0.245],
-      "pmax": [0.25, 0.5, 0.295],
-      "material_id": "aged-brass"
-    },
-    {
-      "id": "aperture-brass-top",
-      "shape": "cuboid",
-      "pmin": [0.15, -0.5, 1.705],
-      "pmax": [0.25, 0.5, 1.755],
-      "material_id": "aged-brass"
-    },
-    {
-      "id": "aperture-brass-near-post",
-      "shape": "cylinder",
-      "center": [0.2, -0.49, 1],
-      "axis": [0, 0, 1],
-      "r": 0.016,
-      "height": 1.5,
-      "material_id": "aged-brass"
-    },
-    {
-      "id": "aperture-brass-far-post",
-      "shape": "cylinder",
-      "center": [0.2, 0.49, 1],
-      "axis": [0, 0, 1],
-      "r": 0.016,
-      "height": 1.5,
-      "material_id": "aged-brass"
-    },
-    {
-      "id": "source-housing-back",
-      "shape": "cuboid",
-      "pmin": [1.91, -0.58, 0.18],
-      "pmax": [2.18, 0.28, 1.82],
-      "material_id": "darkroom-blue"
-    },
-    {
-      "id": "source-housing-cap",
-      "shape": "cuboid",
-      "pmin": [1.84, -0.6, 1.79],
-      "pmax": [2.2, 0.3, 1.86],
-      "material_id": "aged-brass"
-    },
-    {
-      "id": "source-housing-foot",
-      "shape": "cuboid",
-      "pmin": [1.72, -0.67, 0.14],
-      "pmax": [2.25, 0.37, 0.22],
-      "material_id": "aged-brass"
-    },
-    {
-      "id": "screen-stand-post",
-      "shape": "cylinder",
-      "center": [-4.08, 0, 0.52],
-      "axis": [0, 0, 1],
-      "r": 0.035,
-      "height": 0.95,
-      "material_id": "aged-brass"
-    },
-    {
-      "id": "screen-stand-foot",
-      "shape": "cuboid",
-      "pmin": [-4.28, -0.38, 0.015],
-      "pmax": [-3.88, 0.38, 0.075],
-      "material_id": "aged-brass"
-    },
-    {
-      "id": "newton-note-card",
-      "shape": "cuboid",
-      "pmin": [-1.02, -1.02, 0.005],
-      "pmax": [-0.28, -0.86, 0.018],
-      "material_id": "paper-label"
-    },
-    {
-      "id": "white-room-floor",
-      "shape": "cuboid",
-      "pmin": [
-        -4.45,
-        -6,
-        -0.12
-      ],
-      "pmax": [
-        2.35,
-        1.7,
-        0
-      ],
-      "material_id": "art-gallery-white"
-    },
-    {
-      "id": "white-room-back-wall",
-      "shape": "cuboid",
-      "pmin": [
-        -4.5,
-        1.62,
-        0
-      ],
-      "pmax": [
-        2.4,
-        1.68,
-        3.1
-      ],
-      "material_id": "art-gallery-white"
-    },
-    {
-      "id": "screen-frame-left",
-      "shape": "cylinder",
-      "center": [
-        -3.99,
-        -0.76,
-        1.46
-      ],
-      "axis": [
-        0,
-        0,
-        1
-      ],
-      "r": 0.018,
-      "height": 2.76,
-      "material_id": "aged-brass"
-    },
-    {
-      "id": "screen-frame-right",
-      "shape": "cylinder",
-      "center": [
-        -3.99,
-        0.76,
-        1.46
-      ],
-      "axis": [
-        0,
-        0,
-        1
-      ],
-      "r": 0.018,
-      "height": 2.76,
-      "material_id": "aged-brass"
-    },
-    {
-      "id": "screen-frame-bottom",
-      "shape": "cylinder",
-      "center": [
-        -3.99,
-        0,
-        0.08
-      ],
-      "axis": [
-        0,
-        1,
-        0
-      ],
-      "r": 0.018,
-      "height": 1.52,
-      "material_id": "aged-brass"
-    },
-    {
-      "id": "screen-frame-top",
-      "shape": "cylinder",
-      "center": [
-        -3.99,
-        0,
-        2.84
-      ],
-      "axis": [
-        0,
-        1,
-        0
-      ],
-      "r": 0.018,
-      "height": 1.52,
-      "material_id": "aged-brass"
+      "id": "projection-screen-assembly",
+      "shape": "group",
+      "_comment": "Projection screen, brass perimeter frame, and floor stand.",
+      "objects": [
+        {
+          "id": "projection-screen",
+          "shape": "cuboid",
+          "pmin": [
+            -4.02,
+            -0.75,
+            0.1
+          ],
+          "pmax": [
+            -4,
+            0.75,
+            2.8
+          ],
+          "material_id": "white-screen"
+        },
+        {
+          "id": "screen-frame-left",
+          "shape": "cylinder",
+          "center": [
+            -3.99,
+            -0.76,
+            1.46
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "r": 0.018,
+          "height": 2.76,
+          "material_id": "aged-brass"
+        },
+        {
+          "id": "screen-frame-right",
+          "shape": "cylinder",
+          "center": [
+            -3.99,
+            0.76,
+            1.46
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "r": 0.018,
+          "height": 2.76,
+          "material_id": "aged-brass"
+        },
+        {
+          "id": "screen-frame-bottom",
+          "shape": "cylinder",
+          "center": [
+            -3.99,
+            0,
+            0.08
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "r": 0.018,
+          "height": 1.52,
+          "material_id": "aged-brass"
+        },
+        {
+          "id": "screen-frame-top",
+          "shape": "cylinder",
+          "center": [
+            -3.99,
+            0,
+            2.84
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "r": 0.018,
+          "height": 1.52,
+          "material_id": "aged-brass"
+        },
+        {
+          "id": "screen-stand-post",
+          "shape": "cylinder",
+          "center": [
+            -4.08,
+            0,
+            0.52
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "r": 0.035,
+          "height": 0.95,
+          "material_id": "aged-brass"
+        },
+        {
+          "id": "screen-stand-foot",
+          "shape": "cuboid",
+          "pmin": [
+            -4.28,
+            -0.38,
+            0.015
+          ],
+          "pmax": [
+            -3.88,
+            0.38,
+            0.075
+          ],
+          "material_id": "aged-brass"
+        }
+      ]
     }
   ]
 }

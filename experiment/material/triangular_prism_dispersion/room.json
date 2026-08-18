@@ -1,6 +1,17 @@
 {
   "materials": [
     {
+      "id": "white-source",
+      "emission": {
+        "type": "constant",
+        "radiance": {
+          "type": "blackbody",
+          "temperature": 6500,
+          "scale": 1200
+        }
+      }
+    },
+    {
       "id": "art-gallery-white",
       "surface": {
         "type": "weighted_mixture",
@@ -34,10 +45,33 @@
   ],
   "objects": [
     {
-      "id": "room",
+      "id": "white-room-floor",
       "shape": "cuboid",
-      "pmin": [-5, -2.5, 0],
-      "pmax": [2.5, 2.5, 5],
+      "pmin": [
+        -4.45,
+        -6,
+        -0.12
+      ],
+      "pmax": [
+        2.35,
+        1.7,
+        0
+      ],
+      "material_id": "art-gallery-white"
+    },
+    {
+      "id": "white-room-back-wall",
+      "shape": "cuboid",
+      "pmin": [
+        -4.5,
+        1.62,
+        0
+      ],
+      "pmax": [
+        2.4,
+        1.68,
+        3.1
+      ],
       "material_id": "art-gallery-white"
     }
   ]
