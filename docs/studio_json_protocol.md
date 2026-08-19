@@ -323,8 +323,10 @@ world_basis = parent.basis * local.basis
 ```
 
 Rotated groups support triangles directly and rotate the axes of circles and
-finite cylinders. Spheres are rotation invariant. Axis-aligned cuboids cannot
-represent a rotated result and are rejected; author an oriented box as triangles.
+finite cylinders. Quadrilaterals are expanded into triangles before placement,
+so they support the same rotations as triangles. Spheres are rotation invariant.
+Axis-aligned cuboids cannot represent a rotated result and are rejected; author
+an oriented box as triangles or quadrilaterals.
 Combining a rotated nested group with a non-uniform parent scale is rejected to
 avoid silently introducing shear.
 
@@ -431,6 +433,28 @@ Authoring input may provide an object-level `center` offset:
 
 Studio bakes the offset and group placement into `p1`, `p2`, and `p3`, then
 removes `center`.
+
+### Quadrilateral
+
+`quadrilateral` is a Studio-only convenience shape. Its four vertices must be
+listed in boundary order:
+
+```json
+{
+  "id": "panel",
+  "shape": "quadrilateral",
+  "p1": [0, 0, 0],
+  "p2": [1, 0, 0],
+  "p3": [1, 1, 0],
+  "p4": [0, 1, 0]
+}
+```
+
+Studio splits the shape along the `p1`-`p3` diagonal into triangles
+`(p1, p2, p3)` and `(p3, p4, p1)`. They are emitted with ids
+`panel/triangle-1` and `panel/triangle-2`. Object fields and inherited group
+fields apply to both triangles, and Engine never receives a `quadrilateral`
+shape.
 
 ### Quadratic Equation
 

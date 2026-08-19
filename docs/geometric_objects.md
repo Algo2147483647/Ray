@@ -50,7 +50,7 @@ The table lists mathematical geometry, not only factory strings. The word "Shape
 | Parametric Curve | `ParametricCurve` | Swept-sphere envelope search | No | Estimated from sampled segments | Not exposed | No area sampler; `samples + 1` spine samples | Spine tangent and selected-sphere radial normal | Segment BVH, capsule rejection, and golden-section refinement |
 | 4D Klein-bottle tube | `KleinBottle4D` | Distance-field marching | No | Exact analytic box | Not exposed | No; fixed $16\times8$ closest-point seed grid | Optimized $(u,v)$ and offset normal | Multi-seed least-squares/Newton refinement, line search, sphere tracing, and bisection |
 | Triangulated Surface Mesh | Per-facet `Triangle` | Per-facet triangle solve | No | Exact per facet | Exact per facet; no mesh aggregate | Per-facet uniform sampling; no mesh-level distribution | Inherited triangle UV, derivatives, and normal | ASCII/binary parsing, affine frame transform, and ObjectTree BVH |
-| Finite Cylinder | `FiniteCylinder` | Quadratic side plus two caps | No | Exact projected box | Not exposed | No | Radial side normal and constant cap normals | Perpendicular decomposition, side quadratic, and cap-plane tests |
+| Finite Cylinder | `FiniteCylinder` | Quadratic side plus two caps | No | Exact projected box | $A=2\pi r(h+r)$ in 3D | Area-weighted side/cap sampling, $p_A=1/A$ | Radial side normal and constant cap normals | Perpendicular decomposition, side quadratic, and cap-plane tests |
 
 #### Internal Adapter Capabilities
 
@@ -1251,7 +1251,49 @@ $$
 e_i=\frac{h}{2}|a_i|+r\sqrt{1-a_i^2}.
 $$
 
-The type currently has neither `IntersectGeodesic` nor `SurfaceSampler`, so it is not available on Spherical paths and cannot be sampled as a BDPT area light.
+The type has no `IntersectGeodesic`, so it is not available on Spherical paths.
+
+### Surface-Area Sampling
+
+Surface sampling is defined for the complete closed 3D cylinder. Its lateral
+and single-cap areas are
+
+$$
+A_s=2\pi rh,
+\qquad
+A_c=\pi r^2,
+\qquad
+A=A_s+2A_c=2\pi r(h+r).
+$$
+
+The sampler chooses the side, top cap, or bottom cap with probabilities
+$A_s/A$, $A_c/A$, and $A_c/A$. The unused residual of that choice is remapped
+to a uniform variable on the selected component.
+
+For the side, with orthonormal radial basis $(t,b)$ perpendicular to $a$,
+
+$$
+x=c+h(u-1/2)a+r(\cos\phi\,t+\sin\phi\,b),
+\qquad \phi=2\pi v.
+$$
+
+Because the area element is $rh\,du\,d\phi$, the conditional density is
+$1/A_s$. For either cap,
+
+$$
+x=c\pm\frac{h}{2}a+r\sqrt{u}(\cos\phi\,t+\sin\phi\,b),
+$$
+
+whose polar Jacobian gives conditional density $1/A_c$. Multiplying each
+conditional density by its component-selection probability produces the same
+global area density everywhere:
+
+$$
+p_A(x)=\frac{1}{A}.
+$$
+
+Consequently a native finite cylinder can be used directly as a finite-area
+emitter by BDPT and light tracing.
 
 ### Parameters and Schema
 
@@ -1270,4 +1312,3 @@ The type currently has neither `IntersectGeodesic` nor `SurfaceSampler`, so it i
   "bounds": { "pmin": [/* D */], "pmax": [/* D */] } // optional
 }
 ```
-

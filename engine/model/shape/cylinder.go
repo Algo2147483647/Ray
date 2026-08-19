@@ -148,3 +148,77 @@ func (c *FiniteCylinder) BuildBoundingBox() (pmin, pmax *mat.VecDense) {
 
 	return pmin, pmax
 }
+
+// SurfaceArea returns the area of the complete closed cylinder: its lateral
+// surface plus both circular caps.
+func (c *FiniteCylinder) SurfaceArea() float64 {
+	if c == nil || c.Center == nil || c.Axis == nil || c.Center.Len() != 3 || c.Axis.Len() != 3 ||
+		c.R <= 0 || c.Height <= 0 || math.IsNaN(c.R) || math.IsNaN(c.Height) ||
+		math.IsInf(c.R, 0) || math.IsInf(c.Height, 0) {
+		return 0
+	}
+	axisNorm := mat.Norm(c.Axis, 2)
+	if axisNorm <= 0 || math.IsNaN(axisNorm) || math.IsInf(axisNorm, 0) {
+		return 0
+	}
+	return 2 * math.Pi * c.R * (c.Height + c.R)
+}
+
+// SampleSurface samples the complete closed cylinder uniformly with respect to
+// surface area. u.U first selects the lateral surface or one of the two caps in
+// exact proportion to its area; the residual coordinate is then remapped to a
+// uniform variate within that selected component.
+func (c *FiniteCylinder) SampleSurface(u maths.Sample2D) (SurfaceSample, bool) {
+	totalArea := c.SurfaceArea()
+	if totalArea <= 0 {
+		return SurfaceSample{}, false
+	}
+	frame, ok := maths.NewFrameFromNormal(c.Axis)
+	if !ok || frame.Tangent == nil || frame.Bitangent == nil {
+		return SurfaceSample{}, false
+	}
+
+	sideArea := 2 * math.Pi * c.R * c.Height
+	capArea := math.Pi * c.R * c.R
+	x := clampUnit(u.U) * totalArea
+	v := clampUnit(u.V)
+
+	if x < sideArea {
+		heightU := x / sideArea
+		phi := 2 * math.Pi * v
+		radial := cylinderRadialDirection(frame, phi)
+		point := mat.VecDenseCopyOf(c.Center)
+		point.AddScaledVec(point, c.Height*(heightU-0.5), frame.Normal)
+		point.AddScaledVec(point, c.R, radial)
+		return SurfaceSample{
+			Point: point, Normal: radial,
+			UV: [2]float64{heightU, v}, PDFArea: 1 / totalArea,
+		}, true
+	}
+
+	x -= sideArea
+	capSign := 1.0
+	if x >= capArea {
+		x -= capArea
+		capSign = -1
+	}
+	diskU := x / capArea
+	phi := 2 * math.Pi * v
+	radial := cylinderRadialDirection(frame, phi)
+	point := mat.VecDenseCopyOf(c.Center)
+	point.AddScaledVec(point, capSign*0.5*c.Height, frame.Normal)
+	point.AddScaledVec(point, c.R*math.Sqrt(diskU), radial)
+	normal := mat.VecDenseCopyOf(frame.Normal)
+	normal.ScaleVec(capSign, normal)
+	return SurfaceSample{
+		Point: point, Normal: normal,
+		UV: [2]float64{diskU, v}, PDFArea: 1 / totalArea,
+	}, true
+}
+
+func cylinderRadialDirection(frame maths.Frame, phi float64) *mat.VecDense {
+	radial := mat.NewVecDense(3, nil)
+	radial.AddScaledVec(radial, math.Cos(phi), frame.Tangent)
+	radial.AddScaledVec(radial, math.Sin(phi), frame.Bitangent)
+	return radial
+}

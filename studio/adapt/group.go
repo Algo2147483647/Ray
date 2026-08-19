@@ -56,6 +56,14 @@ func flattenObjects(objects []map[string]interface{}, ctx groupContext, dimensio
 			flattened = append(flattened, children...)
 			continue
 		}
+		if strings.EqualFold(shapeName, "quadrilateral") {
+			triangles, err := flattenQuadrilateralObject(object, ctx, index, dimension)
+			if err != nil {
+				return nil, fmt.Errorf("object %s: %w", objectLabel(object, index), err)
+			}
+			flattened = append(flattened, triangles...)
+			continue
+		}
 
 		adapted, err := adaptObject(object, ctx, index, dimension)
 		if err != nil {
@@ -64,6 +72,41 @@ func flattenObjects(objects []map[string]interface{}, ctx groupContext, dimensio
 		flattened = append(flattened, adapted)
 	}
 	return flattened, nil
+}
+
+func flattenQuadrilateralObject(object map[string]interface{}, ctx groupContext, index, dimension int) ([]map[string]interface{}, error) {
+	vertices := make([][]float64, 4)
+	for vertexIndex := range vertices {
+		field := fmt.Sprintf("p%d", vertexIndex+1)
+		vertex, err := vectorField(object, field, dimension)
+		if err != nil {
+			return nil, err
+		}
+		vertices[vertexIndex] = vertex
+	}
+
+	triangleVertices := [][3][]float64{
+		{vertices[0], vertices[1], vertices[2]},
+		{vertices[2], vertices[3], vertices[0]},
+	}
+	result := make([]map[string]interface{}, 0, len(triangleVertices))
+	quadrilateralID := objectID(object, index)
+	for triangleIndex, points := range triangleVertices {
+		triangle := cloneMap(object)
+		triangle["id"] = joinID(quadrilateralID, fmt.Sprintf("triangle-%d", triangleIndex+1))
+		triangle["shape"] = "triangle"
+		triangle["p1"] = points[0]
+		triangle["p2"] = points[1]
+		triangle["p3"] = points[2]
+		delete(triangle, "p4")
+
+		adapted, err := adaptObject(triangle, ctx, triangleIndex, dimension)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, adapted)
+	}
+	return result, nil
 }
 
 func deriveGroupContext(parent groupContext, object map[string]interface{}, index, dimension int) (groupContext, error) {

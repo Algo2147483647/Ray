@@ -760,6 +760,83 @@ func TestStudioAdaptsTriangleCenterAndGroupPlacement(t *testing.T) {
 	}
 }
 
+func TestStudioExpandsQuadrilateralIntoTwoTriangles(t *testing.T) {
+	script := &schema.StudioScript{
+		Objects: []map[string]interface{}{
+			{
+				"id":          "panel-group",
+				"shape":       "group",
+				"center":      []interface{}{10, 0, 0},
+				"scale":       2,
+				"material_id": "mat",
+				"objects": []interface{}{
+					map[string]interface{}{
+						"id":     "panel",
+						"shape":  "quadrilateral",
+						"center": []interface{}{1, 1, 1},
+						"p1":     []interface{}{0, 0, 0},
+						"p2":     []interface{}{1, 0, 0},
+						"p3":     []interface{}{1, 1, 0},
+						"p4":     []interface{}{0, 1, 0},
+					},
+				},
+			},
+		},
+	}
+
+	adapted, err := adaptTestScript(script, []string{"scene.json"}, 3)
+	if err != nil {
+		t.Fatalf("adapt quadrilateral: %v", err)
+	}
+	if len(adapted.Objects) != 2 {
+		t.Fatalf("expected two triangles, got %d objects", len(adapted.Objects))
+	}
+
+	first, second := adapted.Objects[0], adapted.Objects[1]
+	if first["shape"] != "triangle" || second["shape"] != "triangle" {
+		t.Fatalf("engine objects must both be triangles, got %v and %v", first["shape"], second["shape"])
+	}
+	if first["id"] != "panel-group/panel/triangle-1" || second["id"] != "panel-group/panel/triangle-2" {
+		t.Fatalf("unexpected triangle ids: %v, %v", first["id"], second["id"])
+	}
+	assertFloatSlice(t, first["p1"], []float64{12, 2, 2})
+	assertFloatSlice(t, first["p2"], []float64{14, 2, 2})
+	assertFloatSlice(t, first["p3"], []float64{14, 4, 2})
+	assertFloatSlice(t, second["p1"], []float64{14, 4, 2})
+	assertFloatSlice(t, second["p2"], []float64{12, 4, 2})
+	assertFloatSlice(t, second["p3"], []float64{12, 2, 2})
+	for _, triangle := range adapted.Objects {
+		if triangle["material_id"] != "mat" {
+			t.Fatalf("triangle did not inherit material: %v", triangle["material_id"])
+		}
+		if _, ok := triangle["p4"]; ok {
+			t.Fatal("engine triangle must not contain p4")
+		}
+		if _, ok := triangle["center"]; ok {
+			t.Fatal("engine triangle must not contain center")
+		}
+	}
+}
+
+func TestStudioQuadrilateralRequiresP4(t *testing.T) {
+	script := &schema.StudioScript{
+		Objects: []map[string]interface{}{
+			{
+				"id":    "panel",
+				"shape": "quadrilateral",
+				"p1":    []interface{}{0, 0, 0},
+				"p2":    []interface{}{1, 0, 0},
+				"p3":    []interface{}{1, 1, 0},
+			},
+		},
+	}
+
+	_, err := adaptTestScript(script, []string{"scene.json"}, 3)
+	if err == nil || !strings.Contains(err.Error(), `missing required field "p4"`) {
+		t.Fatalf("expected missing p4 error, got %v", err)
+	}
+}
+
 func TestStudioAdaptsBasicShapesWithGroupPlacement(t *testing.T) {
 	script := &schema.StudioScript{
 		Objects: []map[string]interface{}{

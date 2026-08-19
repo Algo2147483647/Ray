@@ -84,6 +84,28 @@ func TestBDPTPreflightValidatesBeforeFilmIndexing(t *testing.T) {
 	}
 }
 
+func TestBDPTPreflightAcceptsFiniteCylinderAreaLight(t *testing.T) {
+	tree := (&object.ObjectTree{}).Build()
+	tree.AddObject(&object.Object{
+		Shape: shape.NewFiniteCylinder(
+			mat.NewVecDense(3, []float64{0, 0, 2}),
+			mat.NewVecDense(3, []float64{0, 0, 1}),
+			0.25,
+			3,
+		),
+		Material: &material.Material{Emission: emission.NewConstant(optics.ConstantSpectrum(4))},
+	})
+	tree.Build()
+
+	state, err := newBDPTTestHandler().prepareBDPT(newBDPTTestCamera(t, 1, 1), tree)
+	if err != nil {
+		t.Fatalf("finite cylinder area light should pass BDPT preflight: %v", err)
+	}
+	if len(state.Lights) != 1 || state.TotalLightWeight <= 0 {
+		t.Fatalf("finite cylinder was not collected as an area light: %+v", state)
+	}
+}
+
 func TestBDPTFallbackUsesPathDriverOnlyWhenExplicit(t *testing.T) {
 	tree := (&object.ObjectTree{}).Build()
 	tree.AddObject(&object.Object{

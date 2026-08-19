@@ -12,6 +12,7 @@ var (
 	_ SurfaceSampler = (*Sphere)(nil)
 	_ SurfaceSampler = (*Circle)(nil)
 	_ SurfaceSampler = (*Cuboid)(nil)
+	_ SurfaceSampler = (*FiniteCylinder)(nil)
 	_ SurfaceSampler = (*Triangle)(nil)
 	_ SurfaceSampler = (*BoundedShape)(nil)
 )
@@ -37,6 +38,16 @@ func TestFiniteShapeSurfaceAreas(t *testing.T) {
 	)
 	if got, want := box.SurfaceArea(), 22.0; math.Abs(got-want) > 1e-12 {
 		t.Fatalf("cuboid area = %g, want %g", got, want)
+	}
+
+	cylinder := NewFiniteCylinder(
+		mat.NewVecDense(3, nil),
+		mat.NewVecDense(3, []float64{0, 0, 1}),
+		2,
+		3,
+	)
+	if got, want := cylinder.SurfaceArea(), 20*math.Pi; math.Abs(got-want) > 1e-12 {
+		t.Fatalf("cylinder area = %g, want %g", got, want)
 	}
 }
 
