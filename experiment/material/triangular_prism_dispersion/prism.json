@@ -1,5 +1,5 @@
 {
-  "_comment": "Absorbing prism used by the beauty render and the absorbing verification pass.",
+  "_comment": "Unit regular triangular prism in local coordinates. Its centroid is [0,0,0], each equilateral-triangle edge is 1 m, and its axial height is 1 m.",
   "media": {
     "prism_glass": {
       "type": "homogeneous",
@@ -16,7 +16,7 @@
       }
     }
   },
-  "materials":[
+  "materials": [
     {
       "id": "dispersive-prism",
       "surface": {
@@ -43,32 +43,14 @@
     {
       "id": "prism",
       "shape": "group",
-      "center": [
-        0,
-        0,
-        0
-      ],
       "material_id": "dispersive-prism",
       "objects": [
         {
-          "id": "prism-bottom",
+          "id": "bottom",
           "shape": "triangle",
-          "p1": [
-            -0.5,
-            -0.55,
-            0.25
-          ],
-          "p2": [
-            -0.5,
-            0.55,
-            0.25
-          ],
-          "p3": [
-            -0.15,
-            0,
-            0.25
-          ],
-          "material_id": "dispersive-prism",
+          "p1": [0.2886751345948129, -0.5, -0.5],
+          "p2": [-0.5773502691896258, 0, -0.5],
+          "p3": [0.2886751345948129, 0.5, -0.5],
           "medium_boundary": {
             "outside": "air",
             "inside": "prism_glass",
@@ -77,24 +59,11 @@
           }
         },
         {
-          "id": "prism-top",
+          "id": "top",
           "shape": "triangle",
-          "p1": [
-            -0.5,
-            -0.55,
-            1.75
-          ],
-          "p2": [
-            -0.15,
-            0,
-            1.75
-          ],
-          "p3": [
-            -0.5,
-            0.55,
-            1.75
-          ],
-          "material_id": "dispersive-prism",
+          "p1": [0.2886751345948129, -0.5, 0.5],
+          "p2": [0.2886751345948129, 0.5, 0.5],
+          "p3": [-0.5773502691896258, 0, 0.5],
           "medium_boundary": {
             "outside": "air",
             "inside": "prism_glass",
@@ -103,24 +72,12 @@
           }
         },
         {
-          "id": "prism-entry-0",
-          "shape": "triangle",
-          "p1": [
-            -0.5,
-            -0.55,
-            0.25
-          ],
-          "p2": [
-            -0.5,
-            -0.55,
-            1.75
-          ],
-          "p3": [
-            -0.5,
-            0.55,
-            1.75
-          ],
-          "material_id": "dispersive-prism",
+          "id": "entry",
+          "shape": "quadrilateral",
+          "p1": [0.2886751345948129, -0.5, -0.5],
+          "p2": [0.2886751345948129, 0.5, -0.5],
+          "p3": [0.2886751345948129, 0.5, 0.5],
+          "p4": [0.2886751345948129, -0.5, 0.5],
           "medium_boundary": {
             "outside": "air",
             "inside": "prism_glass",
@@ -129,24 +86,12 @@
           }
         },
         {
-          "id": "prism-entry-1",
-          "shape": "triangle",
-          "p1": [
-            -0.5,
-            -0.55,
-            0.25
-          ],
-          "p2": [
-            -0.5,
-            0.55,
-            1.75
-          ],
-          "p3": [
-            -0.5,
-            0.55,
-            0.25
-          ],
-          "material_id": "dispersive-prism",
+          "id": "upper-slope",
+          "shape": "quadrilateral",
+          "p1": [0.2886751345948129, 0.5, -0.5],
+          "p2": [-0.5773502691896258, 0, -0.5],
+          "p3": [-0.5773502691896258, 0, 0.5],
+          "p4": [0.2886751345948129, 0.5, 0.5],
           "medium_boundary": {
             "outside": "air",
             "inside": "prism_glass",
@@ -155,102 +100,12 @@
           }
         },
         {
-          "id": "prism-upper-slope-0",
-          "shape": "triangle",
-          "p1": [
-            -0.5,
-            0.55,
-            0.25
-          ],
-          "p2": [
-            -0.5,
-            0.55,
-            1.75
-          ],
-          "p3": [
-            -0.15,
-            0,
-            1.75
-          ],
-          "material_id": "dispersive-prism",
-          "medium_boundary": {
-            "outside": "air",
-            "inside": "prism_glass",
-            "priority": 10,
-            "thin": false
-          }
-        },
-        {
-          "id": "prism-upper-slope-1",
-          "shape": "triangle",
-          "p1": [
-            -0.5,
-            0.55,
-            0.25
-          ],
-          "p2": [
-            -0.15,
-            0,
-            1.75
-          ],
-          "p3": [
-            -0.15,
-            0,
-            0.25
-          ],
-          "material_id": "dispersive-prism",
-          "medium_boundary": {
-            "outside": "air",
-            "inside": "prism_glass",
-            "priority": 10,
-            "thin": false
-          }
-        },
-        {
-          "id": "prism-lower-slope-0",
-          "shape": "triangle",
-          "p1": [
-            -0.15,
-            0,
-            0.25
-          ],
-          "p2": [
-            -0.15,
-            0,
-            1.75
-          ],
-          "p3": [
-            -0.5,
-            -0.55,
-            1.75
-          ],
-          "material_id": "dispersive-prism",
-          "medium_boundary": {
-            "outside": "air",
-            "inside": "prism_glass",
-            "priority": 10,
-            "thin": false
-          }
-        },
-        {
-          "id": "prism-lower-slope-1",
-          "shape": "triangle",
-          "p1": [
-            -0.15,
-            0,
-            0.25
-          ],
-          "p2": [
-            -0.5,
-            -0.55,
-            1.75
-          ],
-          "p3": [
-            -0.5,
-            -0.55,
-            0.25
-          ],
-          "material_id": "dispersive-prism",
+          "id": "lower-slope",
+          "shape": "quadrilateral",
+          "p1": [-0.5773502691896258, 0, -0.5],
+          "p2": [0.2886751345948129, -0.5, -0.5],
+          "p3": [0.2886751345948129, -0.5, 0.5],
+          "p4": [-0.5773502691896258, 0, 0.5],
           "medium_boundary": {
             "outside": "air",
             "inside": "prism_glass",

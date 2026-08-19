@@ -80,7 +80,7 @@ func (h *Handler) Render() *Handler {
 	}
 	film.Reset()
 
-	fmt.Println("Starting rendering...")
+	fmt.Printf("Starting rendering (integrator: %s)...\n", h.Context.Integrator)
 	start := time.Now()
 
 	var err error

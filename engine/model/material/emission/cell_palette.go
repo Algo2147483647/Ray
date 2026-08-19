@@ -57,7 +57,7 @@ func NewCellPalette() CellPalette {
 	}
 }
 
-func (c CellPalette) Emit(ctx bxdf.ShadingContext, _ maths.Direction) optics.Spectrum {
+func (c CellPalette) EvaluateRadiance(ctx bxdf.ShadingContext) optics.Spectrum {
 	palette := c.Palette
 	if len(palette) == 0 {
 		palette = DefaultCellPalette
@@ -88,7 +88,26 @@ func (c CellPalette) Emit(ctx bxdf.ShadingContext, _ maths.Direction) optics.Spe
 	return c.GridColor
 }
 
+func (c CellPalette) Eval(ctx bxdf.ShadingContext, wo maths.Direction) optics.Spectrum {
+	return c.defaultEmitter().Eval(ctx, wo)
+}
+func (c CellPalette) SampleDirection(ctx bxdf.ShadingContext, u maths.Sample2D) DirectionSample {
+	return c.defaultEmitter().SampleDirection(ctx, u)
+}
+func (c CellPalette) PDFDirection(ctx bxdf.ShadingContext, wo maths.Direction) float64 {
+	return c.defaultEmitter().PDFDirection(ctx, wo)
+}
+func (c CellPalette) ExitanceEstimate(ctx bxdf.ShadingContext) optics.Spectrum {
+	return c.defaultEmitter().ExitanceEstimate(ctx)
+}
+func (CellPalette) DirectionFlags() DirectionFlags { return DirectionContinuous }
+func (c CellPalette) Emit(ctx bxdf.ShadingContext, wo maths.Direction) optics.Spectrum {
+	return c.Eval(ctx, wo)
+}
 func (CellPalette) IsDelta() bool { return false }
+func (c CellPalette) defaultEmitter() SurfaceEmitter {
+	return NewSurfaceEmitter(c, NewUniform(TwoSided), PeakRadiance)
+}
 
 // dominantAxis returns the axis with the largest absolute component of the
 // normal, and the sign of that component. Returns (-1, 0) when the input is

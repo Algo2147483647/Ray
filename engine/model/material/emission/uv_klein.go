@@ -44,7 +44,7 @@ func NewUVKlein(saturation, lightness float64, vStripes int, intensity float64) 
 	}
 }
 
-func (u UVKlein) Emit(ctx bxdf.ShadingContext, _ maths.Direction) optics.Spectrum {
+func (u UVKlein) EvaluateRadiance(ctx bxdf.ShadingContext) optics.Spectrum {
 	const twoPi = 2 * math.Pi
 
 	hue := positiveMod(ctx.UV[0], twoPi) / twoPi
@@ -59,7 +59,26 @@ func (u UVKlein) Emit(ctx bxdf.ShadingContext, _ maths.Direction) optics.Spectru
 	return optics.NewSpectrum(r, g, b).MulScalar(u.Intensity)
 }
 
+func (u UVKlein) Eval(ctx bxdf.ShadingContext, wo maths.Direction) optics.Spectrum {
+	return u.defaultEmitter().Eval(ctx, wo)
+}
+func (u UVKlein) SampleDirection(ctx bxdf.ShadingContext, sample maths.Sample2D) DirectionSample {
+	return u.defaultEmitter().SampleDirection(ctx, sample)
+}
+func (u UVKlein) PDFDirection(ctx bxdf.ShadingContext, wo maths.Direction) float64 {
+	return u.defaultEmitter().PDFDirection(ctx, wo)
+}
+func (u UVKlein) ExitanceEstimate(ctx bxdf.ShadingContext) optics.Spectrum {
+	return u.defaultEmitter().ExitanceEstimate(ctx)
+}
+func (UVKlein) DirectionFlags() DirectionFlags { return DirectionContinuous }
+func (u UVKlein) Emit(ctx bxdf.ShadingContext, wo maths.Direction) optics.Spectrum {
+	return u.Eval(ctx, wo)
+}
 func (UVKlein) IsDelta() bool { return false }
+func (u UVKlein) defaultEmitter() SurfaceEmitter {
+	return NewSurfaceEmitter(u, NewUniform(TwoSided), PeakRadiance)
+}
 
 func positiveMod(v, period float64) float64 {
 	v = math.Mod(v, period)

@@ -1,13 +1,93 @@
 package factory
 
 import (
+	"math"
+	"strings"
 	"testing"
 
 	"github.com/Algo2147483647/ray/engine/controller/parser"
 	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/model/material/bsdf"
 	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
+	"github.com/Algo2147483647/ray/engine/model/material/emission"
 )
+
+func TestParseCosinePowerEmission(t *testing.T) {
+	script := &parser.Script{Materials: []map[string]interface{}{
+		{
+			"id": "spot-panel",
+			"emission": map[string]interface{}{
+				"type":     "constant",
+				"exitance": []interface{}{12.0, 8.0, 4.0},
+				"distribution": map[string]interface{}{
+					"type": "cosine_power", "half_angle_degrees": 30.0, "sidedness": "front",
+				},
+			},
+		},
+	}}
+	materials, err := ParseMaterials(script)
+	if err != nil {
+		t.Fatalf("ParseMaterials failed: %v", err)
+	}
+	emitter, ok := materials["spot-panel"].Emission.(emission.SurfaceEmitter)
+	if !ok {
+		t.Fatalf("expected SurfaceEmitter, got %T", materials["spot-panel"].Emission)
+	}
+	distribution, ok := emitter.Distribution.(emission.CosinePower)
+	if !ok {
+		t.Fatalf("expected CosinePower, got %T", emitter.Distribution)
+	}
+	wantExponent := math.Log(0.5) / math.Log(math.Cos(math.Pi/6))
+	if math.Abs(distribution.Exponent-wantExponent) > 1e-12 || distribution.Sidedness != emission.FrontSide {
+		t.Fatalf("unexpected distribution: %+v", distribution)
+	}
+	if emitter.Quantity != emission.TotalExitance {
+		t.Fatalf("quantity = %v, want total exitance", emitter.Quantity)
+	}
+}
+
+func TestParseEmissionRejectsAmbiguousOrInvalidDirection(t *testing.T) {
+	tests := []struct {
+		name     string
+		emission map[string]interface{}
+		contains string
+	}{
+		{
+			name: "radiance and exitance",
+			emission: map[string]interface{}{
+				"type": "constant", "radiance": []interface{}{1, 1, 1}, "exitance": []interface{}{1, 1, 1},
+			},
+			contains: "mutually exclusive",
+		},
+		{
+			name: "two direction parameters",
+			emission: map[string]interface{}{
+				"type": "constant", "radiance": []interface{}{1, 1, 1},
+				"distribution": map[string]interface{}{
+					"type": "cosine_power", "exponent": 2.0, "half_angle_degrees": 30.0,
+				},
+			},
+			contains: "exactly one",
+		},
+		{
+			name: "negative exponent",
+			emission: map[string]interface{}{
+				"type": "constant", "radiance": []interface{}{1, 1, 1},
+				"distribution": map[string]interface{}{"type": "cosine_power", "exponent": -1.0},
+			},
+			contains: "finite and >= 0",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			script := &parser.Script{Materials: []map[string]interface{}{{"id": "invalid", "emission": test.emission}}}
+			_, err := ParseMaterials(script)
+			if err == nil || !strings.Contains(err.Error(), test.contains) {
+				t.Fatalf("error = %v, want substring %q", err, test.contains)
+			}
+		})
+	}
+}
 
 func TestParseRoughConductorWeight(t *testing.T) {
 	script := &parser.Script{

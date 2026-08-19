@@ -1,18 +1,18 @@
 {
-  "_comment": "A self-contained moissanite fire rig. All children use local coordinates around the culet [0,0,0]; change only the enclosing Group placement to move or rotate the complete setup.",
+  "_comment": "World placement for the moissanite model on the right-hand (+X) radial beam. The model fragment uses local coordinates with its culet at [0,0,0].",
   "materials": [
   ],
   "objects": [
     {
       "id": "moissanite-fire-rig",
       "shape": "group",
-      "_comment": "World placement for the entire local rig. The 17 degree yaw rotates gem, core source, and collimator together.",
-      "center": [0.62, -1.48, 0.012],
-      "scale": 0.62,
+      "_comment": "Place the gem on the 0-degree source beam. A -25 degree Y pitch turns the crown toward the source, while a -17 degree Z yaw turns its fire toward the camera and breaks rotational facet symmetry. The tilted bounds remain centered at z=1.5 m.",
+      "center": [1.2, 0, 1.11197073977225],
+      "scale": 1.2,
       "basis": [
-        [0.95630476, -0.2923717, 0.0],
-        [0.2923717, 0.95630476, 0.0],
-        [0.0, 0.0, 1.0]
+        [0.8667064471094822, 0.2923717047227368, -0.4041518536594618],
+        [-0.2649787526993964, 0.9563047559630354, 0.1235616216320881],
+        [0.4226182617406994, 0, 0.9063077870366499]
       ],
       "objects": [
         {

@@ -47,9 +47,9 @@ The first column is the logical emission-model key. An emission model may be the
 
 | Emission material type | JSON `emission.type` | Description and mathematical model | Input parameters | Runtime type | Spatial rule | `IsDelta()` |
 | --- | --- | --- | --- | --- | --- | --- |
-| Constant Emission | `constant` | Spatially and directionally invariant spectral radiance, $L_e(x,\omega_o,\lambda)=L(\lambda)$. | Required spectral radiance $L(\lambda)\ge0$ in `radiance`; `color` is a fallback alias. | `emission.Constant` | Constant over position and outgoing direction | False |
-| Cell Palette Emission | `cell_palette` | Diagnostic emission indexed by the dominant signed normal axis, $i=2\operatorname*{arg\,max}_j\lvert n_j\rvert+\mathbf{1}_{n_i>0}$, with optional boundary-grid replacement. | Non-empty RGB `palette` $C_i\in\mathbb{R}_{\ge0}^3$; intensity $s\ge0$; `shading`; RGB `grid_color`; grid thickness $t\ge0$. All are optional with documented defaults. | `emission.CellPalette` | Dominant normal axis/sign, optionally modified near AABB boundaries | False |
-| UV Klein Emission | `uv_klein` | Diagnostic Klein-bottle parameter visualization: hue follows wrapped $u$, and $2N$ alternating lightness bands follow wrapped $v$. | Saturation $S\in[0,1]$, default 1; lightness $L\in[0,1]$, default 0.55; positive integer $N=$ `v_stripes`; intensity $s\ge0$, default 1. `v_stripes` is effectively required by the current parser bug. | `emission.UVKlein` | HSL mapping of Klein-bottle UV coordinates | False |
+| Constant Emission | `constant` | A spatially constant spectral field composed with an optional angular distribution, $L_e(x,\omega_o,\lambda)=R(\lambda)D(\omega_o)$. | Exactly one of spectral `radiance`/legacy `color`, or spectral `exitance`; optional `distribution`. | `emission.SurfaceEmitter` with `emission.Constant` field | Constant over position; uniform or cosine-power over direction | False |
+| Cell Palette Emission | `cell_palette` | Diagnostic emission indexed by the dominant signed normal axis, $i=2\operatorname*{arg\,max}_j\lvert n_j\rvert+\mathbf{1}_{n_i>0}$, with optional boundary-grid replacement. | Non-empty RGB `palette` $C_i\in\mathbb{R}_{\ge0}^3$; intensity $s\ge0$; `shading`; RGB `grid_color`; grid thickness $t\ge0$; optional `distribution`. | `emission.SurfaceEmitter` with `emission.CellPalette` field | Dominant normal axis/sign and optional angular distribution | False |
+| UV Klein Emission | `uv_klein` | Diagnostic Klein-bottle parameter visualization: hue follows wrapped $u$, and $2N$ alternating lightness bands follow wrapped $v$. | Saturation $S\in[0,1]$, default 1; lightness $L\in[0,1]$, default 0.55; positive integer $N=$ `v_stripes`; intensity $s\ge0$, default 1; optional `distribution`. | `emission.SurfaceEmitter` with `emission.UVKlein` field | HSL mapping of Klein-bottle UV coordinates and optional angular distribution | False |
 
 ### Medium Discriminators
 
@@ -102,6 +102,34 @@ f(\omega_i,\omega_o)
 $$
 
 Delta models return zero from `Eval` and `PDF`; their non-zero probability and value exist only in `Sample`.
+
+Emission directions instead use a separate local frame built from the geometric
+normal, so normal mapping cannot rotate emitted energy or create back-face
+leaks. Omitting `emission.distribution` preserves the legacy direction-invariant,
+two-sided radiance. A directional emitter can be authored as:
+
+```jsonc
+"emission": {
+  "type": "constant",
+  "exitance": [20, 16, 12],
+  "distribution": {
+    "type": "cosine_power",
+    "half_angle_degrees": 15,
+    "sidedness": "front"
+  }
+}
+```
+
+`distribution.type` is `uniform` or `cosine_power`. Sidedness is `front`,
+`back`, or `two_sided`; it defaults to `front` when a distribution is present.
+Cosine-power accepts exactly one of finite `exponent >= 0` and
+`half_angle_degrees` in `(0, 90]`. For exponent $k$, the front-side model is
+$D(\omega)=\max(0,\cos\theta)^k$, its projected integral is
+$2\pi/(k+2)$, and its solid-angle sampling density is
+$p(\omega)=(k+2)\cos^{k+1}\theta/(2\pi)$. `exitance` denotes the total over all
+enabled sides and is normalized by this projected integral; `radiance` denotes
+the peak value and therefore changes total emitted power when the lobe width is
+changed.
 
 ### Shared Spectral Parameter Schema
 

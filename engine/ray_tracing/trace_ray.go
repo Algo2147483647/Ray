@@ -14,11 +14,13 @@ import (
 )
 
 type SurfaceInteraction struct {
-	Hit     *object.SurfaceHit
-	Object  *object.Object
-	Frame   maths.Frame
-	WoLocal maths.Direction
-	Context bxdf.ShadingContext
+	Hit           *object.SurfaceHit
+	Object        *object.Object
+	Frame         maths.Frame
+	EmissionFrame maths.Frame
+	WoLocal       maths.Direction
+	WoEmission    maths.Direction
+	Context       bxdf.ShadingContext
 }
 
 func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level int64) {
@@ -87,7 +89,7 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level in
 	}
 
 	// Handle emissive surfaces directly; terminate if there is no BSDF to sample.
-	if h.traceEmission(ray, si.Object, si.Context, si.WoLocal) {
+	if h.traceEmission(ray, si.Object, si.Context, si.WoEmission) {
 		return
 	} else if !si.Object.Material.HasSurface() {
 		terminateRay(ray)
@@ -190,15 +192,26 @@ func (h *Handler) prepareSurfaceInteraction(
 	if !ok {
 		return SurfaceInteraction{}, false
 	}
+	emissionNormal := hit.GeometricNormal
+	if emissionNormal == nil {
+		emissionNormal = hit.ShadingNormal
+	}
+	emissionFrame, ok := maths.NewFrameFromNormalInGeometry(ray.G(), hit.Point, emissionNormal)
+	if !ok {
+		return SurfaceInteraction{}, false
+	}
 
 	woLocal := frame.WorldToLocalNegated(ray.Direction)
+	woEmission := emissionFrame.WorldToLocalNegated(ray.Direction)
 
 	return SurfaceInteraction{
-		Hit:     hit,
-		Object:  obj,
-		Frame:   frame,
-		WoLocal: woLocal,
-		Context: ctx,
+		Hit:           hit,
+		Object:        obj,
+		Frame:         frame,
+		EmissionFrame: emissionFrame,
+		WoLocal:       woLocal,
+		WoEmission:    woEmission,
+		Context:       ctx,
 	}, true
 }
 
@@ -233,7 +246,11 @@ func (h *Handler) traceEmission(
 		return false
 	}
 
-	emitted := obj.Material.Emission.Emit(ctx, woLocal)
+	emitted := obj.Material.Emission.Eval(ctx, woLocal)
+	if emitted.IsZero() {
+		// A one-sided emitter can still carry a BSDF on its dark side.
+		return false
+	}
 	applySpectrum(ray, emitted)
 	return true
 }

@@ -394,23 +394,109 @@ func parseEmission(def map[string]interface{}) (emission.Emitter, error) {
 		return nil, err
 	}
 
+	var field emission.RadianceField
+	quantity := emission.PeakRadiance
 	switch emissionType {
 	case "constant":
-		radiance, err := requiredEmissionRadianceField(def)
+		_, hasRadiance := def["radiance"]
+		_, hasColor := def["color"]
+		_, hasExitance := def["exitance"]
+		if hasExitance && (hasRadiance || hasColor) {
+			return nil, fmt.Errorf("radiance/color and exitance are mutually exclusive")
+		}
+		var strength optics.SpectralParameter
+		if hasExitance {
+			strength, err = requiredSpectralParameterField(def, "exitance")
+			quantity = emission.TotalExitance
+		} else {
+			strength, err = requiredEmissionRadianceField(def)
+		}
 		if err != nil {
 			return nil, err
 		}
-		return emission.NewConstantParameter(radiance), nil
+		field = emission.Constant{Radiance: strength}
 	case "cell_palette":
-		return parseCellPaletteEmission(def)
+		field, err = parseCellPaletteEmission(def)
 	case "uv_klein":
-		return parseUVKleinEmission(def)
+		field, err = parseUVKleinEmission(def)
 	default:
 		return nil, fmt.Errorf("unsupported emission type %q", emissionType)
 	}
+	if err != nil {
+		return nil, err
+	}
+	distribution, err := parseEmissionDistribution(def)
+	if err != nil {
+		return nil, err
+	}
+	return emission.NewSurfaceEmitter(field, distribution, quantity), nil
 }
 
-func parseUVKleinEmission(def map[string]interface{}) (emission.Emitter, error) {
+func parseEmissionDistribution(def map[string]interface{}) (emission.AngularDistribution, error) {
+	distributionDef, ok, err := utils.OptionalMapField(def, "distribution")
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return emission.NewUniform(emission.TwoSided), nil
+	}
+
+	distributionType, err := utils.RequiredStringField(distributionDef, "type")
+	if err != nil {
+		return nil, fmt.Errorf("distribution: %w", err)
+	}
+	sidedness := emission.FrontSide
+	if side, ok, err := utils.OptionalStringField(distributionDef, "sidedness"); err != nil {
+		return nil, fmt.Errorf("distribution: %w", err)
+	} else if ok {
+		switch side {
+		case "front":
+			sidedness = emission.FrontSide
+		case "back":
+			sidedness = emission.BackSide
+		case "two_sided":
+			sidedness = emission.TwoSided
+		default:
+			return nil, fmt.Errorf("distribution sidedness must be front, back, or two_sided")
+		}
+	}
+
+	switch distributionType {
+	case "uniform":
+		return emission.NewUniform(sidedness), nil
+	case "cosine_power":
+		exponent, hasExponent, err := utils.OptionalFloat64Field(distributionDef, "exponent")
+		if err != nil {
+			return nil, fmt.Errorf("distribution: %w", err)
+		}
+		halfAngle, hasHalfAngle, err := utils.OptionalFloat64Field(distributionDef, "half_angle_degrees")
+		if err != nil {
+			return nil, fmt.Errorf("distribution: %w", err)
+		}
+		if hasExponent == hasHalfAngle {
+			return nil, fmt.Errorf("distribution requires exactly one of exponent or half_angle_degrees")
+		}
+		if hasHalfAngle {
+			if halfAngle <= 0 || halfAngle > 90 || math.IsNaN(halfAngle) || math.IsInf(halfAngle, 0) {
+				return nil, fmt.Errorf("distribution half_angle_degrees must be finite and in (0, 90]")
+			}
+			if halfAngle == 90 {
+				exponent = 0
+			} else {
+				exponent = math.Log(0.5) / math.Log(math.Cos(halfAngle*math.Pi/180))
+			}
+		}
+		result, err := emission.NewCosinePower(exponent, sidedness)
+		if err != nil {
+			return nil, fmt.Errorf("distribution: %w", err)
+		}
+		return result, nil
+	default:
+		return nil, fmt.Errorf("unsupported emission distribution type %q", distributionType)
+	}
+}
+
+func parseUVKleinEmission(def map[string]interface{}) (emission.RadianceField, error) {
 	saturation, ok, err := utils.OptionalFloat64Field(def, "saturation")
 	if err != nil {
 		return nil, err
@@ -471,7 +557,7 @@ func parseUVKleinEmission(def map[string]interface{}) (emission.Emitter, error) 
 //     (defaults to 0.02 of the smallest object extent at parse
 //     time — but here we just default to a small absolute value
 //     of 0.02 and rely on the user to tune).
-func parseCellPaletteEmission(def map[string]interface{}) (emission.Emitter, error) {
+func parseCellPaletteEmission(def map[string]interface{}) (emission.RadianceField, error) {
 	cp := emission.NewCellPalette()
 
 	if rawPalette, ok := def["palette"]; ok {

@@ -1,48 +1,9 @@
 {
-  "_comment": "Shared Newton-prism experiment and darkroom geometry. Compose it with prism-absorbing.json plus beauty.json for the artwork, or with a prism variant plus diagnostic JSON for verification.",
+  "_comment": "World placement for the unit regular prism, a frameless black triangular collimator, and the projection screen. Illumination is supplied only by light-source.json.",
   "geometry": {
     "type": "euclidean"
   },
   "materials": [
-    {
-      "id": "art-vermilion-enamel",
-      "surface": {
-        "type": "lambert",
-        "albedo": {
-          "type": "rgb",
-          "value": [
-            0.52,
-            0.055,
-            0.018
-          ]
-        }
-      }
-    },
-    {
-      "id": "art-jade-enamel",
-      "surface": {
-        "type": "lambert",
-        "albedo": {
-          "type": "rgb",
-          "value": [
-            0.08,
-            0.48,
-            0.18
-          ]
-        }
-      }
-    },
-    {
-      "id": "art-warm-key",
-      "emission": {
-        "type": "constant",
-        "radiance": {
-          "type": "blackbody",
-          "temperature": 2350,
-          "scale": 12
-        }
-      }
-    },
     {
       "id": "aperture-black",
       "surface": {
@@ -62,380 +23,64 @@
           "value": 0.92
         }
       }
-    },
-    {
-      "id": "apparatus-dark",
-      "surface": {
-        "type": "lambert",
-        "albedo": {
-          "type": "constant",
-          "value": 0.16
-        }
-      }
-    },
-    {
-      "id": "darkroom-blue",
-      "surface": {
-        "type": "lambert",
-        "albedo": {
-          "type": "rgb",
-          "value": [0.006, 0.012, 0.03]
-        }
-      }
-    },
-    {
-      "id": "aged-oak",
-      "surface": {
-        "type": "lambert",
-        "albedo": {
-          "type": "rgb",
-          "value": [0.24, 0.085, 0.025]
-        }
-      }
-    },
-    {
-      "id": "aged-brass",
-      "surface": {
-        "type": "rough_conductor",
-        "eta": [0.32, 0.58, 1.18],
-        "k": [3.05, 2.45, 1.72],
-        "roughness": 0.3
-      }
-    },
-    {
-      "id": "paper-label",
-      "surface": {
-        "type": "lambert",
-        "albedo": {
-          "type": "rgb",
-          "value": [0.48, 0.29, 0.12]
-        }
-      }
-    },
-    {
-      "id": "glass-edge-highlight",
-      "surface": {
-        "type": "lambert",
-        "albedo": {
-          "type": "rgb",
-          "value": [0.055, 0.19, 0.28]
-        }
-      }
     }
   ],
   "objects": [
     {
-      "id": "source-assembly",
+      "id": "prism",
       "shape": "group",
-      "_comment": "Light-emitting slit, brass source frame, and dark source housing.",
+      "_comment": "Place the prism on the 180-degree source beam. Its center and 49-degree yaw put the entry face about 0.20 m behind the collimator; this is near the minimum-deviation orientation and avoids total internal reflection across 400-700 nm.",
+      "center": [-1.05, 0, 1.5],
+      "scale": [0.9, 0.9, 2],
+      "basis": [
+        [0.6560590289905073, -0.754709580222772, 0],
+        [0.754709580222772, 0.6560590289905073, 0],
+        [0, 0, 1]
+      ]
+    },
+    {
+      "id": "collimator",
+      "shape": "group",
+      "_comment": "Four pure-black triangles form a full-height slit centered on the 180-degree source normal. The baffle is 0.20 m from the emitter at x=-0.25 and about 0.20 m before the prism entry face.",
+      "material_id": "aperture-black",
       "objects": [
         {
-          "id": "spectral-slit-0",
+          "id": "lower-a",
           "shape": "triangle",
-          "p1": [
-            1.85,
-            -0.2,
-            0.3
-          ],
-          "p2": [
-            1.85,
-            -0.2,
-            1.7
-          ],
-          "p3": [
-            1.85,
-            -0.1,
-            1.7
-          ],
-          "material_id": "white-source"
+          "p1": [-0.45, -0.6, 0],
+          "p2": [-0.45, -0.04, 0],
+          "p3": [-0.45, -0.04, 3]
         },
         {
-          "id": "spectral-slit-1",
+          "id": "lower-b",
           "shape": "triangle",
-          "p1": [
-            1.85,
-            -0.2,
-            0.3
-          ],
-          "p2": [
-            1.85,
-            -0.1,
-            1.7
-          ],
-          "p3": [
-            1.85,
-            -0.1,
-            0.3
-          ],
-          "material_id": "white-source"
+          "p1": [-0.45, -0.6, 0],
+          "p2": [-0.45, -0.04, 3],
+          "p3": [-0.45, -0.6, 3]
         },
         {
-          "id": "source-frame-left",
-          "shape": "cuboid",
-          "pmin": [
-            1.86,
-            -0.55,
-            0.25
-          ],
-          "pmax": [
-            1.9,
-            -0.2,
-            1.75
-          ],
-          "material_id": "aged-brass"
+          "id": "upper-a",
+          "shape": "triangle",
+          "p1": [-0.45, 0.04, 0],
+          "p2": [-0.45, 0.6, 0],
+          "p3": [-0.45, 0.6, 3]
         },
         {
-          "id": "source-frame-right",
-          "shape": "cuboid",
-          "pmin": [
-            1.86,
-            -0.1,
-            0.25
-          ],
-          "pmax": [
-            1.9,
-            0.25,
-            1.75
-          ],
-          "material_id": "aged-brass"
-        },
-        {
-          "id": "source-frame-bottom",
-          "shape": "cuboid",
-          "pmin": [
-            1.86,
-            -0.55,
-            0.21
-          ],
-          "pmax": [
-            1.9,
-            0.25,
-            0.25
-          ],
-          "material_id": "aged-brass"
-        },
-        {
-          "id": "source-frame-top",
-          "shape": "cuboid",
-          "pmin": [
-            1.86,
-            -0.55,
-            1.75
-          ],
-          "pmax": [
-            1.9,
-            0.25,
-            1.79
-          ],
-          "material_id": "aged-brass"
-        },
-        {
-          "id": "source-housing-back",
-          "shape": "cuboid",
-          "pmin": [
-            1.91,
-            -0.58,
-            0.18
-          ],
-          "pmax": [
-            2.18,
-            0.28,
-            1.82
-          ],
-          "material_id": "darkroom-blue"
-        },
-        {
-          "id": "source-housing-cap",
-          "shape": "cuboid",
-          "pmin": [
-            1.84,
-            -0.6,
-            1.79
-          ],
-          "pmax": [
-            2.2,
-            0.3,
-            1.86
-          ],
-          "material_id": "aged-brass"
-        },
-        {
-          "id": "source-housing-foot",
-          "shape": "cuboid",
-          "pmin": [
-            1.72,
-            -0.67,
-            0.14
-          ],
-          "pmax": [
-            2.25,
-            0.37,
-            0.22
-          ],
-          "material_id": "aged-brass"
+          "id": "upper-b",
+          "shape": "triangle",
+          "p1": [-0.45, 0.04, 0],
+          "p2": [-0.45, 0.6, 3],
+          "p3": [-0.45, 0.04, 3]
         }
       ]
     },
     {
-      "id": "collimator-assembly",
-      "shape": "group",
-      "_comment": "Black collimator baffles and their brass support frame.",
-      "objects": [
-        {
-          "id": "aperture-lower",
-          "_comment": "Matte-black negative-y collimator baffle; together with aperture-upper it leaves only y=[0.145,0.22] open.",
-          "shape": "cuboid",
-          "pmin": [
-            0.18,
-            -0.45,
-            0.3
-          ],
-          "pmax": [
-            0.22,
-            0.145,
-            1.7
-          ],
-          "material_id": "aperture-black"
-        },
-        {
-          "id": "aperture-upper",
-          "_comment": "Matte-black positive-y collimator baffle; it blocks off-axis slit rays before they reach the prism.",
-          "shape": "cuboid",
-          "pmin": [
-            0.18,
-            0.22,
-            0.3
-          ],
-          "pmax": [
-            0.22,
-            0.45,
-            1.7
-          ],
-          "material_id": "aperture-black"
-        }
-      ]
-    },
-    {
-      "id": "projection-screen-assembly",
-      "shape": "group",
-      "_comment": "Projection screen, brass perimeter frame, and floor stand.",
-      "objects": [
-        {
-          "id": "projection-screen",
-          "shape": "cuboid",
-          "pmin": [
-            -4.02,
-            -0.75,
-            0.1
-          ],
-          "pmax": [
-            -4,
-            0.75,
-            2.8
-          ],
-          "material_id": "white-screen"
-        },
-        {
-          "id": "screen-frame-left",
-          "shape": "cylinder",
-          "center": [
-            -3.99,
-            -0.76,
-            1.46
-          ],
-          "axis": [
-            0,
-            0,
-            1
-          ],
-          "r": 0.018,
-          "height": 2.76,
-          "material_id": "aged-brass"
-        },
-        {
-          "id": "screen-frame-right",
-          "shape": "cylinder",
-          "center": [
-            -3.99,
-            0.76,
-            1.46
-          ],
-          "axis": [
-            0,
-            0,
-            1
-          ],
-          "r": 0.018,
-          "height": 2.76,
-          "material_id": "aged-brass"
-        },
-        {
-          "id": "screen-frame-bottom",
-          "shape": "cylinder",
-          "center": [
-            -3.99,
-            0,
-            0.08
-          ],
-          "axis": [
-            0,
-            1,
-            0
-          ],
-          "r": 0.018,
-          "height": 1.52,
-          "material_id": "aged-brass"
-        },
-        {
-          "id": "screen-frame-top",
-          "shape": "cylinder",
-          "center": [
-            -3.99,
-            0,
-            2.84
-          ],
-          "axis": [
-            0,
-            1,
-            0
-          ],
-          "r": 0.018,
-          "height": 1.52,
-          "material_id": "aged-brass"
-        },
-        {
-          "id": "screen-stand-post",
-          "shape": "cylinder",
-          "center": [
-            -4.08,
-            0,
-            0.52
-          ],
-          "axis": [
-            0,
-            0,
-            1
-          ],
-          "r": 0.035,
-          "height": 0.95,
-          "material_id": "aged-brass"
-        },
-        {
-          "id": "screen-stand-foot",
-          "shape": "cuboid",
-          "pmin": [
-            -4.28,
-            -0.38,
-            0.015
-          ],
-          "pmax": [
-            -3.88,
-            0.38,
-            0.075
-          ],
-          "material_id": "aged-brass"
-        }
-      ]
+      "id": "projection-screen",
+      "shape": "cuboid",
+      "_comment": "Offset toward negative Y to catch the 49-degree prism's dispersed beam; after matching the apparatus to the radius-0.25 m source ring, the predicted 400-700 nm footprint at x=-4 is approximately y=[-3.9,-2.0].",
+      "pmin": [-4.02, -4, 0],
+      "pmax": [-4, -1.2, 3],
+      "material_id": "white-screen"
     }
   ]
 }

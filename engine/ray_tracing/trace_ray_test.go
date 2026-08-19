@@ -177,6 +177,38 @@ func TestPrepareSurfaceInteractionSamplesLambertIn4D(t *testing.T) {
 	}
 }
 
+func TestPrepareSurfaceInteractionUsesGeometricNormalForEmission(t *testing.T) {
+	handler := &Handler{}
+	ray := &renderray.Ray{
+		Origin:    mat.NewVecDense(3, []float64{0, 0, 1}),
+		Direction: mat.NewVecDense(3, []float64{0, 0, -1}),
+	}
+	ray.Init()
+	ray.Origin.CopyVec(mat.NewVecDense(3, []float64{0, 0, 1}))
+	ray.Direction.CopyVec(mat.NewVecDense(3, []float64{0, 0, -1}))
+
+	obj := &object.Object{Material: &material.Material{}}
+	hit := &object.SurfaceHit{
+		Distance:        1,
+		Point:           mat.NewVecDense(3, []float64{0, 0, 0}),
+		GeometricNormal: mat.NewVecDense(3, []float64{0, 0, 1}),
+		ShadingNormal:   mat.NewVecDense(3, []float64{1, 0, 0}),
+		FrontFace:       true,
+		Object:          obj,
+	}
+
+	si, ok := handler.prepareSurfaceInteraction(medium.NewRegistry(), ray, hit)
+	if !ok {
+		t.Fatal("expected surface interaction to prepare")
+	}
+	if math.Abs(si.WoEmission.Component(2)-1) > 1e-12 {
+		t.Fatalf("emission direction = %v, want geometric-normal cosine 1", si.WoEmission)
+	}
+	if math.Abs(si.WoLocal.Component(2)) > 1e-12 {
+		t.Fatalf("BSDF direction unexpectedly used geometric normal: %v", si.WoLocal)
+	}
+}
+
 func TestSurfaceHitInGeometryHonorsKleinBoundary(t *testing.T) {
 	tree := &object.ObjectTree{}
 	tree.AddObject(&object.Object{

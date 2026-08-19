@@ -35,6 +35,7 @@ type bdptVertex struct {
 	Point           *mat.VecDense
 	GeometricNormal *mat.VecDense
 	Frame           maths.Frame
+	EmissionFrame   maths.Frame
 	WoLocal         maths.Direction
 	Context         bxdf.ShadingContext
 	Object          *object.Object
@@ -58,6 +59,18 @@ type areaLight struct {
 type bdptSceneState struct {
 	Lights           []areaLight
 	TotalLightWeight float64
+}
+
+func (v *bdptVertex) emissionLocal(world *mat.VecDense) maths.Direction {
+	if v == nil {
+		return nil
+	}
+	if v.EmissionFrame.Normal != nil {
+		return v.EmissionFrame.WorldToLocal(world)
+	}
+	// Compatibility for manually assembled vertices in tests and external
+	// callers created before EmissionFrame was introduced.
+	return v.Frame.WorldToLocal(world)
 }
 
 // prepareBDPT performs all capability validation before an integrator driver
@@ -131,13 +144,8 @@ func (h *Handler) prepareBDPT(renderCamera camera.RayCamera, tree *object.Object
 				return nil, fmt.Errorf("object %q: BDPT medium boundary requires a material surface", obj.Material.Metadata.Name)
 			}
 			if obj.Material.HasEmission() {
-				if obj.Material.Emission.IsDelta() {
+				if obj.Material.Emission.DirectionFlags()&emission.DirectionDelta != 0 {
 					return nil, fmt.Errorf("BDPT delta emitters are not implemented")
-				}
-				switch obj.Material.Emission.(type) {
-				case emission.Constant, *emission.Constant:
-				default:
-					return nil, fmt.Errorf("BDPT currently supports constant finite-area emission, got %T", obj.Material.Emission)
 				}
 				if !isSampleableAreaLight(obj) {
 					return nil, fmt.Errorf("BDPT environment or non-sampleable emitter %T is not implemented", obj.Shape)
@@ -325,11 +333,11 @@ func collectAreaLights(tree *object.ObjectTree) ([]areaLight, float64) {
 		if area <= 0 || math.IsNaN(area) || math.IsInf(area, 0) {
 			continue
 		}
-		emitted := obj.Material.Emission.Emit(
-			bxdf.ShadingContext{SpectrumMode: optics.SpectrumModeRGB},
-			maths.NewDirection(0, 0, 1),
-		)
-		powerEstimate := emitted.MaxComponent()
+		exitance := obj.Material.Emission.ExitanceEstimate(bxdf.ShadingContext{
+			SpectrumMode:    optics.SpectrumModeRGB,
+			GeometricNormal: maths.NewDirection(0, 0, 1),
+		})
+		powerEstimate := exitance.MaxComponent()
 		if powerEstimate <= 0 || math.IsNaN(powerEstimate) || math.IsInf(powerEstimate, 0) {
 			powerEstimate = 1
 		}
@@ -425,10 +433,12 @@ func (h *Handler) makeLightEndpoint(
 		return bdptVertex{}, false
 	}
 	return bdptVertex{
-		Kind: bdptVertexLight, Point: ss.Point, GeometricNormal: ss.Normal, Frame: frame,
+		Kind: bdptVertexLight, Point: ss.Point, GeometricNormal: ss.Normal,
+		Frame: frame, EmissionFrame: frame,
 		Context: ctx, Object: selected.Object,
-		Beta:       unitSpectrum(wavelengthNM).MulScalar(1 / pdfLightArea),
-		PDFFwdArea: pdfLightArea, Connectible: true,
+		Beta:        unitSpectrum(wavelengthNM).MulScalar(1 / pdfLightArea),
+		PDFFwdArea:  pdfLightArea,
+		Connectible: selected.Object.Material.Emission.DirectionFlags()&emission.DirectionDelta == 0,
 		MediumStack: medium.NewStack(medium.MediumAir),
 	}, true
 }
@@ -442,24 +452,19 @@ func (h *Handler) buildLightSubpath(
 	if !ok {
 		return nil
 	}
-	emissionNormal := mat.VecDenseCopyOf(root.GeometricNormal)
-	if rand.Float64() < 0.5 {
-		emissionNormal.ScaleVec(-1, emissionNormal)
-	}
-	emissionFrame, ok := maths.NewFrameFromNormal(emissionNormal)
-	if !ok {
+	directionSample := root.Object.Material.Emission.SampleDirection(root.Context, maths.Sample2D{
+		U: rand.Float64(), V: rand.Float64(),
+	})
+	if directionSample.PDF <= 0 || directionSample.Wo.Len() != root.GeometricNormal.Len() ||
+		!directionSample.Le.IsFinite() || !directionSample.Le.IsNonNegative() {
 		return nil
 	}
-	localDirection := maths.CosineSampleHemisphere(maths.Sample2D{U: rand.Float64(), V: rand.Float64()})
-	pdfDirection := 0.5 * maths.CosineHemispherePDF(localDirection)
-	if pdfDirection <= 0 {
-		return nil
-	}
-	worldDirection := emissionFrame.LocalToWorld(localDirection)
-	emitted := root.Object.Material.Emission.Emit(root.Context, localDirection)
-	beta := root.Beta.Mul(emitted).MulScalar(maths.AbsCosTheta(localDirection) / pdfDirection)
-	root.Frame = emissionFrame
-	root.SampledPDF = pdfDirection
+	worldDirection := root.EmissionFrame.LocalToWorld(directionSample.Wo)
+	beta := root.Beta.Mul(directionSample.Le).MulScalar(
+		maths.AbsCosTheta(directionSample.Wo) / directionSample.PDF,
+	)
+	root.SampledPDF = directionSample.PDF
+	root.SampledDelta = directionSample.Flags&emission.DirectionDelta != 0
 	path := []bdptVertex{root}
 	ray := &optics.Ray{
 		Origin: mat.VecDenseCopyOf(root.Point), Direction: mat.VecDenseCopyOf(worldDirection),
@@ -470,7 +475,7 @@ func (h *Handler) buildLightSubpath(
 	ray.Direction.CopyVec(worldDirection)
 	setBDPTWavelength(ray, wavelengthNM, wavelengthPDF)
 	return h.randomWalk(
-		tree, ray, beta, pdfDirection,
+		tree, ray, beta, directionSample.PDF,
 		bxdf.TransportImportance, int(h.MaxRayLevel)+1, path,
 	)
 }
@@ -513,7 +518,8 @@ func (h *Handler) randomWalk(
 		si.Context.TransportMode = mode
 		vertex := bdptVertex{
 			Kind: bdptVertexSurface, Point: hit.Point, GeometricNormal: hit.GeometricNormal,
-			Frame: si.Frame, WoLocal: si.WoLocal, Context: si.Context, Object: si.Object,
+			Frame: si.Frame, EmissionFrame: si.EmissionFrame,
+			WoLocal: si.WoLocal, Context: si.Context, Object: si.Object,
 			Beta: beta, PDFFwdArea: pdfArea, MediumStack: ray.MediumStack.Clone(),
 		}
 		if si.Object.Material != nil && si.Object.Material.HasSurface() {
@@ -582,8 +588,8 @@ func (h *Handler) connectBDPTStrategy(
 		if toPrevious == nil {
 			return optics.Spectrum{}, camera.FilmProjection{}, false, false
 		}
-		wo := pt.Frame.WorldToLocal(toPrevious)
-		value := pt.Beta.Mul(pt.Object.Material.Emission.Emit(pt.Context, wo))
+		wo := pt.emissionLocal(toPrevious)
+		value := pt.Beta.Mul(pt.Object.Material.Emission.Eval(pt.Context, wo))
 		return value, camera.FilmProjection{}, false, validSpectrum(value)
 	}
 	if t == 1 {
@@ -626,8 +632,8 @@ func (h *Handler) connectBDPTVertices(tree *object.ObjectTree, lv, cv *bdptVerte
 
 	var lightFactor optics.Spectrum
 	if lv.Kind == bdptVertexLight {
-		woLight := lv.Frame.WorldToLocal(toCamera)
-		lightFactor = lv.Object.Material.Emission.Emit(lv.Context, woLight).Mul(lv.Beta)
+		woLight := lv.emissionLocal(toCamera)
+		lightFactor = lv.Object.Material.Emission.Eval(lv.Context, woLight).Mul(lv.Beta)
 	} else {
 		if lv.Kind != bdptVertexSurface || !lv.Connectible || lv.Object == nil ||
 			lv.Object.Material == nil || !lv.Object.Material.HasSurface() {
@@ -792,10 +798,12 @@ func bdptVertexPDF(source, previous, next *bdptVertex, renderCamera camera.Bidir
 		}
 		pdfDirection = renderCamera.PDFDirection(toNext)
 	case bdptVertexLight:
-		if source.GeometricNormal == nil {
+		if source.GeometricNormal == nil || source.Object == nil || source.Object.Material == nil ||
+			!source.Object.Material.HasEmission() {
 			return 0
 		}
-		pdfDirection = 0.5 * absDot(source.GeometricNormal, toNext) / math.Pi
+		wo := source.emissionLocal(toNext)
+		pdfDirection = source.Object.Material.Emission.PDFDirection(source.Context, wo)
 	case bdptVertexSurface:
 		if source.Object == nil || source.Object.Material == nil || !source.Object.Material.HasSurface() || previous == nil {
 			return 0
@@ -826,14 +834,17 @@ func bdptLightOriginPDF(state *bdptSceneState, lightVertex *bdptVertex) float64 
 }
 
 func bdptLightEmissionPDF(lightVertex, next *bdptVertex) float64 {
-	if lightVertex == nil || next == nil || lightVertex.GeometricNormal == nil {
+	if lightVertex == nil || next == nil || lightVertex.GeometricNormal == nil ||
+		lightVertex.Object == nil || lightVertex.Object.Material == nil ||
+		!lightVertex.Object.Material.HasEmission() {
 		return 0
 	}
 	direction := directionBetween(lightVertex.Point, next.Point)
 	if direction == nil {
 		return 0
 	}
-	pdfDirection := 0.5 * absDot(lightVertex.GeometricNormal, direction) / math.Pi
+	wo := lightVertex.emissionLocal(direction)
+	pdfDirection := lightVertex.Object.Material.Emission.PDFDirection(lightVertex.Context, wo)
 	return convertBDPTDensity(pdfDirection, lightVertex, next)
 }
 

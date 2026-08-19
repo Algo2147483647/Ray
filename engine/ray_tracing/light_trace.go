@@ -124,9 +124,9 @@ func projectLightVertex(
 	)
 
 	if vertex.Kind == bdptVertexLight {
-		wo := vertex.Frame.WorldToLocal(projection.ToCamera)
+		wo := vertex.emissionLocal(projection.ToCamera)
 		value := transmittance.ApplyToSpectrum(
-			vertex.Object.Material.Emission.Emit(vertex.Context, wo).Mul(vertex.Beta),
+			vertex.Object.Material.Emission.Eval(vertex.Context, wo).Mul(vertex.Beta),
 		).MulScalar(factor)
 		return value, projection, validSpectrum(value)
 	}

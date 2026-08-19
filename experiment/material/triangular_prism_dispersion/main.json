@@ -5,7 +5,7 @@
       "type": "3d",
       "position": [
         0,
-        5,
+        10,
         4
       ],
       "look_at": [
@@ -19,8 +19,8 @@
         1
       ],
       "field_of_views": [
-        48,
-        48
+        60,
+        60
       ],
       "aspect_ratio": 1
     }
@@ -30,8 +30,8 @@
       "id": "prism-beauty-film",
       "camera_id": "prism-lab-camera",
       "shape": [
-        400,
-        400
+        1000,
+        1000
       ],
       "output_image": "../outputs/newton-prism-wall.png",
       "output_film": "../outputs/newton-prism-wall.bin",
