@@ -1,0 +1,48 @@
+{
+  "_comment": "A near-black jewellery set. The floor catches a restrained silhouette while the rear wall keeps the transparent stone legible.",
+  "materials": [
+    {
+      "id": "closeup-black",
+      "surface": {
+        "type": "lambert",
+        "albedo": [0.006, 0.007, 0.009]
+      }
+    },
+    {
+      "id": "closeup-plinth",
+      "surface": {
+        "type": "lambert",
+        "albedo": [0.018, 0.02, 0.024]
+      }
+    }
+  ],
+  "objects": [
+    {
+      "id": "closeup-floor",
+      "shape": "quadrilateral",
+      "p1": [-4, -3, 0],
+      "p2": [4, -3, 0],
+      "p3": [4, 5, 0],
+      "p4": [-4, 5, 0],
+      "material_id": "closeup-black"
+    },
+    {
+      "id": "closeup-backdrop",
+      "shape": "quadrilateral",
+      "p1": [4, -2.2, 0],
+      "p2": [-4, -2.2, 0],
+      "p3": [-4, -2.2, 5],
+      "p4": [4, -2.2, 5],
+      "material_id": "closeup-black"
+    },
+    {
+      "id": "closeup-plinth",
+      "shape": "cylinder",
+      "center": [0, 0, 0.055],
+      "axis": [0, 0, 1],
+      "r": 0.62,
+      "height": 0.11,
+      "material_id": "closeup-plinth"
+    }
+  ]
+}

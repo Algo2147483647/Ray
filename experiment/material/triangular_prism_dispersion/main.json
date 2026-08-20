@@ -5,7 +5,7 @@
       "type": "3d",
       "position": [
         0,
-        10,
+        8,
         4
       ],
       "look_at": [
@@ -19,8 +19,8 @@
         1
       ],
       "field_of_views": [
-        60,
-        60
+        50,
+        50
       ],
       "aspect_ratio": 1
     }

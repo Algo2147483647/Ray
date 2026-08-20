@@ -1,0 +1,102 @@
+{
+  "_comment": "Jewellery lighting: one broad overhead softbox for facet definition, two rear strip cards for edge flashes, three small narrow-angle white fire lights for dispersion, and a very weak camera-side fill.",
+  "materials": [
+    {
+      "id": "overhead-softbox",
+      "emission": {
+        "type": "constant",
+        "radiance": {"type": "blackbody", "temperature": 5600, "scale": 42000},
+        "distribution": {"type": "cosine_power", "half_angle_degrees": 55, "sidedness": "front"}
+      }
+    },
+    {
+      "id": "rear-strip-light",
+      "emission": {
+        "type": "constant",
+        "radiance": {"type": "blackbody", "temperature": 6500, "scale": 85000},
+        "distribution": {"type": "cosine_power", "half_angle_degrees": 28, "sidedness": "front"}
+      }
+    },
+    {
+      "id": "fire-pin-light",
+      "emission": {
+        "type": "constant",
+        "radiance": {"type": "blackbody", "temperature": 6500, "scale": 180000},
+        "distribution": {"type": "cosine_power", "half_angle_degrees": 12, "sidedness": "front"}
+      }
+    },
+    {
+      "id": "camera-fill-light",
+      "emission": {
+        "type": "constant",
+        "radiance": {"type": "blackbody", "temperature": 5000, "scale": 4500},
+        "distribution": {"type": "cosine_power", "half_angle_degrees": 60, "sidedness": "front"}
+      }
+    }
+  ],
+  "objects": [
+    {
+      "id": "overhead-softbox-card",
+      "shape": "quadrilateral",
+      "p1": [-1.35, -0.65, 3.15],
+      "p2": [-1.35, 0.75, 3.15],
+      "p3": [1.35, 0.75, 3.15],
+      "p4": [1.35, -0.65, 3.15],
+      "material_id": "overhead-softbox"
+    },
+    {
+      "id": "rear-strip-left",
+      "shape": "quadrilateral",
+      "p1": [-1.42, -1.55, 0.18],
+      "p2": [-1.68, -1.55, 0.18],
+      "p3": [-1.68, -1.55, 2.55],
+      "p4": [-1.42, -1.55, 2.55],
+      "material_id": "rear-strip-light"
+    },
+    {
+      "id": "rear-strip-right",
+      "shape": "quadrilateral",
+      "p1": [1.68, -1.55, 0.18],
+      "p2": [1.42, -1.55, 0.18],
+      "p3": [1.42, -1.55, 2.55],
+      "p4": [1.68, -1.55, 2.55],
+      "material_id": "rear-strip-light"
+    },
+    {
+      "id": "fire-pin-upper-left",
+      "shape": "quadrilateral",
+      "p1": [-1.96, 0.48, 2.27],
+      "p2": [-1.76, 0.48, 2.27],
+      "p3": [-1.76, 0.48, 2.47],
+      "p4": [-1.96, 0.48, 2.47],
+      "material_id": "fire-pin-light"
+    },
+    {
+      "id": "fire-pin-upper-right",
+      "shape": "quadrilateral",
+      "p1": [1.76, 0.15, 2.02],
+      "p2": [1.98, 0.15, 2.02],
+      "p3": [1.98, 0.15, 2.24],
+      "p4": [1.76, 0.15, 2.24],
+      "material_id": "fire-pin-light"
+    },
+    {
+      "id": "fire-pin-low-left",
+      "shape": "quadrilateral",
+      "p1": [-1.42, -0.72, 0.28],
+      "p2": [-1.2, -0.72, 0.28],
+      "p3": [-1.2, -0.72, 0.5],
+      "p4": [-1.42, -0.72, 0.5],
+      "material_id": "fire-pin-light"
+    },
+    {
+      "id": "camera-fill-card",
+      "shape": "quadrilateral",
+      "p1": [1.7, 5.25, 0.3],
+      "p2": [-1.7, 5.25, 0.3],
+      "p3": [-1.7, 5.25, 2.9],
+      "p4": [1.7, 5.25, 2.9],
+      "material_id": "camera-fill-light"
+    }
+  ]
+}

@@ -30,7 +30,7 @@
       "id": "prism",
       "shape": "group",
       "_comment": "Place the prism on the 180-degree source beam. Its center and 49-degree yaw put the entry face about 0.20 m behind the collimator; this is near the minimum-deviation orientation and avoids total internal reflection across 400-700 nm.",
-      "center": [-1.05, 0, 1.5],
+      "center": [-1.35, 0, 1.5],
       "scale": [0.9, 0.9, 2],
       "basis": [
         [0.6560590289905073, -0.754709580222772, 0],
@@ -41,45 +41,47 @@
     {
       "id": "collimator",
       "shape": "group",
-      "_comment": "Four pure-black triangles form a full-height slit centered on the 180-degree source normal. The baffle is 0.20 m from the emitter at x=-0.25 and about 0.20 m before the prism entry face.",
+      "_comment": "Four pure-black triangles form a full-height slit centered on the 180-degree source normal. The baffle is 0.20 m from the emitter at x=-0.55 and about 0.20 m before the prism entry face.",
       "material_id": "aperture-black",
       "objects": [
         {
           "id": "lower-a",
           "shape": "triangle",
-          "p1": [-0.45, -0.6, 0],
-          "p2": [-0.45, -0.04, 0],
-          "p3": [-0.45, -0.04, 3]
+          "p1": [-0.75, -1, 0],
+          "p2": [-0.75, -0.04, 0],
+          "p3": [-0.75, -0.04, 3]
         },
         {
           "id": "lower-b",
           "shape": "triangle",
-          "p1": [-0.45, -0.6, 0],
-          "p2": [-0.45, -0.04, 3],
-          "p3": [-0.45, -0.6, 3]
+          "p1": [-0.75, -1, 0],
+          "p2": [-0.75, -0.04, 3],
+          "p3": [-0.75, -1, 3]
         },
         {
           "id": "upper-a",
           "shape": "triangle",
-          "p1": [-0.45, 0.04, 0],
-          "p2": [-0.45, 0.6, 0],
-          "p3": [-0.45, 0.6, 3]
+          "p1": [-0.75, 0.04, 0],
+          "p2": [-0.75, 1, 0],
+          "p3": [-0.75, 1, 3]
         },
         {
           "id": "upper-b",
           "shape": "triangle",
-          "p1": [-0.45, 0.04, 0],
-          "p2": [-0.45, 0.6, 3],
-          "p3": [-0.45, 0.04, 3]
+          "p1": [-0.75, 0.04, 0],
+          "p2": [-0.75, 1, 3],
+          "p3": [-0.75, 0.04, 3]
         }
       ]
     },
     {
       "id": "projection-screen",
-      "shape": "cuboid",
-      "_comment": "Offset toward negative Y to catch the 49-degree prism's dispersed beam; after matching the apparatus to the radius-0.25 m source ring, the predicted 400-700 nm footprint at x=-4 is approximately y=[-3.9,-2.0].",
-      "pmin": [-4.02, -4, 0],
-      "pmax": [-4, -1.2, 3],
+      "shape": "quadrilateral",
+      "_comment": "A 2 m wide screen perpendicular to the 550 nm chief ray, 3 m beyond the prism. Predicted spectral coordinates along the screen are blue=-0.845 m, green=0 m, red=+0.296 m. Direct 180- and 225-degree source rays intersect at +2.702 m and -1.349 m, outside the screen.",
+      "p1": [-3.387047703898, -2.896312893982, 0],
+      "p2": [-4.632486529245, -1.331422440206, 0],
+      "p3": [-4.632486529245, -1.331422440206, 3],
+      "p4": [-3.387047703898, -2.896312893982, 3],
       "material_id": "white-screen"
     }
   ]

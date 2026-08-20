@@ -1,5 +1,5 @@
 {
-  "_comment": "Eight directional full-height strip sources are placed on a radius-0.25 m circle and emit radially outward. A weak 0.1 m diameter white cylinder at the center provides soft fill. Coordinates are metres.",
+  "_comment": "Eight directional full-height strip sources are placed on a radius-0.55 m circle and emit radially outward. A weak 0.1 m diameter white cylinder at the center provides soft fill. Coordinates are metres.",
   "materials": [
     {
       "id": "directional-white-source",
@@ -8,7 +8,7 @@
         "radiance": {
           "type": "blackbody",
           "temperature": 6500,
-          "scale": 120000
+          "scale": 100000
         },
         "distribution": {
           "type": "cosine_power",
@@ -16,102 +16,78 @@
           "sidedness": "front"
         }
       }
-    },
-    {
-      "id": "central-soft-white-source",
-      "emission": {
-        "type": "constant",
-        "radiance": {
-          "type": "rgb",
-          "value": [6, 6, 6]
-        },
-        "distribution": {
-          "type": "uniform",
-          "sidedness": "two_sided"
-        }
-      }
     }
   ],
   "objects": [
     {
-      "id": "central-soft-white-light",
-      "shape": "cylinder",
-      "center": [0, 0, 1.5],
-      "axis": [0, 0, 1],
-      "r": 0.05,
-      "height": 3,
-      "material_id": "central-soft-white-source",
-      "_comment": "A pure-white weak vertical fill light at the center of the eight-source ring; diameter 0.1 m and height 3 m."
-    },
-    {
       "id": "directional-slit-sources",
       "shape": "group",
-      "_comment": "Eight 3 m tall quadrilateral emitters centered every 45 degrees on radius 0.25. Each spans 1/6 degree; boundary-order winding points its geometric normal radially outward.",
+      "_comment": "Eight 3 m tall quadrilateral emitters centered every 45 degrees on radius 0.55. Each spans 1/6 degree; boundary-order winding points its geometric normal radially outward.",
       "material_id": "directional-white-source",
       "objects": [
         {
           "id": "directional-slit-000",
           "shape": "quadrilateral",
-          "p1": [0.249999735575, -0.000363610133, 0],
-          "p2": [0.249999735575, 0.000363610133, 0],
-          "p3": [0.249999735575, 0.000363610133, 3],
-          "p4": [0.249999735575, -0.000363610133, 3]
+          "p1": [0.549999418265, -0.000799942292, 0],
+          "p2": [0.549999418265, 0.000799942292, 0],
+          "p3": [0.549999418265, 0.000799942292, 3],
+          "p4": [0.549999418265, -0.000799942292, 3]
         },
         {
           "id": "directional-slit-045",
           "shape": "quadrilateral",
-          "p1": [0.177033619511, 0.17651939713, 0],
-          "p2": [0.17651939713, 0.177033619511, 0],
-          "p3": [0.17651939713, 0.177033619511, 3],
-          "p4": [0.177033619511, 0.17651939713, 3]
+          "p1": [0.389473962923, 0.388342673685, 0],
+          "p2": [0.388342673685, 0.389473962923, 0],
+          "p3": [0.388342673685, 0.389473962923, 3],
+          "p4": [0.389473962923, 0.388342673685, 3]
         },
         {
           "id": "directional-slit-090",
           "shape": "quadrilateral",
-          "p1": [0.000363610133, 0.249999735575, 0],
-          "p2": [-0.000363610133, 0.249999735575, 0],
-          "p3": [-0.000363610133, 0.249999735575, 3],
-          "p4": [0.000363610133, 0.249999735575, 3]
+          "p1": [0.000799942292, 0.549999418265, 0],
+          "p2": [-0.000799942292, 0.549999418265, 0],
+          "p3": [-0.000799942292, 0.549999418265, 3],
+          "p4": [0.000799942292, 0.549999418265, 3]
         },
         {
           "id": "directional-slit-135",
           "shape": "quadrilateral",
-          "p1": [-0.17651939713, 0.177033619511, 0],
-          "p2": [-0.177033619511, 0.17651939713, 0],
-          "p3": [-0.177033619511, 0.17651939713, 3],
-          "p4": [-0.17651939713, 0.177033619511, 3]
+          "p1": [-0.388342673685, 0.389473962923, 0],
+          "p2": [-0.389473962923, 0.388342673685, 0],
+          "p3": [-0.389473962923, 0.388342673685, 3],
+          "p4": [-0.388342673685, 0.389473962923, 3]
         },
         {
           "id": "directional-slit-180",
           "shape": "quadrilateral",
-          "p1": [-0.249999735575, 0.000363610133, 0],
-          "p2": [-0.249999735575, -0.000363610133, 0],
-          "p3": [-0.249999735575, -0.000363610133, 3],
-          "p4": [-0.249999735575, 0.000363610133, 3]
+          "p1": [-0.549999418265, 0.000799942292, 0],
+          "p2": [-0.549999418265, -0.000799942292, 0],
+          "p3": [-0.549999418265, -0.000799942292, 3],
+          "p4": [-0.549999418265, 0.000799942292, 3]
         },
         {
           "id": "directional-slit-225",
           "shape": "quadrilateral",
-          "p1": [-0.177033619511, -0.17651939713, 0],
-          "p2": [-0.17651939713, -0.177033619511, 0],
-          "p3": [-0.17651939713, -0.177033619511, 3],
-          "p4": [-0.177033619511, -0.17651939713, 3]
+          "p1": [-0.389473962923, -0.388342673685, 0],
+          "p2": [-0.388342673685, -0.389473962923, 0],
+          "p3": [-0.388342673685, -0.389473962923, 3],
+          "p4": [-0.389473962923, -0.388342673685, 3]
         },
         {
           "id": "directional-slit-270",
           "shape": "quadrilateral",
-          "p1": [-0.000363610133, -0.249999735575, 0],
-          "p2": [0.000363610133, -0.249999735575, 0],
-          "p3": [0.000363610133, -0.249999735575, 3],
-          "p4": [-0.000363610133, -0.249999735575, 3]
+          "p1": [-0.000799942292, -0.549999418265, 0],
+          "p2": [0.000799942292, -0.549999418265, 0],
+          "p3": [0.000799942292, -0.549999418265, 3],
+          "p4": [-0.000799942292, -0.549999418265, 3]
         },
         {
           "id": "directional-slit-315",
           "shape": "quadrilateral",
-          "p1": [0.17651939713, -0.177033619511, 0],
-          "p2": [0.177033619511, -0.17651939713, 0],
-          "p3": [0.177033619511, -0.17651939713, 3],
-          "p4": [0.17651939713, -0.177033619511, 3]
+          "p1": [0.388342673685, -0.389473962923, 0],
+          "p2": [0.389473962923, -0.388342673685, 0],
+          "p3": [0.389473962923, -0.388342673685, 3],
+          "p4": [0.388342673685, -0.389473962923, 3]
         }
       ]
     }

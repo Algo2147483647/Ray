@@ -7,7 +7,7 @@
       "id": "moissanite-fire-rig",
       "shape": "group",
       "_comment": "Place the gem on the 0-degree source beam. A -25 degree Y pitch turns the crown toward the source, while a -17 degree Z yaw turns its fire toward the camera and breaks rotational facet symmetry. The tilted bounds remain centered at z=1.5 m.",
-      "center": [1.2, 0, 1.11197073977225],
+      "center": [2, 0, 0.5],
       "scale": 1.2,
       "basis": [
         [0.8667064471094822, 0.2923717047227368, -0.4041518536594618],
