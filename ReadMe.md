@@ -120,6 +120,7 @@ Useful render flags:
 ```bash
 npm run ray -- --width 800 --height 600 --samples 64 --threads 8
 npm run studio -- --output-film ../outputs/render.bin --output-image ../outputs/render.png
+npm run studio -- --input-film ../outputs/render.bin --output-image ../outputs/render.png --tone-mapping aces --gamma 2.2
 ```
 
 Engine writes Film data. Studio converts Film data to images and handles

@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"image/png"
 	"math"
 	"os"
 	"path/filepath"
@@ -1363,6 +1364,86 @@ func TestStudioOwnsLatestColorAndSpectrumCLI(t *testing.T) {
 	}
 	if _, err := parseStudioConfig([]string{"--spectrum-mode", "rgb"}); err == nil {
 		t.Fatal("expected removed RGB Film mode to fail")
+	}
+}
+
+func TestStudioParsesStandaloneFilmConversionConfig(t *testing.T) {
+	config, err := parseStudioConfig([]string{
+		"--input-film", filepath.Join("renders", "beauty.BIN"),
+		"--exposure", "1.25",
+		"--tone-mapping", "aces",
+		"--gamma", "2.2",
+		"--color-space", "acescg",
+	})
+	if err != nil {
+		t.Fatalf("parse Film conversion config: %v", err)
+	}
+	if len(config.scriptPaths) != 0 {
+		t.Fatalf("Film conversion unexpectedly resolved scene scripts: %v", config.scriptPaths)
+	}
+	if got, want := config.filmConversionImagePath(), filepath.Join("renders", "beauty.png"); got != want {
+		t.Fatalf("conversion image path = %q, want %q", got, want)
+	}
+	if config.exposure != 1.25 || config.toneMapping != "aces" || config.gamma != 2.2 || config.colorSpace != "acescg" {
+		t.Fatalf("unexpected Film conversion options: %+v", config)
+	}
+}
+
+func TestStudioRejectsRenderInputsInFilmConversionMode(t *testing.T) {
+	for name, args := range map[string][]string{
+		"scene flag":       {"--input-film", "film.bin", "--script", "scene.json"},
+		"positional scene": {"--input-film", "film.bin", "scene.json"},
+		"render flag":      {"--input-film", "film.bin", "--samples", "4"},
+		"empty output":     {"--input-film", "film.bin", "--output-image", ""},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if _, err := parseStudioConfig(args); err == nil {
+				t.Fatal("expected incompatible Film conversion config to fail")
+			}
+		})
+	}
+}
+
+func TestRunFilmConversionWritesConfiguredPNG(t *testing.T) {
+	dir := t.TempDir()
+	filmPath := filepath.Join(dir, "render.bin")
+	imagePath := filepath.Join(dir, "image.png")
+	film := modelcamera.NewFilm(2, 1)
+	film.InitSpectralBins(64, 380, 750)
+	film.Samples = 1
+	for bin := range film.SpectralBins {
+		for pixel := range film.SpectralBins[bin].Data {
+			film.SpectralBins[bin].Data[pixel] = 1.0 / 64
+		}
+	}
+	if err := film.SaveToFile(filmPath); err != nil {
+		t.Fatalf("save input Film: %v", err)
+	}
+
+	config, err := parseStudioConfig([]string{
+		"--input-film", filmPath,
+		"--output-image", imagePath,
+		"--tone-mapping", "reinhard",
+		"--gamma", "2.2",
+	})
+	if err != nil {
+		t.Fatalf("parse Film conversion config: %v", err)
+	}
+	if err := runFilmConversion(config); err != nil {
+		t.Fatalf("convert Film to PNG: %v", err)
+	}
+
+	file, err := os.Open(imagePath)
+	if err != nil {
+		t.Fatalf("open output PNG: %v", err)
+	}
+	defer file.Close()
+	decoded, err := png.DecodeConfig(file)
+	if err != nil {
+		t.Fatalf("decode output PNG: %v", err)
+	}
+	if decoded.Width != 2 || decoded.Height != 1 {
+		t.Fatalf("output PNG size = %dx%d, want 2x1", decoded.Width, decoded.Height)
 	}
 }
 

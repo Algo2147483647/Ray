@@ -19,6 +19,13 @@ func run(args []string) int {
 		fmt.Printf("Error: %v\n", err)
 		return 1
 	}
+	if config.inputFilm != "" {
+		if err := runFilmConversion(config); err != nil {
+			fmt.Printf("Error: %v\n", err)
+			return 1
+		}
+		return 0
+	}
 
 	script, err := storage.ReadStudioScriptFiles(config.scriptPaths)
 	if err != nil {
@@ -99,6 +106,16 @@ func run(args []string) int {
 		return 1
 	}
 	return 0
+}
+
+func runFilmConversion(config studioConfig) error {
+	output := studioRenderOutputFromFilm(schema.StudioFilmScript{}, config, config.inputFilm)
+	output.ImagePath = config.filmConversionImagePath()
+	if err := writeStudioImages([]studioRenderOutput{output}); err != nil {
+		return fmt.Errorf("convert Film %q to PNG %q: %w", config.inputFilm, output.ImagePath, err)
+	}
+	fmt.Printf("Studio converted Film to PNG: %s -> %s\n", config.inputFilm, output.ImagePath)
+	return nil
 }
 
 func runEndless(adapted *schema.IntermediateScript, script *schema.StudioScript, config studioConfig) error {

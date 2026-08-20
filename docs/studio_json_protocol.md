@@ -34,6 +34,23 @@ Studio accepts the same render override flags as engine:
 --pixel-window
 ```
 
+Studio can also convert an existing binary Film directly to PNG without reading
+a scene or launching Engine:
+
+```bash
+go -C studio run . --input-film ../outputs/render.bin \
+  --output-image ../outputs/render.png \
+  --exposure 1.25 \
+  --tone-mapping aces \
+  --gamma 2.2 \
+  --color-space linear_srgb
+```
+
+`--output-image` is optional in this mode. By default Studio replaces the
+input `.bin` extension with `.png`. Only the five image-output options shown
+above can be combined with `--input-film`; scene and rendering options are
+rejected because this mode performs post-processing only.
+
 `studio` owns authoring and output orchestration. `output_image` and
 `resume_film`, exposure, tone mapping, gamma, and `color_space` are accepted by
 studio but are not emitted to the generated engine JSON and are not passed to

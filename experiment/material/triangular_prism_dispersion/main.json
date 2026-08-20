@@ -20,7 +20,8 @@
       "exposure": 0.8,
       "tone_mapping": "aces",
       "gamma": 2.2,
-      "color_space": "linear_srgb"
+      "color_space": "linear_srgb",
+      "spectral_bin_count": 128
     }
   ],
   "render": {
@@ -30,6 +31,6 @@
     "samples": 1,
     "thread_num": 16,
     "spectrum_mode": "sampled",
-    "wavelength_samples": 16
+    "wavelength_samples": 8
   }
 }

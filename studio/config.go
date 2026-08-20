@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -21,6 +22,7 @@ const (
 
 type studioConfig struct {
 	scriptPaths        []string
+	inputFilm          string
 	provided           map[string]bool
 	integrator         string
 	cameraID           string
@@ -67,6 +69,7 @@ func parseStudioConfig(args []string) (studioConfig, error) {
 	flagSet := flag.NewFlagSet("ray", flag.ContinueOnError)
 	flagSet.SetOutput(io.Discard)
 	flagSet.Var(&scriptPaths, "script", "path to a scene script; repeat to merge multiple scripts")
+	flagSet.StringVar(&config.inputFilm, "input-film", "", "existing binary Film to convert to PNG without rendering")
 	flagSet.Var(&pixelWindowFlags, "pixel-window", "pixel render window, for example 100:150,600:650; repeat for multiple windows")
 	flagSet.StringVar(&config.integrator, "integrator", "", "light transport integrator: path, bdpt, light_tracing")
 	flagSet.StringVar(&config.cameraID, "camera-id", "", "canonical Engine camera ID override")
@@ -111,12 +114,7 @@ func parseStudioConfig(args []string) (studioConfig, error) {
 	}
 
 	config.scriptPaths = append(config.scriptPaths, scriptPaths...)
-	if len(config.scriptPaths) == 0 && len(flagSet.Args()) > 0 {
-		config.scriptPaths = append(config.scriptPaths, flagSet.Args()...)
-	}
-	if len(config.scriptPaths) == 0 {
-		config.scriptPaths = []string{defaultScriptPath}
-	}
+	config.scriptPaths = append(config.scriptPaths, flagSet.Args()...)
 
 	if config.dimension < 0 || config.dimension == 1 {
 		return studioConfig{}, fmt.Errorf("dimension must be 0 or >= 2")
@@ -173,7 +171,49 @@ func parseStudioConfig(args []string) (studioConfig, error) {
 	if config.colorSpace != "" && config.colorSpace != "linear_srgb" && config.colorSpace != "acescg" && config.colorSpace != "xyz" {
 		return studioConfig{}, fmt.Errorf("color-space must be linear_srgb, acescg, or xyz")
 	}
+	if config.provided["input-film"] {
+		if config.inputFilm == "" {
+			return studioConfig{}, fmt.Errorf("input-film cannot be empty")
+		}
+		if err := validateFilmConversionConfig(config); err != nil {
+			return studioConfig{}, err
+		}
+		return config, nil
+	}
+	if len(config.scriptPaths) == 0 {
+		config.scriptPaths = []string{defaultScriptPath}
+	}
 	return config, nil
+}
+
+func validateFilmConversionConfig(config studioConfig) error {
+	if len(config.scriptPaths) > 0 {
+		return fmt.Errorf("input-film cannot be combined with scene scripts")
+	}
+	if config.provided["output-image"] && config.outputImage == "" {
+		return fmt.Errorf("output-image cannot be empty when input-film is used")
+	}
+	for _, name := range []string{
+		"integrator", "camera-id", "dimension", "threads", "width", "height", "widths",
+		"samples", "output-film", "resume-film", "endless", "checkpoint-interval",
+		"checkpoint-dir", "start-iteration", "spectrum-mode", "wavelength-samples", "pixel-window",
+	} {
+		if config.provided[name] {
+			return fmt.Errorf("input-film cannot be combined with --%s", name)
+		}
+	}
+	return nil
+}
+
+func (c studioConfig) filmConversionImagePath() string {
+	if c.provided["output-image"] {
+		return c.outputImage
+	}
+	ext := filepath.Ext(c.inputFilm)
+	if strings.EqualFold(ext, ".bin") {
+		return strings.TrimSuffix(c.inputFilm, ext) + ".png"
+	}
+	return c.inputFilm + ".png"
 }
 
 func (c studioConfig) engineArgs(scriptPath string) []string {
