@@ -1,16 +1,22 @@
 {
-  "_comment": "World placement for the unit regular prism, a frameless black triangular collimator, and the projection screen. Illumination is supplied only by light-source.json.",
+  "_comment": "A self-contained prism-dispersion rig. Local coordinates are centered at [0,0,0] with the optical layout running right-to-left along X; the outer group moves the complete rig 3 m behind the moissanite along -Y.",
   "geometry": {
     "type": "euclidean"
   },
   "materials": [
     {
-      "id": "aperture-black",
-      "surface": {
-        "type": "lambert",
-        "albedo": {
-          "type": "constant",
-          "value": 0
+      "id": "prism-slit-source",
+      "emission": {
+        "type": "constant",
+        "radiance": {
+          "type": "blackbody",
+          "temperature": 6500,
+          "scale": 300000
+        },
+        "distribution": {
+          "type": "cosine_power",
+          "half_angle_degrees": 2,
+          "sidedness": "front"
         }
       }
     },
@@ -27,62 +33,56 @@
   ],
   "objects": [
     {
-      "id": "prism",
+      "id": "prism-dispersion-rig",
       "shape": "group",
-      "_comment": "Place the prism on the 180-degree source beam. Its center and 49-degree yaw put the entry face about 0.20 m behind the collimator; this is near the minimum-deviation orientation and avoids total internal reflection across 400-700 nm.",
-      "center": [-1.35, 0, 1.5],
-      "scale": [0.9, 0.9, 2],
-      "basis": [
-        [0.6560590289905073, -0.754709580222772, 0],
-        [0.754709580222772, 0.6560590289905073, 0],
-        [0, 0, 1]
-      ]
-    },
-    {
-      "id": "collimator",
-      "shape": "group",
-      "_comment": "Four pure-black triangles form a full-height slit centered on the 180-degree source normal. The baffle is 0.20 m from the emitter at x=-0.55 and about 0.20 m before the prism entry face.",
-      "material_id": "aperture-black",
+      "_comment": "The rig's local origin is its layout midpoint. center=[0,-3,0] places it 3 m behind the moissanite; all principal components remain on local Y=0 except the prism's small optical-path correction.",
+      "center": [0, -3, 0],
       "objects": [
         {
-          "id": "lower-a",
-          "shape": "triangle",
-          "p1": [-0.75, -1, 0],
-          "p2": [-0.75, -0.04, 0],
-          "p3": [-0.75, -0.04, 3]
+          "id": "slit-light-source",
+          "shape": "quadrilateral",
+          "_comment": "A 2 cm wide, 3 m tall slit at the right side. Reversed winding points its front-side 1-degree emission toward -X and the prism.",
+          "p1": [3, 0.01, 0],
+          "p2": [3, -0.01, 0],
+          "p3": [3, -0.01, 3],
+          "p4": [3, 0.01, 3],
+          "material_id": "prism-slit-source"
         },
         {
-          "id": "lower-b",
-          "shape": "triangle",
-          "p1": [-0.75, -1, 0],
-          "p2": [-0.75, -0.04, 3],
-          "p3": [-0.75, -1, 3]
+          "id": "prism",
+          "shape": "group",
+          "_comment": "The prism is on the right of the origin, between the slit and screen. Its entry face is parallel to the slit-light plane; the small +Y offset preserves a practical dispersive path.",
+          "center": [2, -0.1, 1.5],
+          "scale": [1, 1, 3],
+          "basis": [
+            [1, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1]
+          ]
         },
         {
-          "id": "upper-a",
-          "shape": "triangle",
-          "p1": [-0.75, 0.04, 0],
-          "p2": [-0.75, 1, 0],
-          "p3": [-0.75, 1, 3]
-        },
-        {
-          "id": "upper-b",
-          "shape": "triangle",
-          "p1": [-0.75, 0.04, 0],
-          "p2": [-0.75, 1, 3],
-          "p3": [-0.75, 0.04, 3]
+          "id": "projection-screen",
+          "shape": "group",
+          "_comment": "The photosensitive screen is centered at local [-3,0]. Its +45-degree Z rotation points the local +X front normal toward the moissanite at world [0,0].",
+          "center": [-3, 0, 0],
+          "basis": [
+            [0.7071067811865476, -0.7071067811865475, 0],
+            [0.7071067811865475, 0.7071067811865476, 0],
+            [0, 0, 1]
+          ],
+          "material_id": "white-screen",
+          "objects": [
+            {
+              "id": "surface",
+              "shape": "quadrilateral",
+              "p1": [0, -6, 0],
+              "p2": [0, 3, 0],
+              "p3": [0, 3, 3],
+              "p4": [0, -6, 3]
+            }
+          ]
         }
       ]
-    },
-    {
-      "id": "projection-screen",
-      "shape": "quadrilateral",
-      "_comment": "A 2 m wide screen perpendicular to the 550 nm chief ray, 3 m beyond the prism. Predicted spectral coordinates along the screen are blue=-0.845 m, green=0 m, red=+0.296 m. Direct 180- and 225-degree source rays intersect at +2.702 m and -1.349 m, outside the screen.",
-      "p1": [-3.387047703898, -2.896312893982, 0],
-      "p2": [-4.632486529245, -1.331422440206, 0],
-      "p3": [-4.632486529245, -1.331422440206, 3],
-      "p4": [-3.387047703898, -2.896312893982, 3],
-      "material_id": "white-screen"
     }
   ]
 }

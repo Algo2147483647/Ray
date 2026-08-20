@@ -19,13 +19,12 @@ echo Checkpoint dir: %CHECKPOINT_DIR%
 call npm --prefix "%REPO_ROOT%" run studio -- ^
   --script "%SCENE_DIR%\main.json" ^
   --script "%SCENE_DIR%\room.json" ^
-  --script "%SCENE_DIR%\light-source.json" ^
   --script "%SCENE_DIR%\prism.json" ^
   --script "%SCENE_DIR%\prism-scene.json" ^
   --script "%SCENE_DIR%\moissanite.json" ^
   --script "%SCENE_DIR%\moissanite-scene.json" ^
   --endless ^
-  --checkpoint-interval 10 ^
+  --checkpoint-interval 1 ^
   --checkpoint-dir "%CHECKPOINT_DIR%" ^
   %*
 
