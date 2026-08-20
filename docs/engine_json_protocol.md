@@ -329,10 +329,15 @@ features.
 	"ortho": false,
 	"film": {
 		"shape": [800, 800],
+		"spectral_bin_count": 128,
 		"output_film": "../outputs/main.bin"
 	}
 }
 ```
+
+`film.spectral_bin_count` selects the number of stored wavelength bins over
+380–750 nm. The default is 64 and the supported range is 1–4096. This is
+independent of `render.wavelength_samples`.
 
 If the scene has no cameras, engine returns an error. Use studio to generate the
 default authoring camera.

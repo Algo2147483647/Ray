@@ -9,14 +9,20 @@ import (
 
 // Film is a scene-linear spectral image. It deliberately carries no observer,
 // tristimulus working space, display transform, or image-encoding policy.
+const (
+	DefaultSpectralBinCount = 64
+	MaxSpectralBinCount     = 4096
+)
+
 type Film struct {
-	Shape         []int                   `json:"shape"`
-	OutputFilm    string                  `json:"output_film,omitempty"`
-	PixelWindows  []PixelWindow           `json:"pixel_windows,omitempty"`
-	Samples       int64                   `json:"samples"`
-	SpectralBins  []maths.Tensor[float64] `json:"spectral_bins"`
-	SpectralMinNM float64                 `json:"spectral_min_nm"`
-	SpectralMaxNM float64                 `json:"spectral_max_nm"`
+	Shape            []int                   `json:"shape"`
+	OutputFilm       string                  `json:"output_film,omitempty"`
+	PixelWindows     []PixelWindow           `json:"pixel_windows,omitempty"`
+	Samples          int64                   `json:"samples"`
+	SpectralBinCount int                     `json:"spectral_bin_count,omitempty"`
+	SpectralBins     []maths.Tensor[float64] `json:"spectral_bins"`
+	SpectralMinNM    float64                 `json:"spectral_min_nm"`
+	SpectralMaxNM    float64                 `json:"spectral_max_nm"`
 }
 
 type SpectralSample struct {
@@ -34,6 +40,7 @@ func (f *Film) Init(shape ...int) *Film {
 	}
 	f.Shape = append(f.Shape[:0], shape...)
 	f.Samples = 0
+	f.SpectralBinCount = 0
 	f.SpectralBins = nil
 	f.SpectralMinNM = 0
 	f.SpectralMaxNM = 0
@@ -68,6 +75,7 @@ func (f *Film) ElementCount() int {
 func (f *Film) InitSpectralBins(count int, minNM, maxNM float64) {
 	if f == nil || count <= 0 || f.ElementCount() == 0 || minNM <= 0 || maxNM <= minNM {
 		if f != nil {
+			f.SpectralBinCount = 0
 			f.SpectralBins = nil
 			f.SpectralMinNM = 0
 			f.SpectralMaxNM = 0
@@ -80,6 +88,7 @@ func (f *Film) InitSpectralBins(count int, minNM, maxNM float64) {
 	}
 	f.SpectralMinNM = minNM
 	f.SpectralMaxNM = maxNM
+	f.SpectralBinCount = count
 }
 
 func (f *Film) HasSpectralBins() bool {

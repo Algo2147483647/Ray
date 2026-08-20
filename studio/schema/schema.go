@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	modelcamera "github.com/Algo2147483647/ray/engine/model/camera"
 	"github.com/Algo2147483647/ray/engine/ray_tracing"
 )
 
@@ -105,25 +106,32 @@ func (r *StudioRenderScript) UnmarshalJSON(data []byte) error {
 // StudioFilmScript owns a Film's sampling grid, camera association, and
 // output presentation. Render settings select it through film_id.
 type StudioFilmScript struct {
-	ID           string              `json:"id"`
-	CameraID     string              `json:"camera_id"`
-	Shape        []int               `json:"shape"`
-	OutputImage  string              `json:"output_image"`
-	OutputFilm   string              `json:"output_film"`
-	ResumeFilm   string              `json:"resume_film"`
-	Exposure     float64             `json:"exposure"`
-	ToneMapping  string              `json:"tone_mapping"`
-	Gamma        float64             `json:"gamma"`
-	ColorSpace   string              `json:"color_space"`
-	PixelWindows []PixelWindowScript `json:"pixel_windows"`
+	ID               string              `json:"id"`
+	CameraID         string              `json:"camera_id"`
+	Shape            []int               `json:"shape"`
+	SpectralBinCount int                 `json:"spectral_bin_count"`
+	OutputImage      string              `json:"output_image"`
+	OutputFilm       string              `json:"output_film"`
+	ResumeFilm       string              `json:"resume_film"`
+	Exposure         float64             `json:"exposure"`
+	ToneMapping      string              `json:"tone_mapping"`
+	Gamma            float64             `json:"gamma"`
+	ColorSpace       string              `json:"color_space"`
+	PixelWindows     []PixelWindowScript `json:"pixel_windows"`
 }
 
 func (f *StudioFilmScript) UnmarshalJSON(data []byte) error {
 	type plain StudioFilmScript
-	if err := rejectUnknownFields(data, "film", "id", "camera_id", "shape", "output_image", "output_film", "resume_film", "exposure", "tone_mapping", "gamma", "color_space", "pixel_windows"); err != nil {
+	if err := rejectUnknownFields(data, "film", "id", "camera_id", "shape", "spectral_bin_count", "output_image", "output_film", "resume_film", "exposure", "tone_mapping", "gamma", "color_space", "pixel_windows"); err != nil {
 		return err
 	}
-	return json.Unmarshal(data, (*plain)(f))
+	if err := json.Unmarshal(data, (*plain)(f)); err != nil {
+		return err
+	}
+	if f.SpectralBinCount < 0 || f.SpectralBinCount > modelcamera.MaxSpectralBinCount {
+		return fmt.Errorf("film spectral_bin_count must be between 0 and %d", modelcamera.MaxSpectralBinCount)
+	}
+	return nil
 }
 
 type StudioCameraScript struct {
@@ -198,7 +206,8 @@ type EngineCameraScript struct {
 }
 
 type EngineFilmScript struct {
-	Shape        []int               `json:"shape"`
-	OutputFilm   string              `json:"output_film,omitempty"`
-	PixelWindows []PixelWindowScript `json:"pixel_windows,omitempty"`
+	Shape            []int               `json:"shape"`
+	SpectralBinCount int                 `json:"spectral_bin_count,omitempty"`
+	OutputFilm       string              `json:"output_film,omitempty"`
+	PixelWindows     []PixelWindowScript `json:"pixel_windows,omitempty"`
 }

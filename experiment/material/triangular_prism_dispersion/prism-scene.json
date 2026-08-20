@@ -11,7 +11,7 @@
         "radiance": {
           "type": "blackbody",
           "temperature": 6500,
-          "scale": 300000
+          "scale": 50000
         },
         "distribution": {
           "type": "cosine_power",
@@ -51,12 +51,12 @@
         {
           "id": "prism",
           "shape": "group",
-          "_comment": "The prism is on the right of the origin, between the slit and screen. Its entry face is parallel to the slit-light plane; the small +Y offset preserves a practical dispersive path.",
+          "_comment": "The prism is rotated 49 degrees around Z, close to the minimum-deviation orientation for the incoming -X beam. This keeps the internal incidence below the critical angle so wavelengths leave at distinct angles.",
           "center": [2, -0.1, 1.5],
           "scale": [1, 1, 3],
           "basis": [
-            [1, 0, 0],
-            [0, 1, 0],
+            [0.6560590289905073, -0.754709580222772, 0],
+            [0.754709580222772, 0.6560590289905073, 0],
             [0, 0, 1]
           ]
         },

@@ -24,7 +24,7 @@ call npm --prefix "%REPO_ROOT%" run studio -- ^
   --script "%SCENE_DIR%\moissanite.json" ^
   --script "%SCENE_DIR%\moissanite-scene.json" ^
   --endless ^
-  --checkpoint-interval 1 ^
+  --checkpoint-interval 10 ^
   --checkpoint-dir "%CHECKPOINT_DIR%" ^
   %*
 

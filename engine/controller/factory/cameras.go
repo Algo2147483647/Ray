@@ -9,8 +9,6 @@ import (
 	"github.com/Algo2147483647/ray/engine/utils"
 )
 
-const defaultSpectralBinCount = 64
-
 func ParseCameras(script *parser.Script) (map[string]modelcamera.RayCamera, error) {
 	cameras := make(map[string]modelcamera.RayCamera, len(script.Cameras))
 	for index, def := range script.Cameras {
@@ -29,8 +27,17 @@ func ParseCameras(script *parser.Script) (map[string]modelcamera.RayCamera, erro
 		if _, err := modelcamera.NormalizePixelWindows(def.Film.PixelWindows, def.Film.Shape); err != nil {
 			return nil, fmt.Errorf("parse camera[%d] %q: %w", index, def.ID, err)
 		}
+		binCount := def.Film.SpectralBinCount
+		if binCount < 0 || binCount > modelcamera.MaxSpectralBinCount {
+			return nil, fmt.Errorf("parse camera[%d] %q: film spectral_bin_count must be between 0 and %d", index, def.ID, modelcamera.MaxSpectralBinCount)
+		}
 		if !def.Film.HasSpectralBins() {
-			def.Film.InitSpectralBins(defaultSpectralBinCount, optics.WavelengthMin, optics.WavelengthMax)
+			if binCount == 0 {
+				binCount = modelcamera.DefaultSpectralBinCount
+			}
+			def.Film.InitSpectralBins(binCount, optics.WavelengthMin, optics.WavelengthMax)
+		} else if binCount > 0 && binCount != len(def.Film.SpectralBins) {
+			return nil, fmt.Errorf("parse camera[%d] %q: film spectral_bin_count %d does not match %d supplied spectral bins", index, def.ID, binCount, len(def.Film.SpectralBins))
 		}
 
 		parsed, err := BuildCameraFromScript(def)

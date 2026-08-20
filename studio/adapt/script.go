@@ -128,9 +128,10 @@ func attachFilms(baseCameras []schema.EngineCameraScript, script *schema.StudioS
 			camera.ID = film.CameraID + "@" + film.ID
 		}
 		camera.Film = schema.EngineFilmScript{
-			Shape:        append([]int(nil), film.Shape...),
-			OutputFilm:   film.OutputFilm,
-			PixelWindows: clonePixelWindows(film.PixelWindows),
+			Shape:            append([]int(nil), film.Shape...),
+			SpectralBinCount: film.SpectralBinCount,
+			OutputFilm:       film.OutputFilm,
+			PixelWindows:     clonePixelWindows(film.PixelWindows),
 		}
 		cameras = append(cameras, camera)
 		cameraIDs[film.ID] = camera.ID

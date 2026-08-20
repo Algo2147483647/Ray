@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"math"
 	"os"
 	"path/filepath"
@@ -11,6 +12,7 @@ import (
 	enginefactory "github.com/Algo2147483647/ray/engine/controller/factory"
 	engineparser "github.com/Algo2147483647/ray/engine/controller/parser"
 	enginemodel "github.com/Algo2147483647/ray/engine/model"
+	modelcamera "github.com/Algo2147483647/ray/engine/model/camera"
 	modelshape "github.com/Algo2147483647/ray/engine/model/shape"
 	"github.com/Algo2147483647/ray/studio/adapt"
 	"github.com/Algo2147483647/ray/studio/schema"
@@ -98,6 +100,47 @@ func TestIntermediateScriptUsesCameraOwnedFilm(t *testing.T) {
 	}
 	if len(scene.Cameras) != 1 || scene.Cameras["main"].GetFilm() == nil || scene.Cameras["main"].GetFilm().Shape[1] != 600 {
 		t.Fatalf("Film was not loaded into Camera: %+v", scene.Cameras)
+	}
+}
+
+func TestStudioConfiguresSpectralBinCount(t *testing.T) {
+	adapted, err := adaptTestScript(&schema.StudioScript{
+		Cameras: []schema.StudioCameraScript{{ID: "main", Type: "3d"}},
+		Films: []schema.StudioFilmScript{{
+			ID: "main-film", CameraID: "main", Shape: []int{2, 2}, SpectralBinCount: 128,
+		}},
+		Render: schema.StudioRenderScript{FilmID: "main-film"},
+	}, []string{"scene.json"}, 3)
+	if err != nil {
+		t.Fatalf("adapt script: %v", err)
+	}
+	data, err := json.Marshal(adapted)
+	if err != nil {
+		t.Fatalf("marshal intermediate script: %v", err)
+	}
+	var engineScript engineparser.Script
+	if err := json.Unmarshal(data, &engineScript); err != nil {
+		t.Fatalf("Engine rejected Studio intermediate script: %v", err)
+	}
+	if engineScript.Cameras[0].Film.SpectralBinCount != 128 {
+		t.Fatalf("spectral_bin_count = %d, want 128", engineScript.Cameras[0].Film.SpectralBinCount)
+	}
+	scene := enginemodel.NewScene()
+	if err := enginefactory.LoadSceneFromScript(&engineScript, scene); err != nil {
+		t.Fatalf("load Engine scene: %v", err)
+	}
+	if got := len(scene.Cameras["main"].GetFilm().SpectralBins); got != 128 {
+		t.Fatalf("spectral bins = %d, want 128", got)
+	}
+}
+
+func TestStudioRejectsInvalidSpectralBinCount(t *testing.T) {
+	for _, count := range []int{-1, modelcamera.MaxSpectralBinCount + 1} {
+		var script schema.StudioScript
+		source := fmt.Sprintf(`{"films":[{"id":"film","camera_id":"camera","shape":[1,1],"spectral_bin_count":%d}]}`, count)
+		if err := json.Unmarshal([]byte(source), &script); err == nil {
+			t.Fatalf("expected spectral_bin_count %d to be rejected", count)
+		}
 	}
 }
 

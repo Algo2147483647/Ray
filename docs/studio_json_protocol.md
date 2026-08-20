@@ -121,6 +121,7 @@ Camera with `camera_id`; Engine has no top-level `films` or `film_id`.
     "id": "main-film",
     "camera_id": "main",
     "shape": [960, 800],
+    "spectral_bin_count": 128,
     "output_image": "../outputs/geometry-benchmark-matrix.png",
     "output_film": "../outputs/geometry-benchmark-matrix.bin",
     "exposure": 1,
@@ -131,6 +132,12 @@ Camera with `camera_id`; Engine has no top-level `films` or `film_id`.
   "render": { "dimension": 3, "samples": 100, "film_id": "main-film" }
 }
 ```
+
+`spectral_bin_count` controls the number of wavelength bins stored in the
+scene-linear Film over the 380–750 nm range. It defaults to 64 and may be set
+from 1 through 4096. Increasing it raises Film memory and checkpoint size
+linearly; it does not change `render.wavelength_samples`, which controls Monte
+Carlo wavelength samples per render sample.
 
 `render.width`, `render.height`, `camera_index`, output fields, display fields,
 and `pixel_windows` are not part of the Studio source format.
