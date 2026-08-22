@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"math"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -41,6 +42,7 @@ type studioConfig struct {
 	startIteration     int64
 	exposure           float64
 	toneMapping        string
+	tanhOmega          float64
 	gamma              float64
 	spectrumMode       string
 	wavelengthSamples  int
@@ -93,7 +95,8 @@ func parseStudioConfig(args []string) (studioConfig, error) {
 	flagSet.StringVar(&config.checkpointDir, "checkpoint-dir", "", "directory for endless film and image checkpoints")
 	flagSet.Int64Var(&config.startIteration, "start-iteration", 0, "sample iteration count represented by resume-film")
 	flagSet.Float64Var(&config.exposure, "exposure", 0, "output exposure multiplier")
-	flagSet.StringVar(&config.toneMapping, "tone-mapping", "", "output tone mapping: linear, reinhard, aces")
+	flagSet.StringVar(&config.toneMapping, "tone-mapping", "", "output tone mapping: linear, reinhard, aces, spectral_tanh")
+	flagSet.Float64Var(&config.tanhOmega, "tanh-omega", 0, "spectral_tanh slope coefficient (default 1)")
 	flagSet.Float64Var(&config.gamma, "gamma", 0, "output gamma, for example 2.2")
 	flagSet.StringVar(&config.spectrumMode, "spectrum-mode", "", "spectrum mode: hero_wavelength, sampled")
 	flagSet.IntVar(&config.wavelengthSamples, "wavelength-samples", 0, "wavelength samples per camera sample in sampled mode")
@@ -159,14 +162,17 @@ func parseStudioConfig(args []string) (studioConfig, error) {
 	if config.gamma < 0 {
 		return studioConfig{}, fmt.Errorf("gamma must be >= 0")
 	}
+	if config.provided["tanh-omega"] && (config.tanhOmega <= 0 || math.IsNaN(config.tanhOmega) || math.IsInf(config.tanhOmega, 0)) {
+		return studioConfig{}, fmt.Errorf("tanh-omega must be finite and > 0")
+	}
 	if config.wavelengthSamples < 0 {
 		return studioConfig{}, fmt.Errorf("wavelength-samples must be >= 0")
 	}
 	if config.spectrumMode != "" && config.spectrumMode != "hero_wavelength" && config.spectrumMode != "sampled" {
 		return studioConfig{}, fmt.Errorf("spectrum-mode must be hero_wavelength or sampled")
 	}
-	if config.toneMapping != "" && config.toneMapping != "linear" && config.toneMapping != "reinhard" && config.toneMapping != "aces" {
-		return studioConfig{}, fmt.Errorf("tone-mapping must be linear, reinhard, or aces")
+	if config.toneMapping != "" && config.toneMapping != "linear" && config.toneMapping != "reinhard" && config.toneMapping != "aces" && config.toneMapping != "spectral_tanh" {
+		return studioConfig{}, fmt.Errorf("tone-mapping must be linear, reinhard, aces, or spectral_tanh")
 	}
 	if config.colorSpace != "" && config.colorSpace != "linear_srgb" && config.colorSpace != "acescg" && config.colorSpace != "xyz" {
 		return studioConfig{}, fmt.Errorf("color-space must be linear_srgb, acescg, or xyz")

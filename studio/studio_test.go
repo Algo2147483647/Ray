@@ -1175,7 +1175,7 @@ func TestStudioKeepsColorPipelineOutOfEngineIntermediateScript(t *testing.T) {
 	if err != nil {
 		t.Fatalf("adapt script: %v", err)
 	}
-	for _, field := range []string{"exposure", "tone_mapping", "gamma", "color_space", "working_space"} {
+	for _, field := range []string{"exposure", "tone_mapping", "tanh_omega", "gamma", "color_space", "working_space"} {
 		if _, ok := adapted.Renders[0][field]; ok {
 			t.Fatalf("Studio-only field %q leaked into Engine script", field)
 		}
@@ -1238,12 +1238,12 @@ func TestStudioEngineArgsOnlyPassScriptPath(t *testing.T) {
 func TestStudioEngineArgsDoNotForwardColorPipeline(t *testing.T) {
 	config := studioConfig{
 		provided: map[string]bool{
-			"exposure": true, "tone-mapping": true, "gamma": true, "color-space": true,
+			"exposure": true, "tone-mapping": true, "tanh-omega": true, "gamma": true, "color-space": true,
 		},
-		exposure: 0.75, toneMapping: "aces", gamma: 2.2, colorSpace: "acescg",
+		exposure: 0.75, toneMapping: "spectral_tanh", tanhOmega: 2, gamma: 2.2, colorSpace: "acescg",
 	}
 	args := config.engineArgs("intermediate.json")
-	for _, flag := range []string{"--exposure", "--tone-mapping", "--gamma", "--color-space"} {
+	for _, flag := range []string{"--exposure", "--tone-mapping", "--tanh-omega", "--gamma", "--color-space"} {
 		if containsString(args, flag) {
 			t.Fatalf("Studio-only flag %q leaked into Engine args: %v", flag, args)
 		}
@@ -1404,6 +1404,23 @@ func TestStudioRejectsRenderInputsInFilmConversionMode(t *testing.T) {
 	}
 }
 
+func TestStudioParsesSpectralTanhFilmConversion(t *testing.T) {
+	config, err := parseStudioConfig([]string{
+		"--input-film", "render.bin",
+		"--tone-mapping", "spectral_tanh",
+		"--tanh-omega", "3.5",
+	})
+	if err != nil {
+		t.Fatalf("parse spectral tanh conversion: %v", err)
+	}
+	if config.toneMapping != "spectral_tanh" || config.tanhOmega != 3.5 {
+		t.Fatalf("unexpected spectral tanh options: %+v", config)
+	}
+	if _, err := parseStudioConfig([]string{"--input-film", "render.bin", "--tanh-omega", "0"}); err == nil {
+		t.Fatal("expected non-positive tanh omega to fail")
+	}
+}
+
 func TestRunFilmConversionWritesConfiguredPNG(t *testing.T) {
 	dir := t.TempDir()
 	filmPath := filepath.Join(dir, "render.bin")
@@ -1449,11 +1466,12 @@ func TestRunFilmConversionWritesConfiguredPNG(t *testing.T) {
 
 func TestStudioResolvesPerRenderColorPipeline(t *testing.T) {
 	film := schema.StudioFilmScript{
-		Exposure: 0.5, ToneMapping: "reinhard", Gamma: 2.4, ColorSpace: "acescg",
+		Exposure: 0.5, ToneMapping: "spectral_tanh", TanhOmega: 3.5, Gamma: 2.4, ColorSpace: "acescg",
 	}
 	output := studioRenderOutputFromFilm(film, studioConfig{provided: map[string]bool{}}, "")
 	if output.Options.Exposure != 0.5 || output.Options.Gamma != 2.4 ||
-		string(output.Options.ToneMapping) != "reinhard" || string(output.Options.ColorSpace) != "acescg" {
+		output.Options.TanhOmega != 3.5 || string(output.Options.ToneMapping) != "spectral_tanh" ||
+		string(output.Options.ColorSpace) != "acescg" {
 		t.Fatalf("unexpected Studio color pipeline: %+v", output.Options)
 	}
 }

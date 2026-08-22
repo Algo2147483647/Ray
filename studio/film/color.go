@@ -14,9 +14,10 @@ type ToneMapping string
 type ColorSpace string
 
 const (
-	ToneMappingLinear   ToneMapping = "linear"
-	ToneMappingReinhard ToneMapping = "reinhard"
-	ToneMappingACES     ToneMapping = "aces"
+	ToneMappingLinear       ToneMapping = "linear"
+	ToneMappingReinhard     ToneMapping = "reinhard"
+	ToneMappingACES         ToneMapping = "aces"
+	ToneMappingSpectralTanh ToneMapping = "spectral_tanh"
 )
 
 const (
@@ -28,6 +29,7 @@ const (
 type ImageOptions struct {
 	Exposure    float64
 	ToneMapping ToneMapping
+	TanhOmega   float64
 	Gamma       float64
 	ColorSpace  ColorSpace
 }
@@ -60,17 +62,39 @@ func ToImage(film *modelcamera.Film, options ImageOptions) (*image.RGBA, error) 
 		return nil, fmt.Errorf("Film wavelength range has no visible CIE Y response")
 	}
 	for pixel := 0; pixel < film.ElementCount(); pixel++ {
-		x, y, z := spectralXYZAt(film, pixel, whiteY)
+		encodeOptions := options
+		var x, y, z float64
+		if options.ToneMapping == ToneMappingSpectralTanh {
+			var brightness float64
+			var err error
+			x, y, z, brightness, err = spectralXYZAndBrightnessAt(film, pixel, whiteY)
+			if err != nil {
+				return nil, err
+			}
+			spectralScale := spectralTanhScale(brightness, options.Exposure, options.TanhOmega)
+			x *= spectralScale
+			y *= spectralScale
+			z *= spectralScale
+			// Exposure and tone mapping have already been applied as one scalar
+			// to the complete physical spectrum.
+			encodeOptions.Exposure = 1
+			encodeOptions.ToneMapping = ToneMappingLinear
+		} else {
+			x, y, z = spectralXYZAt(film, pixel, whiteY)
+		}
 		r, g, b := xyzToOutputRGB(x, y, z, options.ColorSpace)
+		if options.ToneMapping == ToneMappingSpectralTanh {
+			r, g, b = fitRGBWithoutChannelClipping(r, g, b)
+		}
 		coords := film.SpectralBins[0].GetCoordinates(pixel)
 		slice := flattenedSliceIndex(coords[2:], shape[2:])
 		output.Set(
 			coords[0]+(slice%atlasCols)*width,
 			coords[1]+(slice/atlasCols)*height,
 			color.RGBA{
-				R: encodeOutputChannel(r, options),
-				G: encodeOutputChannel(g, options),
-				B: encodeOutputChannel(b, options),
+				R: encodeOutputChannel(r, encodeOptions),
+				G: encodeOutputChannel(g, encodeOptions),
+				B: encodeOutputChannel(b, encodeOptions),
 				A: 255,
 			},
 		)
@@ -86,9 +110,12 @@ func validateImageOptions(options ImageOptions) error {
 		return fmt.Errorf("gamma must be finite and > 0")
 	}
 	switch options.ToneMapping {
-	case ToneMappingLinear, ToneMappingReinhard, ToneMappingACES:
+	case ToneMappingLinear, ToneMappingReinhard, ToneMappingACES, ToneMappingSpectralTanh:
 	default:
 		return fmt.Errorf("unsupported tone mapping %q", options.ToneMapping)
+	}
+	if math.IsNaN(options.TanhOmega) || math.IsInf(options.TanhOmega, 0) || options.TanhOmega <= 0 {
+		return fmt.Errorf("tanh omega must be finite and > 0")
 	}
 	switch options.ColorSpace {
 	case ColorSpaceLinearSRGB, ColorSpaceXYZ, ColorSpaceACEScg:
@@ -112,6 +139,49 @@ func spectralXYZAt(film *modelcamera.Film, pixel int, whiteY float64) (float64, 
 		z += math.Max(0, cz) * scale
 	}
 	return x, y, z
+}
+
+func spectralXYZAndBrightnessAt(film *modelcamera.Film, pixel int, whiteY float64) (float64, float64, float64, float64, error) {
+	var x, y, z, brightness float64
+	for bin := range film.SpectralBins {
+		value := film.SpectralBins[bin].Data[pixel]
+		if math.IsNaN(value) || math.IsInf(value, 0) || value < 0 {
+			return 0, 0, 0, 0, fmt.Errorf("spectral_tanh requires finite non-negative spectral values; bin %d pixel %d is %g", bin, pixel, value)
+		}
+		brightness += value
+		wavelength := film.SpectralBinCenterNM(bin)
+		cx, cy, cz := cie1931Approximation(wavelength)
+		scale := value / whiteY
+		x += math.Max(0, cx) * scale
+		y += math.Max(0, cy) * scale
+		z += math.Max(0, cz) * scale
+	}
+	if math.IsInf(brightness, 0) {
+		return 0, 0, 0, 0, fmt.Errorf("spectral brightness overflow at pixel %d", pixel)
+	}
+	return x, y, z, brightness, nil
+}
+
+// spectralTanhScale maps the sum x of all bins to tanh(omega*exposure*x).
+// Returning one shared scale preserves all spectral-bin ratios in the pixel.
+func spectralTanhScale(brightness, exposure, omega float64) float64 {
+	if brightness <= 0 {
+		return 0
+	}
+	targetBrightness := math.Tanh(omega * exposure * brightness)
+	return targetBrightness / brightness
+}
+
+// fitRGBWithoutChannelClipping uses one scale for all positive RGB channels.
+// It avoids hue shifts from independently clipping over-range channels. Negative
+// components are still outside the representable gamut of an RGB PNG.
+func fitRGBWithoutChannelClipping(r, g, b float64) (float64, float64, float64) {
+	maximum := math.Max(r, math.Max(g, b))
+	if maximum > 1 {
+		scale := 1 / maximum
+		return r * scale, g * scale, b * scale
+	}
+	return r, g, b
 }
 
 func filmSpectralWhiteY(film *modelcamera.Film) float64 {
@@ -141,6 +211,9 @@ func normalizeImageOptions(options ImageOptions) ImageOptions {
 	}
 	if options.ToneMapping == "" {
 		options.ToneMapping = ToneMappingLinear
+	}
+	if options.TanhOmega == 0 {
+		options.TanhOmega = 1
 	}
 	if options.Gamma == 0 {
 		options.Gamma = 1

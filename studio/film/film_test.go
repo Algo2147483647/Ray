@@ -131,6 +131,45 @@ func TestToImageRejectsOutputSettingsUnknownToStudio(t *testing.T) {
 	}
 }
 
+func TestSpectralTanhUsesOneScaleForEveryBin(t *testing.T) {
+	film := spectralFilm([]int{2, 1}, 3, 1, 0)
+	values := [][2]float64{{1, 2}, {2, 4}, {3, 6}}
+	for bin := range film.SpectralBins {
+		copy(film.SpectralBins[bin].Data, values[bin][:])
+	}
+
+	x, y, z, brightness, err := spectralXYZAndBrightnessAt(film, 0, 1)
+	if err != nil {
+		t.Fatalf("spectral pixel: %v", err)
+	}
+	if x <= 0 || y <= 0 || z <= 0 {
+		t.Fatalf("expected positive XYZ, got %g %g %g", x, y, z)
+	}
+	assertClose(t, brightness, 6)
+	scale := spectralTanhScale(brightness, 1, 0.5)
+	assertClose(t, brightness*scale, math.Tanh(3))
+	for bin := 1; bin < len(film.SpectralBins); bin++ {
+		gotRatio := film.SpectralBins[bin].Data[0] * scale / (film.SpectralBins[0].Data[0] * scale)
+		wantRatio := film.SpectralBins[bin].Data[0] / film.SpectralBins[0].Data[0]
+		assertClose(t, gotRatio, wantRatio)
+	}
+}
+
+func TestSpectralTanhRejectsNonPhysicalSpectrum(t *testing.T) {
+	film := spectralFilm([]int{1, 1}, 3, 1, 1)
+	film.SpectralBins[1].Data[0] = -0.01
+	if _, err := ToImage(film, ImageOptions{ToneMapping: ToneMappingSpectralTanh}); err == nil {
+		t.Fatal("expected a negative spectral channel to be rejected")
+	}
+}
+
+func TestSpectralTanhFitsRGBWithOneSharedScale(t *testing.T) {
+	r, g, b := fitRGBWithoutChannelClipping(2, 1, 0.5)
+	assertClose(t, r, 1)
+	assertClose(t, g, 0.5)
+	assertClose(t, b, 0.25)
+}
+
 func byteDistance(a, b uint8) uint8 {
 	if a >= b {
 		return a - b

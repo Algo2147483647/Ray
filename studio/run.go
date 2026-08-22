@@ -302,6 +302,7 @@ func studioRenderOutputFromFilm(film schema.StudioFilmScript, config studioConfi
 	options := studiofilm.ImageOptions{
 		Exposure:    1,
 		ToneMapping: studiofilm.ToneMappingLinear,
+		TanhOmega:   1,
 		Gamma:       1,
 		ColorSpace:  studiofilm.ColorSpaceLinearSRGB,
 	}
@@ -310,6 +311,9 @@ func studioRenderOutputFromFilm(film schema.StudioFilmScript, config studioConfi
 	}
 	if film.ToneMapping != "" {
 		options.ToneMapping = studiofilm.ToneMapping(film.ToneMapping)
+	}
+	if film.TanhOmega > 0 {
+		options.TanhOmega = film.TanhOmega
 	}
 	if film.Gamma > 0 {
 		options.Gamma = film.Gamma
@@ -322,6 +326,9 @@ func studioRenderOutputFromFilm(film schema.StudioFilmScript, config studioConfi
 	}
 	if config.provided["tone-mapping"] {
 		options.ToneMapping = studiofilm.ToneMapping(config.toneMapping)
+	}
+	if config.provided["tanh-omega"] {
+		options.TanhOmega = config.tanhOmega
 	}
 	if config.provided["gamma"] {
 		options.Gamma = config.gamma

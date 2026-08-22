@@ -27,6 +27,7 @@ Studio accepts the same render override flags as engine:
 --resume-film
 --exposure
 --tone-mapping
+--tanh-omega
 --gamma
 --spectrum-mode
 --wavelength-samples
@@ -47,9 +48,30 @@ go -C studio run . --input-film ../outputs/render.bin \
 ```
 
 `--output-image` is optional in this mode. By default Studio replaces the
-input `.bin` extension with `.png`. Only the five image-output options shown
+input `.bin` extension with `.png`. Only the six image-output options shown
 above can be combined with `--input-film`; scene and rendering options are
 rejected because this mode performs post-processing only.
+
+Studio also provides a spectrum-preserving highlight mode:
+
+```bash
+go -C studio run . --input-film ../outputs/render.bin \
+  --output-image ../outputs/render.spectral-tanh.png \
+  --tone-mapping spectral_tanh \
+  --tanh-omega 1 \
+  --gamma 2.2
+```
+
+For each pixel this mode sums all spectral bins to obtain brightness `x` and
+maps it to the normalized range with `tanh(tanh_omega * exposure * x)`. The
+resulting brightness is applied to every bin through one shared multiplier, so
+the ratios between the physical spectral channels are unchanged. After
+conversion to RGB, one additional
+shared scale is used if a positive RGB component exceeds 1; this avoids hue
+changes caused by clipping individual high channels. Negative RGB components
+can still occur for spectra outside the selected RGB gamut and cannot be
+represented exactly by an RGB PNG. `tanh_omega` defaults to 1 and must be
+positive.
 
 `studio` owns authoring and output orchestration. `output_image` and
 `resume_film`, exposure, tone mapping, gamma, and `color_space` are accepted by
@@ -142,7 +164,8 @@ Camera with `camera_id`; Engine has no top-level `films` or `film_id`.
     "output_image": "../outputs/geometry-benchmark-matrix.png",
     "output_film": "../outputs/geometry-benchmark-matrix.bin",
     "exposure": 1,
-    "tone_mapping": "aces",
+    "tone_mapping": "spectral_tanh",
+    "tanh_omega": 1,
     "gamma": 2.2,
     "color_space": "linear_srgb"
   }],

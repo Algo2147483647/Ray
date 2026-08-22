@@ -115,6 +115,7 @@ type StudioFilmScript struct {
 	ResumeFilm       string              `json:"resume_film"`
 	Exposure         float64             `json:"exposure"`
 	ToneMapping      string              `json:"tone_mapping"`
+	TanhOmega        float64             `json:"tanh_omega"`
 	Gamma            float64             `json:"gamma"`
 	ColorSpace       string              `json:"color_space"`
 	PixelWindows     []PixelWindowScript `json:"pixel_windows"`
@@ -122,7 +123,7 @@ type StudioFilmScript struct {
 
 func (f *StudioFilmScript) UnmarshalJSON(data []byte) error {
 	type plain StudioFilmScript
-	if err := rejectUnknownFields(data, "film", "id", "camera_id", "shape", "spectral_bin_count", "output_image", "output_film", "resume_film", "exposure", "tone_mapping", "gamma", "color_space", "pixel_windows"); err != nil {
+	if err := rejectUnknownFields(data, "film", "id", "camera_id", "shape", "spectral_bin_count", "output_image", "output_film", "resume_film", "exposure", "tone_mapping", "tanh_omega", "gamma", "color_space", "pixel_windows"); err != nil {
 		return err
 	}
 	if err := json.Unmarshal(data, (*plain)(f)); err != nil {
@@ -130,6 +131,9 @@ func (f *StudioFilmScript) UnmarshalJSON(data []byte) error {
 	}
 	if f.SpectralBinCount < 0 || f.SpectralBinCount > modelcamera.MaxSpectralBinCount {
 		return fmt.Errorf("film spectral_bin_count must be between 0 and %d", modelcamera.MaxSpectralBinCount)
+	}
+	if f.TanhOmega < 0 {
+		return fmt.Errorf("film tanh_omega must be >= 0")
 	}
 	return nil
 }
