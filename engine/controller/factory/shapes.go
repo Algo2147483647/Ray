@@ -55,8 +55,10 @@ func ParseObjectSpecInSpace(spec parser.ObjectSpec, space geometry.SceneSpace) (
 		return nil, fmt.Errorf("shape %q is declared but not implemented", spec.Shape)
 	case *parser.QuadraticEquationSpec:
 		return parseQuadraticEquation(definition, spec.Bounds, dimension)
-	case *parser.PolynomialEquationSpec:
-		return parsePolynomialEquation(definition, spec.Bounds, spec.Shape, dimension)
+	case *parser.CubicEquationSpec:
+		return parsePolynomialEquation(&definition.PolynomialEquationSpec, spec.Bounds, 3, dimension)
+	case *parser.FourOrderEquationSpec:
+		return parsePolynomialEquation(&definition.PolynomialEquationSpec, spec.Bounds, 4, dimension)
 	case *parser.ImplicitEquationSpec:
 		return parseImplicitEquation(definition, spec.Bounds, dimension)
 	case *parser.ParametricEquationSpec:
@@ -232,11 +234,7 @@ func parseQuadraticEquation(spec *parser.QuadraticEquationSpec, bounds *parser.B
 	return wrapSingleShapeWithBounds(equation, bounds, dimension)
 }
 
-func parsePolynomialEquation(spec *parser.PolynomialEquationSpec, bounds *parser.BoundsSpec, kind parser.ShapeKind, dimension int) ([]shape.Shape, error) {
-	order := 3
-	if kind == parser.ShapeFourOrderEquation {
-		order = 4
-	}
+func parsePolynomialEquation(spec *parser.PolynomialEquationSpec, bounds *parser.BoundsSpec, order, dimension int) ([]shape.Shape, error) {
 	a, err := requiredPolynomialCoefficientsRaw(spec.A, spec.UpperA, order)
 	if err != nil {
 		return nil, err

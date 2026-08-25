@@ -86,3 +86,66 @@ func TestTypedSpecsRejectUnknownFieldsAndDiscriminators(t *testing.T) {
 		})
 	}
 }
+
+func TestTypedSpecsMarshalAsFlatDiscriminatedObjects(t *testing.T) {
+	var object ObjectSpec
+	if err := json.Unmarshal([]byte(`{"id":"ball","material_id":"matte","shape":"sphere","center":[1,2,3],"r":2}`), &object); err != nil {
+		t.Fatal(err)
+	}
+	encoded, err := json.Marshal(object)
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(encoded)
+	if !strings.Contains(text, `"shape":"sphere"`) || !strings.Contains(text, `"center":[1,2,3]`) || strings.Contains(text, "Definition") {
+		t.Fatalf("object encoded as %s", text)
+	}
+	var objectRoundTrip ObjectSpec
+	if err := json.Unmarshal(encoded, &objectRoundTrip); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := objectRoundTrip.Definition.(*SphereSpec); !ok {
+		t.Fatalf("round-trip definition = %T", objectRoundTrip.Definition)
+	}
+
+	var material MaterialSpec
+	if err := json.Unmarshal([]byte(`{"id":"matte","surface":{"type":"lambert","albedo":[0.2,0.3,0.4]}}`), &material); err != nil {
+		t.Fatal(err)
+	}
+	encoded, err = json.Marshal(material)
+	if err != nil {
+		t.Fatal(err)
+	}
+	text = string(encoded)
+	if !strings.Contains(text, `"type":"lambert"`) || !strings.Contains(text, `"albedo":[0.2,0.3,0.4]`) || strings.Contains(text, "Definition") {
+		t.Fatalf("material encoded as %s", text)
+	}
+}
+
+func TestMaterialVariantsRejectFieldsFromOtherVariants(t *testing.T) {
+	tests := []struct {
+		name     string
+		data     string
+		contains string
+	}{
+		{"lambert rejects conductor field", `{"type":"lambert","albedo":[1,1,1],"roughness":0.2}`, `unsupported surface field "roughness"`},
+		{"conductor rejects dielectric field", `{"type":"rough_conductor","eta":[1,1,1],"k":[1,1,1],"eta_inside":1.5}`, `unsupported surface field "eta_inside"`},
+		{"constant emission rejects palette", `{"type":"constant","color":[1,1,1],"palette":[[1,0,0]]}`, `unsupported emission field "palette"`},
+		{"palette emission rejects radiance", `{"type":"cell_palette","radiance":[1,1,1]}`, `unsupported emission field "radiance"`},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var err error
+			if strings.Contains(test.data, `"type":"constant"`) || strings.Contains(test.data, `"type":"cell_palette"`) {
+				var spec EmissionSpec
+				err = json.Unmarshal([]byte(test.data), &spec)
+			} else {
+				var spec SurfaceSpec
+				err = json.Unmarshal([]byte(test.data), &spec)
+			}
+			if err == nil || !strings.Contains(err.Error(), test.contains) {
+				t.Fatalf("error = %v, want %q", err, test.contains)
+			}
+		})
+	}
+}

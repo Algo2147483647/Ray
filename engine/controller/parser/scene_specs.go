@@ -121,6 +121,8 @@ type PolynomialEquationSpec struct {
 	Scale  json.RawMessage `json:"scale,omitempty"`
 	Basis  json.RawMessage `json:"basis,omitempty"`
 }
+type CubicEquationSpec struct{ PolynomialEquationSpec }
+type FourOrderEquationSpec struct{ PolynomialEquationSpec }
 type ImplicitEquationSpec struct {
 	Field     json.RawMessage `json:"field,omitempty"`
 	Transform json.RawMessage `json:"transform,omitempty"`
@@ -185,7 +187,8 @@ func (*FiniteCylinderSpec) objectDefinition()     {}
 func (*TriangleSpec) objectDefinition()           {}
 func (*PlaneSpec) objectDefinition()              {}
 func (*QuadraticEquationSpec) objectDefinition()  {}
-func (*PolynomialEquationSpec) objectDefinition() {}
+func (*CubicEquationSpec) objectDefinition()      {}
+func (*FourOrderEquationSpec) objectDefinition()  {}
 func (*ImplicitEquationSpec) objectDefinition()   {}
 func (*ParametricEquationSpec) objectDefinition() {}
 func (*ParametricCurveSpec) objectDefinition()    {}
@@ -244,8 +247,10 @@ func (s *ObjectSpec) UnmarshalJSON(data []byte) error {
 		definition = &PlaneSpec{}
 	case ShapeQuadraticEquation:
 		definition = &QuadraticEquationSpec{}
-	case ShapeCubicEquation, ShapeFourOrderEquation:
-		definition = &PolynomialEquationSpec{}
+	case ShapeCubicEquation:
+		definition = &CubicEquationSpec{}
+	case ShapeFourOrderEquation:
+		definition = &FourOrderEquationSpec{}
 	case ShapeImplicitEquation:
 		definition = &ImplicitEquationSpec{}
 	case ShapeParametricEquation:
@@ -292,14 +297,6 @@ const (
 	SurfaceRoughDielectricTransmission SurfaceKind = "rough_dielectric_transmission"
 )
 
-var supportedSurfaceKinds = map[SurfaceKind]bool{
-	SurfaceWeightedMixture: true, SurfaceLambert: true,
-	SurfaceSpecularReflection: true, SurfaceSpecularDielectric: true,
-	SurfaceRoughConductor: true, SurfaceRoughDielectricReflection: true,
-	SurfaceCylindricalGridCutout: true, SurfaceWireMesh: true,
-	SurfaceRoughDielectricTransmission: true,
-}
-
 type WeightedSurfaceSpec struct {
 	Weight  float64     `json:"weight"`
 	Surface SurfaceSpec `json:"surface"`
@@ -334,52 +331,55 @@ type SurfaceSpec struct {
 	Definition SurfaceDefinition `json:"-"`
 }
 
-type SurfaceDefinition interface{ surfaceDefinition() }
+type SurfaceDefinition interface {
+	surfaceDefinition()
+	decodeSurfaceJSON([]byte) error
+}
 type WeightedMixtureSurfaceSpec struct {
-	Components []WeightedSurfaceSpec `json:"components"`
+	Components []WeightedSurfaceSpec `json:"components,omitempty"`
 }
 type LambertSurfaceSpec struct {
-	Albedo json.RawMessage `json:"albedo"`
+	Albedo json.RawMessage `json:"albedo,omitempty"`
 }
 type SpecularReflectionSurfaceSpec struct {
-	Reflectance json.RawMessage `json:"reflectance"`
+	Reflectance json.RawMessage `json:"reflectance,omitempty"`
 }
 type SpecularDielectricSurfaceSpec struct {
-	Reflectance   json.RawMessage `json:"reflectance"`
-	Transmittance json.RawMessage `json:"transmittance"`
-	IOR           *IORSpec        `json:"ior"`
-	EtaInside     *float64        `json:"eta_inside"`
-	EtaOutside    *float64        `json:"eta_outside"`
+	Reflectance   json.RawMessage `json:"reflectance,omitempty"`
+	Transmittance json.RawMessage `json:"transmittance,omitempty"`
+	IOR           *IORSpec        `json:"ior,omitempty"`
+	EtaInside     *float64        `json:"eta_inside,omitempty"`
+	EtaOutside    *float64        `json:"eta_outside,omitempty"`
 }
 type RoughConductorSurfaceSpec struct {
-	Eta       json.RawMessage `json:"eta"`
-	K         json.RawMessage `json:"k"`
-	Weight    json.RawMessage `json:"weight"`
-	Roughness *float64        `json:"roughness"`
+	Eta       json.RawMessage `json:"eta,omitempty"`
+	K         json.RawMessage `json:"k,omitempty"`
+	Weight    json.RawMessage `json:"weight,omitempty"`
+	Roughness *float64        `json:"roughness,omitempty"`
 }
 type RoughDielectricReflectionSurfaceSpec struct {
-	Reflectance json.RawMessage `json:"reflectance"`
-	IOR         *IORSpec        `json:"ior"`
-	EtaInside   *float64        `json:"eta_inside"`
-	EtaOutside  *float64        `json:"eta_outside"`
-	Roughness   *float64        `json:"roughness"`
+	Reflectance json.RawMessage `json:"reflectance,omitempty"`
+	IOR         *IORSpec        `json:"ior,omitempty"`
+	EtaInside   *float64        `json:"eta_inside,omitempty"`
+	EtaOutside  *float64        `json:"eta_outside,omitempty"`
+	Roughness   *float64        `json:"roughness,omitempty"`
 }
 type RoughDielectricTransmissionSurfaceSpec struct {
-	Transmittance json.RawMessage `json:"transmittance"`
-	IOR           *IORSpec        `json:"ior"`
-	EtaInside     *float64        `json:"eta_inside"`
-	EtaOutside    *float64        `json:"eta_outside"`
-	Roughness     *float64        `json:"roughness"`
+	Transmittance json.RawMessage `json:"transmittance,omitempty"`
+	IOR           *IORSpec        `json:"ior,omitempty"`
+	EtaInside     *float64        `json:"eta_inside,omitempty"`
+	EtaOutside    *float64        `json:"eta_outside,omitempty"`
+	Roughness     *float64        `json:"roughness,omitempty"`
 }
 type CylindricalGridSurfaceSpec struct {
-	LineSurface     *SurfaceSpec `json:"line_surface"`
-	Origin          []float64    `json:"origin"`
-	Axis            []float64    `json:"axis"`
-	ReferenceAxis   []float64    `json:"reference_axis"`
-	LineWidth       *float64     `json:"line_width"`
-	GapWidth        *float64     `json:"gap_width"`
-	GapHeight       *float64     `json:"gap_height"`
-	ReferenceRadius *float64     `json:"reference_radius"`
+	LineSurface     *SurfaceSpec `json:"line_surface,omitempty"`
+	Origin          []float64    `json:"origin,omitempty"`
+	Axis            []float64    `json:"axis,omitempty"`
+	ReferenceAxis   []float64    `json:"reference_axis,omitempty"`
+	LineWidth       *float64     `json:"line_width,omitempty"`
+	GapWidth        *float64     `json:"gap_width,omitempty"`
+	GapHeight       *float64     `json:"gap_height,omitempty"`
+	ReferenceRadius *float64     `json:"reference_radius,omitempty"`
 }
 
 func (*WeightedMixtureSurfaceSpec) surfaceDefinition()             {}
@@ -391,24 +391,36 @@ func (*RoughDielectricReflectionSurfaceSpec) surfaceDefinition()   {}
 func (*RoughDielectricTransmissionSurfaceSpec) surfaceDefinition() {}
 func (*CylindricalGridSurfaceSpec) surfaceDefinition()             {}
 
+func (s *WeightedMixtureSurfaceSpec) decodeSurfaceJSON(data []byte) error {
+	return decodeVariantPayload(data, "surface", s, "type", "components")
+}
+func (s *LambertSurfaceSpec) decodeSurfaceJSON(data []byte) error {
+	return decodeVariantPayload(data, "surface", s, "type", "albedo")
+}
+func (s *SpecularReflectionSurfaceSpec) decodeSurfaceJSON(data []byte) error {
+	return decodeVariantPayload(data, "surface", s, "type", "reflectance")
+}
+func (s *SpecularDielectricSurfaceSpec) decodeSurfaceJSON(data []byte) error {
+	return decodeVariantPayload(data, "surface", s, "type", "reflectance", "transmittance", "eta_inside", "eta_outside", "ior")
+}
+func (s *RoughConductorSurfaceSpec) decodeSurfaceJSON(data []byte) error {
+	return decodeVariantPayload(data, "surface", s, "type", "eta", "k", "roughness", "weight")
+}
+func (s *RoughDielectricReflectionSurfaceSpec) decodeSurfaceJSON(data []byte) error {
+	return decodeVariantPayload(data, "surface", s, "type", "reflectance", "eta_inside", "eta_outside", "ior", "roughness")
+}
+func (s *RoughDielectricTransmissionSurfaceSpec) decodeSurfaceJSON(data []byte) error {
+	return decodeVariantPayload(data, "surface", s, "type", "transmittance", "eta_inside", "eta_outside", "ior", "roughness")
+}
+func (s *CylindricalGridSurfaceSpec) decodeSurfaceJSON(data []byte) error {
+	return decodeVariantPayload(data, "surface", s, "type", "line_surface", "origin", "axis", "reference_axis", "line_width", "gap_width", "gap_height", "reference_radius")
+}
+
 func (s *SurfaceSpec) UnmarshalJSON(data []byte) error {
-	if err := rejectSpecFields(data, "surface", "type", "components", "albedo",
-		"reflectance", "transmittance", "eta", "k", "weight", "ior",
-		"eta_inside", "eta_outside", "roughness", "line_surface", "origin",
-		"axis", "reference_axis", "line_width", "gap_width", "gap_height",
-		"reference_radius"); err != nil {
-		return err
-	}
 	var header struct {
 		Type SurfaceKind `json:"type"`
 	}
 	if err := json.Unmarshal(data, &header); err != nil {
-		return err
-	}
-	if !supportedSurfaceKinds[header.Type] {
-		return fmt.Errorf("unsupported surface type %q", header.Type)
-	}
-	if err := rejectSurfaceVariantFields(data, header.Type); err != nil {
 		return err
 	}
 	var definition SurfaceDefinition
@@ -429,8 +441,10 @@ func (s *SurfaceSpec) UnmarshalJSON(data []byte) error {
 		definition = &RoughDielectricTransmissionSurfaceSpec{}
 	case SurfaceCylindricalGridCutout, SurfaceWireMesh:
 		definition = &CylindricalGridSurfaceSpec{}
+	default:
+		return fmt.Errorf("unsupported surface type %q", header.Type)
 	}
-	if err := json.Unmarshal(data, definition); err != nil {
+	if err := definition.decodeSurfaceJSON(data); err != nil {
 		return err
 	}
 	*s = SurfaceSpec{Type: header.Type, Definition: definition}
@@ -480,36 +494,44 @@ type EmissionSpec struct {
 	Definition   EmissionDefinition        `json:"-"`
 }
 
-type EmissionDefinition interface{ emissionDefinition() }
+type EmissionDefinition interface {
+	emissionDefinition()
+	decodeEmissionJSON([]byte) error
+}
 type ConstantEmissionSpec struct {
-	Radiance json.RawMessage `json:"radiance"`
-	Color    json.RawMessage `json:"color"`
-	Exitance json.RawMessage `json:"exitance"`
+	Radiance json.RawMessage `json:"radiance,omitempty"`
+	Color    json.RawMessage `json:"color,omitempty"`
+	Exitance json.RawMessage `json:"exitance,omitempty"`
 }
 type CellPaletteEmissionSpec struct {
-	Palette       [][]float64 `json:"palette"`
-	GridColor     []float64   `json:"grid_color"`
-	Intensity     *float64    `json:"intensity"`
-	Shading       string      `json:"shading"`
-	GridThickness *float64    `json:"grid_thickness"`
+	Palette       [][]float64 `json:"palette,omitempty"`
+	GridColor     []float64   `json:"grid_color,omitempty"`
+	Intensity     *float64    `json:"intensity,omitempty"`
+	Shading       string      `json:"shading,omitempty"`
+	GridThickness *float64    `json:"grid_thickness,omitempty"`
 }
 type UVKleinEmissionSpec struct {
-	Saturation *float64 `json:"saturation"`
-	Lightness  *float64 `json:"lightness"`
-	VStripes   *float64 `json:"v_stripes"`
-	Intensity  *float64 `json:"intensity"`
+	Saturation *float64 `json:"saturation,omitempty"`
+	Lightness  *float64 `json:"lightness,omitempty"`
+	VStripes   *float64 `json:"v_stripes,omitempty"`
+	Intensity  *float64 `json:"intensity,omitempty"`
 }
 
 func (*ConstantEmissionSpec) emissionDefinition()    {}
 func (*CellPaletteEmissionSpec) emissionDefinition() {}
 func (*UVKleinEmissionSpec) emissionDefinition()     {}
 
+func (s *ConstantEmissionSpec) decodeEmissionJSON(data []byte) error {
+	return decodeVariantPayload(data, "emission", s, "type", "distribution", "radiance", "color", "exitance")
+}
+func (s *CellPaletteEmissionSpec) decodeEmissionJSON(data []byte) error {
+	return decodeVariantPayload(data, "emission", s, "type", "distribution", "palette", "intensity", "shading", "grid_color", "grid_thickness")
+}
+func (s *UVKleinEmissionSpec) decodeEmissionJSON(data []byte) error {
+	return decodeVariantPayload(data, "emission", s, "type", "distribution", "saturation", "lightness", "v_stripes", "intensity")
+}
+
 func (s *EmissionSpec) UnmarshalJSON(data []byte) error {
-	if err := rejectSpecFields(data, "emission", "type", "radiance", "color",
-		"exitance", "distribution", "palette", "grid_color", "intensity",
-		"saturation", "lightness", "v_stripes", "shading", "grid_thickness"); err != nil {
-		return err
-	}
 	var header struct {
 		Type         EmissionKind              `json:"type"`
 		Distribution *EmissionDistributionSpec `json:"distribution"`
@@ -523,9 +545,6 @@ func (s *EmissionSpec) UnmarshalJSON(data []byte) error {
 	default:
 		return fmt.Errorf("unsupported emission type %q", header.Type)
 	}
-	if err := rejectEmissionVariantFields(data, header.Type); err != nil {
-		return err
-	}
 	switch header.Type {
 	case EmissionConstant:
 		definition = &ConstantEmissionSpec{}
@@ -534,7 +553,7 @@ func (s *EmissionSpec) UnmarshalJSON(data []byte) error {
 	case EmissionUVKlein:
 		definition = &UVKleinEmissionSpec{}
 	}
-	if err := json.Unmarshal(data, definition); err != nil {
+	if err := definition.decodeEmissionJSON(data); err != nil {
 		return err
 	}
 	*s = EmissionSpec{Type: header.Type, Distribution: header.Distribution, Definition: definition}
@@ -616,6 +635,13 @@ func rejectSpecFields(data []byte, kind string, allowed ...string) error {
 	return nil
 }
 
+func decodeVariantPayload(data []byte, kind string, target interface{}, allowed ...string) error {
+	if err := rejectSpecFields(data, kind, allowed...); err != nil {
+		return err
+	}
+	return json.Unmarshal(data, target)
+}
+
 func rejectObjectVariantFields(data []byte, kind ShapeKind) error {
 	base := []string{"id", "material_id", "shape", "medium_boundary", "bounds"}
 	var fields []string
@@ -649,40 +675,4 @@ func rejectObjectVariantFields(data []byte, kind ShapeKind) error {
 		fields = []string{"file", "center", "z_dir", "x_dir", "scale"}
 	}
 	return rejectSpecFields(data, fmt.Sprintf("object shape %q", kind), append(base, fields...)...)
-}
-
-func rejectSurfaceVariantFields(data []byte, kind SurfaceKind) error {
-	fields := []string{"type"}
-	switch kind {
-	case SurfaceWeightedMixture:
-		fields = append(fields, "components")
-	case SurfaceLambert:
-		fields = append(fields, "albedo")
-	case SurfaceSpecularReflection:
-		fields = append(fields, "reflectance")
-	case SurfaceSpecularDielectric:
-		fields = append(fields, "reflectance", "transmittance", "eta_inside", "eta_outside", "ior")
-	case SurfaceRoughConductor:
-		fields = append(fields, "eta", "k", "roughness", "weight")
-	case SurfaceRoughDielectricReflection:
-		fields = append(fields, "reflectance", "eta_inside", "eta_outside", "ior", "roughness")
-	case SurfaceRoughDielectricTransmission:
-		fields = append(fields, "transmittance", "eta_inside", "eta_outside", "ior", "roughness")
-	case SurfaceCylindricalGridCutout, SurfaceWireMesh:
-		fields = append(fields, "line_surface", "origin", "axis", "reference_axis", "line_width", "gap_width", "gap_height", "reference_radius")
-	}
-	return rejectSpecFields(data, fmt.Sprintf("surface %q", kind), fields...)
-}
-
-func rejectEmissionVariantFields(data []byte, kind EmissionKind) error {
-	fields := []string{"type", "distribution"}
-	switch kind {
-	case EmissionConstant:
-		fields = append(fields, "radiance", "color", "exitance")
-	case EmissionCellPalette:
-		fields = append(fields, "palette", "intensity", "shading", "grid_color", "grid_thickness")
-	case EmissionUVKlein:
-		fields = append(fields, "saturation", "lightness", "v_stripes", "intensity")
-	}
-	return rejectSpecFields(data, fmt.Sprintf("emission %q", kind), fields...)
 }
