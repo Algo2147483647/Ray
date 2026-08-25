@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	modelcamera "github.com/Algo2147483647/ray/engine/model/camera"
+	modelfilm "github.com/Algo2147483647/ray/engine/model/film"
 	"github.com/Algo2147483647/ray/engine/utils"
 )
 
@@ -53,23 +54,37 @@ func (c *CameraScript) UnmarshalJSON(data []byte) error {
 }
 
 type RenderScript struct {
-	Integrator        string                `json:"integrator"`
-	Samples           int64                 `json:"samples"`
-	ThreadNum         int                   `json:"thread_num"`
-	CameraID          string                `json:"camera_id"`
-	WavelengthSamples int                   `json:"wavelength_samples"`
-	Film              *modelcamera.FilmSpec `json:"film"`
-	Output            string                `json:"output"`
+	Integrator        string          `json:"integrator"`
+	Samples           *int64          `json:"samples,omitempty"`
+	ThreadNum         *int            `json:"thread_num,omitempty"`
+	CameraID          string          `json:"camera_id"`
+	WavelengthSamples *int            `json:"wavelength_samples,omitempty"`
+	Film              *modelfilm.Spec `json:"film"`
+	Output            string          `json:"output"`
 }
 
 func (r *RenderScript) UnmarshalJSON(data []byte) error {
 	type plain RenderScript
-	return utils.DecodeStrictJSON(
+	var decoded plain
+	if err := utils.DecodeStrictJSON(
 		data,
 		"render",
-		(*plain)(r),
+		&decoded,
 		"integrator", "samples", "thread_num", "camera_id", "wavelength_samples", "film", "output",
-	)
+	); err != nil {
+		return err
+	}
+	if decoded.Samples != nil && *decoded.Samples <= 0 {
+		return fmt.Errorf("render samples must be positive when provided")
+	}
+	if decoded.ThreadNum != nil && *decoded.ThreadNum <= 0 {
+		return fmt.Errorf("render thread_num must be positive when provided")
+	}
+	if decoded.WavelengthSamples != nil && *decoded.WavelengthSamples <= 0 {
+		return fmt.Errorf("render wavelength_samples must be positive when provided")
+	}
+	*r = RenderScript(decoded)
+	return nil
 }
 
 type GeometryScript struct {

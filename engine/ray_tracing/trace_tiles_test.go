@@ -3,12 +3,12 @@ package ray_tracing
 import (
 	"testing"
 
-	"github.com/Algo2147483647/ray/engine/model/camera"
+	"github.com/Algo2147483647/ray/engine/model/film"
 )
 
 func TestBuildTileCoordinatesForWindowsKeepsOnlyRequestedPixels(t *testing.T) {
 	shape := []int{10, 10}
-	windows := []camera.PixelWindow{
+	windows := []film.PixelWindow{
 		{Min: []int{2, 3}, Max: []int{5, 5}},
 		{Min: []int{4, 4}, Max: []int{7, 6}},
 	}

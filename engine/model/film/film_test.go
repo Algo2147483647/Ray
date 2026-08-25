@@ -1,4 +1,4 @@
-package camera
+package film
 
 import (
 	"encoding/binary"
@@ -18,6 +18,18 @@ func TestSpectralFilmRecordsSamples(t *testing.T) {
 	}
 	if got := film.SpectralBins[film.SpectralBinIndex(math.Nextafter(750, 380))].Data[1]; got != 2.5 {
 		t.Fatalf("last spectral value = %g, want 2.5", got)
+	}
+}
+
+func TestSpectralBinCountIsDerivedFromPlanes(t *testing.T) {
+	film := NewFilm(2, 1)
+	film.InitSpectralBins(5, 380, 750)
+	if got := film.SpectralBinCount(); got != len(film.SpectralBins) || got != 5 {
+		t.Fatalf("spectral bin count = %d, planes = %d", got, len(film.SpectralBins))
+	}
+	film.SpectralBins = film.SpectralBins[:2]
+	if got := film.SpectralBinCount(); got != 2 {
+		t.Fatalf("derived spectral bin count did not follow planes: %d", got)
 	}
 }
 

@@ -87,21 +87,18 @@ type spectralCoefficient struct {
 	parameter optics.SpectralParameter
 }
 
-func (c spectralCoefficient) Eval(ctx medium.WavelengthContext) medium.CoefficientSpectrum {
+func (c spectralCoefficient) Eval(ctx medium.WavelengthContext) float64 {
 	if c.parameter == nil {
-		return medium.CoefficientSpectrum{}
+		return 0
 	}
 	evaluated := c.parameter.Eval(ctx)
-	if evaluated.HasSamples() {
-		samples := make([]float64, evaluated.SampleCount())
-		for i := range samples {
-			samples[i] = evaluated.Sample(i)
-		}
-		return medium.NewSampledCoefficientSpectrum(samples)
+	wavelength := 0.0
+	if ctx != nil {
+		wavelength = ctx.SpectralWavelengthNM()
 	}
-	return medium.NewRGBCoefficientSpectrum(
-		evaluated.RGBChannel(0),
-		evaluated.RGBChannel(1),
-		evaluated.RGBChannel(2),
-	)
+	power, ok := evaluated.PowerAt(wavelength)
+	if !ok {
+		return 0
+	}
+	return power
 }

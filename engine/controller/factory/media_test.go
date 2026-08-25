@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/Algo2147483647/ray/engine/controller/parser"
+	"github.com/Algo2147483647/ray/engine/model/optics"
 )
 
 type mediaTestWavelengthContext struct {
@@ -43,12 +44,11 @@ func TestParseMediaRegistryKeepsAbsorption(t *testing.T) {
 		t.Fatal("expected medium id")
 	}
 
-	sigmaA := registry.SigmaA(id, mediaTestWavelengthContext{})
+	sigmaA := registry.SigmaA(id, mediaTestWavelengthContext{wavelengths: []float64{550}})
+	want := math.Min(0.8, optics.NewRGBSpectrum(0.2, 0.4, 0.8).RGBPowerAtWavelength(550))
 
-	if math.Abs(sigmaA.RGBChannel(0)-0.2) > 1e-12 ||
-		math.Abs(sigmaA.RGBChannel(1)-0.4) > 1e-12 ||
-		math.Abs(sigmaA.RGBChannel(2)-0.8) > 1e-12 {
-		t.Fatalf("unexpected sigma_a: %+v", sigmaA)
+	if math.Abs(sigmaA-want) > 1e-12 {
+		t.Fatalf("sigma_a at 550nm = %g, want %g", sigmaA, want)
 	}
 }
 
@@ -85,7 +85,7 @@ func TestParseMediaRegistryEvaluatesSampledAbsorptionAtWavelength(t *testing.T) 
 
 	sigmaA := registry.SigmaA(id, mediaTestWavelengthContext{wavelengths: []float64{550}})
 
-	if !sigmaA.HasSamples() || math.Abs(sigmaA.Sample(0)-0.3) > 1e-12 {
+	if math.Abs(sigmaA-0.3) > 1e-12 {
 		t.Fatalf("expected interpolated sampled sigma_a of 0.3, got %+v", sigmaA)
 	}
 }

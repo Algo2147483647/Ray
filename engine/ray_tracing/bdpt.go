@@ -8,6 +8,7 @@ import (
 	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"github.com/Algo2147483647/ray/engine/model/camera"
+	"github.com/Algo2147483647/ray/engine/model/film"
 	"github.com/Algo2147483647/ray/engine/model/material/bsdf"
 	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
 	"github.com/Algo2147483647/ray/engine/model/material/emission"
@@ -76,23 +77,23 @@ func (v *bdptVertex) emissionLocal(world *mat.VecDense) maths.Direction {
 // prepareBDPT performs all capability validation before an integrator driver
 // or worker is started. Infinite endpoint measures and non-reciprocal
 // transmission remain explicit capability errors.
-func (h *Handler) prepareBDPT(renderCamera camera.RayCamera, film *camera.Film, tree *object.ObjectTree) (*bdptSceneState, error) {
+func (h *Handler) prepareBDPT(renderCamera camera.RayCamera, renderFilm *film.Film, tree *object.ObjectTree) (*bdptSceneState, error) {
 	if h == nil {
 		return nil, fmt.Errorf("BDPT handler is nil")
 	}
 	if h.Space.G().Kind() != geometry.EuclideanKind {
 		return nil, fmt.Errorf("BDPT requires three-dimensional Euclidean geometry")
 	}
-	if renderCamera == nil || film == nil {
+	if renderCamera == nil || renderFilm == nil {
 		return nil, fmt.Errorf("BDPT camera or Film is nil")
 	}
-	if len(film.Shape) != 2 || film.Shape[0] <= 0 || film.Shape[1] <= 0 {
+	if len(renderFilm.Shape) != 2 || renderFilm.Shape[0] <= 0 || renderFilm.Shape[1] <= 0 {
 		return nil, fmt.Errorf("BDPT requires a non-empty 2D Film")
 	}
-	if !film.HasSpectralBins() {
+	if !renderFilm.HasSpectralBins() {
 		return nil, fmt.Errorf("BDPT Film spectral bins are not initialized")
 	}
-	if _, err := camera.NormalizePixelWindows(film.PixelWindows, film.Shape); err != nil {
+	if _, err := film.NormalizePixelWindows(renderFilm.PixelWindows, renderFilm.Shape); err != nil {
 		return nil, fmt.Errorf("BDPT pixel windows: %w", err)
 	}
 	if _, ok := renderCamera.(camera.BidirectionalCamera); !ok {
@@ -358,9 +359,6 @@ func (h *Handler) makeLightEndpoint(
 		HitPoint:        maths.NewDirectionFromComponents(ss.Point.RawVector().Data),
 		GeometricNormal: maths.NewDirectionFromComponents(ss.Normal.RawVector().Data),
 		UV:              ss.UV,
-	}
-	if wavelengthNM > 0 {
-		ctx.WavelengthsNM = []float64{wavelengthNM}
 	}
 	frame, ok := maths.NewFrameFromNormal(ss.Normal)
 	if !ok {

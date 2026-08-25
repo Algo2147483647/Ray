@@ -23,8 +23,10 @@ func (p SampledParameter) Eval(ctx optics.WavelengthContext) optics.Spectrum {
 	if len(p.WavelengthsNM) == 0 || len(p.Values) == 0 {
 		return optics.Spectrum{}
 	}
-	if ctx != nil && len(ctx.SpectralWavelengthsNM()) > 0 {
-		wavelengths := ctx.SpectralWavelengthsNM()
+	if wavelengths := optics.ContextWavelengthsNM(ctx); len(wavelengths) > 0 {
+		if len(wavelengths) == 1 {
+			return optics.NewSpectralPower(p.valueAt(wavelengths[0]))
+		}
 		values := make([]float64, len(wavelengths))
 		for i, wavelengthNM := range wavelengths {
 			values[i] = p.valueAt(wavelengthNM)
@@ -32,7 +34,7 @@ func (p SampledParameter) Eval(ctx optics.WavelengthContext) optics.Spectrum {
 		return optics.NewSampledSpectrum(values)
 	}
 	if ctx != nil && ctx.SpectralWavelengthNM() > 0 {
-		return optics.NewSampledSpectrum([]float64{p.valueAt(ctx.SpectralWavelengthNM())})
+		return optics.NewSpectralPower(p.valueAt(ctx.SpectralWavelengthNM()))
 	}
 
 	return optics.SampledSpectrumToLinearSRGB(p.WavelengthsNM, p.Values)

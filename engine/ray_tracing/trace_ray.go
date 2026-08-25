@@ -222,7 +222,6 @@ func (h *Handler) newShadingContext(ray *optics.Ray) bxdf.ShadingContext {
 	if ray.Path.Wavelength != nil {
 		ctx.WavelengthNM = ray.Path.Wavelength.LambdaNM
 		ctx.WavelengthPDF = ray.Path.Wavelength.PDF
-		ctx.WavelengthsNM = []float64{ray.Path.Wavelength.LambdaNM}
 	}
 
 	return ctx

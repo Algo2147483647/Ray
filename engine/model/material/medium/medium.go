@@ -8,12 +8,11 @@ type Medium interface {
 	ID() MediumID
 	Name() string
 	IOR(ctx WavelengthContext) float64
-	SigmaA(ctx WavelengthContext) CoefficientSpectrum
+	SigmaA(ctx WavelengthContext) float64
 }
 
 type WavelengthContext interface {
 	SpectralWavelengthNM() float64
-	SpectralWavelengthsNM() []float64
 }
 
 type MediumID uint32
@@ -61,12 +60,6 @@ func (h Homogeneous) IOR(ctx WavelengthContext) float64 {
 	wavelength := 0.0
 	if ctx != nil {
 		wavelength = ctx.SpectralWavelengthNM()
-		if wavelength <= 0 {
-			wavelengths := ctx.SpectralWavelengthsNM()
-			if len(wavelengths) > 0 {
-				wavelength = wavelengths[0]
-			}
-		}
 	}
 	eta := h.eta.Evaluate(wavelength)
 	if !IsValidEta(eta) {
@@ -75,9 +68,9 @@ func (h Homogeneous) IOR(ctx WavelengthContext) float64 {
 	return eta
 }
 
-func (h Homogeneous) SigmaA(ctx WavelengthContext) CoefficientSpectrum {
+func (h Homogeneous) SigmaA(ctx WavelengthContext) float64 {
 	if h.sigmaA == nil {
-		return CoefficientSpectrum{}
+		return 0
 	}
 	return h.sigmaA.Eval(ctx)
 }
@@ -158,10 +151,10 @@ func (r *Registry) IOR(id MediumID, ctx WavelengthContext) float64 {
 	return m.IOR(ctx)
 }
 
-func (r *Registry) SigmaA(id MediumID, ctx WavelengthContext) CoefficientSpectrum {
+func (r *Registry) SigmaA(id MediumID, ctx WavelengthContext) float64 {
 	m := r.mediumOrAir(id)
 	if m == nil {
-		return CoefficientSpectrum{}
+		return 0
 	}
 	return m.SigmaA(ctx)
 }

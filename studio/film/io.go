@@ -160,9 +160,6 @@ func validateFilm(film *Film) error {
 	if !validSpectralRange(film.SpectralMinNM, film.SpectralMaxNM) {
 		return fmt.Errorf("invalid spectral range [%v, %v]", film.SpectralMinNM, film.SpectralMaxNM)
 	}
-	if film.SpectralBinCount != 0 && film.SpectralBinCount != len(film.SpectralBins) {
-		return fmt.Errorf("spectral-bin count does not match planes")
-	}
 	for bin, plane := range film.SpectralBins {
 		if !slices.Equal(plane.Shape, film.Shape) || len(plane.Data) != elements {
 			return fmt.Errorf("spectral plane %d does not match Film shape %v", bin, film.Shape)

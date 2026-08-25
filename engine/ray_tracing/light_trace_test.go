@@ -6,8 +6,8 @@ import (
 
 	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/maths/geometry"
-	"github.com/Algo2147483647/ray/engine/model"
 	"github.com/Algo2147483647/ray/engine/model/camera"
+	"github.com/Algo2147483647/ray/engine/model/film"
 	"github.com/Algo2147483647/ray/engine/model/material"
 	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
 	"github.com/Algo2147483647/ray/engine/model/material/emission"
@@ -33,7 +33,7 @@ func TestSegmentTransmittanceAppliesBeerLambertToScalarPower(t *testing.T) {
 		registry,
 		absorbingID,
 		2,
-		bxdf.ShadingContext{WavelengthNM: 550, WavelengthsNM: []float64{550}},
+		bxdf.ShadingContext{WavelengthNM: 550},
 	).ApplyToPower(2)
 	want := 2 * math.Exp(-1)
 	if math.Abs(got-want) > 1e-12 {
@@ -132,14 +132,15 @@ func renderDirectAreaLight(t *testing.T, sigmaA float64, samples int64) float64 
 		FieldOfViews: []float64{60, 60},
 	}
 	handler := NewHandler(geometry.DefaultSceneSpace())
-	handler.IntegratorKind = IntegratorLightTracing
-	handler.WavelengthSamples = 1
-	handler.ThreadNum = 1
 	handler.MaxRayLevel = 0
-	film := camera.NewFilm(1, 1)
+	film := film.NewFilm(1, 1)
 	film.InitSpectralBins(64, optics.WavelengthMin, optics.WavelengthMax)
 
-	if err := handler.TraceScene(model.RenderTarget{Camera: renderCamera, Film: film, Output: "test.bin"}, tree, samples); err != nil {
+	job, err := NewRenderJob(IntegratorLightTracing, renderCamera, film, "test.bin", tree, samples, 1, 1)
+	if err != nil {
+		t.Fatalf("create light-tracing job: %v", err)
+	}
+	if err := handler.TraceScene(job); err != nil {
 		t.Fatalf("light-tracing render: %v", err)
 	}
 	if film.Samples != samples {

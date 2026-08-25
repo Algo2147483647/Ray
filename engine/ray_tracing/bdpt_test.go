@@ -7,8 +7,8 @@ import (
 
 	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/maths/geometry"
-	"github.com/Algo2147483647/ray/engine/model"
 	"github.com/Algo2147483647/ray/engine/model/camera"
+	"github.com/Algo2147483647/ray/engine/model/film"
 	"github.com/Algo2147483647/ray/engine/model/material"
 	"github.com/Algo2147483647/ray/engine/model/material/bsdf"
 	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
@@ -20,7 +20,7 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-type nonBidirectionalCamera struct{ Film *camera.Film }
+type nonBidirectionalCamera struct{ Film *film.Film }
 
 func (nonBidirectionalCamera) GenerateRay(ray *optics.Ray, _ []int, _ ...int) *optics.Ray {
 	ray.Init()
@@ -33,12 +33,12 @@ func (nonBidirectionalCamera) RasterDimension() int { return 2 }
 
 type bdptTestCamera struct {
 	*camera.Camera3D
-	Film *camera.Film
+	Film *film.Film
 }
 
 func newBDPTTestCamera(t testing.TB, width, height int) *bdptTestCamera {
 	t.Helper()
-	result := &bdptTestCamera{Camera3D: camera.NewCamera3D(), Film: camera.NewFilm(width, height)}
+	result := &bdptTestCamera{Camera3D: camera.NewCamera3D(), Film: film.NewFilm(width, height)}
 	result.Position = mat.NewVecDense(3, []float64{0, 0, 0})
 	result.Coordinates = []*mat.VecDense{
 		mat.NewVecDense(3, []float64{0, 0, 1}),
@@ -53,8 +53,13 @@ func newBDPTTestCamera(t testing.TB, width, height int) *bdptTestCamera {
 	return result
 }
 
-func bdptTarget(c *bdptTestCamera) model.RenderTarget {
-	return model.RenderTarget{Camera: c, Film: c.Film, Output: "test.bin"}
+func bdptJob(t testing.TB, c *bdptTestCamera, tree *object.ObjectTree, samples int64) RenderJob {
+	t.Helper()
+	job, err := NewRenderJob(IntegratorBDPT, c, c.Film, "test.bin", tree, samples, 1, 1)
+	if err != nil {
+		t.Fatalf("create BDPT job: %v", err)
+	}
+	return job
 }
 
 func addTestAreaLight(tree *object.ObjectTree, center []float64) *object.Object {
@@ -72,9 +77,6 @@ func addTestAreaLight(tree *object.ObjectTree, center []float64) *object.Object 
 
 func newBDPTTestHandler() *Handler {
 	h := NewHandler(geometry.DefaultSceneSpace())
-	h.IntegratorKind = IntegratorBDPT
-	h.WavelengthSamples = 1
-	h.ThreadNum = 1
 	h.MaxRayLevel = 3
 	return h
 }
@@ -85,7 +87,7 @@ func (h *Handler) traceBidirectionalSample(
 	wavelengthNM, wavelengthPDF float64,
 	index ...int,
 ) float64 {
-	film := camera.NewFilm(1, 1)
+	film := film.NewFilm(1, 1)
 	film.InitSpectralBins(3, 400, 700)
 	state, err := h.prepareBDPT(renderCamera, film, objTree)
 	if err != nil {
@@ -105,7 +107,7 @@ func TestBDPTPreflightValidatesBeforeFilmIndexing(t *testing.T) {
 	if _, err := h.prepareBDPT(bad, bad.Film, tree); err == nil {
 		t.Fatal("expected one-dimensional Film to fail BDPT preflight")
 	}
-	unsupported := nonBidirectionalCamera{Film: camera.NewFilm(1, 1)}
+	unsupported := nonBidirectionalCamera{Film: film.NewFilm(1, 1)}
 	if _, err := h.prepareBDPT(unsupported, unsupported.Film, tree); err == nil {
 		t.Fatal("expected camera without bidirectional endpoint PDFs to fail")
 	}
@@ -144,11 +146,12 @@ func TestBDPTUnsupportedSceneFailsWithoutChangingIntegrator(t *testing.T) {
 
 	camera3D := newBDPTTestCamera(t, 1, 1)
 	h := newBDPTTestHandler()
-	if err := h.TraceScene(bdptTarget(camera3D), tree, 1); err == nil {
+	job := bdptJob(t, camera3D, tree, 1)
+	if err := h.TraceScene(job); err == nil {
 		t.Fatal("BDPT must report the unsupported emitter")
 	}
-	if h.IntegratorKind != IntegratorBDPT || camera3D.Film.Samples != 0 {
-		t.Fatalf("failed BDPT changed execution state: integrator=%q samples=%d", h.IntegratorKind, camera3D.Film.Samples)
+	if job.Integrator() != IntegratorBDPT || camera3D.Film.Samples != 0 {
+		t.Fatalf("failed BDPT changed execution state: integrator=%q samples=%d", job.Integrator(), camera3D.Film.Samples)
 	}
 }
 
@@ -312,7 +315,7 @@ func TestBDPTSupportedSceneRunsUnifiedSplatDriver(t *testing.T) {
 	tree.Build()
 	cam := newBDPTTestCamera(t, 2, 2)
 	h := newBDPTTestHandler()
-	if err := h.TraceScene(bdptTarget(cam), tree, 4); err != nil {
+	if err := h.TraceScene(bdptJob(t, cam, tree, 4)); err != nil {
 		t.Fatalf("supported BDPT render failed: %v", err)
 	}
 	if cam.Film.Samples != 4 {
@@ -509,7 +512,7 @@ func TestBDPTUnifiedT1ProjectsPathAfterDeltaEvent(t *testing.T) {
 	root := bdptVertex{
 		Kind: bdptVertexLight, Point: mat.NewVecDense(3, []float64{1, 0, 0}),
 		GeometricNormal: rootNormal, Frame: rootFrame, Object: rootObject,
-		Context: bxdf.ShadingContext{WavelengthNM: 550, WavelengthsNM: []float64{550}},
+		Context: bxdf.ShadingContext{WavelengthNM: 550},
 		Beta:    1, PDFFwdArea: 1, Connectible: true,
 		MediumStack: medium.NewStack(medium.MediumAir),
 	}
@@ -529,7 +532,7 @@ func TestBDPTUnifiedT1ProjectsPathAfterDeltaEvent(t *testing.T) {
 			mat.NewVecDense(3, []float64{0, 0, 2}),
 			mat.NewVecDense(3, []float64{1, 0, 1}),
 		)),
-		Context: bxdf.ShadingContext{WavelengthNM: 550, WavelengthsNM: []float64{550}},
+		Context: bxdf.ShadingContext{WavelengthNM: 550},
 		Object:  screenObject, Beta: 1,
 		PDFFwdArea: 1, Connectible: true,
 		MediumStack: medium.NewStack(medium.MediumAir),

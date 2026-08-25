@@ -91,6 +91,25 @@ func TestReadScriptFileRejectsRemovedSpectrumMode(t *testing.T) {
 	}
 }
 
+func TestReadScriptFileRejectsNonPositiveExplicitRenderCounts(t *testing.T) {
+	tests := []string{
+		`{"renders":[{"samples":0}]}`,
+		`{"renders":[{"samples":-1}]}`,
+		`{"renders":[{"thread_num":0}]}`,
+		`{"renders":[{"thread_num":-1}]}`,
+		`{"renders":[{"wavelength_samples":0}]}`,
+		`{"renders":[{"wavelength_samples":-1}]}`,
+	}
+	for _, script := range tests {
+		dir := t.TempDir()
+		path := filepath.Join(dir, "main.json")
+		writeTestScript(t, path, script)
+		if _, err := ReadScriptFile(path); err == nil {
+			t.Fatalf("expected explicit non-positive render count to be rejected: %s", script)
+		}
+	}
+}
+
 func TestReadScriptFileRejectsUnknownFieldsAtEverySceneBoundary(t *testing.T) {
 	tests := []struct {
 		name    string

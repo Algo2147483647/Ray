@@ -63,10 +63,10 @@ func spectrumPower(ray *optics.Ray, spectrum optics.Spectrum) (float64, bool) {
 
 func powerAtWavelength(spectrum optics.Spectrum, wavelengthNM float64) (float64, bool) {
 	power, ok := spectrum.PowerAt(wavelengthNM)
-	return power, ok && mathsFiniteNonNegative(power)
+	return power, ok && validNonNegativePower(power)
 }
 
-func mathsFiniteNonNegative(power float64) bool {
+func validNonNegativePower(power float64) bool {
 	return !math.IsNaN(power) && !math.IsInf(power, 0) && power >= 0
 }
 

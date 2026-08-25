@@ -26,40 +26,40 @@ type lightTracingPreparedState struct {
 
 func (*lightTracingPreparedState) preparedIntegratorState() {}
 
-func (k *lightTracingKernel) Prepare(context *RenderContext) (PreparedIntegratorState, error) {
-	projective, ok := context.Target.Camera.(camera.ProjectiveCamera)
+func (k *lightTracingKernel) Prepare(job *RenderJob) (PreparedIntegratorState, error) {
+	projective, ok := job.camera.(camera.ProjectiveCamera)
 	if !ok {
-		return nil, fmt.Errorf("light tracing requires a projective camera, got %T", context.Target.Camera)
+		return nil, fmt.Errorf("light tracing requires a projective camera, got %T", job.camera)
 	}
 	state := &lightTracingPreparedState{projective: projective}
-	state.lights, state.totalWeight = collectAreaLights(context.ObjectTree)
-	film := context.Target.Film
-	if len(film.Shape) != 2 {
+	state.lights, state.totalWeight = collectAreaLights(job.objectTree)
+	renderFilm := job.film
+	if len(renderFilm.Shape) != 2 {
 		return nil, fmt.Errorf("light tracing requires a 2D Film")
 	}
-	state.width = film.Shape[0]
-	state.height = film.Shape[1]
-	state.pixelCount = film.ElementCount()
+	state.width = renderFilm.Shape[0]
+	state.height = renderFilm.Shape[1]
+	state.pixelCount = renderFilm.ElementCount()
 	state.activeMask = make([]bool, state.pixelCount)
 	activePixels := int64(state.pixelCount)
-	if len(film.PixelWindows) == 0 {
+	if len(renderFilm.PixelWindows) == 0 {
 		for pixel := range state.activeMask {
 			state.activeMask[pixel] = true
 		}
 	} else {
 		state.activeMask, activePixels = buildPixelWindowMask(
-			film.Shape,
-			film.PixelWindows,
+			renderFilm.Shape,
+			renderFilm.PixelWindows,
 		)
 	}
 	if len(state.lights) == 0 || state.totalWeight <= 0 || activePixels <= 0 {
 		return state, nil
 	}
-	state.totalPaths = context.Samples * activePixels
+	state.totalPaths = job.samples * activePixels
 	return state, nil
 }
 
-func (k *lightTracingKernel) WorkCount(_ *RenderContext, prepared PreparedIntegratorState) int64 {
+func (k *lightTracingKernel) WorkCount(_ *RenderJob, prepared PreparedIntegratorState) int64 {
 	state, ok := prepared.(*lightTracingPreparedState)
 	if !ok || state == nil {
 		return 0
@@ -67,15 +67,15 @@ func (k *lightTracingKernel) WorkCount(_ *RenderContext, prepared PreparedIntegr
 	return state.totalPaths
 }
 
-func (k *lightTracingKernel) TraceSample(context *RenderContext, prepared PreparedIntegratorState, _ int64) []FilmSplat {
+func (k *lightTracingKernel) TraceSample(job *RenderJob, prepared PreparedIntegratorState, _ int64) []FilmSplat {
 	state, ok := prepared.(*lightTracingPreparedState)
 	if !ok || state == nil {
 		return nil
 	}
-	wavelength := context.Handler.wavelengthSampler().Sample(rand.Float64())
+	wavelength := job.handler.wavelengthSampler().Sample(rand.Float64())
 	wavelengthNM, wavelengthPDF := wavelength.LambdaNM, wavelength.PDF
-	path := context.Handler.buildLightSubpath(
-		context.ObjectTree,
+	path := job.handler.buildLightSubpath(
+		job.objectTree,
 		state.lights,
 		state.totalWeight,
 		wavelengthNM,
@@ -85,8 +85,8 @@ func (k *lightTracingKernel) TraceSample(context *RenderContext, prepared Prepar
 	for vertexIndex := range path {
 		value, projection, valid := projectLightVertex(
 			state.projective,
-			context.Target.Film.Shape,
-			context.ObjectTree,
+			job.film.Shape,
+			job.objectTree,
 			&path[vertexIndex],
 		)
 		if !valid {

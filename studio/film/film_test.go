@@ -19,6 +19,17 @@ func spectralFilm(shape []int, bins int, samples int64, value float64) *Film {
 	return film
 }
 
+func TestSpectralBinCountIsDerivedFromPlanes(t *testing.T) {
+	film := spectralFilm([]int{1, 1}, 5, 1, 0)
+	if got := film.SpectralBinCount(); got != len(film.SpectralBins) || got != 5 {
+		t.Fatalf("spectral bin count = %d, planes = %d", got, len(film.SpectralBins))
+	}
+	film.SpectralBins = film.SpectralBins[:2]
+	if got := film.SpectralBinCount(); got != 2 {
+		t.Fatalf("derived spectral bin count did not follow planes: %d", got)
+	}
+}
+
 func TestMergeFilmFilesWritesWeightedSpectralMerge(t *testing.T) {
 	dir := t.TempDir()
 	basePath := filepath.Join(dir, "base.bin")

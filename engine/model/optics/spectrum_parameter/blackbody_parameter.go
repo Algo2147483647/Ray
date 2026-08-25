@@ -23,8 +23,10 @@ func (p BlackbodyParameter) Eval(ctx optics.WavelengthContext) optics.Spectrum {
 	if p.Temperature <= 0 || p.Scale <= 0 {
 		return optics.Spectrum{}
 	}
-	if ctx != nil && len(ctx.SpectralWavelengthsNM()) > 0 {
-		wavelengths := ctx.SpectralWavelengthsNM()
+	if wavelengths := optics.ContextWavelengthsNM(ctx); len(wavelengths) > 0 {
+		if len(wavelengths) == 1 {
+			return optics.NewSpectralPower(p.Scale * relativeBlackbody(wavelengths[0], p.Temperature))
+		}
 		values := make([]float64, len(wavelengths))
 		for i, wavelengthNM := range wavelengths {
 			values[i] = p.Scale * relativeBlackbody(wavelengthNM, p.Temperature)
@@ -32,7 +34,7 @@ func (p BlackbodyParameter) Eval(ctx optics.WavelengthContext) optics.Spectrum {
 		return optics.NewSampledSpectrum(values)
 	}
 	if ctx != nil && ctx.SpectralWavelengthNM() > 0 {
-		return optics.NewSampledSpectrum([]float64{p.Scale * relativeBlackbody(ctx.SpectralWavelengthNM(), p.Temperature)})
+		return optics.NewSpectralPower(p.Scale * relativeBlackbody(ctx.SpectralWavelengthNM(), p.Temperature))
 	}
 	return ApproximateBlackbodyRGB(p.Temperature).MulScalar(p.Scale)
 }

@@ -123,29 +123,26 @@ func TestFresnelConductorProducesChannelColor(t *testing.T) {
 	}
 }
 
-func TestRoughConductorKeepsSampledColorFromSampledParameters(t *testing.T) {
+func TestRoughConductorEvaluatesSampledParametersAtPathWavelength(t *testing.T) {
 	conductor := bxdf.NewRoughConductorParameter(
 		spectrum_parameter.NewSampledParameter([]float64{450, 610}, []float64{1.5, 0.2}),
 		spectrum_parameter.NewSampledParameter([]float64{450, 610}, []float64{1.8, 3.5}),
 		0.35,
 	)
-	ctx := bxdf.ShadingContext{
-		WavelengthNM:  610,
-		WavelengthsNM: []float64{450, 610},
-	}
 	wi := maths.NewDirection(0.25, 0.1, 0.96).Normalize()
 	wo := maths.NewDirection(-0.15, 0.05, 0.98).Normalize()
 
-	got := conductor.Eval(ctx, wi, wo)
+	blue := conductor.Eval(bxdf.ShadingContext{WavelengthNM: 450}, wi, wo)
+	red := conductor.Eval(bxdf.ShadingContext{WavelengthNM: 610}, wi, wo)
 
-	if !got.HasSamples() || len(got.Samples) != 2 {
-		t.Fatalf("expected sampled rough conductor response, got %+v", got)
+	if blue.SampleCount() != 1 || red.SampleCount() != 1 {
+		t.Fatalf("expected one scalar response per path, got blue=%+v red=%+v", blue, red)
 	}
-	if got.Samples[0] == got.Samples[1] {
-		t.Fatalf("expected sampled rough conductor color to vary by wavelength, got %v", got.Samples)
+	if blue.Sample(0) == red.Sample(0) {
+		t.Fatalf("expected conductor response to vary by wavelength, got blue=%+v red=%+v", blue, red)
 	}
-	if got.Samples[1] <= got.Samples[0] {
-		t.Fatalf("expected gold-like rough conductor to keep stronger red response, got %v", got.Samples)
+	if red.Sample(0) <= blue.Sample(0) {
+		t.Fatalf("expected gold-like conductor to keep stronger red response, got blue=%+v red=%+v", blue, red)
 	}
 }
 
@@ -280,7 +277,6 @@ func TestRoughDielectricTransmissionUsesDispersiveIOR(t *testing.T) {
 	ctx := bxdf.ShadingContext{
 		TransportMode: bxdf.TransportRadiance,
 		WavelengthNM:  450,
-		WavelengthsNM: []float64{450},
 	}
 	wo := maths.NewDirection(0.05, 0.2, 0.97).Normalize()
 

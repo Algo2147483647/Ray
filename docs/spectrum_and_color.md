@@ -9,7 +9,7 @@
 | Linear sRGB | Three linear-light coefficients relative to sRGB primaries | Authored input space and Studio display-linear output | Authored RGB uplift; XYZ $\rightarrow$ display RGB |
 | sRGB | Nonlinear display-oriented encoding of linear sRGB | Accepted only as an authored spectral-parameter space and decoded to linear values | sRGB input $\rightarrow$ linear sRGB |
 | ACEScg | Three linear AP1-primary coefficients | Studio output transform; also accepted as an authored label | XYZ $\leftrightarrow$ ACEScg |
-| Film encoding | Spectral planes over 380–750 nm | `camera.Film` v3 | Transport result $\rightarrow$ physical spectral persistence |
+| Film encoding | Spectral planes over 380–750 nm | `film.Film` v3 | Transport result $\rightarrow$ physical spectral persistence |
 | Display mapping | Exposure, tone mapping, clipping, and power-law gamma | `studio/film.ToImage` | Spectral Film $\rightarrow$ XYZ $\rightarrow$ linear sRGB $\rightarrow$ 8-bit RGB |
 
 The central pipeline is:
@@ -124,18 +124,19 @@ S_{\mathrm{bb}}(\lambda;T,s)
 \frac{B_\lambda(\lambda,T)}{B_\lambda(560\ \mathrm{nm},T)}.
 $$
 
-This is a relative spectral shape, not absolutely calibrated blackbody radiance. In RGB mode, the Engine does not integrate Planck's law through the observer model; it instead uses an approximate color-temperature-to-sRGB algorithm and decodes that result to linear sRGB. RGB and spectral blackbody renders are therefore related but not mathematically identical.
+This is a relative spectral shape, not absolutely calibrated blackbody radiance. When evaluated without a wavelength context for preview or validation, the Engine uses an approximate color-temperature-to-sRGB algorithm and decodes that result to linear sRGB. That RGB preview and wavelength-selected transport are related but not mathematically identical.
 
 ### Runtime Spectral Value
 
-`optics.Spectrum` has two real storage kinds:
+`optics.Spectrum` is a transient material-evaluation value with three storage kinds:
 
 | Kind | Stored data | Meaning |
 | --- | --- | --- |
-| `SpectrumKindRGB` | `RGB [3]float64` | Renderer-space scene-linear sRGB coefficients |
-| `SpectrumKindSampled` | `Samples []float64` | Values aligned with the wavelengths in the current `ShadingContext` |
+| `SpectrumKindRGB` | `RGB [3]float64` | Authored or preview-space scene-linear sRGB coefficients |
+| `SpectrumKindScalar` | `Power float64` | One spectral-power value at the path's selected wavelength |
+| `SpectrumKindSampled` | `Samples []float64` | Batched/offline parameter evaluation at explicitly supplied wavelengths |
 
-A sampled `Spectrum` does not store its own wavelength coordinates. Its samples are meaningful only beside the context that supplied `WavelengthsNM`. In the current renderer, a traced spectral ray activates one wavelength at a time, so even `sampled` render mode normally produces a one-element sampled `Spectrum` per path. That mode traces a batch of independent monochromatic paths; it is not a packet tracer carrying several wavelengths through one geometric path.
+Runtime transport does not store this union in a Ray. Each path selects exactly one wavelength and stores `Throughput` and `Radiance` directly as `float64`; material results are resolved to that wavelength at the shading boundary. `SpectrumKindScalar` provides the same allocation-free representation while evaluating a material. A one-wavelength evaluation never allocates a one-element sample slice. `SpectrumKindSampled` is reserved for callers that deliberately evaluate several wavelengths together and does not store wavelength coordinates itself.
 
 Mixed RGB/sampled arithmetic is deliberately restricted. Sampled-plus-sampled operations align by array index, missing entries become zero, and most nonzero RGB/sampled combinations return a zero `Spectrum` unless a model explicitly uplifts the RGB value. This makes a consistent spectral representation within one model important.
 
@@ -437,7 +438,7 @@ This is unbiased for the bin-center-discretized observer model, not exactly for 
 
 ### Authored Sampled Data Without a Wavelength Context
 
-When a `sampled` parameter is evaluated in RGB mode, the Engine converts its authored pairs directly to linear sRGB. It computes an equal-weight discrete mean of normalized XYZ samples and then applies the XYZ-to-linear-sRGB matrix:
+When a `sampled` parameter is evaluated without a wavelength context, the Engine converts its authored pairs directly to linear sRGB. It computes an equal-weight discrete mean of normalized XYZ samples and then applies the XYZ-to-linear-sRGB matrix:
 
 $$
 \mathbf{C}_{XYZ}
@@ -520,11 +521,12 @@ The sampler maps $u_j$ to a wavelength and PDF. This reduces wavelength-stratifi
 
 ### Path State
 
-A Ray carries one `PathState` containing a `Spectrum` throughput and an optional
-`WavelengthSample`. A nil wavelength denotes RGB transport. Once a wavelength
-is selected, throughput is a one-sample Spectrum aligned to that wavelength.
-RGB material results are immediately uplifted to the selected wavelength before
-multiplication; no parallel RGB compatibility product or mode flags exist.
+A Ray carries one `PathState` containing scalar `float64` throughput and radiance
+plus its `WavelengthSample`. There is no RGB transport state and no sampled slice
+inside a path. Authored RGB remains in `SpectralParameter`; a material evaluation
+resolves it to the path wavelength before transport multiplication. Increasing
+`wavelength_samples` schedules more independent scalar paths rather than widening
+one path into a wavelength packet.
 
 ## Film Space and Image Output
 
@@ -599,7 +601,7 @@ The decoder validates the exact version, rank, dimensions, spectral metadata, an
 }
 ```
 
-`ResolveRenderSpec` supplies the one-sample default once. `color_space`, exposure,
+`ResolveRenderJob` supplies the one-sample default once. `color_space`, exposure,
 tone mapping, and gamma are Studio-only output settings.
 
 Equivalent command-line controls are:
@@ -759,8 +761,8 @@ These are boundaries, not additional hidden categories. Within them, the rendere
 | Spectral ray state | `engine/model/optics/ray.go` |
 | Spectral/RGB throughput compatibility | `engine/ray_tracing/throughput.go` |
 | Pixel wavelength scheduling and normalization | `engine/ray_tracing/trace_pixel.go` |
-| Film bins, film-space transforms, tone mapping, and gamma | `engine/model/camera/film.go` |
-| Spectral film preparation and finalization | `engine/ray_tracing/trace_scene.go`, `engine/ray_tracing/render_session.go` |
-| Public render schema and defaults | `engine/controller/parser/schema.go`, `engine/controller/render_context.go` |
+| Film storage, pixel windows, and binary codec | `engine/model/film/` |
+| Spectral Film execution and finalization | `engine/ray_tracing/trace_scene.go`, `engine/ray_tracing/render_job.go` |
+| Public render schema and defaults | `engine/controller/parser/schema.go`, `engine/controller/render_job.go` |
 | Public spectral-parameter parser | `engine/controller/factory/materials.go` |
 | Cauchy dispersion and homogeneous media | `engine/model/material/medium/` |

@@ -2,6 +2,22 @@ package optics
 
 import "testing"
 
+func TestSingleSampleSpectrumUsesInlineScalarStorage(t *testing.T) {
+	got := NewSampledSpectrum([]float64{2})
+
+	if got.Kind != SpectrumKindScalar || got.Power != 2 || got.Samples != nil {
+		t.Fatalf("expected inline scalar without sampled-slice allocation, got %+v", got)
+	}
+}
+
+func TestSingleWavelengthUpliftUsesInlineScalarStorage(t *testing.T) {
+	got := NewRGBSpectrum(0.8, 0.1, 0.05).UpliftRGBReflectanceToSampled([]float64{610})
+
+	if got.Kind != SpectrumKindScalar || got.SampleCount() != 1 || got.Samples != nil {
+		t.Fatalf("expected inline scalar uplift, got %+v", got)
+	}
+}
+
 func TestSpectrumDoesNotImplicitlyAverageRGBAndSampledMul(t *testing.T) {
 	rgb := NewRGBSpectrum(0.9, 0.1, 0.1)
 	sampled := NewSampledSpectrum([]float64{2, 4})

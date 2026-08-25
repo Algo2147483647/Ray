@@ -41,7 +41,6 @@ type RoughnessInfo struct {
 type ShadingContext struct {
 	TransportMode   TransportMode   // Light transport evaluation mode.
 	WavelengthNM    float64         // Selected wavelength in nanometers.
-	WavelengthsNM   []float64       // Sampled wavelengths in nanometers.
 	WavelengthPDF   float64         // Probability density of wavelength sampling.
 	EtaIncident     float64         // Incident-side index of refraction.
 	EtaTransmit     float64         // Transmitted-side index of refraction.
@@ -55,10 +54,6 @@ type ShadingContext struct {
 
 func (ctx ShadingContext) SpectralWavelengthNM() float64 {
 	return ctx.WavelengthNM
-}
-
-func (ctx ShadingContext) SpectralWavelengthsNM() []float64 {
-	return ctx.WavelengthsNM
 }
 
 type BxDFSample struct {

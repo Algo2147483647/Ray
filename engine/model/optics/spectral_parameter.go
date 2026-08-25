@@ -17,7 +17,21 @@ type SpectrumBounds struct {
 
 type WavelengthContext interface {
 	SpectralWavelengthNM() float64
+}
+
+// WavelengthBatchContext is an optional extension for explicit batched/offline
+// parameter evaluation. Runtime transport contexts intentionally do not
+// implement it because one path owns exactly one wavelength.
+type WavelengthBatchContext interface {
 	SpectralWavelengthsNM() []float64
+}
+
+func ContextWavelengthsNM(ctx WavelengthContext) []float64 {
+	batch, ok := ctx.(WavelengthBatchContext)
+	if !ok {
+		return nil
+	}
+	return batch.SpectralWavelengthsNM()
 }
 
 type SpectralParameter interface {

@@ -15,8 +15,7 @@ type Handler struct {
 	Scene      *model.Scene
 	Script     *parser.Script
 	ScriptPath string
-	Target     model.RenderTarget
-	Context    RenderContext
+	Job        ray_tracing.RenderJob
 }
 
 func NewHandler() *Handler {
@@ -52,14 +51,13 @@ func (h *Handler) Renders() *Handler {
 	for idx, render := range h.Script.Renders {
 		fmt.Printf("Starting render job %d/%d\n", idx+1, len(h.Script.Renders))
 
-		context, err := ResolveRenderSpec(render)
+		job, err := ResolveRenderJob(render, h.Scene)
 		if err != nil {
 			h.err = fmt.Errorf("render[%d]: %w", idx, err)
 			return h
 		}
-		h.ConfigureRenderContext(context).
-			Render().
-			SaveFilm(h.Target.Output)
+		h.Job = job
+		h.Render().SaveFilm()
 		if h.err != nil {
 			return h
 		}
@@ -72,37 +70,24 @@ func (h *Handler) Render() *Handler {
 		return h
 	}
 
-	if h.Target.Camera == nil {
+	if h.Job.Camera() == nil {
 		h.err = fmt.Errorf("render camera is not configured")
 		return h
 	}
 
-	film := h.Target.Film
-	if film == nil {
+	renderFilm := h.Job.Film()
+	if renderFilm == nil {
 		h.err = fmt.Errorf("film is not initialized")
 		return h
 	}
-	film.Reset()
+	renderFilm.Reset()
 
-	fmt.Printf("Starting rendering (integrator: %s)...\n", h.Context.Integrator)
+	fmt.Printf("Starting rendering (integrator: %s)...\n", h.Job.Integrator())
 	start := time.Now()
 
-	var err error
-
 	renderHandler := ray_tracing.NewHandler(h.Scene.Space)
-	renderHandler.IntegratorKind, err = ray_tracing.ParseIntegratorKind(h.Context.Integrator)
-	if err != nil {
-		h.err = err
-		return h
-	}
-	renderHandler.ThreadNum = h.Context.ThreadNum
-	renderHandler.WavelengthSamples = h.Context.WavelengthSamples
 	renderHandler.MaxArc = h.Scene.MaxArc
-	if err := renderHandler.TraceScene(
-		h.Target,
-		h.Scene.ObjectTree,
-		h.Context.Samples,
-	); err != nil {
+	if err := renderHandler.TraceScene(h.Job); err != nil {
 		h.err = err
 		return h
 	}
@@ -111,12 +96,16 @@ func (h *Handler) Render() *Handler {
 	return h
 }
 
-func (h *Handler) SaveFilm(filename string) *Handler {
+func (h *Handler) SaveFilm() *Handler {
 	if h.err != nil {
 		return h
 	}
+	if h.Job.Film() == nil || h.Job.Output() == "" {
+		h.err = fmt.Errorf("render job is not configured")
+		return h
+	}
 
-	err := h.Target.Film.SaveToFile(filename)
+	err := h.Job.Film().SaveToFile(h.Job.Output())
 	if err != nil {
 		h.err = err
 		return h

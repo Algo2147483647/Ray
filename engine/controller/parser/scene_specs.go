@@ -28,13 +28,21 @@ const (
 	ShapeSTL                ShapeKind = "stl"
 )
 
-var supportedShapeKinds = map[ShapeKind]bool{
-	ShapeCuboid: true, ShapeHypercuboid: true, ShapeSphere: true,
-	ShapeHypersphere: true, ShapeCircle: true, ShapeCylinder: true,
-	ShapeFiniteCylinder: true, ShapeTriangle: true,
-	ShapePolynomial: true, ShapeImplicitEquation: true,
-	ShapeParametricEquation: true, ShapeParametricCurve: true,
-	ShapeKleinBottle: true, ShapeSTL: true,
+var objectDefinitionFactories = map[ShapeKind]func() ObjectDefinition{
+	ShapeCuboid:             func() ObjectDefinition { return &CuboidSpec{} },
+	ShapeHypercuboid:        func() ObjectDefinition { return &CuboidSpec{} },
+	ShapeSphere:             func() ObjectDefinition { return &SphereSpec{} },
+	ShapeHypersphere:        func() ObjectDefinition { return &SphereSpec{} },
+	ShapeCircle:             func() ObjectDefinition { return &CircleSpec{} },
+	ShapeCylinder:           func() ObjectDefinition { return &FiniteCylinderSpec{} },
+	ShapeFiniteCylinder:     func() ObjectDefinition { return &FiniteCylinderSpec{} },
+	ShapeTriangle:           func() ObjectDefinition { return &TriangleSpec{} },
+	ShapePolynomial:         func() ObjectDefinition { return &PolynomialSpec{} },
+	ShapeImplicitEquation:   func() ObjectDefinition { return &ImplicitEquationSpec{} },
+	ShapeParametricEquation: func() ObjectDefinition { return &ParametricEquationSpec{} },
+	ShapeParametricCurve:    func() ObjectDefinition { return &ParametricCurveSpec{} },
+	ShapeKleinBottle:        func() ObjectDefinition { return &KleinBottleSpec{} },
+	ShapeSTL:                func() ObjectDefinition { return &STLSpec{} },
 }
 
 type BoundsSpec struct {
@@ -224,7 +232,8 @@ func (s *ObjectSpec) UnmarshalJSON(data []byte) error {
 	if header.Shape == "" {
 		return fmt.Errorf("object: missing required field %q", "shape")
 	}
-	if !supportedShapeKinds[header.Shape] {
+	newDefinition, supported := objectDefinitionFactories[header.Shape]
+	if !supported {
 		return fmt.Errorf("object: unsupported shape %q", header.Shape)
 	}
 	if err := rejectObjectVariantFields(data, header.Shape); err != nil {
@@ -233,31 +242,7 @@ func (s *ObjectSpec) UnmarshalJSON(data []byte) error {
 	if header.MaterialID == "" {
 		return fmt.Errorf("object: missing required field %q", "material_id")
 	}
-	var definition ObjectDefinition
-	switch header.Shape {
-	case ShapeCuboid, ShapeHypercuboid:
-		definition = &CuboidSpec{}
-	case ShapeSphere, ShapeHypersphere:
-		definition = &SphereSpec{}
-	case ShapeCircle:
-		definition = &CircleSpec{}
-	case ShapeCylinder, ShapeFiniteCylinder:
-		definition = &FiniteCylinderSpec{}
-	case ShapeTriangle:
-		definition = &TriangleSpec{}
-	case ShapePolynomial:
-		definition = &PolynomialSpec{}
-	case ShapeImplicitEquation:
-		definition = &ImplicitEquationSpec{}
-	case ShapeParametricEquation:
-		definition = &ParametricEquationSpec{}
-	case ShapeParametricCurve:
-		definition = &ParametricCurveSpec{}
-	case ShapeKleinBottle:
-		definition = &KleinBottleSpec{}
-	case ShapeSTL:
-		definition = &STLSpec{}
-	}
+	definition := newDefinition()
 	if err := json.Unmarshal(data, definition); err != nil {
 		return err
 	}

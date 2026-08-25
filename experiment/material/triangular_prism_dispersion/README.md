@@ -126,6 +126,6 @@ SceneIntegrator
        └─ splatDriver + bdptKernel / lightTracingKernel
 ```
 
-Path Tracing 使用 `pixelDriver`；BDPT 和 Light Tracing 使用 `splatDriver`。两个 splat kernel 只生成未归一化 `FilmSplat`，并发调度、总样本归一化、进度报告和线程安全写入由通用 `splatDriver` 与 `FilmAccumulator` 负责。逐像素 driver 使用无锁独占写入，splat driver 使用按像素同步写入。
+Path Tracing 使用 `pixelSceneIntegrator`；BDPT 和 Light Tracing 使用 `splatSceneIntegrator`。两个 splat kernel 只生成未归一化 `FilmSplat`，并发调度、总样本归一化、进度报告和线程安全写入由通用 splat integrator 与私有 Film accumulator 负责。逐像素 integrator 使用无锁独占写入，splat integrator 使用按像素同步写入。
 
 不支持投影的相机会返回明确错误，不会静默回退。旧配置字符串 `light_trace` 仅在解析边界作为兼容别名保留，运行时规范名称为 `light_tracing`。

@@ -10,13 +10,12 @@ const MaxSpectralBinCount = 4096
 // Film is Studio's independent representation of the versioned RAYFILM
 // process artifact. It intentionally does not depend on Engine runtime types.
 type Film struct {
-	Shape            []int
-	PixelWindows     []PixelWindow
-	Samples          int64
-	SpectralBinCount int
-	SpectralBins     []SpectralPlane
-	SpectralMinNM    float64
-	SpectralMaxNM    float64
+	Shape         []int
+	PixelWindows  []PixelWindow
+	Samples       int64
+	SpectralBins  []SpectralPlane
+	SpectralMinNM float64
+	SpectralMaxNM float64
 }
 
 type SpectralPlane struct {
@@ -56,7 +55,6 @@ func (film *Film) Init(shape ...int) *Film {
 	}
 	film.Shape = append(film.Shape[:0], shape...)
 	film.Samples = 0
-	film.SpectralBinCount = 0
 	film.SpectralBins = nil
 	film.SpectralMinNM = 0
 	film.SpectralMaxNM = 0
@@ -82,14 +80,21 @@ func (film *Film) InitSpectralBins(count int, minNM, maxNM float64) {
 		return
 	}
 	if count <= 0 || film.ElementCount() == 0 || minNM <= 0 || maxNM <= minNM {
-		film.SpectralBinCount, film.SpectralBins, film.SpectralMinNM, film.SpectralMaxNM = 0, nil, 0, 0
+		film.SpectralBins, film.SpectralMinNM, film.SpectralMaxNM = nil, 0, 0
 		return
 	}
 	film.SpectralBins = make([]SpectralPlane, count)
 	for index := range film.SpectralBins {
 		film.SpectralBins[index] = newSpectralPlane(film.Shape)
 	}
-	film.SpectralBinCount, film.SpectralMinNM, film.SpectralMaxNM = count, minNM, maxNM
+	film.SpectralMinNM, film.SpectralMaxNM = minNM, maxNM
+}
+
+func (film *Film) SpectralBinCount() int {
+	if film == nil {
+		return 0
+	}
+	return len(film.SpectralBins)
 }
 
 func (film *Film) HasSpectralBins() bool {

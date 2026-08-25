@@ -12,8 +12,9 @@ failure returns an error before samples are committed.
 `SceneIntegrator` exposes:
 
 ```go
-Run(*RenderContext) error
-EffectiveSampleCount(*RenderContext) int64
+Prepare(*RenderJob) (PreparedIntegratorState, error)
+Run(*RenderJob, PreparedIntegratorState) error
+EffectiveSampleCount(*RenderJob) int64
 ConcurrentFilmWrites() bool
 ```
 
@@ -25,9 +26,11 @@ ConcurrentFilmWrites() bool
 | `bdpt` | `splatSceneIntegrator` + `bdptKernel` | Global work indices; contributions may target arbitrary pixels |
 | `light_tracing` | `splatSceneIntegrator` + `lightTracingKernel` | Global light paths; eligible vertices splat to projected pixels |
 
-The shared `RenderContext` contains the selected Camera, ObjectTree, sample
-count, Handler, and FilmAccumulator. It does not contain Scene dimension or an
-alternate Integrator state.
+`RenderJob` is the sole resolved representation passed from controller through
+the selected Integrator. It binds the Camera, Film, output, ObjectTree,
+Integrator, sample counts, and worker count. Its public configuration is
+immutable after construction; the tracing layer attaches its Handler and
+private Film accumulator only to a private execution copy.
 
 ## Path
 
@@ -81,8 +84,9 @@ Each item in top-level `renders` may select:
 - `thread_num`;
 - `wavelength_samples`.
 
-These values are complete before the Integrator is created. Runtime handlers do
-not infer render defaults.
+These values are complete before the Integrator is created. Missing values are
+defaulted only by `ResolveRenderJob`; explicit zero or negative counts are
+protocol errors. Runtime handlers do not infer render defaults.
 
 Every scene Integrator has two phases. `Prepare` validates capabilities and
 returns algorithm-specific prepared state; `Run` consumes that exact state.
@@ -90,5 +94,6 @@ BDPT scene traversal, surface validation, and finite-area-light collection occur
 only in its single Prepare call.
 
 Film shape, spectral bins, output path, and pixel windows belong to the selected
-RenderTarget. Cameras are reusable imaging models; geometry and dimension belong
-to the Scene.
+`RenderJob`. Cameras are reusable imaging models; geometry and dimension belong
+to the Scene. Film storage and its binary codec live independently in
+`model/film`.

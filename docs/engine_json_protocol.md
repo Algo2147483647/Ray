@@ -346,8 +346,10 @@ independent of `render.wavelength_samples`.
 `render.output` is required for every Render. Engine no
 longer invents a process-relative output filename.
 
-Render defaults are applied exactly once by `ResolveRenderSpec`: `path`, 20
-camera samples, the available CPU count, and one wavelength sample. Increasing
+Render defaults are applied exactly once by `ResolveRenderJob`: `path`, 20
+camera samples, the available CPU count, and one wavelength sample. A count is
+defaulted only when its field is absent; explicit zero and negative values for
+`samples`, `thread_num`, or `wavelength_samples` are rejected. Increasing
 `wavelength_samples` stratifies that many wavelengths per camera sample; there
 is no separate public spectrum mode. Runtime renderer and Film objects do not
 apply a second set of render defaults.
@@ -362,7 +364,7 @@ They are parsed by:
 engine/controller/factory/materials.go
 engine/controller/factory/media.go
 engine/controller/factory/cameras.go
-engine/controller/render_context.go
+engine/controller/render_job.go
 ```
 
 ### Pixel Windows

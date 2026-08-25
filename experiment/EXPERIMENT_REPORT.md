@@ -507,8 +507,8 @@ $$
 T(\lambda,d)=\exp[-\sigma_a(\lambda)d].
 $$
 
-The matrix is rendered in sampled-spectrum mode, which is important for dispersive,
-colored-transmission, and wavelength-dependent materials.
+The matrix is rendered with wavelength-selected transport, which is important for
+dispersive, colored-transmission, and wavelength-dependent materials.
 
 ### 7.4 Result and interpretation
 

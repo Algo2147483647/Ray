@@ -7,19 +7,17 @@ import (
 )
 
 func TestEffectiveSampleCountUsesWavelengthSubsamples(t *testing.T) {
-	handler := NewHandler(geometry.DefaultSceneSpace())
-	handler.WavelengthSamples = 3
+	job := &RenderJob{samples: 10, wavelengthSamples: 3}
 
-	if got := handler.EffectiveSampleCount(10); got != 30 {
+	if got := (&pixelSceneIntegrator{}).EffectiveSampleCount(job); got != 30 {
 		t.Fatalf("unexpected effective sample count: got %d want 30", got)
 	}
 }
 
 func TestEffectiveSampleCountDoesNotInventWavelengthSubsamples(t *testing.T) {
-	handler := NewHandler(geometry.DefaultSceneSpace())
-	handler.WavelengthSamples = 0
+	job := &RenderJob{samples: 10}
 
-	if got := handler.EffectiveSampleCount(10); got != 0 {
+	if got := (&pixelSceneIntegrator{}).EffectiveSampleCount(job); got != 0 {
 		t.Fatalf("runtime handler invented a wavelength default: got %d", got)
 	}
 }

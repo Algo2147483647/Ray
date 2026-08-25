@@ -3,30 +3,27 @@ package ray_tracing
 import (
 	"math/rand/v2"
 
-	"github.com/Algo2147483647/ray/engine/model"
-	rendercamera "github.com/Algo2147483647/ray/engine/model/camera"
-	"github.com/Algo2147483647/ray/engine/model/object"
+	renderfilm "github.com/Algo2147483647/ray/engine/model/film"
 	"github.com/Algo2147483647/ray/engine/model/optics"
 )
 
 type pixelKernel interface {
-	sampleSpectral(*Handler, model.RenderTarget, *object.ObjectTree, *optics.Ray, optics.WavelengthSample, ...int) rendercamera.SpectralSample
+	sampleSpectral(*Handler, *RenderJob, *optics.Ray, optics.WavelengthSample, ...int) renderfilm.SpectralSample
 }
 
 type pathTracingKernel struct{}
 
 func (pathTracingKernel) sampleSpectral(
 	h *Handler,
-	target model.RenderTarget,
-	objTree *object.ObjectTree,
+	job *RenderJob,
 	ray *optics.Ray,
 	wavelength optics.WavelengthSample,
 	index ...int,
-) rendercamera.SpectralSample {
-	target.Camera.GenerateRay(ray, target.Film.Shape, index...)
+) renderfilm.SpectralSample {
+	job.camera.GenerateRay(ray, job.film.Shape, index...)
 	ray.SetSpectralSample(wavelength)
-	h.TraceRay(objTree, ray, 0)
-	return rendercamera.SpectralSample{
+	h.TraceRay(job.objectTree, ray, 0)
+	return renderfilm.SpectralSample{
 		WavelengthNM: wavelength.LambdaNM,
 		Value: optics.SpectralSampleRadiance(
 			optics.SpectralRayToScalar(ray),
@@ -37,50 +34,41 @@ func (pathTracingKernel) sampleSpectral(
 
 func (h *Handler) tracePixel(
 	kernel pixelKernel,
-	context *RenderContext,
+	job *RenderJob,
 	pixel int,
 	index ...int,
 ) {
 	for _, sample := range h.traceSpectral(
 		kernel,
-		context.Target,
-		context.ObjectTree,
-		context.Samples,
+		job,
 		index...,
 	) {
-		context.Accumulator.AddSpectral(pixel, sample.WavelengthNM, sample.Value)
+		job.accumulator.AddSpectral(pixel, sample.WavelengthNM, sample.Value)
 	}
 }
 
-func (h *Handler) TraceSpectral(
-	target model.RenderTarget,
-	objTree *object.ObjectTree,
-	samples int64,
-	index ...int,
-) []rendercamera.SpectralSample {
-	return h.traceSpectral(pathTracingKernel{}, target, objTree, samples, index...)
+func (h *Handler) TraceSpectral(job RenderJob, index ...int) []renderfilm.SpectralSample {
+	return h.traceSpectral(pathTracingKernel{}, &job, index...)
 }
 
 func (h *Handler) traceSpectral(
 	kernel pixelKernel,
-	target model.RenderTarget,
-	objTree *object.ObjectTree,
-	samples int64,
+	job *RenderJob,
 	index ...int,
-) []rendercamera.SpectralSample {
+) []renderfilm.SpectralSample {
 	ray := h.RayPool.Get().(*optics.Ray)
 	ray.Space = h.Space
 	defer h.RayPool.Put(ray)
 
 	wavelengthSampler := h.wavelengthSampler()
-	spectralSamples := make([]rendercamera.SpectralSample, 0, h.estimatedSpectralSampleCount(samples))
+	spectralSamples := make([]renderfilm.SpectralSample, 0, estimatedSpectralSampleCount(job.samples, job.wavelengthSamples))
 
-	wavelengthSamples := h.wavelengthSampleCount()
-	for s := int64(0); s < samples; s++ {
+	wavelengthSamples := job.wavelengthSamples
+	for s := int64(0); s < job.samples; s++ {
 		for wavelengthIndex := 0; wavelengthIndex < wavelengthSamples; wavelengthIndex++ {
 			u := (float64(wavelengthIndex) + rand.Float64()) / float64(wavelengthSamples)
 			spectralSamples = append(spectralSamples, kernel.sampleSpectral(
-				h, target, objTree, ray, wavelengthSampler.Sample(u), index...,
+				h, job, ray, wavelengthSampler.Sample(u), index...,
 			))
 		}
 	}
@@ -90,30 +78,25 @@ func (h *Handler) traceSpectral(
 }
 
 func (h *Handler) TraceSpectralSample(
-	target model.RenderTarget,
-	objTree *object.ObjectTree,
+	job RenderJob,
 	ray *optics.Ray,
 	wavelengthSampler optics.WavelengthSampler,
 	u float64,
 	index ...int,
-) rendercamera.SpectralSample {
+) renderfilm.SpectralSample {
 	return pathTracingKernel{}.sampleSpectral(
-		h, target, objTree, ray, wavelengthSampler.Sample(u), index...,
+		h, &job, ray, wavelengthSampler.Sample(u), index...,
 	)
 }
 
-func (h *Handler) wavelengthSampleCount() int {
-	return h.WavelengthSamples
-}
-
-func (h *Handler) estimatedSpectralSampleCount(samples int64) int {
+func estimatedSpectralSampleCount(samples int64, wavelengthSamples int) int {
 	if samples <= 0 {
 		return 0
 	}
-	return int(samples) * h.wavelengthSampleCount()
+	return int(samples) * wavelengthSamples
 }
 
-func normalizeSpectralSamples(samples []rendercamera.SpectralSample) {
+func normalizeSpectralSamples(samples []renderfilm.SpectralSample) {
 	if len(samples) == 0 {
 		return
 	}

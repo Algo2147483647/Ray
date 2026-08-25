@@ -4,6 +4,7 @@ import (
 	"math"
 	"testing"
 
+	"github.com/Algo2147483647/ray/engine/model/film"
 	"github.com/Algo2147483647/ray/engine/model/material/medium"
 	"github.com/Algo2147483647/ray/engine/model/optics"
 	"gonum.org/v1/gonum/mat"
@@ -75,7 +76,7 @@ func TestCameraNDimOrthoKeepsDirectionAndMovesOrigin(t *testing.T) {
 	camera.FieldOfViews = []float64{90, 90, 90}
 	camera.Ortho = true
 
-	film := NewFilm(10, 10, 10)
+	film := film.NewFilm(10, 10, 10)
 	rayA := camera.GenerateRay(nil, film.Shape, 0, 0, 0)
 	rayB := camera.GenerateRay(nil, film.Shape, 9, 9, 9)
 

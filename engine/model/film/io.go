@@ -1,4 +1,4 @@
-package camera
+package film
 
 import (
 	"encoding/binary"
@@ -84,7 +84,6 @@ func (f *Film) LoadFromFile(filename string) error {
 	// Commit only after the complete file has been decoded successfully.
 	f.Shape = loaded.Shape
 	f.Samples = loaded.Samples
-	f.SpectralBinCount = loaded.SpectralBinCount
 	f.SpectralBins = loaded.SpectralBins
 	f.SpectralMinNM = loaded.SpectralMinNM
 	f.SpectralMaxNM = loaded.SpectralMaxNM
@@ -135,12 +134,11 @@ func readFilm(r io.Reader) (*Film, error) {
 	}
 
 	film := &Film{
-		Shape:            metadata.Shape,
-		Samples:          metadata.Samples,
-		SpectralBinCount: metadata.BinCount,
-		SpectralBins:     make([]maths.Tensor[float64], metadata.BinCount),
-		SpectralMinNM:    metadata.MinNM,
-		SpectralMaxNM:    metadata.MaxNM,
+		Shape:         metadata.Shape,
+		Samples:       metadata.Samples,
+		SpectralBins:  make([]maths.Tensor[float64], metadata.BinCount),
+		SpectralMinNM: metadata.MinNM,
+		SpectralMaxNM: metadata.MaxNM,
 	}
 	buffer := make([]byte, filmFloatChunkBytes)
 	for bin := range film.SpectralBins {

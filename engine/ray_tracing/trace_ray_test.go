@@ -317,7 +317,7 @@ func TestApplyMediumAbsorptionResolvesAuthoredRGBAtPathWavelength(t *testing.T) 
 	ray.SetSpectralWavelength(550)
 	ray.MediumStack.Reset(waterID)
 
-	applyMediumAbsorption(registry, ray, 2, bxdf.ShadingContext{WavelengthNM: 550, WavelengthsNM: []float64{550}})
+	applyMediumAbsorption(registry, ray, 2, bxdf.ShadingContext{WavelengthNM: 550})
 
 	want := math.Exp(-1)
 	if math.Abs(ray.Path.Throughput-want) > 1e-12 {
@@ -340,10 +340,7 @@ func TestApplyMediumAbsorptionUsesSampledPathThroughput(t *testing.T) {
 	ray.SetSpectralWavelength(550)
 	ray.MediumStack.Reset(filterID)
 
-	applyMediumAbsorption(registry, ray, 4, bxdf.ShadingContext{
-		WavelengthNM:  550,
-		WavelengthsNM: []float64{550},
-	})
+	applyMediumAbsorption(registry, ray, 4, bxdf.ShadingContext{WavelengthNM: 550})
 
 	want := math.Exp(-1)
 	if math.Abs(ray.Path.Throughput-want) > 1e-12 {
@@ -452,6 +449,6 @@ type sampledCoefficient struct {
 	value float64
 }
 
-func (c sampledCoefficient) Eval(medium.WavelengthContext) medium.CoefficientSpectrum {
-	return medium.NewSampledCoefficientSpectrum([]float64{c.value})
+func (c sampledCoefficient) Eval(medium.WavelengthContext) float64 {
+	return c.value
 }

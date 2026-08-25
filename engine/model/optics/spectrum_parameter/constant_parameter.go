@@ -11,15 +11,18 @@ func NewConstantParameter(value float64) ConstantParameter {
 }
 
 func (p ConstantParameter) Eval(ctx optics.WavelengthContext) optics.Spectrum {
-	if ctx != nil && len(ctx.SpectralWavelengthsNM()) > 0 {
-		values := make([]float64, len(ctx.SpectralWavelengthsNM()))
+	if wavelengths := optics.ContextWavelengthsNM(ctx); len(wavelengths) > 0 {
+		if len(wavelengths) == 1 {
+			return optics.NewSpectralPower(p.Value)
+		}
+		values := make([]float64, len(wavelengths))
 		for i := range values {
 			values[i] = p.Value
 		}
 		return optics.NewSampledSpectrum(values)
 	}
 	if ctx != nil && ctx.SpectralWavelengthNM() > 0 {
-		return optics.NewSampledSpectrum([]float64{p.Value})
+		return optics.NewSpectralPower(p.Value)
 	}
 	return optics.ConstantSpectrum(p.Value)
 }

@@ -152,8 +152,8 @@ Every new or updated experiment should preserve the following information:
 
 - the question or hypothesis;
 - the exact scene and generator inputs;
-- the engine dimension, camera, integrator, spectrum mode, sample count, and film
-  shape;
+- the engine dimension, camera, integrator, wavelength sample count, camera sample
+  count, and film shape;
 - the exact command used to generate and render the scene;
 - quantitative acceptance criteria where a numerical claim is made;
 - result artifacts, including raw film data when later analysis requires it;

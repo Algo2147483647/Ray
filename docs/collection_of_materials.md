@@ -79,9 +79,9 @@ Media are scene-level optical models rather than subtypes of `material.Material`
 ```
 
 - At least one of `surface` and `emission` is required.
-- Unknown fields are generally ignored because the factories read selected values from untyped maps.
-- The factory sets `Metadata.Name=id` and `Metadata.SpectrumMode=RGB`. Other metadata fields are not populated from JSON.
-- Runtime spectral mode comes from the render handler and `ShadingContext`, not from the material metadata value.
+- Material variants are strictly decoded into their dedicated payload structs; unknown fields are rejected before factory construction.
+- The factory sets `Metadata.Name=id`. Spectral transport state is not material metadata.
+- Authored RGB and sampled data remain `SpectralParameter` inputs. A transport path evaluates them at its one selected wavelength.
 
 The shared scattering contract is:
 
@@ -165,7 +165,7 @@ Processing details:
 - In wavelength modes, RGB parameters are uplifted through the Engine's RGB reflectance approximation.
 - A sampled parameter uses linear interpolation and clamps outside its wavelength range to the nearest endpoint value.
 - Without an active wavelength context, sampled data is converted to linear sRGB.
-- Spectral blackbody evaluation uses Planck power relative to its value at 560 nm. RGB mode uses a color-temperature approximation instead of integrating the spectrum.
+- Spectral blackbody evaluation uses Planck power relative to its value at 560 nm. Evaluation without a wavelength context uses a color-temperature approximation instead of integrating the spectrum.
 - The parser enforces non-negativity but does not cap reflectance, transmittance, albedo, or weights at 1. Values above 1 can violate energy conservation.
 - Any spectral form is syntactically accepted for any spectral field, even combinations that are not physically meaningful, such as blackbody conductor eta.
 
@@ -759,9 +759,9 @@ The Engine implements homogeneous absorption but not volumetric scattering event
 
 ### Spectral Processing
 
-The render selects RGB, hero-wavelength, or sampled-wavelength mode. `ShadingContext` carries the active wavelength data to every spectral parameter and IOR model. Cauchy dielectric samples can propagate wavelength metadata on transmission. RGB authored data is uplifted when a wavelength representation is requested.
+The render always uses wavelength-selected transport. `wavelength_samples=1` is the hero case; larger values schedule independent scalar paths. `ShadingContext` carries one active wavelength to every spectral parameter and IOR model. Cauchy dielectric samples can propagate that wavelength metadata on transmission. Authored RGB is uplifted once at the material boundary and never becomes Ray transport state.
 
-The generic `Spectrum` type does not freely combine RGB and sampled values. Most mixed-kind operations return zero unless a model explicitly performs a compatible uplift. Authors should use consistent spectral parameter forms within one model.
+The generic `Spectrum` type is limited to transient material evaluation and batched/offline parameter work. The transport core itself carries scalar power, so it does not perform RGB/sample union arithmetic or allocate one-element sampled slices.
 
 ### Dimension Support
 

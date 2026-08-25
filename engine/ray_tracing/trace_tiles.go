@@ -1,6 +1,6 @@
 package ray_tracing
 
-import "github.com/Algo2147483647/ray/engine/model/camera"
+import "github.com/Algo2147483647/ray/engine/model/film"
 
 type TileCoordinate struct {
 	X0 int
@@ -19,18 +19,18 @@ func (t TileCoordinate) pixelIndex(x, y int, shape []int) int {
 
 func (h *Handler) traceTile(
 	kernel pixelKernel,
-	context *RenderContext,
+	job *RenderJob,
 	tile TileCoordinate,
 ) int64 {
 	var rendered int64
 
 	for y := tile.Y0; y < tile.Y1; y++ {
 		for x := tile.X0; x < tile.X1; x++ {
-			film := context.Target.Film
-			pixel := tile.pixelIndex(x, y, film.Shape)
-			coords := film.SpectralBins[0].GetCoordinates(pixel)
+			renderFilm := job.film
+			pixel := tile.pixelIndex(x, y, renderFilm.Shape)
+			coords := renderFilm.SpectralBins[0].GetCoordinates(pixel)
 
-			h.tracePixel(kernel, context, pixel, coords...)
+			h.tracePixel(kernel, job, pixel, coords...)
 
 			rendered++
 		}
@@ -54,7 +54,7 @@ func buildTileCoordinates(shape []int, tileWidth, tileHeight int) []TileCoordina
 	return build2DRenderTiles(shape[0], shape[1], tileWidth, tileHeight)
 }
 
-func buildTileCoordinatesForWindows(shape []int, windows []camera.PixelWindow, tileWidth, tileHeight int) ([]TileCoordinate, int64) {
+func buildTileCoordinatesForWindows(shape []int, windows []film.PixelWindow, tileWidth, tileHeight int) ([]TileCoordinate, int64) {
 	total := shapeElementCount(shape)
 	if len(windows) == 0 {
 		return buildTileCoordinates(shape, tileWidth, tileHeight), int64(total)
@@ -67,7 +67,7 @@ func buildTileCoordinatesForWindows(shape []int, windows []camera.PixelWindow, t
 		tileHeight = defaultTileSize
 	}
 
-	normalized, err := camera.NormalizePixelWindows(windows, shape)
+	normalized, err := film.NormalizePixelWindows(windows, shape)
 	if err != nil {
 		return nil, 0
 	}
@@ -125,14 +125,14 @@ func buildMaskedLinearRenderTiles(mask []bool, chunkSize int) []TileCoordinate {
 	return tiles
 }
 
-func buildPixelWindowMask(shape []int, windows []camera.PixelWindow) ([]bool, int64) {
+func buildPixelWindowMask(shape []int, windows []film.PixelWindow) ([]bool, int64) {
 	total := shapeElementCount(shape)
 	mask := make([]bool, total)
 	strides := pixelStrides(shape)
 	var pixels int64
 
-	var mark func(window camera.PixelWindow, dim, index int)
-	mark = func(window camera.PixelWindow, dim, index int) {
+	var mark func(window film.PixelWindow, dim, index int)
+	mark = func(window film.PixelWindow, dim, index int) {
 		if dim == len(shape) {
 			if !mask[index] {
 				mask[index] = true

@@ -14,9 +14,10 @@ const (
 	SpectrumKindSampled
 )
 
-// Spectrum is a renderer-space value, not an authored color.
-// RGB values are scene-linear sRGB. Sampled values are aligned with
-// ShadingContext.WavelengthsNM and intentionally do not mirror RGB channels.
+// Spectrum is a transient material-evaluation value, not transport-path state.
+// Authored RGB is scene-linear sRGB. Transport paths resolve it to an inline
+// scalar at their selected wavelength; sampled vectors are for batched/offline
+// parameter evaluation and intentionally do not mirror RGB channels.
 type Spectrum struct {
 	Kind    SpectrumKind
 	RGB     RGB
@@ -39,12 +40,16 @@ func ConstantSpectrum(v float64) Spectrum {
 	return NewSpectrum(v, v, v)
 }
 
+func NewSpectralPower(power float64) Spectrum {
+	return Spectrum{Kind: SpectrumKindScalar, Power: power}
+}
+
 func NewSampledSpectrum(samples []float64) Spectrum {
 	if len(samples) == 0 {
 		return Spectrum{}
 	}
 	if len(samples) == 1 {
-		return Spectrum{Kind: SpectrumKindScalar, Power: samples[0]}
+		return NewSpectralPower(samples[0])
 	}
 	return Spectrum{
 		Kind:    SpectrumKindSampled,
@@ -54,7 +59,7 @@ func NewSampledSpectrum(samples []float64) Spectrum {
 
 func (s Spectrum) Clone() Spectrum {
 	if s.Kind == SpectrumKindScalar {
-		return Spectrum{Kind: SpectrumKindScalar, Power: s.Power}
+		return NewSpectralPower(s.Power)
 	}
 	if s.HasSamples() {
 		return NewSampledSpectrum(s.Samples)
@@ -184,6 +189,9 @@ func (s Spectrum) UpliftRGBToSampled(wavelengthsNM []float64) Spectrum {
 	if s.HasSamples() || len(wavelengthsNM) == 0 {
 		return s.Clone()
 	}
+	if len(wavelengthsNM) == 1 {
+		return NewSpectralPower(s.RGBPowerAtWavelength(wavelengthsNM[0]))
+	}
 	samples := make([]float64, len(wavelengthsNM))
 	for i, wavelengthNM := range wavelengthsNM {
 		samples[i] = s.RGBPowerAtWavelength(wavelengthNM)
@@ -197,13 +205,30 @@ func (s Spectrum) UpliftRGBReflectanceToSampled(wavelengthsNM []float64) Spectru
 	}
 	maxReflectance := s.MaxComponent()
 	if maxReflectance <= 0 {
+		if len(wavelengthsNM) == 1 {
+			return NewSpectralPower(0)
+		}
 		return NewSampledSpectrum(make([]float64, len(wavelengthsNM)))
+	}
+	if len(wavelengthsNM) == 1 {
+		return NewSpectralPower(math.Min(maxReflectance, s.RGBPowerAtWavelength(wavelengthsNM[0])))
 	}
 	samples := make([]float64, len(wavelengthsNM))
 	for i, wavelengthNM := range wavelengthsNM {
 		samples[i] = math.Min(maxReflectance, s.RGBPowerAtWavelength(wavelengthNM))
 	}
 	return NewSampledSpectrum(samples)
+}
+
+func (s Spectrum) RGBReflectancePowerAt(wavelengthNM float64) float64 {
+	if s.HasSamples() {
+		return s.Sample(0)
+	}
+	maxReflectance := s.MaxComponent()
+	if maxReflectance <= 0 {
+		return 0
+	}
+	return math.Min(maxReflectance, s.RGBPowerAtWavelength(wavelengthNM))
 }
 
 func (s Spectrum) RGBPowerAtWavelength(wavelengthNM float64) float64 {
@@ -290,7 +315,7 @@ func combineSampled(a, b Spectrum, fn func(float64, float64) float64) Spectrum {
 		count = b.SampleCount()
 	}
 	if count == 1 {
-		return Spectrum{Kind: SpectrumKindScalar, Power: fn(a.Sample(0), b.Sample(0))}
+		return NewSpectralPower(fn(a.Sample(0), b.Sample(0)))
 	}
 	result := make([]float64, count)
 	for i := 0; i < count; i++ {
@@ -301,7 +326,7 @@ func combineSampled(a, b Spectrum, fn func(float64, float64) float64) Spectrum {
 
 func mapSampled(spectrum Spectrum, fn func(float64) float64) Spectrum {
 	if spectrum.Kind == SpectrumKindScalar {
-		return Spectrum{Kind: SpectrumKindScalar, Power: fn(spectrum.Power)}
+		return NewSpectralPower(fn(spectrum.Power))
 	}
 	result := make([]float64, spectrum.SampleCount())
 	for i := range result {

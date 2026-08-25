@@ -8,15 +8,12 @@ import (
 )
 
 type Handler struct {
-	IntegratorKind       IntegratorKind           `json:"integrator"`
 	MaxRayLevel          int64                    `json:"max_ray_level"`
 	RussianRouletteDepth int64                    `json:"russian_roulette_depth"`
 	MaxArc               float64                  `json:"max_arc"` // total geodesic distance budget per ray (0 ⇒ unbounded)
 	Space                geometry.SceneSpace      `json:"-"`
-	ThreadNum            int                      `json:"thread_num"`
 	BlockCols            int                      `json:"block_cols"`
 	BlockRows            int                      `json:"block_rows"`
-	WavelengthSamples    int                      `json:"wavelength_samples"`
 	WavelengthSampler    optics.WavelengthSampler `json:"-"`
 	RayPool              sync.Pool                `json:"ray_pool"`
 }
@@ -47,11 +44,4 @@ func (h *Handler) wavelengthSampler() optics.WavelengthSampler {
 		return h.WavelengthSampler
 	}
 	return optics.NewUniformWavelengthSampler()
-}
-
-func (h *Handler) EffectiveSampleCount(cameraSamples int64) int64 {
-	if cameraSamples <= 0 {
-		return 0
-	}
-	return cameraSamples * int64(h.WavelengthSamples)
 }

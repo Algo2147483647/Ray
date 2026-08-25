@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/Algo2147483647/ray/engine/maths"
+	"github.com/Algo2147483647/ray/engine/model/film"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -14,7 +15,7 @@ func TestCamera3DProjectPointMapsViewCenter(t *testing.T) {
 		Coordinates:  testCameraCoordinates([]float64{0, 0, -1}, []float64{0, 1, 0}),
 		FieldOfViews: []float64{60, 90},
 	}
-	film := NewFilm(100, 50)
+	film := film.NewFilm(100, 50)
 	projection, ok := camera.ProjectPoint(mat.NewVecDense(3, []float64{0, 0, -2}), film.Shape)
 	if !ok {
 		t.Fatal("view-center point did not project")
@@ -40,7 +41,7 @@ func TestCamera3DProjectPointRejectsOutsideFilm(t *testing.T) {
 		Coordinates:  testCameraCoordinates([]float64{0, 0, -1}, []float64{0, 1, 0}),
 		FieldOfViews: []float64{60, 90},
 	}
-	film := NewFilm(100, 50)
+	film := film.NewFilm(100, 50)
 	if _, ok := camera.ProjectPoint(mat.NewVecDense(3, []float64{3, 0, -2}), film.Shape); ok {
 		t.Fatal("point outside horizontal FOV projected onto film")
 	}
@@ -91,7 +92,7 @@ func TestCamera3DProjectPointMapsOpticalAxisToCenterWithWorldUp(t *testing.T) {
 
 	point := mat.VecDenseCopyOf(camera.Position)
 	point.AddScaledVec(point, 4, camera.orthonormalCoordinates[0])
-	film := NewFilm(800, 800)
+	film := film.NewFilm(800, 800)
 	projection, ok := camera.ProjectPoint(point, film.Shape)
 	if !ok {
 		t.Fatal("point on optical axis did not project")
@@ -112,7 +113,7 @@ func TestCamera3DGenerateRayProjectPointRoundTripWithWorldUp(t *testing.T) {
 	if err := camera.Prepare(); err != nil {
 		t.Fatalf("Prepare returned error: %v", err)
 	}
-	film := NewFilm(80, 80)
+	film := film.NewFilm(80, 80)
 
 	for _, pixel := range [][2]int{{0, 0}, {79, 0}, {0, 79}, {79, 79}, {40, 40}, {17, 63}} {
 		x, y := pixel[0], pixel[1]
