@@ -10,19 +10,21 @@ import (
 )
 
 type Ray struct {
-	Origin               *mat.VecDense       `json:"origin"`
-	Direction            *mat.VecDense       `json:"direction"`
-	Color                RGB                 `json:"color"`
-	SpectralPower        float64             `json:"spectral_power"`
-	SpectralPath         bool                `json:"spectral_path"`
-	RGBCompatibility     RGB                 `json:"rgb_compatibility"`
-	RGBCompatibilityPath bool                `json:"rgb_compatibility_path"`
-	WaveLength           float64             `json:"wave_length"` // (nm)
-	WavelengthPDF        float64             `json:"wavelength_pdf"`
-	RefractionIndex      float64             `json:"refraction_index"`
-	MediumStack          medium.Stack        `json:"-"`
-	Space                geometry.SceneSpace `json:"-"`
-	ArcTraveled          float64             `json:"-"` // geodesic arc length traveled so far (S^3 wrap)
+	Origin          *mat.VecDense       `json:"origin"`
+	Direction       *mat.VecDense       `json:"direction"`
+	Path            PathState           `json:"path"`
+	RefractionIndex float64             `json:"refraction_index"`
+	MediumStack     medium.Stack        `json:"-"`
+	Space           geometry.SceneSpace `json:"-"`
+	ArcTraveled     float64             `json:"-"` // geodesic arc length traveled so far (S^3 wrap)
+}
+
+// PathState is the sole representation of path throughput and spectral mode.
+// A nil Wavelength means RGB transport. A non-nil Wavelength means Throughput
+// is a sampled Spectrum aligned to that wavelength.
+type PathState struct {
+	Throughput Spectrum          `json:"throughput"`
+	Wavelength *WavelengthSample `json:"wavelength,omitempty"`
 }
 
 func (r *Ray) Init() {
@@ -48,16 +50,9 @@ func (r *Ray) Init() {
 		r.Direction.Zero()
 	}
 
-	r.Color = RGB{1, 1, 1}
-	r.RGBCompatibility = RGB{1, 1, 1}
-
-	r.SpectralPower = 1
-	r.SpectralPath = false
-	r.RGBCompatibilityPath = false
+	r.Path = PathState{Throughput: ConstantSpectrum(1)}
 	r.RefractionIndex = 1
 	r.MediumStack.Reset(0)
-	r.WaveLength = 0
-	r.WavelengthPDF = 0
 
 	r.ArcTraveled = 0
 	// Space is intentionally NOT reset: it is set per-render by the
@@ -89,24 +84,18 @@ func (r *Ray) SetSpectralWavelength(wavelength float64) {
 func (r *Ray) SetSpectralSample(sample WavelengthSample) {
 	wavelength := sample.LambdaNM
 	wavelength = math.Max(WavelengthMin+1e-6, math.Min(WavelengthMax-1e-6, wavelength))
-	if r.SpectralPower == 0 {
-		r.SpectralPower = 1
+	sample.LambdaNM = wavelength
+	if sample.PDF <= 0 || math.IsNaN(sample.PDF) || math.IsInf(sample.PDF, 0) {
+		sample.PDF = UniformWavelengthPDF()
 	}
-	r.WaveLength = wavelength
-	r.WavelengthPDF = sample.PDF
-	if r.WavelengthPDF <= 0 || math.IsNaN(r.WavelengthPDF) || math.IsInf(r.WavelengthPDF, 0) {
-		r.WavelengthPDF = UniformWavelengthPDF()
+	r.Path = PathState{
+		Throughput: NewSampledSpectrum([]float64{1}),
+		Wavelength: &sample,
 	}
 }
 
 func (r *Ray) DisableSpectralSampling() {
-	r.WaveLength = 0
-	r.WavelengthPDF = 0
-	r.SpectralPower = 1
-	r.SpectralPath = false
-	r.RGBCompatibilityPath = false
-	r.Color = RGB{1, 1, 1}
-	r.RGBCompatibility = RGB{1, 1, 1}
+	r.Path = PathState{Throughput: ConstantSpectrum(1)}
 }
 
 // G returns the ray's geometry, falling back to Euclidean if unset.

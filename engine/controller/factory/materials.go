@@ -86,7 +86,7 @@ func ParseMaterials(script *parser.Script) (map[string]*material.Material, error
 	return materials, nil
 }
 
-func parseSurface(def map[string]interface{}) (bsdf.BSDF, error) {
+func parseSurface(def map[string]interface{}) (bxdf.Scattering, error) {
 	surfaceType, err := utils.RequiredStringField(def, "type")
 	if err != nil {
 		return nil, err
@@ -106,7 +106,7 @@ func parseSurface(def map[string]interface{}) (bsdf.BSDF, error) {
 			return nil, fmt.Errorf("field %q must not be empty", "components")
 		}
 
-		components := make([]bsdf.WeightedBxDF, 0, len(componentDefs))
+		components := make([]bsdf.WeightedScattering, 0, len(componentDefs))
 		for index, componentRaw := range componentDefs {
 			component, ok := componentRaw.(map[string]interface{})
 			if !ok {
@@ -130,7 +130,7 @@ func parseSurface(def map[string]interface{}) (bsdf.BSDF, error) {
 			if err != nil {
 				return nil, fmt.Errorf("components[%d] surface: %w", index, err)
 			}
-			components = append(components, bsdf.WeightedBxDF{Weight: weight, BxDF: surface})
+			components = append(components, bsdf.WeightedScattering{Weight: weight, Scattering: surface})
 		}
 		return bsdf.NewWeightedMixture(components...), nil
 
@@ -139,14 +139,14 @@ func parseSurface(def map[string]interface{}) (bsdf.BSDF, error) {
 		if err != nil {
 			return nil, err
 		}
-		return bsdf.NewSingle(bxdf.NewLambertParameter(albedo)), nil
+		return bxdf.NewLambertParameter(albedo), nil
 
 	case "specular_reflection":
 		reflectance, _, err := optionalSpectralParameterField(def, "reflectance", spectrum_parameter.NewConstantParameter(1))
 		if err != nil {
 			return nil, err
 		}
-		return bsdf.NewSingle(bxdf.NewSpecularReflectionParameter(reflectance)), nil
+		return bxdf.NewSpecularReflectionParameter(reflectance), nil
 
 	case "specular_dielectric":
 		reflectance, _, err := optionalSpectralParameterField(def, "reflectance", spectrum_parameter.NewConstantParameter(1))
@@ -171,7 +171,7 @@ func parseSurface(def map[string]interface{}) (bsdf.BSDF, error) {
 		if err != nil {
 			return nil, err
 		}
-		return bsdf.NewSingle(bxdf.NewSpecularDielectricParameter(reflectance, transmittance, etaOutside, insideIOR)), nil
+		return bxdf.NewSpecularDielectricParameter(reflectance, transmittance, etaOutside, insideIOR), nil
 
 	case "rough_conductor":
 		eta, err := requiredSpectralParameterField(def, "eta")
@@ -199,7 +199,7 @@ func parseSurface(def map[string]interface{}) (bsdf.BSDF, error) {
 		}
 		conductor := bxdf.NewRoughConductorParameter(eta, k, alpha)
 		conductor.Weight = weight
-		return bsdf.NewSingle(conductor), nil
+		return conductor, nil
 
 	case "rough_dielectric_reflection":
 		reflectance, _, err := optionalSpectralParameterField(def, "reflectance", spectrum_parameter.NewConstantParameter(1))
@@ -230,12 +230,12 @@ func parseSurface(def map[string]interface{}) (bsdf.BSDF, error) {
 		if roughness < 0 || roughness > 1 {
 			return nil, fmt.Errorf("roughness must be in [0, 1]")
 		}
-		return bsdf.NewSingle(bxdf.NewRoughDielectricReflectionParameter(
+		return bxdf.NewRoughDielectricReflectionParameter(
 			reflectance,
 			etaOutside,
 			insideIOR,
 			roughness*roughness,
-		)), nil
+		), nil
 
 	case "cylindrical_grid_cutout", "wire_mesh":
 		return parseCylindricalGridCutoutSurface(def)
@@ -270,14 +270,14 @@ func parseSurface(def map[string]interface{}) (bsdf.BSDF, error) {
 			return nil, fmt.Errorf("roughness must be in [0, 1]")
 		}
 		alpha := roughness * roughness
-		return bsdf.NewSingle(bxdf.NewRoughDielectricTransmissionParameter(transmittance, etaOutside, insideIOR, alpha)), nil
+		return bxdf.NewRoughDielectricTransmissionParameter(transmittance, etaOutside, insideIOR, alpha), nil
 
 	default:
 		return nil, fmt.Errorf("unsupported surface type %q", surfaceType)
 	}
 }
 
-func parseCylindricalGridCutoutSurface(def map[string]interface{}) (bsdf.BSDF, error) {
+func parseCylindricalGridCutoutSurface(def map[string]interface{}) (bxdf.Scattering, error) {
 	lineSurface, err := parseGridLineSurface(def)
 	if err != nil {
 		return nil, err
@@ -355,7 +355,7 @@ func parseCylindricalGridCutoutSurface(def map[string]interface{}) (bsdf.BSDF, e
 	), nil
 }
 
-func parseGridLineSurface(def map[string]interface{}) (bsdf.BSDF, error) {
+func parseGridLineSurface(def map[string]interface{}) (bxdf.Scattering, error) {
 	lineSurfaceDef, ok, err := utils.OptionalMapField(def, "line_surface")
 	if err != nil {
 		return nil, err

@@ -6,11 +6,12 @@ import (
 
 	"github.com/Algo2147483647/ray/engine/controller/parser"
 	"github.com/Algo2147483647/ray/engine/model/optics"
+	"github.com/Algo2147483647/ray/engine/ray_tracing"
 )
 
 const (
-	defaultSamples    = int64(20)
-	defaultOutputFilm = "../../outputs/img.bin"
+	defaultSamples                = int64(20)
+	defaultSampledWavelengthCount = 4
 )
 
 type RenderContext struct {
@@ -23,18 +24,11 @@ type RenderContext struct {
 	WavelengthSamples int
 }
 
-func defaultRenderContext() RenderContext {
-	return RenderContext{
-		Integrator:        "path",
-		ThreadNum:         runtime.NumCPU(),
-		Samples:           defaultSamples,
-		SpectrumMode:      "hero_wavelength",
-		WavelengthSamples: 1,
-	}
-}
-
-func renderScriptContext(render parser.RenderScript) RenderContext {
-	return RenderContext{
+// ResolveRenderSpec is the single business-default boundary for an Engine
+// render job. Runtime objects receive a complete context and never infer
+// missing render semantics.
+func ResolveRenderSpec(render parser.RenderScript) (RenderContext, error) {
+	resolved := RenderContext{
 		Integrator:        render.Integrator,
 		CameraID:          render.CameraID,
 		ThreadNum:         render.ThreadNum,
@@ -42,30 +36,32 @@ func renderScriptContext(render parser.RenderScript) RenderContext {
 		SpectrumMode:      render.SpectrumMode,
 		WavelengthSamples: render.WavelengthSamples,
 	}
-}
-
-// mergeRenderContext applies non-zero override values to base. A zero value
-// means "not specified" for render configuration fields.
-func mergeRenderContext(base, override RenderContext) RenderContext {
-	if override.Integrator != "" {
-		base.Integrator = override.Integrator
+	if resolved.Integrator == "" {
+		resolved.Integrator = "path"
 	}
-	if override.CameraID != "" {
-		base.CameraID = override.CameraID
+	if _, err := ray_tracing.ParseIntegratorKind(resolved.Integrator); err != nil {
+		return RenderContext{}, err
 	}
-	if override.ThreadNum > 0 {
-		base.ThreadNum = override.ThreadNum
+	if resolved.ThreadNum <= 0 {
+		resolved.ThreadNum = runtime.NumCPU()
 	}
-	if override.Samples > 0 {
-		base.Samples = override.Samples
+	if resolved.Samples <= 0 {
+		resolved.Samples = defaultSamples
 	}
-	if override.SpectrumMode != "" {
-		base.SpectrumMode = override.SpectrumMode
+	if resolved.SpectrumMode == "" {
+		resolved.SpectrumMode = "hero_wavelength"
 	}
-	if override.WavelengthSamples > 0 {
-		base.WavelengthSamples = override.WavelengthSamples
+	switch resolved.SpectrumMode {
+	case "hero_wavelength":
+		resolved.WavelengthSamples = 1
+	case "sampled":
+		if resolved.WavelengthSamples <= 0 {
+			resolved.WavelengthSamples = defaultSampledWavelengthCount
+		}
+	default:
+		return RenderContext{}, fmt.Errorf("unsupported spectrum_mode %q", resolved.SpectrumMode)
 	}
-	return base
+	return resolved, nil
 }
 
 func (h *Handler) ConfigureRenderContext(context RenderContext) *Handler {
@@ -87,7 +83,8 @@ func (h *Handler) ConfigureRenderContext(context RenderContext) *Handler {
 	film := h.Camera.GetFilm()
 	context.OutputFilm = film.OutputFilm
 	if context.OutputFilm == "" {
-		context.OutputFilm = defaultOutputFilm
+		h.err = fmt.Errorf("camera %q Film requires output_film", context.CameraID)
+		return h
 	}
 	h.Context = context
 	return h
@@ -97,7 +94,9 @@ func renderSpectrumMode(value string) optics.SpectrumMode {
 	switch value {
 	case "sampled":
 		return optics.SpectrumModeSampledWavelengths
-	default:
+	case "hero_wavelength":
 		return optics.SpectrumModeHeroWavelength
+	default:
+		panic("unresolved spectrum mode")
 	}
 }

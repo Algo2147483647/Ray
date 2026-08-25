@@ -17,13 +17,13 @@ func TestEffectiveSampleCountUsesWavelengthSubsamples(t *testing.T) {
 	}
 }
 
-func TestEffectiveSampleCountDefaultsSampledModeWavelengths(t *testing.T) {
+func TestEffectiveSampleCountDoesNotInventWavelengthSubsamples(t *testing.T) {
 	handler := NewHandler(geometry.DefaultSceneSpace())
 	handler.SpectrumMode = optics.SpectrumModeSampledWavelengths
 	handler.WavelengthSamples = 0
 
-	if got := handler.EffectiveSampleCount(10); got != 40 {
-		t.Fatalf("unexpected default sampled effective count: got %d want 40", got)
+	if got := handler.EffectiveSampleCount(10); got != 0 {
+		t.Fatalf("runtime handler invented a wavelength default: got %d", got)
 	}
 }
 

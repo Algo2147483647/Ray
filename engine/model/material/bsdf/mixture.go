@@ -7,16 +7,16 @@ import (
 	"math"
 )
 
-type WeightedBxDF struct {
-	Weight float64
-	BxDF   bxdf.BxDF
+type WeightedScattering struct {
+	Weight     float64
+	Scattering bxdf.Scattering
 }
 
 type WeightedMixture struct {
-	Components []WeightedBxDF
+	Components []WeightedScattering
 }
 
-func NewWeightedMixture(components ...WeightedBxDF) WeightedMixture {
+func NewWeightedMixture(components ...WeightedScattering) WeightedMixture {
 	return WeightedMixture{Components: components}
 }
 
@@ -28,10 +28,10 @@ func (m WeightedMixture) Eval(ctx bxdf.ShadingContext, wi, wo maths.Direction) o
 
 	result := optics.Spectrum{}
 	for _, component := range m.Components {
-		if component.BxDF == nil || component.Weight <= 0 {
+		if component.Scattering == nil || component.Weight <= 0 {
 			continue
 		}
-		result = result.Add(component.BxDF.Eval(ctx, wi, wo).MulScalar(component.Weight / total))
+		result = result.Add(component.Scattering.Eval(ctx, wi, wo).MulScalar(component.Weight / total))
 	}
 	return result
 }
@@ -47,7 +47,7 @@ func (m WeightedMixture) Sample(ctx bxdf.ShadingContext, wo maths.Direction, u m
 		return bxdf.BxDFSample{}
 	}
 
-	selected := m.Components[index].BxDF
+	selected := m.Components[index].Scattering
 	sample := selected.Sample(ctx, wo, maths.Sample2D{U: remappedU, V: u.V})
 	if sample.PDF == 0 {
 		return sample
@@ -73,10 +73,10 @@ func (m WeightedMixture) PDF(ctx bxdf.ShadingContext, wi, wo maths.Direction) fl
 
 	var pdf float64
 	for _, component := range m.Components {
-		if component.BxDF == nil || component.Weight <= 0 {
+		if component.Scattering == nil || component.Weight <= 0 {
 			continue
 		}
-		pdf += component.BxDF.PDF(ctx, wi, wo) * component.Weight / total
+		pdf += component.Scattering.PDF(ctx, wi, wo) * component.Weight / total
 	}
 	return pdf
 }
@@ -89,10 +89,10 @@ func (m WeightedMixture) AlbedoBound(ctx bxdf.ShadingContext) optics.Spectrum {
 
 	result := optics.Spectrum{}
 	for _, component := range m.Components {
-		if component.BxDF == nil || component.Weight <= 0 {
+		if component.Scattering == nil || component.Weight <= 0 {
 			continue
 		}
-		result = result.Add(component.BxDF.AlbedoBound(ctx).MulScalar(component.Weight / total))
+		result = result.Add(component.Scattering.AlbedoBound(ctx).MulScalar(component.Weight / total))
 	}
 	return result
 }
@@ -100,10 +100,10 @@ func (m WeightedMixture) AlbedoBound(ctx bxdf.ShadingContext) optics.Spectrum {
 func (m WeightedMixture) RoughnessInfo(ctx bxdf.ShadingContext) bxdf.RoughnessInfo {
 	info := bxdf.RoughnessInfo{IsDelta: true}
 	for _, component := range m.Components {
-		if component.BxDF == nil || component.Weight <= 0 {
+		if component.Scattering == nil || component.Weight <= 0 {
 			continue
 		}
-		componentInfo := component.BxDF.RoughnessInfo(ctx)
+		componentInfo := component.Scattering.RoughnessInfo(ctx)
 		info.IsDelta = info.IsDelta && componentInfo.IsDelta
 		info.AlphaX = math.Max(info.AlphaX, componentInfo.AlphaX)
 		info.AlphaY = math.Max(info.AlphaY, componentInfo.AlphaY)
@@ -114,10 +114,10 @@ func (m WeightedMixture) RoughnessInfo(ctx bxdf.ShadingContext) bxdf.RoughnessIn
 func (m WeightedMixture) DeltaFlags() bxdf.DeltaFlags {
 	flags := bxdf.DeltaNone
 	for _, component := range m.Components {
-		if component.BxDF == nil || component.Weight <= 0 {
+		if component.Scattering == nil || component.Weight <= 0 {
 			continue
 		}
-		flags |= component.BxDF.DeltaFlags()
+		flags |= component.Scattering.DeltaFlags()
 	}
 	return flags
 }
@@ -125,7 +125,7 @@ func (m WeightedMixture) DeltaFlags() bxdf.DeltaFlags {
 func (m WeightedMixture) totalWeight() float64 {
 	var total float64
 	for _, component := range m.Components {
-		if component.BxDF != nil && component.Weight > 0 {
+		if component.Scattering != nil && component.Weight > 0 {
 			total += component.Weight
 		}
 	}
@@ -136,7 +136,7 @@ func (m WeightedMixture) selectComponent(u, total float64) (int, float64, bool) 
 	target := clamp01Open(u) * total
 	var prefix float64
 	for i, component := range m.Components {
-		if component.BxDF == nil || component.Weight <= 0 {
+		if component.Scattering == nil || component.Weight <= 0 {
 			continue
 		}
 

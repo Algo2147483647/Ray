@@ -5,6 +5,7 @@ import (
 
 	"github.com/Algo2147483647/ray/engine/model/camera"
 	"github.com/Algo2147483647/ray/engine/model/object"
+	"github.com/Algo2147483647/ray/engine/model/optics"
 )
 
 const defaultTileSize = 8
@@ -22,11 +23,11 @@ func (h *Handler) TraceScene(
 	if renderCamera == nil || renderCamera.GetFilm() == nil {
 		return fmt.Errorf("render camera or Film is nil")
 	}
-
-	if h.IntegratorKind == IntegratorBDPT {
-		if _, err := h.prepareBDPT(renderCamera, objectTree); err != nil {
-			return err
-		}
+	if h.ThreadNum <= 0 {
+		return fmt.Errorf("render thread_num must be resolved before tracing")
+	}
+	if h.SpectrumMode != optics.SpectrumModeRGB && h.WavelengthSamples <= 0 {
+		return fmt.Errorf("render wavelength_samples must be resolved before tracing")
 	}
 
 	integrator, err := NewSceneIntegrator(h.IntegratorKind, h)
@@ -42,7 +43,11 @@ func (h *Handler) TraceScene(
 		Accumulator: newFilmAccumulator(renderCamera.GetFilm(), integrator.ConcurrentFilmWrites()),
 	}
 
-	err = integrator.Run(context)
+	prepared, err := integrator.Prepare(context)
+	if err != nil {
+		return err
+	}
+	err = integrator.Run(context, prepared)
 	if err != nil {
 		return err
 	}

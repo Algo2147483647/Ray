@@ -7,7 +7,6 @@ import (
 	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/model/camera"
 	"github.com/Algo2147483647/ray/engine/model/material"
-	"github.com/Algo2147483647/ray/engine/model/material/bsdf"
 	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
 	"github.com/Algo2147483647/ray/engine/model/object"
 	"github.com/Algo2147483647/ray/engine/model/optics"
@@ -33,7 +32,7 @@ func benchmarkBDPTPaths(tb testing.TB, vertexCount int) ([]bdptVertex, []bdptVer
 		vertexCount = 4
 	}
 	lambert := &object.Object{Material: &material.Material{
-		Surface: bsdf.NewSingle(bxdf.NewLambert(optics.ConstantSpectrum(0.8))),
+		Surface: bxdf.NewLambert(optics.ConstantSpectrum(0.8)),
 	}}
 	points := make([]*mat.VecDense, vertexCount)
 	for i := range points {

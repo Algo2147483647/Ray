@@ -11,8 +11,8 @@ import (
 
 func TestWeightedMixturePreservesSelectedDeltaSample(t *testing.T) {
 	mixture := NewWeightedMixture(
-		WeightedBxDF{Weight: 1, BxDF: bxdf.NewLambert(optics.NewSpectrum(0.6, 0.6, 0.6))},
-		WeightedBxDF{Weight: 1, BxDF: bxdf.NewSpecularReflection(optics.NewSpectrum(0.8, 0.7, 0.6))},
+		WeightedScattering{Weight: 1, Scattering: bxdf.NewLambert(optics.NewSpectrum(0.6, 0.6, 0.6))},
+		WeightedScattering{Weight: 1, Scattering: bxdf.NewSpecularReflection(optics.NewSpectrum(0.8, 0.7, 0.6))},
 	)
 	wo := maths.NewDirection(0, 0, 1)
 
@@ -33,8 +33,8 @@ func TestWeightedMixturePreservesSelectedDeltaSample(t *testing.T) {
 
 func TestWeightedMixtureKeepsNonDeltaSampleFlags(t *testing.T) {
 	mixture := NewWeightedMixture(
-		WeightedBxDF{Weight: 1, BxDF: bxdf.NewLambert(optics.NewSpectrum(0.6, 0.6, 0.6))},
-		WeightedBxDF{Weight: 1, BxDF: bxdf.NewSpecularReflection(optics.NewSpectrum(0.8, 0.7, 0.6))},
+		WeightedScattering{Weight: 1, Scattering: bxdf.NewLambert(optics.NewSpectrum(0.6, 0.6, 0.6))},
+		WeightedScattering{Weight: 1, Scattering: bxdf.NewSpecularReflection(optics.NewSpectrum(0.8, 0.7, 0.6))},
 	)
 	wo := maths.NewDirection(0, 0, 1)
 

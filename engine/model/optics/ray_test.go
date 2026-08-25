@@ -11,19 +11,12 @@ func TestConvertToMonochromeMonteCarlo(t *testing.T) {
 	wavelengths := make([]float64, numSamples)
 
 	for i := 0; i < numSamples; i++ {
-		ray := &Ray{
-			Color: RGB{1.0, 1.0, 1.0},
-		}
+		ray := &Ray{}
 		ray.ConvertToMonochrome()
 
-		wavelengths[i] = ray.WaveLength
-		for ch := 0; ch < 3; ch++ {
-			if ray.Color[ch] != 1 {
-				t.Fatalf("expected spectral ray throughput to stay scalar-white before film conversion, got %v", ray.Color)
-			}
-		}
-		if ray.SpectralPower != 1 {
-			t.Fatalf("expected spectral power to start at 1, got %f", ray.SpectralPower)
+		wavelengths[i] = ray.Path.Wavelength.LambdaNM
+		if !ray.Path.Throughput.HasSamples() || ray.Path.Throughput.Sample(0) != 1 {
+			t.Fatalf("expected unit sampled throughput, got %+v", ray.Path)
 		}
 	}
 
@@ -113,35 +106,18 @@ func TestSpectralPowerToXYZKeeps6500KBlackbodyNearNeutral(t *testing.T) {
 }
 
 func TestRayInitResetsReusedThroughput(t *testing.T) {
-	ray := &Ray{
-		Color:            RGB{0.2, 0.3, 0.4},
-		RGBCompatibility: RGB{0.5, 0.6, 0.7},
-		SpectralPower:    0.25,
-	}
-	ray.WaveLength = 510
-	ray.WavelengthPDF = UniformWavelengthPDF()
+	ray := &Ray{Path: PathState{
+		Throughput: NewSampledSpectrum([]float64{0.25}),
+		Wavelength: &WavelengthSample{LambdaNM: 510, PDF: UniformWavelengthPDF()},
+	}}
 
 	ray.Init()
 
-	if ray.WaveLength != 0 || ray.WavelengthPDF != 0 {
-		t.Fatalf("expected spectral state reset, got wavelength=%f pdf=%f", ray.WaveLength, ray.WavelengthPDF)
+	if ray.Path.Wavelength != nil {
+		t.Fatalf("expected RGB path after reset, got %+v", ray.Path)
 	}
-	for i := 0; i < 3; i++ {
-		if ray.Color[i] != 1 {
-			t.Fatalf("expected throughput reset to white, got %v", ray.Color)
-		}
-		if ray.RGBCompatibility[i] != 1 {
-			t.Fatalf("expected RGB compatibility reset to white, got %v", ray.RGBCompatibility)
-		}
-	}
-	if ray.SpectralPower != 1 {
-		t.Fatalf("expected spectral power reset to 1, got %f", ray.SpectralPower)
-	}
-	if ray.SpectralPath {
-		t.Fatal("expected spectral path marker to reset")
-	}
-	if ray.RGBCompatibilityPath {
-		t.Fatal("expected RGB compatibility path marker to reset")
+	if ray.Path.Throughput.RGB != (RGB{1, 1, 1}) {
+		t.Fatalf("expected throughput reset to white, got %+v", ray.Path.Throughput)
 	}
 }
 
@@ -150,11 +126,11 @@ func TestRaySetSpectralSamplePreservesSamplerPDF(t *testing.T) {
 
 	ray.SetSpectralSample(WavelengthSample{LambdaNM: 520, PDF: 0.0123})
 
-	if ray.WaveLength != 520 {
-		t.Fatalf("unexpected wavelength: %f", ray.WaveLength)
+	if ray.Path.Wavelength == nil || ray.Path.Wavelength.LambdaNM != 520 {
+		t.Fatalf("unexpected wavelength: %+v", ray.Path.Wavelength)
 	}
-	if math.Abs(ray.WavelengthPDF-0.0123) > 1e-12 {
-		t.Fatalf("expected sampler pdf to be preserved, got %f", ray.WavelengthPDF)
+	if math.Abs(ray.Path.Wavelength.PDF-0.0123) > 1e-12 {
+		t.Fatalf("expected sampler pdf to be preserved, got %f", ray.Path.Wavelength.PDF)
 	}
 }
 

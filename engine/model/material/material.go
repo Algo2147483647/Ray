@@ -1,14 +1,14 @@
 package material
 
 import (
-	"github.com/Algo2147483647/ray/engine/model/material/bsdf"
+	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
 	"github.com/Algo2147483647/ray/engine/model/material/emission"
 	"github.com/Algo2147483647/ray/engine/model/optics"
 	"github.com/Algo2147483647/ray/engine/utils"
 )
 
 type Material struct {
-	Surface  bsdf.BSDF
+	Surface  bxdf.Scattering
 	Emission emission.Emitter
 	Metadata MaterialMetadata
 }

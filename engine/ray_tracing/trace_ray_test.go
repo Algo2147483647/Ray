@@ -8,7 +8,6 @@ import (
 	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"github.com/Algo2147483647/ray/engine/model/material"
-	"github.com/Algo2147483647/ray/engine/model/material/bsdf"
 	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
 	"github.com/Algo2147483647/ray/engine/model/material/medium"
 	"github.com/Algo2147483647/ray/engine/model/object"
@@ -151,7 +150,7 @@ func TestPrepareSurfaceInteractionSamplesLambertIn4D(t *testing.T) {
 
 	obj := &object.Object{
 		Material: &material.Material{
-			Surface: bsdf.NewSingle(bxdf.NewLambert(renderray.NewSpectrum(1, 1, 1))),
+			Surface: bxdf.NewLambert(renderray.NewSpectrum(1, 1, 1)),
 		},
 	}
 	hit := &object.SurfaceHit{
@@ -237,7 +236,7 @@ func TestKleinSurfaceInteractionNormalizesIncidentDirectionAndReflectsMetricAngl
 			B: -1,
 		},
 		Material: &material.Material{
-			Surface: bsdf.NewSingle(bxdf.NewSpecularReflection(renderray.NewSpectrum(1, 1, 1))),
+			Surface: bxdf.NewSpecularReflection(renderray.NewSpectrum(1, 1, 1)),
 		},
 	}
 	tree := &object.ObjectTree{}
@@ -289,7 +288,7 @@ func TestApplyMediumAbsorptionUsesBeerLambertRGB(t *testing.T) {
 	if err != nil {
 		t.Fatalf("register water: %v", err)
 	}
-	ray := &renderray.Ray{Color: renderray.RGB{1, 1, 1}}
+	ray := &renderray.Ray{}
 	ray.Init()
 	ray.MediumStack.Reset(waterID)
 
@@ -297,13 +296,13 @@ func TestApplyMediumAbsorptionUsesBeerLambertRGB(t *testing.T) {
 
 	want := math.Exp(-1)
 	for ch := 0; ch < 3; ch++ {
-		if math.Abs(ray.Color[ch]-want) > 1e-12 {
-			t.Fatalf("channel %d: got %f want %f", ch, ray.Color[ch], want)
+		if math.Abs(ray.Path.Throughput.RGB[ch]-want) > 1e-12 {
+			t.Fatalf("channel %d: got %f want %f", ch, ray.Path.Throughput.RGB[ch], want)
 		}
 	}
 }
 
-func TestApplyMediumAbsorptionUsesSpectralPowerForSampledSigmaA(t *testing.T) {
+func TestApplyMediumAbsorptionUsesSampledPathThroughput(t *testing.T) {
 	registry := medium.NewRegistry()
 	filterID, err := registry.RegisterHomogeneousWithCoefficients(
 		"filter",
@@ -325,46 +324,36 @@ func TestApplyMediumAbsorptionUsesSpectralPowerForSampledSigmaA(t *testing.T) {
 	})
 
 	want := math.Exp(-1)
-	if math.Abs(ray.SpectralPower-want) > 1e-12 {
-		t.Fatalf("got spectral power %f want %f", ray.SpectralPower, want)
-	}
-	if !ray.SpectralPath {
-		t.Fatal("expected sampled absorption to mark spectral path")
+	if math.Abs(ray.Path.Throughput.Sample(0)-want) > 1e-12 {
+		t.Fatalf("got spectral throughput %f want %f", ray.Path.Throughput.Sample(0), want)
 	}
 }
 
-func TestApplySpectrumMarksRGBCompatibilityExplicitly(t *testing.T) {
+func TestApplySpectrumUpliftsRGBToCurrentWavelength(t *testing.T) {
 	ray := &renderray.Ray{}
 	ray.Init()
 	ray.SetSpectralWavelength(610)
 
 	applySpectrum(ray, renderray.NewRGBSpectrum(0.8, 0.1, 0.05))
 
-	if !ray.RGBCompatibilityPath {
-		t.Fatal("expected RGB compatibility path to be marked explicitly")
-	}
-	if ray.SpectralPath {
-		t.Fatal("RGB compatibility should not masquerade as spectral throughput")
-	}
-	if math.Abs(ray.SpectralPower-1) > 1e-12 {
-		t.Fatalf("expected spectral power to stay scalar, got %f", ray.SpectralPower)
+	want := renderray.NewRGBSpectrum(0.8, 0.1, 0.05).RGBPowerAtWavelength(610)
+	if !ray.Path.Throughput.HasSamples() || math.Abs(ray.Path.Throughput.Sample(0)-want) > 1e-12 {
+		t.Fatalf("sampled throughput = %+v, want %f", ray.Path.Throughput, want)
 	}
 }
 
 func TestApplySpectrumRejectsSampledSpectrumWithoutWavelength(t *testing.T) {
-	ray := &renderray.Ray{Color: renderray.RGB{1, 1, 1}}
+	ray := &renderray.Ray{Path: renderray.PathState{Throughput: renderray.ConstantSpectrum(1)}}
 
 	applySpectrum(ray, renderray.NewSampledSpectrum([]float64{0.2, 1.0}))
 
-	for ch := 0; ch < 3; ch++ {
-		if ray.Color[ch] != 0 {
-			t.Fatalf("expected sampled spectrum without wavelength context to be rejected, got color %v", ray.Color)
-		}
+	if !ray.Path.Throughput.IsZero() {
+		t.Fatalf("expected sampled spectrum without wavelength context to be rejected, got %+v", ray.Path.Throughput)
 	}
 }
 
 func TestRussianRouletteSurvivalUsesRGBThroughputMax(t *testing.T) {
-	ray := &renderray.Ray{Color: renderray.RGB{0.2, 0.8, 0.4}}
+	ray := &renderray.Ray{Path: renderray.PathState{Throughput: renderray.NewRGBSpectrum(0.2, 0.8, 0.4)}}
 
 	if got := russianRouletteSurvivalProbability(ray); math.Abs(got-0.8) > 1e-12 {
 		t.Fatalf("unexpected RGB survival probability: got %f want 0.8", got)
@@ -372,7 +361,7 @@ func TestRussianRouletteSurvivalUsesRGBThroughputMax(t *testing.T) {
 }
 
 func TestRussianRouletteSurvivalClampsLowThroughput(t *testing.T) {
-	ray := &renderray.Ray{Color: renderray.RGB{0.001, 0.002, 0.003}}
+	ray := &renderray.Ray{Path: renderray.PathState{Throughput: renderray.NewRGBSpectrum(0.001, 0.002, 0.003)}}
 
 	if got := russianRouletteSurvivalProbability(ray); math.Abs(got-minRussianRouletteSurvival) > 1e-12 {
 		t.Fatalf("expected low throughput survival clamp, got %f", got)
@@ -380,14 +369,14 @@ func TestRussianRouletteSurvivalClampsLowThroughput(t *testing.T) {
 }
 
 func TestRussianRouletteScalesRGBThroughput(t *testing.T) {
-	ray := &renderray.Ray{Color: renderray.RGB{0.2, 0.4, 0.6}}
+	ray := &renderray.Ray{Path: renderray.PathState{Throughput: renderray.NewRGBSpectrum(0.2, 0.4, 0.6)}}
 
 	scaleRayThroughput(ray, 2)
 
-	if math.Abs(ray.Color[0]-0.4) > 1e-12 ||
-		math.Abs(ray.Color[1]-0.8) > 1e-12 ||
-		math.Abs(ray.Color[2]-1.2) > 1e-12 {
-		t.Fatalf("unexpected scaled RGB throughput: %v", ray.Color)
+	if math.Abs(ray.Path.Throughput.RGB[0]-0.4) > 1e-12 ||
+		math.Abs(ray.Path.Throughput.RGB[1]-0.8) > 1e-12 ||
+		math.Abs(ray.Path.Throughput.RGB[2]-1.2) > 1e-12 {
+		t.Fatalf("unexpected scaled RGB throughput: %+v", ray.Path.Throughput)
 	}
 }
 
@@ -395,12 +384,12 @@ func TestRussianRouletteScalesSpectralThroughput(t *testing.T) {
 	ray := &renderray.Ray{}
 	ray.Init()
 	ray.SetSpectralWavelength(550)
-	ray.SpectralPower = 0.25
+	ray.Path.Throughput = renderray.NewSampledSpectrum([]float64{0.25})
 
 	scaleRayThroughput(ray, 4)
 
-	if math.Abs(ray.SpectralPower-1) > 1e-12 {
-		t.Fatalf("unexpected scaled spectral throughput: %f", ray.SpectralPower)
+	if math.Abs(ray.Path.Throughput.Sample(0)-1) > 1e-12 {
+		t.Fatalf("unexpected scaled spectral throughput: %+v", ray.Path.Throughput)
 	}
 }
 
@@ -417,25 +406,25 @@ func TestRussianRouletteDepthDefaultsToThirdBounce(t *testing.T) {
 
 func TestTerminateBeforeBounceStopsPastMaxDepth(t *testing.T) {
 	handler := &Handler{MaxRayLevel: 2}
-	ray := &renderray.Ray{Color: renderray.RGB{1, 1, 1}}
+	ray := &renderray.Ray{Path: renderray.PathState{Throughput: renderray.ConstantSpectrum(1)}}
 
 	if !handler.terminateBeforeBounce(ray, 3) {
 		t.Fatal("expected path to terminate beyond max depth")
 	}
-	if ray.Color != (renderray.RGB{}) {
-		t.Fatalf("expected terminated ray color to be cleared, got %v", ray.Color)
+	if !ray.Path.Throughput.IsZero() {
+		t.Fatalf("expected terminated ray throughput to be cleared, got %+v", ray.Path.Throughput)
 	}
 }
 
 func TestTerminateBeforeBounceAllowsFullSurvivalRoulette(t *testing.T) {
 	handler := &Handler{MaxRayLevel: 8, RussianRouletteDepth: 3}
-	ray := &renderray.Ray{Color: renderray.RGB{1, 1, 1}}
+	ray := &renderray.Ray{Path: renderray.PathState{Throughput: renderray.ConstantSpectrum(1)}}
 
 	if handler.terminateBeforeBounce(ray, 3) {
 		t.Fatal("did not expect roulette to terminate a unit-throughput RGB path")
 	}
-	if ray.Color != (renderray.RGB{1, 1, 1}) {
-		t.Fatalf("unexpected ray throughput after guaranteed survival: %v", ray.Color)
+	if ray.Path.Throughput.RGB != (renderray.RGB{1, 1, 1}) {
+		t.Fatalf("unexpected ray throughput after guaranteed survival: %+v", ray.Path.Throughput)
 	}
 }
 

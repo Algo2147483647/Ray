@@ -275,8 +275,6 @@ func normalizeIntermediateRender(render map[string]interface{}) {
 	if render["spectrum_mode"] != "sampled" {
 		return
 	}
-	wavelengthSamples, _ := render["wavelength_samples"].(int)
-	render["wavelength_samples"] = schema.NormalizeWavelengthSamples("sampled", wavelengthSamples)
 }
 
 func (c studioConfig) filmShapeOverride() []int {

@@ -149,7 +149,7 @@ func (h *Handler) prepareBDPT(renderCamera camera.RayCamera, tree *object.Object
 	return state, nil
 }
 
-func validateBDPTSurface(surface bsdf.BSDF) error {
+func validateBDPTSurface(surface bxdf.Scattering) error {
 	if surface == nil {
 		return nil
 	}
@@ -163,41 +163,26 @@ func validateBDPTSurface(surface bsdf.BSDF) error {
 	return nil
 }
 
-func isBDPTSurface(surface bsdf.BSDF) bool {
-	switch value := surface.(type) {
-	case bsdf.Single:
-		return isBDPTBxDF(value.BxDF)
-	case *bsdf.Single:
-		return value != nil && isBDPTBxDF(value.BxDF)
-	case bsdf.WeightedMixture:
-		return isBDPTMixture(value)
-	case *bsdf.WeightedMixture:
-		return value != nil && isBDPTMixture(*value)
-	default:
-		return false
-	}
+func isBDPTSurface(surface bxdf.Scattering) bool {
+	return isBDPTScattering(surface)
 }
 
 func isBDPTMixture(mixture bsdf.WeightedMixture) bool {
 	hasComponent := false
 	for _, component := range mixture.Components {
-		if component.BxDF == nil || component.Weight <= 0 {
+		if component.Scattering == nil || component.Weight <= 0 {
 			continue
 		}
 		hasComponent = true
-		if !isBDPTBxDF(component.BxDF) {
+		if !isBDPTScattering(component.Scattering) {
 			return false
 		}
 	}
 	return hasComponent
 }
 
-func isBDPTBxDF(scattering bxdf.BxDF) bool {
+func isBDPTScattering(scattering bxdf.Scattering) bool {
 	switch value := scattering.(type) {
-	case bsdf.Single:
-		return isBDPTBxDF(value.BxDF)
-	case *bsdf.Single:
-		return value != nil && isBDPTBxDF(value.BxDF)
 	case bsdf.WeightedMixture:
 		return isBDPTMixture(value)
 	case *bsdf.WeightedMixture:
@@ -216,20 +201,6 @@ func isBDPTBxDF(scattering bxdf.BxDF) bool {
 func prepareBDPTScene(tree *object.ObjectTree) *bdptSceneState {
 	lights, total := collectAreaLights(tree)
 	return &bdptSceneState{Lights: lights, TotalLightWeight: total}
-}
-
-func (h *Handler) traceBidirectionalSample(
-	renderCamera camera.RayCamera,
-	objTree *object.ObjectTree,
-	wavelengthNM, wavelengthPDF float64,
-	index ...int,
-) optics.Spectrum {
-	state, err := h.prepareBDPT(renderCamera, objTree)
-	if err != nil {
-		return zeroSpectrum(wavelengthNM)
-	}
-	result, _ := h.traceBidirectionalPrepared(state, renderCamera, objTree, wavelengthNM, wavelengthPDF, index...)
-	return result
 }
 
 func (h *Handler) traceBidirectionalPrepared(

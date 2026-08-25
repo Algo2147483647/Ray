@@ -12,7 +12,9 @@ import (
 
 // lightTracingKernel implements the t=1 algorithm while splatSceneIntegrator owns
 // scheduling, synchronization, normalization and progress reporting.
-type lightTracingKernel struct {
+type lightTracingKernel struct{}
+
+type lightTracingPreparedState struct {
 	projective  camera.ProjectiveCamera
 	lights      []areaLight
 	totalWeight float64
@@ -23,66 +25,75 @@ type lightTracingKernel struct {
 	totalPaths  int64
 }
 
-func (k *lightTracingKernel) Prepare(context *RenderContext) error {
+func (*lightTracingPreparedState) preparedIntegratorState() {}
+
+func (k *lightTracingKernel) Prepare(context *RenderContext) (PreparedIntegratorState, error) {
 	projective, ok := context.Camera.(camera.ProjectiveCamera)
 	if !ok {
-		return fmt.Errorf("light tracing requires a projective camera, got %T", context.Camera)
+		return nil, fmt.Errorf("light tracing requires a projective camera, got %T", context.Camera)
 	}
-	k.projective = projective
-	k.lights, k.totalWeight = collectAreaLights(context.ObjectTree)
+	state := &lightTracingPreparedState{projective: projective}
+	state.lights, state.totalWeight = collectAreaLights(context.ObjectTree)
 	film := context.Camera.GetFilm()
 	if len(film.Shape) != 2 {
-		return fmt.Errorf("light tracing requires a 2D Film")
+		return nil, fmt.Errorf("light tracing requires a 2D Film")
 	}
-	k.width = film.Shape[0]
-	k.height = film.Shape[1]
-	k.pixelCount = film.ElementCount()
-	k.activeMask = make([]bool, k.pixelCount)
-	activePixels := int64(k.pixelCount)
+	state.width = film.Shape[0]
+	state.height = film.Shape[1]
+	state.pixelCount = film.ElementCount()
+	state.activeMask = make([]bool, state.pixelCount)
+	activePixels := int64(state.pixelCount)
 	if len(film.PixelWindows) == 0 {
-		for pixel := range k.activeMask {
-			k.activeMask[pixel] = true
+		for pixel := range state.activeMask {
+			state.activeMask[pixel] = true
 		}
 	} else {
-		k.activeMask, activePixels = buildPixelWindowMask(
+		state.activeMask, activePixels = buildPixelWindowMask(
 			film.Shape,
 			film.PixelWindows,
 		)
 	}
-	if len(k.lights) == 0 || k.totalWeight <= 0 || activePixels <= 0 {
-		k.totalPaths = 0
+	if len(state.lights) == 0 || state.totalWeight <= 0 || activePixels <= 0 {
+		return state, nil
+	}
+	state.totalPaths = context.Samples * activePixels
+	return state, nil
+}
+
+func (k *lightTracingKernel) WorkCount(_ *RenderContext, prepared PreparedIntegratorState) int64 {
+	state, ok := prepared.(*lightTracingPreparedState)
+	if !ok || state == nil {
+		return 0
+	}
+	return state.totalPaths
+}
+
+func (k *lightTracingKernel) TraceSample(context *RenderContext, prepared PreparedIntegratorState, _ int64) []FilmSplat {
+	state, ok := prepared.(*lightTracingPreparedState)
+	if !ok || state == nil {
 		return nil
 	}
-	k.totalPaths = context.Samples * activePixels
-	return nil
-}
-
-func (k *lightTracingKernel) WorkCount(*RenderContext) int64 {
-	return k.totalPaths
-}
-
-func (k *lightTracingKernel) TraceSample(context *RenderContext, _ int64) []FilmSplat {
 	wavelength := context.Handler.wavelengthSampler().Sample(rand.Float64())
 	wavelengthNM, wavelengthPDF := wavelength.LambdaNM, wavelength.PDF
 	path := context.Handler.buildLightSubpath(
 		context.ObjectTree,
-		k.lights,
-		k.totalWeight,
+		state.lights,
+		state.totalWeight,
 		wavelengthNM,
 		wavelengthPDF,
 	)
 	splats := make([]FilmSplat, 0, len(path))
 	for vertexIndex := range path {
 		value, projection, valid := projectLightVertex(
-			k.projective,
+			state.projective,
 			context.ObjectTree,
 			&path[vertexIndex],
 		)
 		if !valid {
 			continue
 		}
-		pixel, ok := camera.PixelIndex(projection.Position[0], projection.Position[1], k.width, k.height)
-		if !ok || !k.activeMask[pixel] {
+		pixel, ok := camera.PixelIndex(projection.Position[0], projection.Position[1], state.width, state.height)
+		if !ok || !state.activeMask[pixel] {
 			continue
 		}
 		splats = append(splats, FilmSplat{

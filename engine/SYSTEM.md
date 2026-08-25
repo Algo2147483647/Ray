@@ -37,6 +37,9 @@ runtime state.
 ## Render
 
 `controller.Handler` executes each Render job against the compiled Scene.
+`controller.ResolveRenderSpec` is the only render-default boundary; it resolves
+the Integrator, worker count, camera samples, spectrum mode, and wavelength
+sample count before constructing runtime objects.
 `ray_tracing.NewHandler` receives the SceneSpace explicitly and creates Rays for
 that space. `NewSceneIntegrator` selects exactly the requested algorithm:
 
@@ -45,7 +48,15 @@ that space. `NewSceneIntegrator` selects exactly the requested algorithm:
 - `light_tracing`: global light-path splat work through `splatSceneIntegrator`.
 
 Capability preflight failures are errors. The Engine never substitutes another
-Integrator.
+Integrator. Each Integrator performs one `Prepare` call, returns immutable
+prepared state, and receives that state in `Run`; BDPT capability validation and
+light collection therefore happen once per render.
+
+A Material surface is one `bxdf.Scattering` value. Atomic scattering models,
+weighted mixtures, and procedural mixtures implement the same interface
+directly; there is no BSDF/BxDF interface split or single-model wrapper. A Ray
+owns one `PathState{Throughput, Wavelength}`. RGB and wavelength-selected paths
+share this state instead of maintaining parallel compatibility products.
 
 ## Film
 

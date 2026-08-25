@@ -1,19 +1,10 @@
 package optics
 
 func SpectralRayToScalar(ray *Ray) float64 {
-	if ray == nil || ray.WaveLength <= 0 {
+	if ray == nil || ray.Path.Wavelength == nil || !ray.Path.Throughput.HasSamples() {
 		return 0
 	}
-	power := ray.SpectralPower
-	compatibility := ray.RGBCompatibility
-	if !ray.RGBCompatibilityPath {
-		return power
-	}
-	return power * NewRGBSpectrum(
-		compatibility[0],
-		compatibility[1],
-		compatibility[2],
-	).RGBPowerAtWavelength(ray.WaveLength)
+	return ray.Path.Throughput.Sample(0)
 }
 
 func XYZToLinearSRGB(x, y, z float64) (float64, float64, float64) {

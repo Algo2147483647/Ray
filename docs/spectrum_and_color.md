@@ -500,7 +500,9 @@ This is a renderer compatibility approximation. It does not guarantee exact roun
 | `hero_wavelength` | 1 | One uniform random wavelength | One monochromatic scalar path, with explicit RGB compatibility handling | Spectral bin $\rightarrow$ XYZ $\rightarrow$ film space |
 | `sampled` | `wavelength_samples` | Stratified samples across the wavelength sampler's unit interval | Multiple independent monochromatic paths | All contributions enter spectral bins, then XYZ and the film space |
 
-If sampled mode resolves to one or fewer wavelength samples, render configuration promotes it to four. At the lower-level handler API, a non-positive sampled count also defaults to four.
+`ResolveRenderSpec` assigns four wavelength samples when sampled mode omits the
+count. An explicit positive count, including one, is preserved. Runtime handlers
+require the resolved positive value and do not provide another default.
 
 For $N_c$ camera samples and $m$ wavelength samples, pixel tracing normalizes all spectral contributions by
 
@@ -520,9 +522,13 @@ $$
 
 The sampler maps $u_j$ to a wavelength and PDF. This reduces wavelength-stratification variance compared with fully independent uniform draws. Integrator-specific scheduling can differ: for example, the current splat-based light-tracing path samples one wavelength per light path rather than creating `wavelength_samples` paths.
 
-### Hybrid RGB Compatibility
+### Path State
 
-A spectral ray carries both `SpectralPower` and an optional `RGBCompatibility` product. A sampled material contribution multiplies the scalar spectral path directly. An RGB-only contribution encountered by a spectral ray is accumulated separately and evaluated at the ray wavelength before film accumulation. This prevents every RGB-only procedural component from immediately terminating a spectral render, but it remains an approximate RGB uplift path rather than measured spectral transport.
+A Ray carries one `PathState` containing a `Spectrum` throughput and an optional
+`WavelengthSample`. A nil wavelength denotes RGB transport. Once a wavelength
+is selected, throughput is a one-sample Spectrum aligned to that wavelength.
+RGB material results are immediately uplifted to the selected wavelength before
+multiplication; no parallel RGB compatibility product or mode flags exist.
 
 ## Film Space and Image Output
 
@@ -588,7 +594,7 @@ The decoder validates the exact version, rank, dimensions, spectral metadata, an
 {
   "render": {
     "spectrum_mode": "hero_wavelength", // hero_wavelength | sampled
-    "wavelength_samples": 1,             // positive integer; sampled promotes <= 1 to 4
+    "wavelength_samples": 1,             // optional positive integer; sampled defaults to 4 when omitted
     "color_space": "linear_srgb",       // linear_srgb | xyz | acescg
 
     "exposure": 1,                       // positive output multiplier
@@ -598,7 +604,10 @@ The decoder validates the exact version, rank, dimensions, spectral metadata, an
 }
 ```
 
-Engine defaults are `hero_wavelength` and one wavelength sample. `wavelength_samples` only controls sampled wavelength mode. `color_space`, exposure, tone mapping, and gamma are Studio-only output settings.
+`ResolveRenderSpec` supplies Engine defaults once: `hero_wavelength` with one
+wavelength sample, or four samples when `sampled` omits the count.
+`wavelength_samples` only controls sampled wavelength mode. `color_space`,
+exposure, tone mapping, and gamma are Studio-only output settings.
 
 Equivalent command-line controls are:
 

@@ -88,7 +88,7 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level in
 		return
 	}
 
-	// Handle emissive surfaces directly; terminate if there is no BSDF to sample.
+	// Handle emissive surfaces directly; terminate if there is no scattering to sample.
 	if h.traceEmission(ray, si.Object, si.Context, si.WoEmission) {
 		return
 	} else if !si.Object.Material.HasSurface() {
@@ -96,14 +96,14 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level in
 		return
 	}
 
-	// Sample the surface BSDF to choose the next path direction.
+	// Sample the surface scattering to choose the next path direction.
 	sample, ok := sampleSurface(si.Object, si.Context, si.WoLocal)
 	if !ok {
 		terminateRay(ray)
 		return
 	}
 
-	// Apply the BSDF weight, spectral update, and medium transmission if needed.
+	// Apply the scattering weight, spectral update, and medium transmission if needed.
 	applySurfaceSample(media, ray, si.Context, si.Object, sample)
 
 	// Transform the sampled local direction back to world space.
@@ -159,7 +159,7 @@ func (h *Handler) prepareSurfaceInteraction(
 	ray.Origin.CopyVec(hit.Point)
 	// A Klein geodesic is an affine chord, so its embedded direction stays
 	// constant while its metric norm changes with position. Re-normalize at
-	// the hit before converting the incident direction into the local BSDF
+	// the hit before converting the incident direction into the local scattering
 	// frame. This is a no-op in direction for Euclidean and Spherical rays.
 	if !normalizeDirectionInGeometry(ray.G(), ray.Origin, ray.Direction) {
 		return SurfaceInteraction{}, false
@@ -227,13 +227,13 @@ func getMediumRegistry(objTree *object.ObjectTree) *medium.Registry {
 
 func (h *Handler) newShadingContext(ray *optics.Ray) bxdf.ShadingContext {
 	ctx := bxdf.ShadingContext{
-		SpectrumMode:  h.SpectrumMode,
-		WavelengthNM:  ray.WaveLength,
-		WavelengthPDF: ray.WavelengthPDF,
+		SpectrumMode: h.SpectrumMode,
 	}
 
-	if h.SpectrumMode != optics.SpectrumModeRGB && ray.WaveLength > 0 {
-		ctx.WavelengthsNM = []float64{ray.WaveLength}
+	if ray.Path.Wavelength != nil {
+		ctx.WavelengthNM = ray.Path.Wavelength.LambdaNM
+		ctx.WavelengthPDF = ray.Path.Wavelength.PDF
+		ctx.WavelengthsNM = []float64{ray.Path.Wavelength.LambdaNM}
 	}
 
 	return ctx
@@ -251,7 +251,7 @@ func (h *Handler) traceEmission(
 
 	emitted := obj.Material.Emission.Eval(ctx, woLocal)
 	if emitted.IsZero() {
-		// A one-sided emitter can still carry a BSDF on its dark side.
+		// A one-sided emitter can still carry scattering on its dark side.
 		return false
 	}
 	applySpectrum(ray, emitted)
@@ -288,10 +288,6 @@ func applySurfaceSample(
 ) {
 	weight := maths.AbsCosTheta(sample.Wi) / sample.PDF
 	applySpectrum(ray, sample.F.MulScalar(weight))
-
-	if sample.WavelengthNM > 0 {
-		ray.SpectralPath = true
-	}
 
 	if sample.Flags&bxdf.TransmissionEvent != 0 {
 		applyMediumTransmission(media, ray, ctx, obj.MediumBoundary, sample)

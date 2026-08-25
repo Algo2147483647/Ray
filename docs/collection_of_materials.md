@@ -5,7 +5,7 @@
 
 The Engine does not have a top-level material `type` hierarchy. Every JSON entry becomes the same runtime type, `*material.Material`, which is a composition of:
 
-- an optional `bsdf.BSDF` in `Surface`;
+- an optional `bxdf.Scattering` in `Surface`;
 - an optional `emission.Emitter` in `Emission`;
 - internal `MaterialMetadata` initialized by the factory.
 
@@ -13,8 +13,8 @@ A material must contain at least a surface or an emission block. It may contain 
 
 ```text
 material.Material
-|- Surface: bsdf.BSDF
-|  |- physical BxDF wrapped by bsdf.Single
+|- Surface: bxdf.Scattering
+|  |- atomic model or weighted/procedural mixture
 |  |- bsdf.WeightedMixture
 |  `- bsdf.CylindricalGridCutout
 `- Emission: emission.Emitter
@@ -31,12 +31,12 @@ The first column is the logical surface-model key. JSON aliases are grouped into
 | Surface material type | JSON `surface.type` | Description and mathematical model | Input parameters | Actual runtime result | Category | Delta/event flags |
 | --- | --- | --- | --- | --- | --- | --- |
 | Weighted Mixture | `weighted_mixture` | Normalized statistical mixture of recursively defined surfaces, with $p_i=w_i/\sum\limits_j w_j$ and $f=\sum\limits_i p_i f_i$. | Non-empty `components`; each component has finite $w_i>0$ and a recursive `surface`. | `bsdf.WeightedMixture` | Probabilistic mixture | Union of component flags |
-| Lambert | `lambert` | Ideal reciprocal diffuse reflector, $f=\rho(\lambda)/I_D$; in 3D, $I_3=\pi$. | Required spectral albedo $\rho(\lambda)\ge 0$. | `bsdf.Single{BxDF: bxdf.Lambert}` | Diffuse reflection | None |
-| Specular Reflection | `specular_reflection` | Colored ideal mirror with a single deterministic reflected direction and no Fresnel model. | Spectral reflectance $R(\lambda)\ge 0$; optional, default $R=1$. | `bsdf.Single{BxDF: bxdf.SpecularReflection}` | Perfect mirror reflection | `DeltaReflection` |
-| Specular Dielectric | `specular_dielectric` | Smooth dielectric interface selecting perfect reflection with probability $F$ and refraction with probability $1-F$; supports dispersion and total internal reflection. | Spectral $R(\lambda),T(\lambda)\ge0$; optional, default 1. Outside IOR $\eta_o>0$, default 1. Inside `ior` is constant or Cauchy; legacy $\eta_i>0$, default 1.5. | `bsdf.Single{BxDF: bxdf.SpecularDielectric}` | Perfect Fresnel reflection and refraction | `DeltaReflection`, `DeltaTransmission`, `TransmissionEvent` |
-| Rough Conductor | `rough_conductor` | Reciprocal GGX microfacet reflection using complex spectral IOR $\eta(\lambda)+ik(\lambda)$ and $\alpha=\max(r^2,10^{-4})$. | Required spectral $\eta(\lambda),k(\lambda)\ge0$; roughness $r\in[0,1]$, default 0.25; spectral weight $W(\lambda)\ge0$, default 1. | `bsdf.Single{BxDF: bxdf.RoughConductor}` | GGX conductor reflection | None |
-| Rough Dielectric Reflection | `rough_dielectric_reflection` | Reciprocal GGX dielectric reflection lobe with Fresnel modulation; it contains no transmission lobe. | Spectral $R(\lambda)\ge0$, default 1; $\eta_o>0$, default 1; constant or Cauchy inside `ior`; $r\in[0,1]$, default 0.25. | `bsdf.Single{BxDF: bxdf.RoughDielectricReflection}` | GGX dielectric reflection only | None |
-| Rough Dielectric Transmission | `rough_dielectric_transmission` | Walter-style GGX dielectric transmission lobe for opposite hemispheres; it contains no reflection fallback. | Spectral $T(\lambda)\ge0$, default 1; $\eta_o>0$, default 1; constant or Cauchy inside `ior`; $r\in[0,1]$, default 0.25. | `bsdf.Single{BxDF: bxdf.RoughDielectricTransmission}` | GGX dielectric transmission only | `TransmissionEvent`, `NonReciprocal` |
+| Lambert | `lambert` | Ideal reciprocal diffuse reflector, $f=\rho(\lambda)/I_D$; in 3D, $I_3=\pi$. | Required spectral albedo $\rho(\lambda)\ge 0$. | `bxdf.Lambert` | Diffuse reflection | None |
+| Specular Reflection | `specular_reflection` | Colored ideal mirror with a single deterministic reflected direction and no Fresnel model. | Spectral reflectance $R(\lambda)\ge 0$; optional, default $R=1$. | `bxdf.SpecularReflection` | Perfect mirror reflection | `DeltaReflection` |
+| Specular Dielectric | `specular_dielectric` | Smooth dielectric interface selecting perfect reflection with probability $F$ and refraction with probability $1-F$; supports dispersion and total internal reflection. | Spectral $R(\lambda),T(\lambda)\ge0$; optional, default 1. Outside IOR $\eta_o>0$, default 1. Inside `ior` is constant or Cauchy. | `bxdf.SpecularDielectric` | Perfect Fresnel reflection and refraction | `DeltaReflection`, `DeltaTransmission`, `TransmissionEvent` |
+| Rough Conductor | `rough_conductor` | Reciprocal GGX microfacet reflection using complex spectral IOR $\eta(\lambda)+ik(\lambda)$ and $\alpha=\max(r^2,10^{-4})$. | Required spectral $\eta(\lambda),k(\lambda)\ge0$; roughness $r\in[0,1]$, default 0.25; spectral weight $W(\lambda)\ge0$, default 1. | `bxdf.RoughConductor` | GGX conductor reflection | None |
+| Rough Dielectric Reflection | `rough_dielectric_reflection` | Reciprocal GGX dielectric reflection lobe with Fresnel modulation; it contains no transmission lobe. | Spectral $R(\lambda)\ge0$, default 1; $\eta_o>0$, default 1; constant or Cauchy inside `ior`; $r\in[0,1]$, default 0.25. | `bxdf.RoughDielectricReflection` | GGX dielectric reflection only | None |
+| Rough Dielectric Transmission | `rough_dielectric_transmission` | Walter-style GGX dielectric transmission lobe for opposite hemispheres; it contains no reflection fallback. | Spectral $T(\lambda)\ge0$, default 1; $\eta_o>0$, default 1; constant or Cauchy inside `ior`; $r\in[0,1]$, default 0.25. | `bxdf.RoughDielectricTransmission` | GGX dielectric transmission only | `TransmissionEvent`, `NonReciprocal` |
 | Cylindrical Grid Cutout / Wire Mesh | `cylindrical_grid_cutout`, `wire_mesh` | Procedural cylindrical-coordinate mask: grid lines delegate to `line_surface`, while gaps are deterministic straight-through delta transmission. | Recursive `line_surface`; 3-vectors $o$, axis $a\ne0$, and reference axis; widths $w_l,w_g,h_g\ge0$; reference radius $r_{ref}>0$. All are optional and have documented defaults. | `bsdf.CylindricalGridCutout` | Spatial line BSDF plus transparent gaps | Always `DeltaTransmission`, plus line-surface flags |
 
 There are nine JSON surface values but only eight distinct runtime surface constructions because `wire_mesh` is an alias.

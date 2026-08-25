@@ -9,33 +9,28 @@ import (
 const minRussianRouletteSurvival = 0.05
 
 func applySpectrum(ray *renderray.Ray, spectrum optics.Spectrum) {
-	if ray.WaveLength > 0 {
-		if spectrum.HasSamples() {
-			ray.SpectralPower *= spectrum.Sample(0)
-			ray.SpectralPath = true
-			return
+	if ray == nil {
+		return
+	}
+	if ray.Path.Wavelength != nil {
+		if !spectrum.HasSamples() {
+			spectrum = spectrum.UpliftRGBToSampled([]float64{ray.Path.Wavelength.LambdaNM})
 		}
-		ray.RGBCompatibility = ray.RGBCompatibility.Mul(spectrum.RGB)
-		ray.RGBCompatibilityPath = true
+		ray.Path.Throughput = ray.Path.Throughput.Mul(spectrum)
 		return
 	}
-
 	if spectrum.HasSamples() {
-		ray.Color = optics.RGB{}
+		terminateRay(ray)
 		return
 	}
-	ray.Color = ray.Color.Mul(spectrum.RGB)
+	ray.Path.Throughput = ray.Path.Throughput.Mul(spectrum)
 }
 
 func terminateRay(ray *renderray.Ray) {
 	if ray == nil {
 		return
 	}
-	ray.Color = optics.RGB{}
-	ray.SpectralPower = 0
-	ray.SpectralPath = false
-	ray.RGBCompatibilityPath = false
-	ray.RGBCompatibility = optics.RGB{}
+	ray.Path.Throughput = ray.Path.Throughput.MulScalar(0)
 	return
 }
 
@@ -43,33 +38,14 @@ func russianRouletteSurvivalProbability(ray *renderray.Ray) float64 {
 	if ray == nil {
 		return 0
 	}
-	if ray.WaveLength > 0 {
-		throughput := finiteNonNegative(ray.SpectralPower)
-		if ray.RGBCompatibilityPath {
-			throughput *= maxRGBChannel(ray.RGBCompatibility)
-		}
-		return clampSurvival(throughput)
-	}
-	return clampSurvival(maxRGBChannel(ray.Color))
+	return clampSurvival(finiteNonNegative(ray.Path.Throughput.MaxComponent()))
 }
 
 func scaleRayThroughput(ray *renderray.Ray, scale float64) {
 	if ray == nil || scale == 1 {
 		return
 	}
-	if ray.WaveLength > 0 {
-		ray.SpectralPower *= scale
-		return
-	}
-	ray.Color = ray.Color.MulScalar(scale)
-}
-
-func maxRGBChannel(v optics.RGB) float64 {
-	maxValue := 0.0
-	for i := 0; i < 3; i++ {
-		maxValue = math.Max(maxValue, finiteNonNegative(v[i]))
-	}
-	return maxValue
+	ray.Path.Throughput = ray.Path.Throughput.MulScalar(scale)
 }
 
 func finiteNonNegative(v float64) float64 {

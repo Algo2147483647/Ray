@@ -15,10 +15,6 @@ type Scattering interface {
 	DeltaFlags() DeltaFlags                                                     // Returns flags describing whether the scattering contains delta/discrete components.
 }
 
-type BxDF interface {
-	Scattering
-}
-
 type TransportMode int
 
 const (
@@ -71,7 +67,7 @@ func (ctx ShadingContext) SpectralWavelengthsNM() []float64 {
 
 type BxDFSample struct {
 	Wi             maths.Direction // Sampled incident direction.
-	F              optics.Spectrum // Sampled BxDF value.
+	F              optics.Spectrum // Sampled scattering value.
 	PDF            float64         // Sampling probability density.
 	Flags          DeltaFlags      // Scattering event flags.
 	Eta            float64         // Relative index of refraction.

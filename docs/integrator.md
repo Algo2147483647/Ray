@@ -32,7 +32,7 @@ alternate Integrator state.
 ## Path
 
 Path tracing generates camera Rays, samples wavelengths, intersects in the
-Scene Geometry, evaluates emission and BSDF events, applies homogeneous
+Scene Geometry, evaluates emission and scattering events, applies homogeneous
 Beer–Lambert absorption, updates medium boundaries after transmission, and uses
 Russian roulette after the configured depth. It supports Euclidean, Klein, and
 spherical propagation subject to each Shape's intersection capability.
@@ -78,6 +78,14 @@ Each item in top-level `renders` may select:
 - `thread_num`;
 - `spectrum_mode`;
 - `wavelength_samples`.
+
+These values are complete before the Integrator is created. Runtime handlers do
+not infer render defaults.
+
+Every scene Integrator has two phases. `Prepare` validates capabilities and
+returns algorithm-specific prepared state; `Run` consumes that exact state.
+BDPT scene traversal, surface validation, and finite-area-light collection occur
+only in its single Prepare call.
 
 Film shape, spectral bins, output path, and pixel windows belong to the selected
 Camera's Film. Geometry and dimension belong to the Scene.

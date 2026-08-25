@@ -71,9 +71,8 @@ func renderToMap(script *schema.StudioScript, render schema.StudioRenderScript, 
 	if render.SpectrumMode != "" {
 		result["spectrum_mode"] = render.SpectrumMode
 	}
-	wavelengthSamples := schema.NormalizeWavelengthSamples(render.SpectrumMode, render.WavelengthSamples)
-	if wavelengthSamples > 0 {
-		result["wavelength_samples"] = wavelengthSamples
+	if render.WavelengthSamples > 0 {
+		result["wavelength_samples"] = render.WavelengthSamples
 	}
 	return result, nil
 }

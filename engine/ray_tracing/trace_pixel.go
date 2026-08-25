@@ -8,8 +8,6 @@ import (
 	"github.com/Algo2147483647/ray/engine/model/optics"
 )
 
-const defaultWavelengthSamples = 4
-
 type pixelKernel interface {
 	sampleSpectral(*Handler, rendercamera.RayCamera, *object.ObjectTree, *optics.Ray, optics.WavelengthSample, ...int) rendercamera.SpectralSample
 }
@@ -31,7 +29,7 @@ func (pathTracingKernel) sampleSpectral(
 		WavelengthNM: wavelength.LambdaNM,
 		Value: optics.SpectralSampleRadiance(
 			optics.SpectralRayToScalar(ray),
-			ray.WavelengthPDF,
+			ray.Path.Wavelength.PDF,
 		),
 	}
 }
@@ -122,11 +120,7 @@ func (h *Handler) TraceSpectralSample(
 }
 
 func (h *Handler) wavelengthSampleCount() int {
-	if h.WavelengthSamples > 0 {
-		return h.WavelengthSamples
-	}
-
-	return defaultWavelengthSamples
+	return h.WavelengthSamples
 }
 
 func (h *Handler) estimatedSpectralSampleCount(samples int64) int {

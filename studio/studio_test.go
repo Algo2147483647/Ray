@@ -170,7 +170,7 @@ func TestStudioExpandsLegacyRenderDefaultsIntoEveryEngineJob(t *testing.T) {
 	}
 }
 
-func TestStudioNormalizesSampledWavelengthCount(t *testing.T) {
+func TestStudioPreservesExplicitSampledWavelengthCount(t *testing.T) {
 	adapted, err := adaptTestScript(&schema.StudioScript{
 		Render: schema.StudioRenderScript{
 			SpectrumMode:      "sampled",
@@ -180,12 +180,12 @@ func TestStudioNormalizesSampledWavelengthCount(t *testing.T) {
 	if err != nil {
 		t.Fatalf("adapt script: %v", err)
 	}
-	if adapted.Renders[0]["wavelength_samples"] != 4 {
-		t.Fatalf("wavelength samples = %v, want 4", adapted.Renders[0]["wavelength_samples"])
+	if adapted.Renders[0]["wavelength_samples"] != 1 {
+		t.Fatalf("wavelength samples = %v, want 1", adapted.Renders[0]["wavelength_samples"])
 	}
 }
 
-func TestStudioNormalizesSampledWavelengthCountAfterCLIOverrides(t *testing.T) {
+func TestStudioPreservesExplicitSampledWavelengthCountAfterCLIOverrides(t *testing.T) {
 	config := studioConfig{
 		provided: map[string]bool{
 			"spectrum-mode":      true,
@@ -198,8 +198,8 @@ func TestStudioNormalizesSampledWavelengthCountAfterCLIOverrides(t *testing.T) {
 
 	config.applyEngineOverrides(intermediate, "", 0)
 
-	if intermediate.Renders[0]["wavelength_samples"] != 4 {
-		t.Fatalf("wavelength samples = %v, want 4", intermediate.Renders[0]["wavelength_samples"])
+	if intermediate.Renders[0]["wavelength_samples"] != 1 {
+		t.Fatalf("wavelength samples = %v, want 1", intermediate.Renders[0]["wavelength_samples"])
 	}
 }
 

@@ -158,6 +158,7 @@ func renderDirectAreaLight(t *testing.T, sigmaA float64, samples int64) float64 
 	handler := NewHandler(geometry.DefaultSceneSpace())
 	handler.IntegratorKind = IntegratorLightTracing
 	handler.SpectrumMode = optics.SpectrumModeHeroWavelength
+	handler.WavelengthSamples = 1
 	handler.ThreadNum = 1
 	handler.MaxRayLevel = 0
 	film := renderCamera.Film

@@ -20,17 +20,17 @@ type bdptPreparedState struct {
 	totalWork    int64
 }
 
-type bdptKernel struct {
-	prepared *bdptPreparedState
-}
+func (*bdptPreparedState) preparedIntegratorState() {}
 
-func (k *bdptKernel) Prepare(context *RenderContext) error {
+type bdptKernel struct{}
+
+func (k *bdptKernel) Prepare(context *RenderContext) (PreparedIntegratorState, error) {
 	if k == nil || context == nil {
-		return fmt.Errorf("BDPT kernel or render context is nil")
+		return nil, fmt.Errorf("BDPT kernel or render context is nil")
 	}
 	scene, err := context.Handler.prepareBDPT(context.Camera, context.ObjectTree)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	film := context.Camera.GetFilm()
 	shape := film.Shape
@@ -61,34 +61,35 @@ func (k *bdptKernel) Prepare(context *RenderContext) error {
 		state.wavelengths = int64(context.Handler.wavelengthSampleCount())
 	}
 	state.totalWork = context.Samples * int64(len(activePixels)) * state.wavelengths
-	k.prepared = state
-	return nil
+	return state, nil
 }
 
-func (k *bdptKernel) WorkCount(*RenderContext) int64 {
-	if k == nil || k.prepared == nil {
+func (k *bdptKernel) WorkCount(_ *RenderContext, prepared PreparedIntegratorState) int64 {
+	state, ok := prepared.(*bdptPreparedState)
+	if k == nil || !ok || state == nil {
 		return 0
 	}
-	return k.prepared.totalWork
+	return state.totalWork
 }
 
-func (k *bdptKernel) TraceSample(context *RenderContext, workIndex int64) []FilmSplat {
-	if k == nil || k.prepared == nil || len(k.prepared.activePixels) == 0 {
+func (k *bdptKernel) TraceSample(context *RenderContext, prepared PreparedIntegratorState, workIndex int64) []FilmSplat {
+	state, ok := prepared.(*bdptPreparedState)
+	if k == nil || !ok || state == nil || len(state.activePixels) == 0 {
 		return nil
 	}
-	activeCount := len(k.prepared.activePixels)
-	pixel := k.prepared.activePixels[int(workIndex%int64(activeCount))]
+	activeCount := len(state.activePixels)
+	pixel := state.activePixels[int(workIndex%int64(activeCount))]
 	coords := context.Camera.GetFilm().SpectralBins[0].GetCoordinates(pixel)
 
 	u := rand.Float64()
 	if context.Handler.SpectrumMode == optics.SpectrumModeSampledWavelengths {
-		stratum := (workIndex / int64(activeCount)) % k.prepared.wavelengths
-		u = (float64(stratum) + u) / float64(k.prepared.wavelengths)
+		stratum := (workIndex / int64(activeCount)) % state.wavelengths
+		u = (float64(stratum) + u) / float64(state.wavelengths)
 	}
 	wavelength := context.Handler.wavelengthSampler().Sample(u)
 	wavelengthNM, wavelengthPDF := wavelength.LambdaNM, wavelength.PDF
 	local, remoteSplats := context.Handler.traceBidirectionalPrepared(
-		k.prepared.scene,
+		state.scene,
 		context.Camera,
 		context.ObjectTree,
 		wavelengthNM,
@@ -109,7 +110,7 @@ func (k *bdptKernel) TraceSample(context *RenderContext, workIndex int64) []Film
 
 	for _, splat := range remoteSplats {
 		splats = append(splats, filterBDPTSplat(
-			splat, k.prepared.width, k.prepared.height, k.prepared.activeMask,
+			splat, state.width, state.height, state.activeMask,
 		)...)
 	}
 	return splats

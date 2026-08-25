@@ -53,7 +53,11 @@ func (h *Handler) Renders() *Handler {
 	for idx, render := range h.Script.Renders {
 		fmt.Printf("Starting render job %d/%d\n", idx+1, len(h.Script.Renders))
 
-		context := mergeRenderContext(defaultRenderContext(), renderScriptContext(render))
+		context, err := ResolveRenderSpec(render)
+		if err != nil {
+			h.err = fmt.Errorf("render[%d]: %w", idx, err)
+			return h
+		}
 		h.ConfigureRenderContext(context).
 			Render().
 			SaveFilm(h.Context.OutputFilm)

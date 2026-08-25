@@ -35,10 +35,19 @@ func ParseIntegratorKind(value string) (IntegratorKind, error) {
 // kernels, so pixel-driven and splat-driven transports share one lifecycle
 // without pretending to have the same scheduling semantics.
 type SceneIntegrator interface {
-	Run(*RenderContext) error
+	Prepare(*RenderContext) (PreparedIntegratorState, error)
+	Run(*RenderContext, PreparedIntegratorState) error
 	EffectiveSampleCount(*RenderContext) int64
 	ConcurrentFilmWrites() bool
 }
+
+type PreparedIntegratorState interface {
+	preparedIntegratorState()
+}
+
+type pixelPreparedState struct{}
+
+func (pixelPreparedState) preparedIntegratorState() {}
 
 // NewSceneIntegrator resolves configuration once, before rendering begins.
 func NewSceneIntegrator(kind IntegratorKind, handler *Handler) (SceneIntegrator, error) {
@@ -68,7 +77,11 @@ func (d *pixelSceneIntegrator) EffectiveSampleCount(context *RenderContext) int6
 	return context.Handler.EffectiveSampleCount(context.Samples)
 }
 
-func (d *pixelSceneIntegrator) Run(context *RenderContext) error {
+func (d *pixelSceneIntegrator) Prepare(*RenderContext) (PreparedIntegratorState, error) {
+	return pixelPreparedState{}, nil
+}
+
+func (d *pixelSceneIntegrator) Run(context *RenderContext, _ PreparedIntegratorState) error {
 	if d == nil || d.kernel == nil {
 		return fmt.Errorf("pixel driver kernel is nil")
 	}
@@ -86,9 +99,6 @@ func (d *pixelSceneIntegrator) Run(context *RenderContext) error {
 	defer progress.Close()
 
 	workerCount := context.Handler.ThreadNum
-	if workerCount <= 0 {
-		workerCount = 1
-	}
 	var nextTile atomic.Int64
 	var workers sync.WaitGroup
 	workers.Add(workerCount)
@@ -118,9 +128,9 @@ type FilmSplat struct {
 }
 
 type splatKernel interface {
-	Prepare(*RenderContext) error
-	WorkCount(*RenderContext) int64
-	TraceSample(*RenderContext, int64) []FilmSplat
+	Prepare(*RenderContext) (PreparedIntegratorState, error)
+	WorkCount(*RenderContext, PreparedIntegratorState) int64
+	TraceSample(*RenderContext, PreparedIntegratorState, int64) []FilmSplat
 }
 
 type splatSceneIntegrator struct {
@@ -135,14 +145,18 @@ func (d *splatSceneIntegrator) EffectiveSampleCount(context *RenderContext) int6
 	return context.Samples
 }
 
-func (d *splatSceneIntegrator) Run(context *RenderContext) error {
+func (d *splatSceneIntegrator) Prepare(context *RenderContext) (PreparedIntegratorState, error) {
+	if d == nil || d.kernel == nil {
+		return nil, fmt.Errorf("splat driver kernel is nil")
+	}
+	return d.kernel.Prepare(context)
+}
+
+func (d *splatSceneIntegrator) Run(context *RenderContext, prepared PreparedIntegratorState) error {
 	if d == nil || d.kernel == nil {
 		return fmt.Errorf("splat driver kernel is nil")
 	}
-	if err := d.kernel.Prepare(context); err != nil {
-		return err
-	}
-	totalWork := d.kernel.WorkCount(context)
+	totalWork := d.kernel.WorkCount(context, prepared)
 	if totalWork <= 0 {
 		return nil
 	}
@@ -150,9 +164,6 @@ func (d *splatSceneIntegrator) Run(context *RenderContext) error {
 	progress := newProgressReporter("Splat tracing", "paths", totalWork)
 	defer progress.Close()
 	workerCount := context.Handler.ThreadNum
-	if workerCount <= 0 {
-		workerCount = 1
-	}
 	var nextWork atomic.Int64
 	var workers sync.WaitGroup
 	workers.Add(workerCount)
@@ -166,7 +177,7 @@ func (d *splatSceneIntegrator) Run(context *RenderContext) error {
 				}
 				batchEnd := min(batchStart+splatWorkBatchSize, totalWork)
 				for workIndex := batchStart; workIndex < batchEnd; workIndex++ {
-					for _, splat := range d.kernel.TraceSample(context, workIndex) {
+					for _, splat := range d.kernel.TraceSample(context, prepared, workIndex) {
 						d.accumulate(context, splat, totalWork)
 					}
 				}

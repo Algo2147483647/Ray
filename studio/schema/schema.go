@@ -31,15 +31,6 @@ type StudioRenderScript struct {
 	WavelengthSamples int    `json:"wavelength_samples"`
 }
 
-const DefaultSampledWavelengthCount = 4
-
-func NormalizeWavelengthSamples(spectrumMode string, wavelengthSamples int) int {
-	if spectrumMode == "sampled" && wavelengthSamples <= 1 {
-		return DefaultSampledWavelengthCount
-	}
-	return wavelengthSamples
-}
-
 func MergeRenderScripts(base, override StudioRenderScript) StudioRenderScript {
 	if override.Integrator != "" {
 		base.Integrator = override.Integrator

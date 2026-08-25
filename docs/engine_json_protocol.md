@@ -343,6 +343,15 @@ features.
 380–750 nm. The default is 64 and the supported range is 1–4096. This is
 independent of `render.wavelength_samples`.
 
+`film.output_film` is required for every Camera selected by a Render. Engine no
+longer invents a process-relative output filename.
+
+Render defaults are applied exactly once by `ResolveRenderSpec`: `path`, 20
+camera samples, the available CPU count, and `hero_wavelength` with one
+wavelength sample. In `sampled` mode an omitted `wavelength_samples` resolves to
+four; any explicit positive value is preserved. Runtime renderer and Film
+objects do not apply a second set of render defaults.
+
 If the scene has no cameras, engine returns an error. Use studio to generate the
 default authoring camera.
 

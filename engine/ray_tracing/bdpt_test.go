@@ -63,8 +63,23 @@ func newBDPTTestHandler() *Handler {
 	h := NewHandler(geometry.DefaultSceneSpace())
 	h.IntegratorKind = IntegratorBDPT
 	h.SpectrumMode = optics.SpectrumModeRGB
+	h.ThreadNum = 1
 	h.MaxRayLevel = 3
 	return h
+}
+
+func (h *Handler) traceBidirectionalSample(
+	renderCamera camera.RayCamera,
+	objTree *object.ObjectTree,
+	wavelengthNM, wavelengthPDF float64,
+	index ...int,
+) optics.Spectrum {
+	state, err := h.prepareBDPT(renderCamera, objTree)
+	if err != nil {
+		return zeroSpectrum(wavelengthNM)
+	}
+	result, _ := h.traceBidirectionalPrepared(state, renderCamera, objTree, wavelengthNM, wavelengthPDF, index...)
+	return result
 }
 
 func TestBDPTPreflightValidatesBeforeFilmIndexing(t *testing.T) {
@@ -133,9 +148,9 @@ func TestBDPTPreflightAcceptsIdealTransmissionAndMediumBoundary(t *testing.T) {
 	addTestAreaLight(tree, []float64{0, 0, 3})
 	tree.AddObject(&object.Object{
 		Shape: shape.NewSphere(mat.NewVecDense(3, []float64{0, 0, 1}), 0.25),
-		Material: &material.Material{Surface: bsdf.NewSingle(bxdf.NewSpecularDielectricConstant(
+		Material: &material.Material{Surface: bxdf.NewSpecularDielectricConstant(
 			optics.ConstantSpectrum(1), optics.ConstantSpectrum(1), 1, 1.5,
-		))},
+		)},
 		MediumBoundary: medium.NewBoundary(medium.MediumAir, glassID),
 	})
 	tree.Build()
@@ -150,8 +165,8 @@ func TestBDPTPreflightAcceptsReciprocalRoughReflection(t *testing.T) {
 	tree.AddObject(&object.Object{
 		Shape: shape.NewSphere(mat.NewVecDense(3, []float64{0, 0, 1}), 0.25),
 		Material: &material.Material{Surface: bsdf.NewWeightedMixture(
-			bsdf.WeightedBxDF{Weight: 0.5, BxDF: bxdf.NewLambert(optics.ConstantSpectrum(0.7))},
-			bsdf.WeightedBxDF{Weight: 0.5, BxDF: bxdf.NewRoughDielectricReflection(
+			bsdf.WeightedScattering{Weight: 0.5, Scattering: bxdf.NewLambert(optics.ConstantSpectrum(0.7))},
+			bsdf.WeightedScattering{Weight: 0.5, Scattering: bxdf.NewRoughDielectricReflection(
 				optics.ConstantSpectrum(1), 1, 1.5, 0.2,
 			)},
 		)},
@@ -172,9 +187,9 @@ func TestBDPTRandomWalkTransmitsAndAbsorbsInsideMedium(t *testing.T) {
 	}
 	tree := (&object.ObjectTree{Media: registry}).Build()
 	boundary := medium.NewBoundary(medium.MediumAir, glassID)
-	dielectric := &material.Material{Surface: bsdf.NewSingle(bxdf.NewSpecularDielectricConstant(
+	dielectric := &material.Material{Surface: bxdf.NewSpecularDielectricConstant(
 		optics.ConstantSpectrum(1), optics.ConstantSpectrum(1), 1, 1,
-	))}
+	)}
 	tree.AddObject(&object.Object{
 		Shape: shape.NewTriangle(
 			mat.NewVecDense(3, []float64{-2, -2, 1}),
@@ -229,7 +244,7 @@ func TestBDPTBuildsRealCameraAndLightEndpoints(t *testing.T) {
 			mat.NewVecDense(3, []float64{0, 4, 2}),
 			mat.NewVecDense(3, []float64{4, -4, 2}),
 		),
-		Material: &material.Material{Surface: bsdf.NewSingle(bxdf.NewLambert(optics.ConstantSpectrum(0.8)))},
+		Material: &material.Material{Surface: bxdf.NewLambert(optics.ConstantSpectrum(0.8))},
 	})
 	addTestAreaLight(tree, []float64{2, 0, 1})
 	tree.Build()
@@ -307,7 +322,7 @@ func TestBDPTFiniteAreaLightConnectsToLambertCameraVertex(t *testing.T) {
 			mat.NewVecDense(3, []float64{3, -3, 2}),
 			mat.NewVecDense(3, []float64{0, 3, 2}),
 		),
-		Material: &material.Material{Surface: bsdf.NewSingle(bxdf.NewLambert(optics.ConstantSpectrum(0.8)))},
+		Material: &material.Material{Surface: bxdf.NewLambert(optics.ConstantSpectrum(0.8))},
 	})
 	addTestAreaLight(tree, []float64{1.5, 0, 1})
 	tree.Build()
@@ -333,7 +348,7 @@ func TestBDPTCachedMISWeightsSamePathAsPartition(t *testing.T) {
 		Material: &material.Material{Emission: emission.NewConstant(optics.ConstantSpectrum(1))},
 	}
 	surfaceObject := &object.Object{Material: &material.Material{
-		Surface: bsdf.NewSingle(bxdf.NewLambert(optics.ConstantSpectrum(0.8))),
+		Surface: bxdf.NewLambert(optics.ConstantSpectrum(0.8)),
 	}}
 	lightNormal := mat.NewVecDense(3, []float64{0, 0, -1})
 	surfaceNormal := mat.NewVecDense(3, []float64{0, 0, 1})
@@ -376,7 +391,7 @@ func TestBDPTCachedMISWeightsSamePathAsPartition(t *testing.T) {
 func TestBDPTMISPartitionAcrossRandomizedDirectPaths(t *testing.T) {
 	rng := randv2.New(randv2.NewPCG(0x2147483647, 0x5eed))
 	lambertObject := &object.Object{Material: &material.Material{
-		Surface: bsdf.NewSingle(bxdf.NewLambert(optics.ConstantSpectrum(0.8))),
+		Surface: bxdf.NewLambert(optics.ConstantSpectrum(0.8)),
 	}}
 	for sample := 0; sample < 128; sample++ {
 		lightPoint := mat.NewVecDense(3, []float64{
@@ -490,7 +505,7 @@ func TestBDPTUnifiedT1ProjectsPathAfterDeltaEvent(t *testing.T) {
 	screenNormal := mat.NewVecDense(3, []float64{0, 0, -1})
 	screenFrame, _ := maths.NewFrameFromNormal(screenNormal)
 	screenObject := &object.Object{Material: &material.Material{
-		Surface: bsdf.NewSingle(bxdf.NewLambert(optics.ConstantSpectrum(0.8))),
+		Surface: bxdf.NewLambert(optics.ConstantSpectrum(0.8)),
 	}}
 	screen := bdptVertex{
 		Kind: bdptVertexSurface, Point: mat.NewVecDense(3, []float64{0, 0, 2}),

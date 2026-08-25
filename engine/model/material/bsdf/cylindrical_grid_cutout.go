@@ -9,7 +9,7 @@ import (
 )
 
 type CylindricalGridCutout struct {
-	Line            BSDF
+	Line            bxdf.Scattering
 	Origin          maths.Direction
 	Axis            maths.Direction
 	Reference       maths.Direction
@@ -21,7 +21,7 @@ type CylindricalGridCutout struct {
 }
 
 func NewCylindricalGridCutout(
-	line BSDF,
+	line bxdf.Scattering,
 	origin, axis, reference maths.Direction,
 	gapWidth, gapHeight, lineWidth, referenceRadius float64,
 ) CylindricalGridCutout {

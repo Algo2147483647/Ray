@@ -30,16 +30,11 @@ func TestCameraNDimGenerateRay3D(t *testing.T) {
 	if norm := mat.Norm(ray.Direction, 2); math.Abs(norm-1.0) > 1e-10 {
 		t.Fatalf("expected normalized direction, got norm %f", norm)
 	}
-	if ray.WaveLength != 0 {
-		t.Fatalf("expected camera to leave wavelength sampling to the renderer, got %f", ray.WaveLength)
+	if ray.Path.Wavelength != nil {
+		t.Fatalf("expected camera to leave wavelength sampling to the renderer, got %+v", ray.Path.Wavelength)
 	}
-	if ray.WavelengthPDF != 0 {
-		t.Fatalf("expected camera ray wavelength pdf to remain unset, got %f", ray.WavelengthPDF)
-	}
-	for i := 0; i < 3; i++ {
-		if ray.Color[i] != 1 {
-			t.Fatalf("expected camera ray throughput to start white, got %v", ray.Color)
-		}
+	if ray.Path.Throughput.RGB != (optics.RGB{1, 1, 1}) {
+		t.Fatalf("expected camera ray throughput to start white, got %+v", ray.Path.Throughput)
 	}
 }
 
@@ -118,8 +113,8 @@ func TestCameraNDimGenerateRayResetsReusedRayMediumState(t *testing.T) {
 	if got := ray.MediumStack.Current(); got != medium.MediumAir {
 		t.Fatalf("expected GenerateRay to reset medium stack to air, got %v", got)
 	}
-	if ray.WaveLength != 0 || ray.WavelengthPDF != 0 {
-		t.Fatalf("expected GenerateRay to reset spectral state, got wavelength=%f pdf=%f", ray.WaveLength, ray.WavelengthPDF)
+	if ray.Path.Wavelength != nil {
+		t.Fatalf("expected GenerateRay to reset spectral state, got %+v", ray.Path.Wavelength)
 	}
 }
 

@@ -127,13 +127,9 @@ func TestParseRoughConductorWeight(t *testing.T) {
 		t.Fatalf("ParseMaterials failed: %v", err)
 	}
 
-	single, ok := materials["warm-metal"].Surface.(bsdf.Single)
+	got, ok := materials["warm-metal"].Surface.(bxdf.RoughConductor)
 	if !ok {
-		t.Fatalf("expected single BSDF, got %T", materials["warm-metal"].Surface)
-	}
-	got, ok := single.BxDF.(bxdf.RoughConductor)
-	if !ok {
-		t.Fatalf("expected rough conductor, got %T", single.BxDF)
+		t.Fatalf("expected rough conductor, got %T", materials["warm-metal"].Surface)
 	}
 
 	bounds := got.Weight.Bounds().Max
@@ -166,13 +162,9 @@ func TestParseRoughDielectricTransmission(t *testing.T) {
 		t.Fatalf("ParseMaterials failed: %v", err)
 	}
 
-	single, ok := materials["frosted-glass"].Surface.(bsdf.Single)
+	got, ok := materials["frosted-glass"].Surface.(bxdf.RoughDielectricTransmission)
 	if !ok {
-		t.Fatalf("expected single BSDF, got %T", materials["frosted-glass"].Surface)
-	}
-	got, ok := single.BxDF.(bxdf.RoughDielectricTransmission)
-	if !ok {
-		t.Fatalf("expected rough dielectric transmission, got %T", single.BxDF)
+		t.Fatalf("expected rough dielectric transmission, got %T", materials["frosted-glass"].Surface)
 	}
 	if got.Alpha <= 0 || got.Alpha > 1 {
 		t.Fatalf("expected clamped alpha in (0,1], got %f", got.Alpha)
@@ -224,12 +216,9 @@ func TestParseWeightedMixture(t *testing.T) {
 	if mixture.Components[0].Weight != 0.8 || mixture.Components[1].Weight != 0.2 {
 		t.Fatalf("unexpected component weights: %+v", mixture.Components)
 	}
-	glaze, ok := mixture.Components[1].BxDF.(bsdf.Single)
+	_, ok = mixture.Components[1].Scattering.(bxdf.RoughDielectricReflection)
 	if !ok {
-		t.Fatalf("expected glaze component to be a single BSDF, got %T", mixture.Components[1].BxDF)
-	}
-	if _, ok := glaze.BxDF.(bxdf.RoughDielectricReflection); !ok {
-		t.Fatalf("expected rough dielectric glaze, got %T", glaze.BxDF)
+		t.Fatalf("expected rough dielectric glaze, got %T", mixture.Components[1].Scattering)
 	}
 }
 
