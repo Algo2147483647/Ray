@@ -92,13 +92,13 @@ func (k *bdptKernel) TraceSample(context *RenderContext, prepared PreparedIntegr
 	)
 
 	splats := make([]FilmSplat, 0, 1+len(remoteSplats))
-	if validSpectrum(local) {
+	if validPower(local) {
 		splats = append(splats, FilmSplat{
 			Pixel: pixel, WavelengthNM: wavelengthNM, WavelengthPDF: wavelengthPDF,
 			// Global work samples camera pixels uniformly. Multiplying the local
 			// estimator by the active pixel count restores per-pixel spp after
 			// splatSceneIntegrator divides by totalWork.
-			Value: local.MulScalar(float64(activeCount)),
+			Value: local * float64(activeCount),
 		})
 	}
 

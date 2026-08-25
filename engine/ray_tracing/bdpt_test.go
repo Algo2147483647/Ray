@@ -84,12 +84,12 @@ func (h *Handler) traceBidirectionalSample(
 	objTree *object.ObjectTree,
 	wavelengthNM, wavelengthPDF float64,
 	index ...int,
-) optics.Spectrum {
+) float64 {
 	film := camera.NewFilm(1, 1)
 	film.InitSpectralBins(3, 400, 700)
 	state, err := h.prepareBDPT(renderCamera, film, objTree)
 	if err != nil {
-		return zeroSpectrum(wavelengthNM)
+		return 0
 	}
 	result, _ := h.traceBidirectionalPrepared(state, renderCamera, film.Shape, objTree, wavelengthNM, wavelengthPDF, index...)
 	return result
@@ -228,14 +228,15 @@ func TestBDPTRandomWalkTransmitsAndAbsorbsInsideMedium(t *testing.T) {
 	h := newBDPTTestHandler()
 	ray := &optics.Ray{Space: h.Space}
 	ray.Init()
+	ray.SetSpectralWavelength(550)
 	ray.Origin.CopyVec(mat.NewVecDense(3, []float64{0, 0, 0}))
 	ray.Direction.CopyVec(mat.NewVecDense(3, []float64{0, 0, 1}))
 	path := []bdptVertex{{
 		Kind: bdptVertexCamera, Point: mat.NewVecDense(3, []float64{0, 0, 0}),
-		Beta: optics.ConstantSpectrum(1), PDFFwdArea: 1, Connectible: true,
+		Beta: 1, PDFFwdArea: 1, Connectible: true,
 		MediumStack: medium.NewStack(medium.MediumAir),
 	}}
-	path = h.randomWalk(tree, ray, optics.ConstantSpectrum(1), 1, bxdf.TransportRadiance, 3, path)
+	path = h.randomWalk(tree, ray, 1, 1, bxdf.TransportRadiance, 3, path)
 	if len(path) < 3 {
 		t.Fatalf("camera path did not cross both interfaces: %d vertices", len(path))
 	}
@@ -245,10 +246,8 @@ func TestBDPTRandomWalkTransmitsAndAbsorbsInsideMedium(t *testing.T) {
 			exit.Context.IncidentMedium, exit.Context.TransmitMedium, exit.Context.Entering)
 	}
 	want := math.Exp(-0.7)
-	for channel := 0; channel < 3; channel++ {
-		if got := exit.Beta.RGBChannel(channel); math.Abs(got-want) > 1e-10 {
-			t.Fatalf("channel %d slab transmittance = %g, want %g", channel, got, want)
-		}
+	if got := exit.Beta; math.Abs(got-want) > 1e-10 {
+		t.Fatalf("slab transmittance = %g, want %g", got, want)
 	}
 }
 
@@ -270,8 +269,8 @@ func TestBDPTBuildsRealCameraAndLightEndpoints(t *testing.T) {
 	if err != nil {
 		t.Fatalf("preflight: %v", err)
 	}
-	cameraPath := h.buildCameraSubpath(cam, cam.Film.Shape, tree, 0, 0, 0, 0)
-	lightPath := h.buildLightSubpath(tree, state.Lights, state.TotalLightWeight, 0, 0)
+	cameraPath := h.buildCameraSubpath(cam, cam.Film.Shape, tree, 550, optics.UniformWavelengthPDF(), 0, 0)
+	lightPath := h.buildLightSubpath(tree, state.Lights, state.TotalLightWeight, 550, optics.UniformWavelengthPDF())
 	if len(cameraPath) < 2 || cameraPath[0].Kind != bdptVertexCamera || cameraPath[0].Camera == nil {
 		t.Fatalf("camera path has no real endpoint: %+v", cameraPath)
 	}
@@ -294,8 +293,8 @@ func TestBDPTS0CameraHitEmissionIsEnumerated(t *testing.T) {
 		Material: &material.Material{Emission: emission.NewConstant(optics.ConstantSpectrum(3))},
 	})
 	tree.Build()
-	value := newBDPTTestHandler().traceBidirectionalSample(newBDPTTestCamera(t, 1, 1), tree, 0, 0, 0, 0)
-	if !validSpectrum(value) {
+	value := newBDPTTestHandler().traceBidirectionalSample(newBDPTTestCamera(t, 1, 1), tree, 550, optics.UniformWavelengthPDF(), 0, 0)
+	if !validPower(value) {
 		t.Fatalf("s=0 camera-hit emission did not contribute: %+v", value)
 	}
 }
@@ -342,8 +341,8 @@ func TestBDPTFiniteAreaLightConnectsToLambertCameraVertex(t *testing.T) {
 	})
 	addTestAreaLight(tree, []float64{1.5, 0, 1})
 	tree.Build()
-	value := newBDPTTestHandler().traceBidirectionalSample(newBDPTTestCamera(t, 1, 1), tree, 0, 0, 0, 0)
-	if !value.IsFinite() || !value.IsNonNegative() {
+	value := newBDPTTestHandler().traceBidirectionalSample(newBDPTTestCamera(t, 1, 1), tree, 550, optics.UniformWavelengthPDF(), 0, 0)
+	if !maths.IsFinite(value) || value < 0 {
 		t.Fatalf("invalid BDPT contribution: %+v", value)
 	}
 }
@@ -510,7 +509,8 @@ func TestBDPTUnifiedT1ProjectsPathAfterDeltaEvent(t *testing.T) {
 	root := bdptVertex{
 		Kind: bdptVertexLight, Point: mat.NewVecDense(3, []float64{1, 0, 0}),
 		GeometricNormal: rootNormal, Frame: rootFrame, Object: rootObject,
-		Beta: optics.ConstantSpectrum(1), PDFFwdArea: 1, Connectible: true,
+		Context: bxdf.ShadingContext{WavelengthNM: 550, WavelengthsNM: []float64{550}},
+		Beta:    1, PDFFwdArea: 1, Connectible: true,
 		MediumStack: medium.NewStack(medium.MediumAir),
 	}
 	delta := bdptVertex{
@@ -529,7 +529,8 @@ func TestBDPTUnifiedT1ProjectsPathAfterDeltaEvent(t *testing.T) {
 			mat.NewVecDense(3, []float64{0, 0, 2}),
 			mat.NewVecDense(3, []float64{1, 0, 1}),
 		)),
-		Object: screenObject, Beta: optics.ConstantSpectrum(1),
+		Context: bxdf.ShadingContext{WavelengthNM: 550, WavelengthsNM: []float64{550}},
+		Object:  screenObject, Beta: 1,
 		PDFFwdArea: 1, Connectible: true,
 		MediumStack: medium.NewStack(medium.MediumAir),
 	}
@@ -542,7 +543,7 @@ func TestBDPTUnifiedT1ProjectsPathAfterDeltaEvent(t *testing.T) {
 	value, _, isSplat, ok := newBDPTTestHandler().connectBDPTStrategy(
 		&bdptSceneState{}, cam, []int{4, 4}, nil, lightPath, cameraPath, 3, 1,
 	)
-	if !ok || !isSplat || !validSpectrum(value) {
+	if !ok || !isSplat || !validPower(value) {
 		t.Fatalf("unified t=1 strategy failed after Delta event: value=%+v splat=%v ok=%v", value, isSplat, ok)
 	}
 	if weight := bdptMISWeight(nil, cam, lightPath, cameraPath, 3, 1); weight <= 0 {
@@ -568,7 +569,7 @@ func TestBDPTSegmentMediumUsesOutgoingSide(t *testing.T) {
 
 func TestBDPTReconstructionFilterDoesNotRenormalizeAtCrop(t *testing.T) {
 	splat := FilmSplat{
-		Value:      optics.ConstantSpectrum(8),
+		Value:      8,
 		projection: camera.FilmProjection{Position: []float64{1.25, 1.75}},
 	}
 	fullMask := make([]bool, 16)
@@ -581,7 +582,7 @@ func TestBDPTReconstructionFilterDoesNotRenormalizeAtCrop(t *testing.T) {
 	}
 	var fullSum float64
 	for _, item := range full {
-		fullSum += item.Value.RGBChannel(0)
+		fullSum += item.Value
 	}
 	if math.Abs(fullSum-8) > 1e-12 {
 		t.Fatalf("full filter energy = %g, want 8", fullSum)
@@ -593,7 +594,7 @@ func TestBDPTReconstructionFilterDoesNotRenormalizeAtCrop(t *testing.T) {
 	if len(cropped) != 1 {
 		t.Fatalf("cropped splat count = %d, want 1", len(cropped))
 	}
-	if got := cropped[0].Value.RGBChannel(0); math.Abs(got-8) > 1e-12 {
+	if got := cropped[0].Value; math.Abs(got-8) > 1e-12 {
 		t.Fatalf("box-filtered crop value = %g, want 8", got)
 	}
 	cropMask[2*4+1] = false

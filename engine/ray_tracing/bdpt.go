@@ -512,30 +512,34 @@ func (h *Handler) connectBDPTStrategy(
 	tree *object.ObjectTree,
 	lightPath, cameraPath []bdptVertex,
 	s, t int,
-) (optics.Spectrum, camera.FilmProjection, bool, bool) {
+) (float64, camera.FilmProjection, bool, bool) {
 	if t <= 0 || t > len(cameraPath) || s < 0 || s > len(lightPath) {
-		return optics.Spectrum{}, camera.FilmProjection{}, false, false
+		return 0, camera.FilmProjection{}, false, false
 	}
 	if s == 0 {
 		pt := &cameraPath[t-1]
 		if pt.Kind != bdptVertexSurface || pt.Object == nil || pt.Object.Material == nil || !pt.Object.Material.HasEmission() {
-			return optics.Spectrum{}, camera.FilmProjection{}, false, false
+			return 0, camera.FilmProjection{}, false, false
 		}
 		if t < 2 {
-			return optics.Spectrum{}, camera.FilmProjection{}, false, false
+			return 0, camera.FilmProjection{}, false, false
 		}
 		previous := &cameraPath[t-2]
 		toPrevious := directionBetween(pt.Point, previous.Point)
 		if toPrevious == nil {
-			return optics.Spectrum{}, camera.FilmProjection{}, false, false
+			return 0, camera.FilmProjection{}, false, false
 		}
 		wo := pt.emissionLocal(toPrevious)
-		value := pt.Beta.Mul(pt.Object.Material.Emission.Eval(pt.Context, wo))
-		return value, camera.FilmProjection{}, false, validSpectrum(value)
+		emitted, ok := powerAtWavelength(pt.Object.Material.Emission.Eval(pt.Context, wo), pt.Context.WavelengthNM)
+		if !ok {
+			return 0, camera.FilmProjection{}, false, false
+		}
+		value := pt.Beta * emitted
+		return value, camera.FilmProjection{}, false, validPower(value)
 	}
 	if t == 1 {
 		if s < 2 {
-			return optics.Spectrum{}, camera.FilmProjection{}, true, false
+			return 0, camera.FilmProjection{}, true, false
 		}
 		value, projection, ok := projectLightVertex(renderCamera, filmShape, tree, &lightPath[s-1])
 		return value, projection, true, ok
@@ -544,53 +548,65 @@ func (h *Handler) connectBDPTStrategy(
 	return value, camera.FilmProjection{}, false, ok
 }
 
-func (h *Handler) connectBDPTVertices(tree *object.ObjectTree, lv, cv *bdptVertex) (optics.Spectrum, bool) {
+func (h *Handler) connectBDPTVertices(tree *object.ObjectTree, lv, cv *bdptVertex) (float64, bool) {
 	if lv == nil || cv == nil || cv.Kind != bdptVertexSurface || !cv.Connectible ||
 		cv.Object == nil || cv.Object.Material == nil || !cv.Object.Material.HasSurface() {
-		return optics.Spectrum{}, false
+		return 0, false
 	}
 	toCamera := directionBetween(lv.Point, cv.Point)
 	if toCamera == nil {
-		return optics.Spectrum{}, false
+		return 0, false
 	}
 	distance2 := maths.SquaredDistance(lv.Point, cv.Point)
 	distance := math.Sqrt(distance2)
 	if !visibleSegment(tree, lv.Point, cv.Point, toCamera, distance) {
-		return optics.Spectrum{}, false
+		return 0, false
 	}
 	toLight := negated(toCamera)
 	wiCamera := cv.Frame.WorldToLocal(toLight)
 	fCamera := cv.Object.Material.Surface.Eval(cv.Context, wiCamera, cv.WoLocal)
 	if fCamera.IsZero() {
-		return optics.Spectrum{}, false
+		return 0, false
 	}
 	cosLight := absDot(lv.GeometricNormal, toCamera)
 	cosCamera := absDot(cv.GeometricNormal, toLight)
 	if cosLight <= 0 || cosCamera <= 0 {
-		return optics.Spectrum{}, false
+		return 0, false
 	}
 	geometryTerm := cosLight * cosCamera / distance2
 
-	var lightFactor optics.Spectrum
+	var lightFactor float64
 	if lv.Kind == bdptVertexLight {
 		woLight := lv.emissionLocal(toCamera)
-		lightFactor = lv.Object.Material.Emission.Eval(lv.Context, woLight).Mul(lv.Beta)
+		emitted, ok := powerAtWavelength(lv.Object.Material.Emission.Eval(lv.Context, woLight), lv.Context.WavelengthNM)
+		if !ok {
+			return 0, false
+		}
+		lightFactor = emitted * lv.Beta
 	} else {
 		if lv.Kind != bdptVertexSurface || !lv.Connectible || lv.Object == nil ||
 			lv.Object.Material == nil || !lv.Object.Material.HasSurface() {
-			return optics.Spectrum{}, false
+			return 0, false
 		}
 		wiLight := lv.Frame.WorldToLocal(toCamera)
 		fLight := lv.Object.Material.Surface.Eval(lv.Context, wiLight, lv.WoLocal)
 		if fLight.IsZero() {
-			return optics.Spectrum{}, false
+			return 0, false
 		}
-		lightFactor = lv.Beta.Mul(fLight)
+		f, ok := powerAtWavelength(fLight, lv.Context.WavelengthNM)
+		if !ok {
+			return 0, false
+		}
+		lightFactor = lv.Beta * f
+	}
+	fCameraPower, ok := powerAtWavelength(fCamera, cv.Context.WavelengthNM)
+	if !ok {
+		return 0, false
 	}
 	mediumID := bdptSegmentMedium(lv, toCamera)
 	transmittance := evaluateSegmentTransmittance(getMediumRegistry(tree), mediumID, distance, lv.Context)
-	contribution := transmittance.ApplyToSpectrum(lightFactor.Mul(cv.Beta).Mul(fCamera)).MulScalar(geometryTerm)
-	return contribution, validSpectrum(contribution)
+	contribution := transmittance.ApplyToPower(lightFactor * cv.Beta * fCameraPower * geometryTerm)
+	return contribution, validPower(contribution)
 }
 
 func bdptSegmentMedium(vertex *bdptVertex, outgoing *mat.VecDense) medium.MediumID {
@@ -838,22 +854,8 @@ func setBDPTWavelength(ray *optics.Ray, wavelengthNM, wavelengthPDF float64) {
 	}
 }
 
-func unitSpectrum(wavelengthNM float64) optics.Spectrum {
-	if wavelengthNM > 0 {
-		return optics.NewSampledSpectrum([]float64{1})
-	}
-	return optics.ConstantSpectrum(1)
-}
-
-func zeroSpectrum(wavelengthNM float64) optics.Spectrum {
-	if wavelengthNM > 0 {
-		return optics.NewSampledSpectrum([]float64{0})
-	}
-	return optics.Spectrum{}
-}
-
-func validSpectrum(s optics.Spectrum) bool {
-	return s.IsFinite() && s.IsNonNegative() && !s.IsZero()
+func validPower(power float64) bool {
+	return power > 0 && !math.IsNaN(power) && !math.IsInf(power, 0)
 }
 
 func directionBetween(from, to *mat.VecDense) *mat.VecDense {

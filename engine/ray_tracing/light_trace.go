@@ -6,7 +6,6 @@ import (
 
 	"github.com/Algo2147483647/ray/engine/model/camera"
 	"github.com/Algo2147483647/ray/engine/model/object"
-	"github.com/Algo2147483647/ray/engine/model/optics"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -110,23 +109,23 @@ func projectLightVertex(
 	filmShape []int,
 	tree *object.ObjectTree,
 	vertex *bdptVertex,
-) (optics.Spectrum, camera.FilmProjection, bool) {
+) (float64, camera.FilmProjection, bool) {
 	if vertex == nil || vertex.Point == nil || vertex.GeometricNormal == nil || vertex.Object == nil || vertex.Object.Material == nil {
-		return optics.Spectrum{}, camera.FilmProjection{}, false
+		return 0, camera.FilmProjection{}, false
 	}
 	projection, ok := renderCamera.ProjectPoint(vertex.Point, filmShape)
 	if !ok {
-		return optics.Spectrum{}, camera.FilmProjection{}, false
+		return 0, camera.FilmProjection{}, false
 	}
 	cameraPoint := mat.VecDenseCopyOf(vertex.Point)
 	cameraPoint.AddScaledVec(cameraPoint, projection.Distance, projection.ToCamera)
 	if !visibleSegment(tree, vertex.Point, cameraPoint, projection.ToCamera, projection.Distance) {
-		return optics.Spectrum{}, camera.FilmProjection{}, false
+		return 0, camera.FilmProjection{}, false
 	}
 
 	cosCamera := absDot(vertex.GeometricNormal, projection.ToCamera)
 	if cosCamera <= 0 {
-		return optics.Spectrum{}, camera.FilmProjection{}, false
+		return 0, camera.FilmProjection{}, false
 	}
 	factor := projection.Jacobian * cosCamera
 	transmittance := evaluateSegmentTransmittance(
@@ -138,20 +137,26 @@ func projectLightVertex(
 
 	if vertex.Kind == bdptVertexLight {
 		wo := vertex.emissionLocal(projection.ToCamera)
-		value := transmittance.ApplyToSpectrum(
-			vertex.Object.Material.Emission.Eval(vertex.Context, wo).Mul(vertex.Beta),
-		).MulScalar(factor)
-		return value, projection, validSpectrum(value)
+		emitted, ok := powerAtWavelength(vertex.Object.Material.Emission.Eval(vertex.Context, wo), vertex.Context.WavelengthNM)
+		if !ok {
+			return 0, camera.FilmProjection{}, false
+		}
+		value := transmittance.ApplyToPower(emitted * vertex.Beta * factor)
+		return value, projection, validPower(value)
 	}
 	if !vertex.Object.Material.HasSurface() || !vertex.Connectible {
-		return optics.Spectrum{}, camera.FilmProjection{}, false
+		return 0, camera.FilmProjection{}, false
 	}
 
 	wi := vertex.Frame.WorldToLocal(projection.ToCamera)
 	f := vertex.Object.Material.Surface.Eval(vertex.Context, wi, vertex.WoLocal)
 	if f.IsZero() {
-		return optics.Spectrum{}, camera.FilmProjection{}, false
+		return 0, camera.FilmProjection{}, false
 	}
-	value := transmittance.ApplyToSpectrum(vertex.Beta.Mul(f)).MulScalar(factor)
-	return value, projection, validSpectrum(value)
+	fPower, ok := powerAtWavelength(f, vertex.Context.WavelengthNM)
+	if !ok {
+		return 0, camera.FilmProjection{}, false
+	}
+	value := transmittance.ApplyToPower(vertex.Beta * fPower * factor)
+	return value, projection, validPower(value)
 }

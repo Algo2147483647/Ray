@@ -123,7 +123,7 @@ type FilmSplat struct {
 	Pixel         int
 	WavelengthNM  float64
 	WavelengthPDF float64
-	Value         optics.Spectrum
+	Value         float64
 	projection    camera.FilmProjection
 }
 
@@ -191,6 +191,6 @@ func (d *splatSceneIntegrator) Run(context *RenderContext, prepared PreparedInte
 
 func (d *splatSceneIntegrator) accumulate(context *RenderContext, splat FilmSplat, totalWork int64) {
 	scale := 1 / float64(totalWork)
-	value := optics.SpectralSampleRadiance(splat.Value.Sample(0), splat.WavelengthPDF) * scale
+	value := optics.SpectralSampleRadiance(splat.Value, splat.WavelengthPDF) * scale
 	context.Accumulator.AddSpectral(splat.Pixel, splat.WavelengthNM, value)
 }

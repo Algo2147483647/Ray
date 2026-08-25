@@ -130,7 +130,6 @@ func TestRoughConductorKeepsSampledColorFromSampledParameters(t *testing.T) {
 		0.35,
 	)
 	ctx := bxdf.ShadingContext{
-		SpectrumMode:  optics.SpectrumModeSpectral,
 		WavelengthNM:  610,
 		WavelengthsNM: []float64{450, 610},
 	}
@@ -280,7 +279,6 @@ func TestRoughDielectricTransmissionUsesDispersiveIOR(t *testing.T) {
 	)
 	ctx := bxdf.ShadingContext{
 		TransportMode: bxdf.TransportRadiance,
-		SpectrumMode:  optics.SpectrumModeSpectral,
 		WavelengthNM:  450,
 		WavelengthsNM: []float64{450},
 	}

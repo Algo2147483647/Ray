@@ -32,8 +32,8 @@ func TestCameraNDimGenerateRay3D(t *testing.T) {
 	if ray.Path.Wavelength != nil {
 		t.Fatalf("expected camera to leave wavelength sampling to the renderer, got %+v", ray.Path.Wavelength)
 	}
-	if ray.Path.Throughput.RGB != (optics.RGB{1, 1, 1}) {
-		t.Fatalf("expected camera ray throughput to start white, got %+v", ray.Path.Throughput)
+	if ray.Path.Throughput != 1 {
+		t.Fatalf("expected camera ray throughput to start at one, got %+v", ray.Path.Throughput)
 	}
 }
 

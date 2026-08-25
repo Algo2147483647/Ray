@@ -18,7 +18,7 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-func TestSegmentTransmittanceAppliesBeerLambertToRGBAndSampledSpectra(t *testing.T) {
+func TestSegmentTransmittanceAppliesBeerLambertToScalarPower(t *testing.T) {
 	registry := medium.NewRegistry()
 	absorbingID, err := registry.RegisterHomogeneousWithCoefficients(
 		"absorbing",
@@ -29,31 +29,15 @@ func TestSegmentTransmittanceAppliesBeerLambertToRGBAndSampledSpectra(t *testing
 		t.Fatalf("register absorbing medium: %v", err)
 	}
 
-	rgb := evaluateSegmentTransmittance(
+	got := evaluateSegmentTransmittance(
 		registry,
 		absorbingID,
 		2,
-		bxdf.ShadingContext{SpectrumMode: optics.SpectrumModeRGB},
-	).ApplyToSpectrum(optics.ConstantSpectrum(2))
+		bxdf.ShadingContext{WavelengthNM: 550, WavelengthsNM: []float64{550}},
+	).ApplyToPower(2)
 	want := 2 * math.Exp(-1)
-	for channel := range 3 {
-		if math.Abs(rgb.RGBChannel(channel)-want) > 1e-12 {
-			t.Fatalf("RGB channel %d = %g, want %g", channel, rgb.RGBChannel(channel), want)
-		}
-	}
-
-	sampled := evaluateSegmentTransmittance(
-		registry,
-		absorbingID,
-		2,
-		bxdf.ShadingContext{
-			SpectrumMode:  optics.SpectrumModeSpectral,
-			WavelengthNM:  550,
-			WavelengthsNM: []float64{550},
-		},
-	).ApplyToSpectrum(optics.NewSampledSpectrum([]float64{2}))
-	if !sampled.HasSamples() || math.Abs(sampled.Sample(0)-want) > 1e-12 {
-		t.Fatalf("sampled transmittance = %+v, want %g", sampled, want)
+	if math.Abs(got-want) > 1e-12 {
+		t.Fatalf("transmittance = %g, want %g", got, want)
 	}
 }
 
@@ -93,16 +77,14 @@ func TestBuildLightSubpathAppliesHomogeneousAbsorptionBeforeVertex(t *testing.T)
 	}
 
 	for sample := 0; sample < 32; sample++ {
-		path := handler.buildLightSubpath(tree, lights, totalArea, 0, 0)
+		path := handler.buildLightSubpath(tree, lights, totalArea, 550, optics.UniformWavelengthPDF())
 		if len(path) != 2 {
 			t.Fatalf("light path vertex count = %d, want 2", len(path))
 		}
 		distance := math.Sqrt(maths.SquaredDistance(path[0].Point, path[1].Point))
 		want := 2 * math.Pi * emitterShape.SurfaceArea() * math.Exp(-sigmaA*distance)
-		for channel := range 3 {
-			if got := path[1].Beta.RGBChannel(channel); math.Abs(got-want) > 1e-10 {
-				t.Fatalf("sample %d channel %d beta = %g, want %g", sample, channel, got, want)
-			}
+		if got := path[1].Beta; math.Abs(got-want) > 1e-10 {
+			t.Fatalf("sample %d beta = %g, want %g", sample, got, want)
 		}
 	}
 }

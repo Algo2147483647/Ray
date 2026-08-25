@@ -15,7 +15,7 @@ func TestConvertToMonochromeMonteCarlo(t *testing.T) {
 		ray.ConvertToMonochrome()
 
 		wavelengths[i] = ray.Path.Wavelength.LambdaNM
-		if !ray.Path.Throughput.HasSamples() || ray.Path.Throughput.Sample(0) != 1 {
+		if ray.Path.Throughput != 1 {
 			t.Fatalf("expected unit sampled throughput, got %+v", ray.Path)
 		}
 	}
@@ -107,17 +107,17 @@ func TestSpectralPowerToXYZKeeps6500KBlackbodyNearNeutral(t *testing.T) {
 
 func TestRayInitResetsReusedThroughput(t *testing.T) {
 	ray := &Ray{Path: PathState{
-		Throughput: NewSampledSpectrum([]float64{0.25}),
+		Throughput: 0.25,
 		Wavelength: &WavelengthSample{LambdaNM: 510, PDF: UniformWavelengthPDF()},
 	}}
 
 	ray.Init()
 
 	if ray.Path.Wavelength != nil {
-		t.Fatalf("expected RGB path after reset, got %+v", ray.Path)
+		t.Fatalf("expected wavelength to be reset, got %+v", ray.Path)
 	}
-	if ray.Path.Throughput.RGB != (RGB{1, 1, 1}) {
-		t.Fatalf("expected throughput reset to white, got %+v", ray.Path.Throughput)
+	if ray.Path.Throughput != 1 {
+		t.Fatalf("expected throughput reset to one, got %+v", ray.Path.Throughput)
 	}
 }
 
