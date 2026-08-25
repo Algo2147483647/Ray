@@ -24,7 +24,6 @@ type StudioScript struct {
 
 type StudioRenderScript struct {
 	Integrator        string `json:"integrator"`
-	LegacyDimension   int    `json:"dimension"` // deprecated: use StudioScript.Dimension
 	Samples           int64  `json:"samples"`
 	ThreadNum         int    `json:"thread_num"`
 	FilmID            string `json:"film_id"`
@@ -44,9 +43,6 @@ func NormalizeWavelengthSamples(spectrumMode string, wavelengthSamples int) int 
 func MergeRenderScripts(base, override StudioRenderScript) StudioRenderScript {
 	if override.Integrator != "" {
 		base.Integrator = override.Integrator
-	}
-	if override.LegacyDimension > 0 {
-		base.LegacyDimension = override.LegacyDimension
 	}
 	if override.Samples > 0 {
 		base.Samples = override.Samples
@@ -68,14 +64,11 @@ func MergeRenderScripts(base, override StudioRenderScript) StudioRenderScript {
 
 func (r *StudioRenderScript) UnmarshalJSON(data []byte) error {
 	type plain StudioRenderScript
-	if err := rejectUnknownFields(data, "render", "integrator", "dimension", "samples", "thread_num", "film_id", "spectrum_mode", "wavelength_samples"); err != nil {
+	if err := rejectUnknownFields(data, "render", "integrator", "samples", "thread_num", "film_id", "spectrum_mode", "wavelength_samples"); err != nil {
 		return err
 	}
 	if err := json.Unmarshal(data, (*plain)(r)); err != nil {
 		return err
-	}
-	if r.LegacyDimension < 0 || r.LegacyDimension == 1 {
-		return fmt.Errorf("render dimension must be 0 or >= 2")
 	}
 	if r.ThreadNum < 0 {
 		return fmt.Errorf("render thread_num must be >= 0")
@@ -86,9 +79,7 @@ func (r *StudioRenderScript) UnmarshalJSON(data []byte) error {
 	if _, err := ray_tracing.ParseIntegratorKind(r.Integrator); err != nil {
 		return err
 	}
-	if r.SpectrumMode == "rgb" {
-		r.SpectrumMode = "hero_wavelength"
-	} else if r.SpectrumMode != "" && r.SpectrumMode != "hero_wavelength" && r.SpectrumMode != "sampled" {
+	if r.SpectrumMode != "" && r.SpectrumMode != "hero_wavelength" && r.SpectrumMode != "sampled" {
 		return fmt.Errorf("unsupported spectrum_mode %q", r.SpectrumMode)
 	}
 	if r.WavelengthSamples < 0 {

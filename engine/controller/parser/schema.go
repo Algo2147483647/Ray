@@ -9,9 +9,9 @@ import (
 
 type Script struct {
 	Dimension int                               `json:"dimension"`
-	Materials []map[string]interface{}          `json:"materials"`
+	Materials []MaterialSpec                    `json:"materials"`
 	Media     map[string]map[string]interface{} `json:"media"`
-	Objects   []map[string]interface{}          `json:"objects"`
+	Objects   []ObjectSpec                      `json:"objects"`
 	Cameras   []CameraScript                    `json:"cameras"`
 	Geometry  *GeometryScript                   `json:"geometry"`
 	Renders   []RenderScript                    `json:"renders"`
@@ -29,7 +29,6 @@ type CameraScript struct {
 
 type RenderScript struct {
 	Integrator        string `json:"integrator"`
-	LegacyDimension   int    `json:"dimension,omitempty"` // deprecated: use Script.Dimension
 	Samples           int64  `json:"samples"`
 	ThreadNum         int    `json:"thread_num"`
 	CameraID          string `json:"camera_id"`
@@ -42,8 +41,14 @@ func (r *RenderScript) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return err
 	}
-	if _, exists := raw["bdpt_fallback_policy"]; exists {
-		return fmt.Errorf("render field %q was removed; choose integrator explicitly", "bdpt_fallback_policy")
+	allowed := map[string]bool{
+		"integrator": true, "samples": true, "thread_num": true,
+		"camera_id": true, "spectrum_mode": true, "wavelength_samples": true,
+	}
+	for field := range raw {
+		if !allowed[field] {
+			return fmt.Errorf("unsupported render field %q", field)
+		}
 	}
 	type plain RenderScript
 	return json.Unmarshal(data, (*plain)(r))

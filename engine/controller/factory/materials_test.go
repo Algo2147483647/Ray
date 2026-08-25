@@ -1,6 +1,7 @@
 package factory
 
 import (
+	"encoding/json"
 	"math"
 	"strings"
 	"testing"
@@ -12,9 +13,22 @@ import (
 	"github.com/Algo2147483647/ray/engine/model/material/emission"
 )
 
+func mustMaterialSpecs(t *testing.T, definitions ...map[string]interface{}) []parser.MaterialSpec {
+	t.Helper()
+	data, err := json.Marshal(definitions)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var specs []parser.MaterialSpec
+	if err := json.Unmarshal(data, &specs); err != nil {
+		t.Fatal(err)
+	}
+	return specs
+}
+
 func TestParseCosinePowerEmission(t *testing.T) {
-	script := &parser.Script{Materials: []map[string]interface{}{
-		{
+	script := &parser.Script{Materials: mustMaterialSpecs(t,
+		map[string]interface{}{
 			"id": "spot-panel",
 			"emission": map[string]interface{}{
 				"type":     "constant",
@@ -24,7 +38,7 @@ func TestParseCosinePowerEmission(t *testing.T) {
 				},
 			},
 		},
-	}}
+	)}
 	materials, err := ParseMaterials(script)
 	if err != nil {
 		t.Fatalf("ParseMaterials failed: %v", err)
@@ -80,7 +94,7 @@ func TestParseEmissionRejectsAmbiguousOrInvalidDirection(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			script := &parser.Script{Materials: []map[string]interface{}{{"id": "invalid", "emission": test.emission}}}
+			script := &parser.Script{Materials: mustMaterialSpecs(t, map[string]interface{}{"id": "invalid", "emission": test.emission})}
 			_, err := ParseMaterials(script)
 			if err == nil || !strings.Contains(err.Error(), test.contains) {
 				t.Fatalf("error = %v, want substring %q", err, test.contains)
@@ -91,8 +105,8 @@ func TestParseEmissionRejectsAmbiguousOrInvalidDirection(t *testing.T) {
 
 func TestParseRoughConductorWeight(t *testing.T) {
 	script := &parser.Script{
-		Materials: []map[string]interface{}{
-			{
+		Materials: mustMaterialSpecs(t,
+			map[string]interface{}{
 				"id": "warm-metal",
 				"surface": map[string]interface{}{
 					"type":      "rough_conductor",
@@ -105,7 +119,7 @@ func TestParseRoughConductorWeight(t *testing.T) {
 					},
 				},
 			},
-		},
+		),
 	}
 
 	materials, err := ParseMaterials(script)
@@ -130,8 +144,8 @@ func TestParseRoughConductorWeight(t *testing.T) {
 
 func TestParseRoughDielectricTransmission(t *testing.T) {
 	script := &parser.Script{
-		Materials: []map[string]interface{}{
-			{
+		Materials: mustMaterialSpecs(t,
+			map[string]interface{}{
 				"id": "frosted-glass",
 				"surface": map[string]interface{}{
 					"type":          "rough_dielectric_transmission",
@@ -144,7 +158,7 @@ func TestParseRoughDielectricTransmission(t *testing.T) {
 					"roughness": 0.45,
 				},
 			},
-		},
+		),
 	}
 
 	materials, err := ParseMaterials(script)
@@ -167,8 +181,8 @@ func TestParseRoughDielectricTransmission(t *testing.T) {
 
 func TestParseWeightedMixture(t *testing.T) {
 	script := &parser.Script{
-		Materials: []map[string]interface{}{
-			{
+		Materials: mustMaterialSpecs(t,
+			map[string]interface{}{
 				"id": "glazed-porcelain",
 				"surface": map[string]interface{}{
 					"type": "weighted_mixture",
@@ -193,7 +207,7 @@ func TestParseWeightedMixture(t *testing.T) {
 					},
 				},
 			},
-		},
+		),
 	}
 
 	materials, err := ParseMaterials(script)
@@ -234,16 +248,24 @@ func TestParseWeightedMixtureRejectsInvalidComponents(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			script := &parser.Script{Materials: []map[string]interface{}{
-				{
+			definition := map[string]interface{}{
+				"materials": []interface{}{map[string]interface{}{
 					"id": "invalid-mixture",
 					"surface": map[string]interface{}{
 						"type":       "weighted_mixture",
 						"components": components,
 					},
-				},
-			}}
-			if _, err := ParseMaterials(script); err == nil {
+				}},
+			}
+			data, err := json.Marshal(definition)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var script parser.Script
+			if err := json.Unmarshal(data, &script); err != nil {
+				return // Invalid structure was rejected at the typed protocol boundary.
+			}
+			if _, err := ParseMaterials(&script); err == nil {
 				t.Fatal("expected invalid weighted mixture to fail")
 			}
 		})
@@ -252,8 +274,8 @@ func TestParseWeightedMixtureRejectsInvalidComponents(t *testing.T) {
 
 func TestParseCylindricalGridCutout(t *testing.T) {
 	script := &parser.Script{
-		Materials: []map[string]interface{}{
-			{
+		Materials: mustMaterialSpecs(t,
+			map[string]interface{}{
 				"id": "silver-mesh",
 				"surface": map[string]interface{}{
 					"type":             "cylindrical_grid_cutout",
@@ -265,7 +287,7 @@ func TestParseCylindricalGridCutout(t *testing.T) {
 					"reference_radius": 1.0,
 				},
 			},
-		},
+		),
 	}
 
 	materials, err := ParseMaterials(script)

@@ -397,20 +397,6 @@ func resolveDimension(script *schema.StudioScript, config studioConfig) (int, er
 		return 3, nil
 	}
 	dimension := script.Dimension
-	legacyDimensions := make([]int, 0, 1+len(script.Renders))
-	legacyDimensions = append(legacyDimensions, script.Render.LegacyDimension)
-	for _, render := range script.Renders {
-		legacyDimensions = append(legacyDimensions, render.LegacyDimension)
-	}
-	for i, legacy := range legacyDimensions {
-		if legacy <= 0 {
-			continue
-		}
-		if dimension > 0 && legacy != dimension {
-			return 0, fmt.Errorf("legacy render dimension %d at index %d conflicts with scene dimension %d", legacy, i, dimension)
-		}
-		dimension = legacy
-	}
 	if dimension <= 0 {
 		dimension = 3
 	}

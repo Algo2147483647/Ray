@@ -1,4 +1,5 @@
 {
+  "dimension": 3,
   "_comment": "Horizontal five-room H^3 frame around a white vertical center column. Each room has a pure red, yellow, green, cyan, or blue emissive frame, matching pastel diffuse exterior faces, open shared faces, a square white ceiling light, and a perfectly reflective ball at its center.",
   "_validation": {
     "cell_count_around_edge": 5,
@@ -37,10 +38,9 @@
   ],
   "render": {
     "film_id": "hyperbolic-showcase-film",
-    "dimension": 3,
     "samples": 128,
     "thread_num": 0,
-    "spectrum_mode": "rgb"
+    "spectrum_mode": "hero_wavelength"
   },
   "geometry": {
     "type": "klein",

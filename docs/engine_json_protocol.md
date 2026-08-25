@@ -32,8 +32,7 @@ for authoring composition and command-line overrides.
 
 `dimension` is Scene-owned and defaults to 3. Every Object, Camera, and Render
 job in the file uses the same `SceneSpace`; Render jobs do not carry their own
-dimension. Legacy intermediate files with `renders[].dimension` are accepted
-only as a migration input and all such values must agree.
+dimension. A `renders[].dimension` field is invalid.
 
 `engine` does not resolve `includes` or merge scene files. Use `studio` for
 authoring composition; it writes one normalized intermediate JSON file for
@@ -44,8 +43,17 @@ engine execution.
 resumed, merged, converted through CIE XYZ to a color image, tone-mapped, or
 checkpointed over multiple runs.
 
-Unknown top-level, Camera, Film, and Render fields are rejected. Canonical
-Engine JSON must omit authoring-only fields such as `includes` and `films`.
+Unknown top-level, Material, Surface, Emission, Object, Camera, Film, and Render
+fields are rejected. A field must also belong to the selected discriminator
+variant: for example, `center` is valid for `shape: "sphere"` but not for
+`shape: "cuboid"`. Canonical Engine JSON must omit authoring-only fields such
+as `includes` and `films`.
+
+The Go protocol model uses typed `MaterialSpec` and `ObjectSpec` values.
+Discriminators are typed and validated for shapes, surfaces, emission models,
+emission distributions, and IOR models. `json.RawMessage` is reserved for
+leaves whose representation is intentionally polymorphic: spectral parameters,
+expression programs, parametric functions, and dense/sparse coefficient data.
 
 ## Objects
 
@@ -69,6 +77,10 @@ Each object is a renderable geometry instance:
 
 `engine` does not parse `shape: "group"`. Group expansion must happen before
 the JSON reaches `engine`.
+
+The common object fields are `id`, `material_id`, `shape`, optional `bounds`,
+and optional `medium_boundary`. Shape-specific fields are selected by `shape`;
+fields from another shape variant are errors rather than ignored metadata.
 
 ## Shape Protocol
 

@@ -1098,7 +1098,8 @@ Because the SDF depends on numerical closest-point optimization, it is not guara
 - $c\in\mathbb{R}^4$ is the translation center.
 - $R=r_{\mathrm{major}}>r=r_{\mathrm{minor}}>0$.
 - $\tau=\mathtt{thickness}>0$ is the tube radius.
-- `render.dimension` must be 4; `position` is accepted as an alias for `center`.
+- top-level `dimension` must be 4; Studio normalizes authoring transforms before
+  emitting the Engine object.
 
 ```jsonc
 {

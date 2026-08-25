@@ -11,7 +11,6 @@ import (
 	"github.com/Algo2147483647/ray/engine/model"
 	modelcamera "github.com/Algo2147483647/ray/engine/model/camera"
 	"github.com/Algo2147483647/ray/engine/model/object"
-	"github.com/Algo2147483647/ray/engine/utils"
 )
 
 func LoadSceneFromScript(script *parser.Script, scene *model.Scene) error {
@@ -81,25 +80,18 @@ func LoadSceneFromScript(script *parser.Script, scene *model.Scene) error {
 
 	for idx, item := range script.Objects {
 		objectLabel := fmt.Sprintf("object[%d]", idx)
-		if objectID, ok, err := utils.OptionalStringField(item, "id"); err == nil && ok && objectID != "" {
-			objectLabel = fmt.Sprintf("object[%d] id=%q", idx, objectID)
-		} else if err != nil {
-			parseErrors = append(parseErrors, fmt.Errorf("%s: %w", objectLabel, err))
-			continue
+		if item.ID != "" {
+			objectLabel = fmt.Sprintf("object[%d] id=%q", idx, item.ID)
 		}
 
-		materialID, err := utils.RequiredStringField(item, "material_id")
-		if err != nil {
-			parseErrors = append(parseErrors, fmt.Errorf("%s: %w", objectLabel, err))
-			continue
-		}
+		materialID := item.MaterialID
 		material, exists := materials[materialID]
 		if !exists {
 			parseErrors = append(parseErrors, fmt.Errorf("%s: undefined material %q", objectLabel, materialID))
 			continue
 		}
 
-		shapes, err := ParseShapeInSpace(item, scene.Space)
+		shapes, err := ParseObjectSpecInSpace(item, scene.Space)
 		if err != nil {
 			parseErrors = append(parseErrors, fmt.Errorf("%s: %w", objectLabel, err))
 			continue
@@ -108,7 +100,12 @@ func LoadSceneFromScript(script *parser.Script, scene *model.Scene) error {
 			continue
 		}
 
-		mediumBoundary, err := parseMediumBoundary(item, mediaRegistry)
+		itemDef, err := specMap(item)
+		if err != nil {
+			parseErrors = append(parseErrors, fmt.Errorf("%s: %w", objectLabel, err))
+			continue
+		}
+		mediumBoundary, err := parseMediumBoundary(itemDef, mediaRegistry)
 		if err != nil {
 			parseErrors = append(parseErrors, fmt.Errorf("%s medium_boundary: %w", objectLabel, err))
 			continue
@@ -140,16 +137,6 @@ func LoadSceneFromScript(script *parser.Script, scene *model.Scene) error {
 
 func sceneDimension(script *parser.Script) (int, error) {
 	dimension := script.Dimension
-	for i, render := range script.Renders {
-		legacy := render.LegacyDimension
-		if legacy <= 0 {
-			continue
-		}
-		if dimension > 0 && legacy != dimension {
-			return 0, fmt.Errorf("renders[%d] legacy dimension %d conflicts with scene dimension %d", i, legacy, dimension)
-		}
-		dimension = legacy
-	}
 	if dimension <= 0 {
 		dimension = 3
 	}

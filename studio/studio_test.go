@@ -45,6 +45,7 @@ func TestStudioSchemaValidatesRenderConfiguration(t *testing.T) {
 		"threads":            `{"renders":[{"thread_num":-1}]}`,
 		"samples":            `{"renders":[{"samples":-1}]}`,
 		"integrator":         `{"renders":[{"integrator":"magic"}]}`,
+		"rgb spectrum alias": `{"renders":[{"spectrum_mode":"rgb"}]}`,
 		"spectrum mode":      `{"renders":[{"spectrum_mode":"magic"}]}`,
 		"wavelength samples": `{"renders":[{"wavelength_samples":-1}]}`,
 	} {
@@ -54,16 +55,6 @@ func TestStudioSchemaValidatesRenderConfiguration(t *testing.T) {
 				t.Fatal("expected invalid Studio render configuration to fail")
 			}
 		})
-	}
-}
-
-func TestStudioSchemaUpgradesLegacyRGBSpectrumMode(t *testing.T) {
-	var script schema.StudioScript
-	if err := json.Unmarshal([]byte(`{"render":{"spectrum_mode":"rgb"}}`), &script); err != nil {
-		t.Fatalf("parse legacy RGB spectrum mode: %v", err)
-	}
-	if script.Render.SpectrumMode != "hero_wavelength" {
-		t.Fatalf("spectrum mode = %q, want hero_wavelength", script.Render.SpectrumMode)
 	}
 }
 
@@ -109,18 +100,6 @@ func TestIntermediateScriptUsesCameraOwnedFilm(t *testing.T) {
 	}
 	if len(scene.Cameras) != 1 || scene.Cameras["main"].GetFilm() == nil || scene.Cameras["main"].GetFilm().Shape[1] != 600 {
 		t.Fatalf("Film was not loaded into Camera: %+v", scene.Cameras)
-	}
-}
-
-func TestResolveDimensionRejectsConflictingLegacyRenderValue(t *testing.T) {
-	script := &schema.StudioScript{
-		Dimension: 3,
-		Renders: []schema.StudioRenderScript{{
-			LegacyDimension: 4,
-		}},
-	}
-	if _, err := resolveDimension(script, studioConfig{}); err == nil {
-		t.Fatal("expected legacy render dimension to conflict with scene dimension")
 	}
 }
 

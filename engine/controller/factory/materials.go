@@ -28,11 +28,7 @@ func ParseMaterials(script *parser.Script) (map[string]*material.Material, error
 	for idx, matDef := range script.Materials {
 		context := fmt.Sprintf("material[%d]", idx)
 
-		id, err := utils.RequiredStringField(matDef, "id")
-		if err != nil {
-			parseErrors = append(parseErrors, fmt.Errorf("%s: %w", context, err))
-			continue
-		}
+		id := matDef.ID
 		context = fmt.Sprintf("material[%d] id=%q", idx, id)
 
 		if _, exists := materials[id]; exists {
@@ -47,10 +43,12 @@ func ParseMaterials(script *parser.Script) (map[string]*material.Material, error
 			},
 		}
 
-		if surfaceDef, ok, err := utils.OptionalMapField(matDef, "surface"); err != nil {
-			parseErrors = append(parseErrors, fmt.Errorf("%s: %w", context, err))
-			continue
-		} else if ok {
+		if matDef.Surface != nil {
+			surfaceDef, err := specMap(matDef.Surface)
+			if err != nil {
+				parseErrors = append(parseErrors, fmt.Errorf("%s surface: %w", context, err))
+				continue
+			}
 			surface, err := parseSurface(surfaceDef)
 			if err != nil {
 				parseErrors = append(parseErrors, fmt.Errorf("%s surface: %w", context, err))
@@ -59,10 +57,12 @@ func ParseMaterials(script *parser.Script) (map[string]*material.Material, error
 			material.Surface = surface
 		}
 
-		if emissionDef, ok, err := utils.OptionalMapField(matDef, "emission"); err != nil {
-			parseErrors = append(parseErrors, fmt.Errorf("%s: %w", context, err))
-			continue
-		} else if ok {
+		if matDef.Emission != nil {
+			emissionDef, err := specMap(matDef.Emission)
+			if err != nil {
+				parseErrors = append(parseErrors, fmt.Errorf("%s emission: %w", context, err))
+				continue
+			}
 			emitter, err := parseEmission(emissionDef)
 			if err != nil {
 				parseErrors = append(parseErrors, fmt.Errorf("%s emission: %w", context, err))

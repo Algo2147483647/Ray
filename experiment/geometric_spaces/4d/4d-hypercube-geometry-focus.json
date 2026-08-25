@@ -1,4 +1,5 @@
 {
+  "dimension": 4,
   "materials": [
     {
       "id": "warm-hypersphere-light",
@@ -116,9 +117,8 @@
   ],
   "render": {
     "film_id": "hypercube-focus-film",
-    "dimension": 4,
     "samples": 160,
     "thread_num": 8,
-    "spectrum_mode": "rgb"
+    "spectrum_mode": "hero_wavelength"
   }
 }

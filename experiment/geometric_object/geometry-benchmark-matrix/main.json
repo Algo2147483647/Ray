@@ -1,4 +1,5 @@
 {
+  "dimension": 3,
   "cameras": [
     {
       "id": "geometry-benchmark-stage-wide",
@@ -25,9 +26,8 @@
   ],
   "render": {
     "film_id": "geometry-benchmark-film",
-    "dimension": 3,
     "samples": 100,
     "thread_num": 0,
-    "spectrum_mode": "rgb"
+    "spectrum_mode": "hero_wavelength"
   }
 }

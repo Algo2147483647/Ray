@@ -1,4 +1,5 @@
 {
+  "dimension": 3,
   "media": {
     "clear_glass": {
       "type": "homogeneous",
@@ -1564,7 +1565,6 @@
   ],
   "render": {
     "film_id": "material-benchmark-film",
-    "dimension": 3,
     "samples": 200,
     "thread_num": 0,
     "spectrum_mode": "sampled",

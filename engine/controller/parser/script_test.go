@@ -54,6 +54,15 @@ func TestReadScriptFileRejectsBDPTFallbackPolicy(t *testing.T) {
 	}
 }
 
+func TestReadScriptFileRejectsRenderDimension(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "main.json")
+	writeTestScript(t, path, `{"dimension":3,"renders":[{"dimension":3}]}`)
+	if _, err := ReadScriptFile(path); err == nil {
+		t.Fatal("expected render-local dimension to be rejected")
+	}
+}
+
 func writeTestScript(t *testing.T, path, data string) {
 	t.Helper()
 	if err := os.WriteFile(path, []byte(data), 0o644); err != nil {

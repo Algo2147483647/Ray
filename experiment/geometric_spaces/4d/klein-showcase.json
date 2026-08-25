@@ -1,4 +1,5 @@
 {
+  "dimension": 4,
   "_comment": "Presentation render of the complete epsilon-tube boundary of KleinBottle4D. The orthographic film axes are x0, x2, x3 while rays travel along +x1. For R=1.35, r=0.62 and thickness=0.075, the exact conservative half-extents are (2.04575, 0.69575, 0.69575). FOV half-extents tan(FOV/2) are approximately (2.194, 0.781, 0.781), leaving 7-12% framing margin on every visible axis. Resolution 96x36x36 follows the physical extent ratio so the browser volume viewer preserves proportions. UV emission exposes the u/2 Klein twist without lighting noise.",
   "materials": [
     {
@@ -90,9 +91,8 @@
   ],
   "render": {
     "film_id": "klein-showcase-film",
-    "dimension": 4,
     "samples": 128,
     "thread_num": 16,
-    "spectrum_mode": "rgb"
+    "spectrum_mode": "hero_wavelength"
   }
 }

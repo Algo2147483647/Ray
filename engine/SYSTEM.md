@@ -15,17 +15,24 @@ resume, and CLI render overrides belong to Studio.
 ## Spec
 
 `controller/parser` decodes the canonical Engine JSON protocol. A script owns
-one scene dimension, Geometry, Materials, Media, Objects, Cameras, and Render
-jobs. Each Camera owns its Film. Each Render selects a Camera and an Integrator.
+one scene dimension, Geometry, typed Material and Object specs, Cameras, Media,
+and Render jobs. Object shapes, Material surfaces, emission models, emission
+distributions, and IOR models use validated discriminators. Unknown fields and
+fields belonging to a different discriminator variant are rejected at this
+boundary. Raw JSON is confined to genuinely polymorphic leaves such as
+spectral parameters, expression fields, parametric functions, and sparse
+coefficient encodings. Each Camera owns its Film. Each Render selects a Camera
+and an Integrator.
 
 ## Compile
 
 `controller/factory.LoadSceneFromScript` resolves the script into `model.Scene`.
 It constructs a non-nil `SceneSpace{Geometry, Dimension}`, validates fixed
-non-Euclidean dimensions, builds Materials and absorption-only Media, parses
-Shapes and Cameras with that SceneSpace, and builds the ObjectTree acceleration
-structure. Unsupported configuration is rejected here; it is not retained as
-inactive runtime state.
+non-Euclidean dimensions, compiles typed Material/Object specs and
+absorption-only Media, parses Shapes and Cameras with that SceneSpace, and
+builds the ObjectTree acceleration structure. Numerical and cross-reference
+validation happens here; unsupported configuration is not retained as inactive
+runtime state.
 
 ## Render
 

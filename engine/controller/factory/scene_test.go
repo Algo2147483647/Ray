@@ -119,32 +119,6 @@ func TestLoadSceneFromScriptRejectsNegativeMaxArc(t *testing.T) {
 	}
 }
 
-func TestLoadSceneFromScriptRejectsConflictingLegacyRenderDimensions(t *testing.T) {
-	scene := model.NewScene(geometry.DefaultSceneSpace())
-	script := &parser.Script{Renders: []parser.RenderScript{
-		{LegacyDimension: 3},
-		{LegacyDimension: 4},
-	}}
-
-	err := LoadSceneFromScript(script, scene)
-	if err == nil || !strings.Contains(err.Error(), "conflicts with scene dimension") {
-		t.Fatalf("expected conflicting render dimensions to fail, got %v", err)
-	}
-}
-
-func TestLoadSceneFromScriptRejectsLegacyDimensionConflictingWithScene(t *testing.T) {
-	scene := model.NewScene(geometry.DefaultSceneSpace())
-	script := &parser.Script{
-		Dimension: 3,
-		Renders:   []parser.RenderScript{{LegacyDimension: 4}},
-	}
-
-	err := LoadSceneFromScript(script, scene)
-	if err == nil || !strings.Contains(err.Error(), "conflicts with scene dimension") {
-		t.Fatalf("expected legacy dimension conflict, got %v", err)
-	}
-}
-
 func TestLoadSceneFromScriptBuildsDimensionedEuclideanGeometry(t *testing.T) {
 	scene := model.NewScene(geometry.DefaultSceneSpace())
 	if err := LoadSceneFromScript(&parser.Script{Dimension: 7}, scene); err != nil {

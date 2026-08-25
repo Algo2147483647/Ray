@@ -1,4 +1,5 @@
 {
+  "dimension": 4,
   "materials": [
     {
       "id": "cell-palette-debug",
@@ -90,9 +91,8 @@
   ],
   "render": {
     "film_id": "hypercube-direct-film",
-    "dimension": 4,
     "samples": 64,
     "thread_num": 8,
-    "spectrum_mode": "rgb"
+    "spectrum_mode": "hero_wavelength"
   }
 }

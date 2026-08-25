@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/Algo2147483647/ray/engine/controller/parser"
 	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"github.com/Algo2147483647/ray/engine/model/shape"
@@ -35,20 +36,28 @@ const (
 	ShapeSTL                = "stl"
 )
 
-// ParseShape is the three-dimensional Euclidean compatibility entry point.
-// New Scene construction must use ParseShapeInSpace.
-func ParseShape(objDef map[string]interface{}) ([]shape.Shape, error) {
-	return ParseShapeInSpace(objDef, geometry.DefaultSceneSpace())
-}
-
-// ParseShapeInSpace builds a shape using the owning Scene's space. Build-time
-// dimension is explicit so different scenes can be loaded concurrently.
-func ParseShapeInSpace(objDef map[string]interface{}, space geometry.SceneSpace) ([]shape.Shape, error) {
+func parseShapeMapInSpace(objDef map[string]interface{}, space geometry.SceneSpace) ([]shape.Shape, error) {
 	dimension := geometry.NewSceneSpace(space.Geometry, space.Dimension).Dimension
 	shapeName, err := utils.RequiredStringField(objDef, "shape")
 	if err != nil {
 		return nil, err
 	}
+	return parseShapeDefinition(shapeName, objDef, space, dimension)
+}
+
+// ParseObjectSpecInSpace is the Engine protocol entry point. The discriminator
+// has already been validated by parser.ObjectSpec; numerical validation stays
+// with the individual shape compiler.
+func ParseObjectSpecInSpace(spec parser.ObjectSpec, space geometry.SceneSpace) ([]shape.Shape, error) {
+	dimension := geometry.NewSceneSpace(space.Geometry, space.Dimension).Dimension
+	objDef, err := specMap(spec)
+	if err != nil {
+		return nil, err
+	}
+	return parseShapeDefinition(string(spec.Shape), objDef, space, dimension)
+}
+
+func parseShapeDefinition(shapeName string, objDef map[string]interface{}, space geometry.SceneSpace, dimension int) ([]shape.Shape, error) {
 
 	switch shapeName {
 	case ShapeCuboid, ShapeHypercuboid:
@@ -94,7 +103,7 @@ func ParseShapeInSpace(objDef map[string]interface{}, space geometry.SceneSpace)
 		return parseKleinBottle4D(objDef, dimension)
 
 	case ShapeSTL:
-		shapes, err := ParseShapeForSTLInSpace(objDef, space)
+		shapes, err := parseShapeForSTLInSpace(objDef, space)
 		if err != nil {
 			return nil, err
 		}
@@ -370,11 +379,7 @@ func validatePolynomialScale(scale []float64) error {
 	return nil
 }
 
-func ParseShapeForSTL(objDef map[string]interface{}) ([]shape.Shape, error) {
-	return ParseShapeForSTLInSpace(objDef, geometry.DefaultSceneSpace())
-}
-
-func ParseShapeForSTLInSpace(objDef map[string]interface{}, space geometry.SceneSpace) ([]shape.Shape, error) {
+func parseShapeForSTLInSpace(objDef map[string]interface{}, space geometry.SceneSpace) ([]shape.Shape, error) {
 	dimension := geometry.NewSceneSpace(space.Geometry, space.Dimension).Dimension
 	filePath, err := utils.RequiredStringField(objDef, "file")
 	if err != nil {

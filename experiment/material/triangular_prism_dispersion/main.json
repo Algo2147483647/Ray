@@ -1,4 +1,5 @@
 {
+  "dimension": 3,
   "cameras": [
     {
       "id": "prism-lab-camera",
@@ -26,7 +27,6 @@
   ],
   "render": {
     "film_id": "prism-beauty-film",
-    "dimension": 3,
     "integrator": "bdpt",
     "samples": 1,
     "thread_num": 16,

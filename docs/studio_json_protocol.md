@@ -174,9 +174,9 @@ Camera with `camera_id`; Engine has no top-level `films` or `film_id`.
 }
 ```
 
-`dimension` belongs to the Scene and applies to every render job. Studio still
-accepts legacy `render.dimension` input during migration, but conflicting legacy
-values are rejected and generated Engine JSON uses only the top-level field.
+`dimension` belongs to the Scene and applies to every render job.
+`render.dimension` and `renders[].dimension` are invalid; generated Engine JSON
+uses only the top-level field.
 
 `spectral_bin_count` controls the number of wavelength bins stored in the
 scene-linear Film over the 380–750 nm range. It defaults to 64 and may be set
