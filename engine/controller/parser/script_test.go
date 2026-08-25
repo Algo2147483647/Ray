@@ -9,8 +9,9 @@ import (
 func TestReadScriptFilePreservesGeometry(t *testing.T) {
 	dir := t.TempDir()
 	writeTestScript(t, filepath.Join(dir, "main.json"), `{
+		"dimension": 3,
 		"geometry": {"type": "klein", "max_arc": 12.5},
-		"renders": [{"dimension": 3}]
+		"renders": [{}]
 	}`)
 
 	script, err := ReadScriptFile(filepath.Join(dir, "main.json"))
@@ -22,6 +23,9 @@ func TestReadScriptFilePreservesGeometry(t *testing.T) {
 	}
 	if script.Geometry.Type != "klein" || script.Geometry.MaxArc != 12.5 {
 		t.Fatalf("unexpected geometry: %#v", script.Geometry)
+	}
+	if script.Dimension != 3 {
+		t.Fatalf("unexpected scene dimension: %d", script.Dimension)
 	}
 }
 
@@ -38,6 +42,15 @@ func TestReadScriptFileAcceptsCameraOwnedFilm(t *testing.T) {
 	}
 	if len(script.Renders) != 1 || script.Renders[0].CameraID != "main" || len(script.Cameras) != 1 || script.Cameras[0].Film.Shape[0] != 800 {
 		t.Fatalf("unexpected camera-owned film: %+v", script)
+	}
+}
+
+func TestReadScriptFileRejectsBDPTFallbackPolicy(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "main.json")
+	writeTestScript(t, path, `{"renders":[{"integrator":"bdpt","bdpt_fallback_policy":"path"}]}`)
+	if _, err := ReadScriptFile(path); err == nil {
+		t.Fatal("expected removed BDPT fallback policy to be rejected")
 	}
 }
 

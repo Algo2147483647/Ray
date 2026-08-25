@@ -1,12 +1,13 @@
 package factory
 
 import (
+	"fmt"
 	"math"
 	"sync"
 	"testing"
 
+	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"github.com/Algo2147483647/ray/engine/model/shape"
-	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -126,17 +127,13 @@ func TestParseShapeFiniteCylinderRejectsInvalidAxis(t *testing.T) {
 }
 
 func TestParseShapeKleinBottle4D(t *testing.T) {
-	oldDim := utils.Dimension
-	utils.SetDimension(4)
-	t.Cleanup(func() { utils.SetDimension(oldDim) })
-
-	shapes, err := ParseShape(map[string]interface{}{
+	shapes, err := ParseShapeInSpace(map[string]interface{}{
 		"shape":     "klein_bottle",
 		"center":    []interface{}{0, 1, 2, 3},
 		"r_major":   1.5,
 		"r_minor":   0.5,
 		"thickness": 0.06,
-	})
+	}, geometry.NewSceneSpace(geometry.Euclidean(4), 4))
 	if err != nil {
 		t.Fatalf("parse Klein bottle: %v", err)
 	}
@@ -154,19 +151,59 @@ func TestParseShapeKleinBottle4D(t *testing.T) {
 }
 
 func TestParseShapeKleinBottle4DRequiresDimension4(t *testing.T) {
-	oldDim := utils.Dimension
-	utils.SetDimension(3)
-	t.Cleanup(func() { utils.SetDimension(oldDim) })
-
-	_, err := ParseShape(map[string]interface{}{
+	_, err := ParseShapeInSpace(map[string]interface{}{
 		"shape":     "klein_bottle",
 		"center":    []interface{}{0, 0, 0, 0},
 		"r_major":   1.5,
 		"r_minor":   0.5,
 		"thickness": 0.06,
-	})
+	}, geometry.DefaultSceneSpace())
 	if err == nil {
 		t.Fatal("expected Klein bottle to require render dimension 4")
+	}
+}
+
+func TestParseShapeInSpaceSupportsConcurrentDimensions(t *testing.T) {
+	t.Parallel()
+
+	type buildCase struct {
+		dimension int
+		center    []interface{}
+	}
+	cases := []buildCase{
+		{dimension: 3, center: []interface{}{0, 0, 0}},
+		{dimension: 4, center: []interface{}{0, 0, 0, 0}},
+	}
+
+	errCh := make(chan error, len(cases))
+	var wg sync.WaitGroup
+	for _, tc := range cases {
+		tc := tc
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for i := 0; i < 100; i++ {
+				shapes, err := ParseShapeInSpace(map[string]interface{}{
+					"shape":  "sphere",
+					"center": tc.center,
+					"r":      1,
+				}, geometry.NewSceneSpace(geometry.Euclidean(tc.dimension), tc.dimension))
+				if err != nil {
+					errCh <- err
+					return
+				}
+				pmin, pmax := shapes[0].BuildBoundingBox()
+				if pmin.Len() != tc.dimension || pmax.Len() != tc.dimension {
+					errCh <- fmt.Errorf("dimension %d produced bounds %d/%d", tc.dimension, pmin.Len(), pmax.Len())
+					return
+				}
+			}
+		}()
+	}
+	wg.Wait()
+	close(errCh)
+	for err := range errCh {
+		t.Fatal(err)
 	}
 }
 

@@ -4,7 +4,6 @@ import (
 	"math"
 
 	"github.com/Algo2147483647/ray/engine/maths"
-	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -515,13 +514,7 @@ func (k *KleinBottle4D) normalFromClosestLocal(p [4]float64, cp closestResult, r
 }
 
 func (k *KleinBottle4D) BuildBoundingBox() (pmin, pmax *mat.VecDense) {
-	dim := utils.Dimension
-	if dim != 4 && k.Center != nil {
-		dim = k.Center.Len()
-	}
-	if dim < 4 {
-		dim = 4
-	}
+	dim := 4
 
 	pmin = mat.NewVecDense(dim, nil)
 	pmax = mat.NewVecDense(dim, nil)

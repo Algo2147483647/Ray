@@ -3,11 +3,12 @@ package ray_tracing
 import (
 	"testing"
 
+	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"github.com/Algo2147483647/ray/engine/model/optics"
 )
 
 func TestEffectiveSampleCountUsesWavelengthSubsamples(t *testing.T) {
-	handler := NewHandler()
+	handler := NewHandler(geometry.DefaultSceneSpace())
 	handler.SpectrumMode = optics.SpectrumModeSampledWavelengths
 	handler.WavelengthSamples = 3
 
@@ -17,7 +18,7 @@ func TestEffectiveSampleCountUsesWavelengthSubsamples(t *testing.T) {
 }
 
 func TestEffectiveSampleCountDefaultsSampledModeWavelengths(t *testing.T) {
-	handler := NewHandler()
+	handler := NewHandler(geometry.DefaultSceneSpace())
 	handler.SpectrumMode = optics.SpectrumModeSampledWavelengths
 	handler.WavelengthSamples = 0
 
@@ -27,7 +28,7 @@ func TestEffectiveSampleCountDefaultsSampledModeWavelengths(t *testing.T) {
 }
 
 func TestNewHandlerUsesRussianRouletteFriendlyDefaults(t *testing.T) {
-	handler := NewHandler()
+	handler := NewHandler(geometry.DefaultSceneSpace())
 
 	if handler.RussianRouletteDepth != 3 {
 		t.Fatalf("expected russian roulette after 3 bounces, got %d", handler.RussianRouletteDepth)

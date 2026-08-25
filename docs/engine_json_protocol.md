@@ -14,34 +14,26 @@ npm run ray -- --script path/to/scene.json
 go -C engine run . --script ../path/to/scene.json
 ```
 
-Engine accepts exactly one `--script`. Use `studio` when multiple authoring
-scripts need to be merged before execution. Render fields can be overridden from
-the CLI:
-
-```text
---dimension
---camera-id
---threads
---widths
---samples
---output-film
---spectrum-mode
---wavelength-samples
---pixel-window
-```
+Engine accepts exactly one `--script` and no render override flags. Use Studio
+for authoring composition and command-line overrides.
 
 ## Top Level
 
 ```json
 {
+	"dimension": 3,
   "media": {},
   "materials": [],
   "objects": [],
   "cameras": [],
-  "render": {},
   "renders": []
 }
 ```
+
+`dimension` is Scene-owned and defaults to 3. Every Object, Camera, and Render
+job in the file uses the same `SceneSpace`; Render jobs do not carry their own
+dimension. Legacy intermediate files with `renders[].dimension` are accepted
+only as a migration input and all such values must agree.
 
 `engine` does not resolve `includes` or merge scene files. Use `studio` for
 authoring composition; it writes one normalized intermediate JSON file for
@@ -89,7 +81,7 @@ Canonical shape fields for normalized engine JSON:
 | `circle` | `center`, `normal`, `r` |
 | `cylinder`, `finite cylinder` | `center`, `axis`, `r`, `height` |
 | `triangle` | `p1`, `p2`, `p3` |
-| `quadratic equation` | `a` length 9, `b` length `render.dimension`, `c` |
+| `quadratic equation` | `a` length 9, `b` length `dimension`, `c` |
 | `cubic equation` | `a` length 64, or sparse `a`/`A` object |
 | `four-order equation` | `a` length 256, or sparse `a`/`A` object |
 | `polynomial surface` | `mode`, `input_dim`, `degree`, `coefficients` |
@@ -372,15 +364,8 @@ renders `x = 100..149` and `y = 600..649`:
     ]
 		}
 	}],
-	"render": { "camera_id": "main-camera" }
+	"renders": [{ "camera_id": "main-camera" }]
 }
-```
-
-The CLI override is repeatable. Both `:` and `-` separators are accepted:
-
-```bash
-go -C engine run . --script ../scene.json --pixel-window 100:150,600:650
-go -C engine run . --script ../scene.json --pixel-window 100-150,600-650
 ```
 
 For Films with more than two dimensions, omitted trailing dimensions span the

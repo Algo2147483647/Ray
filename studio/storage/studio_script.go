@@ -131,6 +131,19 @@ func mergeStudioScripts(dst, src *schema.StudioScript, source string) error {
 	if err := appendUniqueStudioFilms(&dst.Films, src.Films, source); err != nil {
 		return err
 	}
+	if src.Dimension > 0 {
+		if dst.Dimension > 0 && dst.Dimension != src.Dimension {
+			return fmt.Errorf("scene dimension %d from %s conflicts with dimension %d", src.Dimension, source, dst.Dimension)
+		}
+		dst.Dimension = src.Dimension
+	}
+	if src.Render.LegacyDimension > 0 && dst.Render.LegacyDimension > 0 &&
+		src.Render.LegacyDimension != dst.Render.LegacyDimension {
+		return fmt.Errorf(
+			"legacy render dimension %d from %s conflicts with dimension %d",
+			src.Render.LegacyDimension, source, dst.Render.LegacyDimension,
+		)
+	}
 	dst.Render = schema.MergeRenderScripts(dst.Render, src.Render)
 	if len(src.Geometry) > 0 {
 		dst.Geometry = cloneMap(src.Geometry)

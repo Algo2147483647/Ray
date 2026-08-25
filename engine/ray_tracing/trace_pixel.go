@@ -70,7 +70,7 @@ func (h *Handler) traceSpectral(
 	index ...int,
 ) []rendercamera.SpectralSample {
 	ray := h.RayPool.Get().(*optics.Ray)
-	ray.Geometry = h.SceneGeometry
+	ray.Space = h.Space
 	defer h.RayPool.Put(ray)
 
 	wavelengthSampler := h.wavelengthSampler()

@@ -4,7 +4,6 @@ import (
 	"math"
 	"testing"
 
-	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -100,10 +99,6 @@ func TestKleinBottle4DNormalMatchesFiniteDifference(t *testing.T) {
 }
 
 func TestKleinBottle4DBuildBoundingBoxUsesCenterAndFourDimensions(t *testing.T) {
-	oldDim := utils.Dimension
-	utils.SetDimension(3)
-	t.Cleanup(func() { utils.SetDimension(oldDim) })
-
 	k := NewKleinBottle4D(mat.NewVecDense(4, []float64{1, -2, 3, -4}), 1.5, 0.5, 0.06)
 
 	pmin, pmax := k.BuildBoundingBox()

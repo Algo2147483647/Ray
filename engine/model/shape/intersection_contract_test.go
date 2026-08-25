@@ -54,7 +54,7 @@ func TestIntersectGeodesicRejectsUnsupportedGeometry(t *testing.T) {
 	_, ok := sphere.IntersectGeodesic(
 		mat.NewVecDense(3, []float64{0, 0, -3}),
 		mat.NewVecDense(3, []float64{0, 0, 1}),
-		geometry.Euclidean(),
+		geometry.Euclidean(3),
 		NewIntersectOptions(1e-6, 10),
 	)
 	if ok {

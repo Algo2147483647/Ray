@@ -3,7 +3,6 @@ package shape
 import (
 	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/maths/geometry"
-	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 	"math"
 )
@@ -34,7 +33,16 @@ type SurfaceSampler interface {
 }
 
 // BaseShape provides the basic shape implementation.
-type BaseShape struct{}
+type BaseShape struct {
+	Dimension int
+}
+
+func (bs *BaseShape) dimension() int {
+	if bs != nil && bs.Dimension > 0 {
+		return bs.Dimension
+	}
+	return 3
+}
 
 func (bs *BaseShape) Name() string {
 	return "Base Shape"
@@ -60,9 +68,10 @@ func (bs *BaseShape) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense
 }
 
 func (bs *BaseShape) BuildBoundingBox() (pmin, pmax *mat.VecDense) {
-	pmin = mat.NewVecDense(utils.Dimension, nil)
-	pmax = mat.NewVecDense(utils.Dimension, nil)
-	for i := 0; i < utils.Dimension; i++ {
+	dimension := bs.dimension()
+	pmin = mat.NewVecDense(dimension, nil)
+	pmax = mat.NewVecDense(dimension, nil)
+	for i := 0; i < dimension; i++ {
 		pmin.SetVec(i, -math.MaxFloat64/2) // math.MaxFloat64 / 2 prevents overflow in later calculations.
 		pmax.SetVec(i, +math.MaxFloat64/2)
 	}

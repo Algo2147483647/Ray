@@ -123,6 +123,9 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level in
 }
 
 func surfaceHitInGeometry(objTree *object.ObjectTree, ray *optics.Ray, g geometry.Geometry) (*object.SurfaceHit, bool) {
+	if objTree == nil || ray == nil || g == nil {
+		return nil, false
+	}
 	if g.Kind() == geometry.SphericalKind {
 		return objTree.GetGeodesicSurfaceHit(ray.Origin, ray.Direction, g, utils.EPS, math.Pi)
 	}
@@ -296,6 +299,9 @@ func applySurfaceSample(
 }
 
 func normalizeDirectionInGeometry(g geometry.Geometry, p, v *mat.VecDense) bool {
+	if g == nil || v == nil {
+		return false
+	}
 	n2 := g.InnerProduct(p, v, v)
 	if n2 <= 0 || math.IsNaN(n2) || math.IsInf(n2, 0) {
 		return false

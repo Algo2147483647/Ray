@@ -12,6 +12,7 @@ import (
 
 	enginefactory "github.com/Algo2147483647/ray/engine/controller/factory"
 	engineparser "github.com/Algo2147483647/ray/engine/controller/parser"
+	enginegeometry "github.com/Algo2147483647/ray/engine/maths/geometry"
 	enginemodel "github.com/Algo2147483647/ray/engine/model"
 	modelcamera "github.com/Algo2147483647/ray/engine/model/camera"
 	modelshape "github.com/Algo2147483647/ray/engine/model/shape"
@@ -25,6 +26,7 @@ func TestStudioSchemaRejectsRemovedFields(t *testing.T) {
 	for name, source := range map[string]string{
 		"render width":  `{"render":{"film_id":"main","width":800}}`,
 		"render output": `{"render":{"film_id":"main","output_film":"old.bin"}}`,
+		"bdpt fallback": `{"render":{"bdpt_fallback_policy":"path"}}`,
 		"film width":    `{"films":[{"id":"main","camera_id":"camera","width":800}]}`,
 		"camera widths": `{"cameras":[{"id":"camera","widths":[800,600]}]}`,
 	} {
@@ -92,15 +94,33 @@ func TestIntermediateScriptUsesCameraOwnedFilm(t *testing.T) {
 	if _, exists := intermediate["renders"]; !exists {
 		t.Fatal("Engine intermediate script must contain renders")
 	}
+	if engineScript.Dimension != 3 {
+		t.Fatalf("Engine scene dimension = %d, want 3", engineScript.Dimension)
+	}
+	if _, exists := adapted.Renders[0]["dimension"]; exists {
+		t.Fatal("scene dimension leaked into an Engine render job")
+	}
 	if len(engineScript.Renders) != 1 || engineScript.Renders[0].CameraID != "main" || engineScript.Cameras[0].Film.Shape[0] != 800 {
 		t.Fatalf("unexpected Engine script: %+v", engineScript)
 	}
-	scene := enginemodel.NewScene()
+	scene := enginemodel.NewScene(enginegeometry.DefaultSceneSpace())
 	if err := enginefactory.LoadSceneFromScript(&engineScript, scene); err != nil {
 		t.Fatalf("load Engine scene: %v", err)
 	}
 	if len(scene.Cameras) != 1 || scene.Cameras["main"].GetFilm() == nil || scene.Cameras["main"].GetFilm().Shape[1] != 600 {
 		t.Fatalf("Film was not loaded into Camera: %+v", scene.Cameras)
+	}
+}
+
+func TestResolveDimensionRejectsConflictingLegacyRenderValue(t *testing.T) {
+	script := &schema.StudioScript{
+		Dimension: 3,
+		Renders: []schema.StudioRenderScript{{
+			LegacyDimension: 4,
+		}},
+	}
+	if _, err := resolveDimension(script, studioConfig{}); err == nil {
+		t.Fatal("expected legacy render dimension to conflict with scene dimension")
 	}
 }
 
@@ -126,7 +146,7 @@ func TestStudioConfiguresSpectralBinCount(t *testing.T) {
 	if engineScript.Cameras[0].Film.SpectralBinCount != 128 {
 		t.Fatalf("spectral_bin_count = %d, want 128", engineScript.Cameras[0].Film.SpectralBinCount)
 	}
-	scene := enginemodel.NewScene()
+	scene := enginemodel.NewScene(enginegeometry.DefaultSceneSpace())
 	if err := enginefactory.LoadSceneFromScript(&engineScript, scene); err != nil {
 		t.Fatalf("load Engine scene: %v", err)
 	}
@@ -148,10 +168,9 @@ func TestStudioRejectsInvalidSpectralBinCount(t *testing.T) {
 func TestStudioExpandsLegacyRenderDefaultsIntoEveryEngineJob(t *testing.T) {
 	adapted, err := adaptTestScript(&schema.StudioScript{
 		Render: schema.StudioRenderScript{
-			Integrator:         "bdpt",
-			BDPTFallbackPolicy: "path",
-			Samples:            8,
-			FilmID:             "test-film",
+			Integrator: "bdpt",
+			Samples:    8,
+			FilmID:     "test-film",
 		},
 		Renders: []schema.StudioRenderScript{
 			{Samples: 32},
@@ -164,10 +183,10 @@ func TestStudioExpandsLegacyRenderDefaultsIntoEveryEngineJob(t *testing.T) {
 	if len(adapted.Renders) != 2 {
 		t.Fatalf("expected two Engine jobs, got %d", len(adapted.Renders))
 	}
-	if adapted.Renders[0]["integrator"] != "bdpt" || adapted.Renders[0]["bdpt_fallback_policy"] != "path" || adapted.Renders[0]["samples"] != int64(32) {
+	if adapted.Renders[0]["integrator"] != "bdpt" || adapted.Renders[0]["samples"] != int64(32) {
 		t.Fatalf("unexpected first Engine job: %v", adapted.Renders[0])
 	}
-	if adapted.Renders[1]["integrator"] != "bdpt" || adapted.Renders[1]["bdpt_fallback_policy"] != "path" || adapted.Renders[1]["samples"] != int64(8) {
+	if adapted.Renders[1]["integrator"] != "bdpt" || adapted.Renders[1]["samples"] != int64(8) {
 		t.Fatalf("unexpected second Engine job: %v", adapted.Renders[1])
 	}
 }

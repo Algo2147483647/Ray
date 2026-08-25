@@ -103,22 +103,15 @@ The active engine is the Go implementation under `engine/`.
 
 ## Render From The CLI
 
-From the repository root:
+From the repository root, Engine requires one canonical scene:
 
 ```bash
-npm run ray
+npm run ray -- --script path/to/canonical-engine-scene.json
 ```
 
-Use a specific scene:
+Authoring and render overrides belong to Studio:
 
 ```bash
-npm run ray -- --script ../examples/scenes/feature-showcase.json
-```
-
-Useful render flags:
-
-```bash
-npm run ray -- --width 800 --height 600 --samples 64 --threads 8
 npm run studio -- --output-film ../outputs/render.bin --output-image ../outputs/render.png
 npm run studio -- --input-film ../outputs/render.bin --output-image ../outputs/render.png --tone-mapping aces --gamma 2.2
 ```

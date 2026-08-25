@@ -22,7 +22,6 @@ func TestSegmentTransmittanceAppliesBeerLambertToRGBAndSampledSpectra(t *testing
 		"absorbing",
 		medium.NewConstant(1),
 		medium.ConstantCoefficient(0.5),
-		nil,
 	)
 	if err != nil {
 		t.Fatalf("register absorbing medium: %v", err)
@@ -90,8 +89,7 @@ func TestBuildLightSubpathAppliesHomogeneousAbsorptionBeforeVertex(t *testing.T)
 	tree.AddObject(lowerReceiver)
 	tree.Build()
 
-	handler := NewHandler()
-	handler.SceneGeometry = geometry.Euclidean()
+	handler := NewHandler(geometry.DefaultSceneSpace())
 	handler.SpectrumMode = optics.SpectrumModeRGB
 	handler.MaxRayLevel = 1
 	lights, totalArea := collectAreaLights(tree)
@@ -157,9 +155,8 @@ func renderDirectAreaLight(t *testing.T, sigmaA float64, samples int64) float64 
 		Coordinates:  []*mat.VecDense{mat.NewVecDense(3, []float64{0, 0, 1}), mat.NewVecDense(3, []float64{-1, 0, 0}), mat.NewVecDense(3, []float64{0, 1, 0})},
 		FieldOfViews: []float64{60, 60},
 	}
-	handler := NewHandler()
+	handler := NewHandler(geometry.DefaultSceneSpace())
 	handler.IntegratorKind = IntegratorLightTracing
-	handler.SceneGeometry = geometry.Euclidean()
 	handler.SpectrumMode = optics.SpectrumModeHeroWavelength
 	handler.ThreadNum = 1
 	handler.MaxRayLevel = 0
@@ -190,7 +187,6 @@ func absorbingAirRegistry(t *testing.T, sigmaA float64) *medium.Registry {
 			"air",
 			medium.NewConstant(1),
 			medium.ConstantCoefficient(sigmaA),
-			nil,
 		),
 	)
 	return registry

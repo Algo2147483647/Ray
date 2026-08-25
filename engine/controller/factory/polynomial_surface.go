@@ -9,7 +9,7 @@ import (
 	"github.com/Algo2147483647/ray/engine/utils"
 )
 
-func parsePolynomialSurface(objDef map[string]interface{}) ([]shape.Shape, error) {
+func parsePolynomialSurface(objDef map[string]interface{}, dimension int) ([]shape.Shape, error) {
 	if modeText, ok, err := utils.OptionalStringField(objDef, "mode"); err != nil {
 		return nil, err
 	} else if ok && modeText != "implicit" {
@@ -40,7 +40,7 @@ func parsePolynomialSurface(objDef map[string]interface{}) ([]shape.Shape, error
 	}
 	surface.Transform = transform
 
-	return wrapSingleShapeWithBounds(surface, objDef)
+	return wrapSingleShapeWithBounds(surface, objDef, dimension)
 }
 
 func parsePolynomialSurfaceCoefficients(

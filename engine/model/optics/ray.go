@@ -6,35 +6,44 @@ import (
 
 	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"github.com/Algo2147483647/ray/engine/model/material/medium"
-	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 )
 
 type Ray struct {
-	Origin               *mat.VecDense     `json:"origin"`
-	Direction            *mat.VecDense     `json:"direction"`
-	Color                RGB               `json:"color"`
-	SpectralPower        float64           `json:"spectral_power"`
-	SpectralPath         bool              `json:"spectral_path"`
-	RGBCompatibility     RGB               `json:"rgb_compatibility"`
-	RGBCompatibilityPath bool              `json:"rgb_compatibility_path"`
-	WaveLength           float64           `json:"wave_length"` // (nm)
-	WavelengthPDF        float64           `json:"wavelength_pdf"`
-	RefractionIndex      float64           `json:"refraction_index"`
-	MediumStack          medium.Stack      `json:"-"`
-	Geometry             geometry.Geometry `json:"-"` // nil ⇒ Euclidean (back-compat default)
-	ArcTraveled          float64           `json:"-"` // geodesic arc length traveled so far (S^3 wrap)
+	Origin               *mat.VecDense       `json:"origin"`
+	Direction            *mat.VecDense       `json:"direction"`
+	Color                RGB                 `json:"color"`
+	SpectralPower        float64             `json:"spectral_power"`
+	SpectralPath         bool                `json:"spectral_path"`
+	RGBCompatibility     RGB                 `json:"rgb_compatibility"`
+	RGBCompatibilityPath bool                `json:"rgb_compatibility_path"`
+	WaveLength           float64             `json:"wave_length"` // (nm)
+	WavelengthPDF        float64             `json:"wavelength_pdf"`
+	RefractionIndex      float64             `json:"refraction_index"`
+	MediumStack          medium.Stack        `json:"-"`
+	Space                geometry.SceneSpace `json:"-"`
+	ArcTraveled          float64             `json:"-"` // geodesic arc length traveled so far (S^3 wrap)
 }
 
 func (r *Ray) Init() {
+	dimension := r.Space.Dimension
+	if dimension <= 0 && r.Origin != nil {
+		dimension = r.Origin.Len()
+	}
+	if dimension <= 0 && r.Direction != nil {
+		dimension = r.Direction.Len()
+	}
+	if dimension <= 0 {
+		dimension = 3
+	}
 	if r.Origin == nil {
-		r.Origin = mat.NewVecDense(utils.Dimension, nil)
+		r.Origin = mat.NewVecDense(dimension, nil)
 	} else {
 		r.Origin.Zero()
 	}
 
 	if r.Direction == nil {
-		r.Direction = mat.NewVecDense(utils.Dimension, nil)
+		r.Direction = mat.NewVecDense(dimension, nil)
 	} else {
 		r.Direction.Zero()
 	}
@@ -51,9 +60,9 @@ func (r *Ray) Init() {
 	r.WavelengthPDF = 0
 
 	r.ArcTraveled = 0
-	// Geometry is intentionally NOT reset: it is set per-render by the
+	// Space is intentionally NOT reset: it is set per-render by the
 	// renderer when handing out a Ray, and Init may be called from a
-	// pool that pre-assigns it. Setting it to nil here would break the
+	// pool that pre-assigns it. Clearing it here would break the
 	// non-Euclidean integrator.
 }
 
@@ -102,5 +111,5 @@ func (r *Ray) DisableSpectralSampling() {
 
 // G returns the ray's geometry, falling back to Euclidean if unset.
 func (r *Ray) G() geometry.Geometry {
-	return geometry.Get(r.Geometry)
+	return r.Space.G()
 }

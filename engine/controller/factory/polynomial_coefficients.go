@@ -112,18 +112,18 @@ func sparsePolynomialCoordinateIndex(key string, order int) (int, error) {
 	return index, nil
 }
 
-func normalizePolynomialCenterScale(center, scale []float64) ([3]float64, [3]float64, error) {
+func normalizePolynomialCenterScale(center, scale []float64, dimension int) ([3]float64, [3]float64, error) {
 	normalizedCenter := [3]float64{}
 	normalizedScale := [3]float64{1, 1, 1}
 
 	if center != nil {
-		if err := utils.RequireSliceLength("center", center, utils.Dimension); err != nil {
+		if err := utils.RequireSliceLength("center", center, dimension); err != nil {
 			return normalizedCenter, normalizedScale, err
 		}
 		copy(normalizedCenter[:], center)
 	}
 	if scale != nil {
-		if err := utils.RequireSliceLength("scale", scale, utils.Dimension); err != nil {
+		if err := utils.RequireSliceLength("scale", scale, dimension); err != nil {
 			return normalizedCenter, normalizedScale, err
 		}
 		for i, value := range scale {

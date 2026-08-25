@@ -36,7 +36,7 @@ func TestHyperbolicCameraGenerateRayUsesKleinUnitDirection(t *testing.T) {
 	camera.Film = NewFilm(64, 64)
 	ray := camera.GenerateRay(nil, 32, 32)
 
-	if ray.Geometry != geometry.Klein() {
+	if ray.Space.Geometry != geometry.Klein() {
 		t.Fatal("expected generated ray to carry Klein geometry")
 	}
 	assertKleinInnerApprox(t, geometry.Klein(), ray.Origin, ray.Direction, ray.Direction, 1, 1e-12)

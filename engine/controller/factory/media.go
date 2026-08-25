@@ -27,6 +27,9 @@ func ParseMediaRegistry(script *parser.Script) (*medium.Registry, error) {
 		if mediumType != "homogeneous" {
 			return nil, fmt.Errorf("%s: unsupported medium type %q", context, mediumType)
 		}
+		if _, exists := def["sigma_s"]; exists {
+			return nil, fmt.Errorf("%s: sigma_s is unsupported until volume scattering is implemented", context)
+		}
 
 		etaModel, err := parseMediumIORModel(def)
 		if err != nil {
@@ -36,16 +39,10 @@ func ParseMediaRegistry(script *parser.Script) (*medium.Registry, error) {
 		if err != nil {
 			return nil, fmt.Errorf("%s sigma_a: %w", context, err)
 		}
-		sigmaS, _, err := optionalSpectralParameterField(def, "sigma_s", nil)
-		if err != nil {
-			return nil, fmt.Errorf("%s sigma_s: %w", context, err)
-		}
-
 		if _, err := registry.RegisterHomogeneousWithCoefficients(
 			name,
 			etaModel,
 			spectralCoefficient{parameter: sigmaA},
-			spectralCoefficient{parameter: sigmaS},
 		); err != nil {
 			return nil, fmt.Errorf("%s: %w", context, err)
 		}

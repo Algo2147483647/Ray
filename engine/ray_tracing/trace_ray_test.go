@@ -143,6 +143,7 @@ func TestPrepareSurfaceInteractionSamplesLambertIn4D(t *testing.T) {
 	ray := &renderray.Ray{
 		Origin:    mat.NewVecDense(4, []float64{-1, 0, 0, 0}),
 		Direction: mat.NewVecDense(4, []float64{1, 0, 0, 0}),
+		Space:     geometry.NewSceneSpace(geometry.Euclidean(4), 4),
 	}
 	ray.Init()
 	ray.Origin.CopyVec(mat.NewVecDense(4, []float64{-1, 0, 0, 0}))
@@ -182,6 +183,7 @@ func TestPrepareSurfaceInteractionUsesGeometricNormalForEmission(t *testing.T) {
 	ray := &renderray.Ray{
 		Origin:    mat.NewVecDense(3, []float64{0, 0, 1}),
 		Direction: mat.NewVecDense(3, []float64{0, 0, -1}),
+		Space:     geometry.DefaultSceneSpace(),
 	}
 	ray.Init()
 	ray.Origin.CopyVec(mat.NewVecDense(3, []float64{0, 0, 1}))
@@ -219,7 +221,7 @@ func TestSurfaceHitInGeometryHonorsKleinBoundary(t *testing.T) {
 	ray := &renderray.Ray{
 		Origin:    mat.NewVecDense(3, []float64{0, 0, 0}),
 		Direction: mat.NewVecDense(3, []float64{1, 0, 0}),
-		Geometry:  geometry.Klein(),
+		Space:     geometry.NewSceneSpace(geometry.Klein(), 3),
 	}
 
 	if _, ok := surfaceHitInGeometry(tree, ray, ray.G()); ok {
@@ -245,14 +247,14 @@ func TestKleinSurfaceInteractionNormalizesIncidentDirectionAndReflectsMetricAngl
 	ray := &renderray.Ray{
 		Origin:    mat.NewVecDense(3, []float64{0, 0, 0}),
 		Direction: mat.NewVecDense(3, []float64{0.8, 0.6, 0}),
-		Geometry:  g,
+		Space:     geometry.NewSceneSpace(g, 3),
 	}
 	hit, ok := surfaceHitInGeometry(tree, ray, g)
 	if !ok {
 		t.Fatal("expected Klein plane hit")
 	}
 
-	handler := NewHandler()
+	handler := NewHandler(geometry.DefaultSceneSpace())
 	si, ok := handler.prepareSurfaceInteraction(medium.NewRegistry(), ray, hit)
 	if !ok {
 		t.Fatal("expected Klein surface interaction")
@@ -283,7 +285,6 @@ func TestApplyMediumAbsorptionUsesBeerLambertRGB(t *testing.T) {
 		"water",
 		medium.NewConstant(1.33),
 		medium.ConstantCoefficient(0.5),
-		nil,
 	)
 	if err != nil {
 		t.Fatalf("register water: %v", err)
@@ -308,7 +309,6 @@ func TestApplyMediumAbsorptionUsesSpectralPowerForSampledSigmaA(t *testing.T) {
 		"filter",
 		medium.NewConstant(1),
 		sampledCoefficient{value: 0.25},
-		nil,
 	)
 	if err != nil {
 		t.Fatalf("register filter: %v", err)

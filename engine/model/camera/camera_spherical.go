@@ -123,6 +123,6 @@ func (c *SphericalCamera) GenerateRay(res *renderray.Ray, index ...int) *renderr
 	// Direction already lives in T_p (sum of T_p vectors). Normalize.
 	maths.Normalize(res.Direction)
 
-	res.Geometry = geometry.Spherical()
+	res.Space = geometry.NewSceneSpace(geometry.Spherical(), 4)
 	return res
 }

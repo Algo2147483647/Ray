@@ -9,9 +9,9 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-func parseParametricCurve(objDef map[string]interface{}) ([]shape.Shape, error) {
-	if utils.Dimension != 3 {
-		return nil, fmt.Errorf("shape %q requires render dimension 3, got %d", ShapeParametricCurve, utils.Dimension)
+func parseParametricCurve(objDef map[string]interface{}, dimension int) ([]shape.Shape, error) {
+	if dimension != 3 {
+		return nil, fmt.Errorf("shape %q requires scene dimension 3, got %d", ShapeParametricCurve, dimension)
 	}
 
 	curveDef, curveType, err := parametricCurveDefinition(objDef)
@@ -36,7 +36,7 @@ func parseParametricCurve(objDef map[string]interface{}) ([]shape.Shape, error) 
 	if err != nil {
 		return nil, err
 	}
-	function, derivative, radius, err = applyParametricCurvePlacement(function, derivative, radius, objDef)
+	function, derivative, radius, err = applyParametricCurvePlacement(function, derivative, radius, objDef, dimension)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func parseParametricCurve(objDef map[string]interface{}) ([]shape.Shape, error) 
 	if err := applyParametricCurveOptions(curve, objDef); err != nil {
 		return nil, err
 	}
-	return wrapSingleShapeWithBounds(curve, objDef)
+	return wrapSingleShapeWithBounds(curve, objDef, dimension)
 }
 
 // Parametric curves are represented as capsules, so their circular cross-section
@@ -56,8 +56,9 @@ func applyParametricCurvePlacement(
 	derivative shape.ParametricCurveDerivative,
 	radius shape.ParametricCurveRadius,
 	objDef map[string]interface{},
+	dimension int,
 ) (shape.ParametricCurveFunction, shape.ParametricCurveDerivative, shape.ParametricCurveRadius, error) {
-	center, scale, err := parsePolynomialCenterScale(objDef)
+	center, scale, err := parsePolynomialCenterScale(objDef, dimension)
 	if err != nil {
 		return nil, nil, nil, err
 	}

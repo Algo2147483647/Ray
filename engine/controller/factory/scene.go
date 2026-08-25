@@ -24,18 +24,28 @@ func LoadSceneFromScript(script *parser.Script, scene *model.Scene) error {
 
 	scene.ObjectTree = &object.ObjectTree{}
 	scene.Cameras = make(map[string]modelcamera.RayCamera)
-	scene.Geometry = nil
+	scene.Space = geometry.DefaultSceneSpace()
 	scene.MaxArc = 0
 
-	// Resolve scene geometry. Default is Euclidean (nil sentinel).
+	dimension, err := sceneDimension(script)
+	if err != nil {
+		return err
+	}
+	if dimension < 2 {
+		return fmt.Errorf("scene dimension must be >= 2, got %d", dimension)
+	}
+
+	// Geometry is always explicit. Euclidean owns the Scene's actual embedding
+	// dimension instead of using nil as a process-wide compatibility sentinel.
+	sceneGeometry := geometry.Euclidean(dimension)
 	if script.Geometry != nil {
 		switch strings.ToLower(script.Geometry.Type) {
 		case "", "euclidean":
-			scene.Geometry = nil
+			sceneGeometry = geometry.Euclidean(dimension)
 		case "klein", "hyperbolic":
-			scene.Geometry = geometry.Klein()
+			sceneGeometry = geometry.Klein()
 		case "spherical", "sphere":
-			scene.Geometry = geometry.Spherical()
+			sceneGeometry = geometry.Spherical()
 		default:
 			return fmt.Errorf("unsupported geometry type %q", script.Geometry.Type)
 		}
@@ -43,27 +53,19 @@ func LoadSceneFromScript(script *parser.Script, scene *model.Scene) error {
 		if scene.MaxArc < 0 || math.IsNaN(scene.MaxArc) || math.IsInf(scene.MaxArc, 0) {
 			return fmt.Errorf("geometry max_arc must be finite and >= 0, got %v", scene.MaxArc)
 		}
-		if scene.MaxArc == 0 && scene.Geometry == geometry.Spherical() {
+		if scene.MaxArc == 0 && sceneGeometry == geometry.Spherical() {
 			scene.MaxArc = 2 * math.Pi
 		}
 	}
-
-	dimension, err := renderDimension(script.Renders)
-	if err != nil {
-		return err
-	}
-	if dimension < 2 {
-		return fmt.Errorf("render dimension must be >= 2, got %d", dimension)
-	}
-	if scene.Geometry != nil && dimension != scene.Geometry.Dimension() {
+	if dimension != sceneGeometry.Dimension() {
 		return fmt.Errorf(
-			"geometry %q requires render dimension %d, got %d",
-			scene.Geometry.Name(),
-			scene.Geometry.Dimension(),
+			"geometry %q requires scene dimension %d, got %d",
+			sceneGeometry.Name(),
+			sceneGeometry.Dimension(),
 			dimension,
 		)
 	}
-	utils.SetDimension(dimension)
+	scene.Space = geometry.NewSceneSpace(sceneGeometry, dimension)
 
 	materials, err := ParseMaterials(script)
 	if err != nil {
@@ -97,7 +99,7 @@ func LoadSceneFromScript(script *parser.Script, scene *model.Scene) error {
 			continue
 		}
 
-		shapes, err := ParseShape(item)
+		shapes, err := ParseShapeInSpace(item, scene.Space)
 		if err != nil {
 			parseErrors = append(parseErrors, fmt.Errorf("%s: %w", objectLabel, err))
 			continue
@@ -124,7 +126,7 @@ func LoadSceneFromScript(script *parser.Script, scene *model.Scene) error {
 	cameras, err := ParseCameras(script)
 	if err != nil {
 		parseErrors = append(parseErrors, err)
-	} else if err := validateCamerasForGeometry(scene.Geometry, cameras); err != nil {
+	} else if err := validateCamerasForGeometry(scene.Space.Geometry, cameras); err != nil {
 		parseErrors = append(parseErrors, err)
 	}
 
@@ -136,24 +138,27 @@ func LoadSceneFromScript(script *parser.Script, scene *model.Scene) error {
 	return nil
 }
 
-func renderDimension(renders []parser.RenderScript) (int, error) {
-	dimension := 3
-	for i, render := range renders {
-		jobDimension := render.Dimension
-		if jobDimension <= 0 {
-			jobDimension = 3
+func sceneDimension(script *parser.Script) (int, error) {
+	dimension := script.Dimension
+	for i, render := range script.Renders {
+		legacy := render.LegacyDimension
+		if legacy <= 0 {
+			continue
 		}
-		if i > 0 && jobDimension != dimension {
-			return 0, fmt.Errorf("renders[%d] dimension %d conflicts with dimension %d", i, jobDimension, dimension)
+		if dimension > 0 && legacy != dimension {
+			return 0, fmt.Errorf("renders[%d] legacy dimension %d conflicts with scene dimension %d", i, legacy, dimension)
 		}
-		dimension = jobDimension
+		dimension = legacy
+	}
+	if dimension <= 0 {
+		dimension = 3
 	}
 	return dimension, nil
 }
 
 func validateCamerasForGeometry(g geometry.Geometry, cameras map[string]modelcamera.RayCamera) error {
 	for id, cam := range cameras {
-		switch geometry.Get(g).Kind() {
+		switch g.Kind() {
 		case geometry.EuclideanKind:
 			switch cam.(type) {
 			case *modelcamera.HyperbolicCamera, *modelcamera.SphericalCamera:

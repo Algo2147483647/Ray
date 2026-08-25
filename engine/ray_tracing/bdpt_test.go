@@ -60,9 +60,8 @@ func addTestAreaLight(tree *object.ObjectTree, center []float64) *object.Object 
 }
 
 func newBDPTTestHandler() *Handler {
-	h := NewHandler()
+	h := NewHandler(geometry.DefaultSceneSpace())
 	h.IntegratorKind = IntegratorBDPT
-	h.SceneGeometry = geometry.Euclidean()
 	h.SpectrumMode = optics.SpectrumModeRGB
 	h.MaxRayLevel = 3
 	return h
@@ -106,7 +105,7 @@ func TestBDPTPreflightAcceptsFiniteCylinderAreaLight(t *testing.T) {
 	}
 }
 
-func TestBDPTFallbackUsesPathDriverOnlyWhenExplicit(t *testing.T) {
+func TestBDPTUnsupportedSceneFailsWithoutChangingIntegrator(t *testing.T) {
 	tree := (&object.ObjectTree{}).Build()
 	tree.AddObject(&object.Object{
 		Shape:    &shape.Plane{A: mat.NewVecDense(3, []float64{0, 0, 1}), B: -1},
@@ -117,20 +116,10 @@ func TestBDPTFallbackUsesPathDriverOnlyWhenExplicit(t *testing.T) {
 	camera3D := newBDPTTestCamera(t, 1, 1)
 	h := newBDPTTestHandler()
 	if err := h.TraceScene(camera3D, tree, 1); err == nil {
-		t.Fatal("default BDPT fallback policy must report the unsupported emitter")
+		t.Fatal("BDPT must report the unsupported emitter")
 	}
-
-	camera3D.Film.Reset()
-	h.BDPTFallbackPolicy = BDPTFallbackPath
-	if err := h.TraceScene(camera3D, tree, 1); err != nil {
-		t.Fatalf("explicit path fallback failed: %v", err)
-	}
-	if h.LastRequestedIntegrator != IntegratorBDPT || h.LastEffectiveIntegrator != IntegratorPathTracing || h.LastFallbackReason == "" {
-		t.Fatalf("incorrect fallback metadata: requested=%q effective=%q reason=%q",
-			h.LastRequestedIntegrator, h.LastEffectiveIntegrator, h.LastFallbackReason)
-	}
-	if camera3D.Film.Samples != 1 {
-		t.Fatalf("fallback must use path-driver sample accounting, got %d", camera3D.Film.Samples)
+	if h.IntegratorKind != IntegratorBDPT || camera3D.Film.Samples != 0 {
+		t.Fatalf("failed BDPT changed execution state: integrator=%q samples=%d", h.IntegratorKind, camera3D.Film.Samples)
 	}
 }
 
@@ -155,29 +144,6 @@ func TestBDPTPreflightAcceptsIdealTransmissionAndMediumBoundary(t *testing.T) {
 	}
 }
 
-func TestBDPTPreflightRejectsParticipatingMediumScattering(t *testing.T) {
-	registry := medium.NewRegistry()
-	fogID, err := registry.RegisterHomogeneousWithCoefficients(
-		"fog", medium.NewConstant(1.1), nil, medium.ConstantCoefficient(0.1),
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-	tree := (&object.ObjectTree{Media: registry}).Build()
-	addTestAreaLight(tree, []float64{0, 0, 3})
-	tree.AddObject(&object.Object{
-		Shape: shape.NewSphere(mat.NewVecDense(3, []float64{0, 0, 1}), 0.25),
-		Material: &material.Material{Surface: bsdf.NewSingle(bxdf.NewSpecularDielectricConstant(
-			optics.ConstantSpectrum(1), optics.ConstantSpectrum(1), 1, 1.1,
-		))},
-		MediumBoundary: medium.NewBoundary(medium.MediumAir, fogID),
-	})
-	tree.Build()
-	if _, err := newBDPTTestHandler().prepareBDPT(newBDPTTestCamera(t, 1, 1), tree); err == nil {
-		t.Fatal("participating-medium scattering must remain behind the capability gate")
-	}
-}
-
 func TestBDPTPreflightAcceptsReciprocalRoughReflection(t *testing.T) {
 	tree := (&object.ObjectTree{}).Build()
 	addTestAreaLight(tree, []float64{0, 0, 3})
@@ -199,7 +165,7 @@ func TestBDPTPreflightAcceptsReciprocalRoughReflection(t *testing.T) {
 func TestBDPTRandomWalkTransmitsAndAbsorbsInsideMedium(t *testing.T) {
 	registry := medium.NewRegistry()
 	glassID, err := registry.RegisterHomogeneousWithCoefficients(
-		"absorbing-glass", medium.NewConstant(1), medium.ConstantCoefficient(0.7), nil,
+		"absorbing-glass", medium.NewConstant(1), medium.ConstantCoefficient(0.7),
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -229,7 +195,7 @@ func TestBDPTRandomWalkTransmitsAndAbsorbsInsideMedium(t *testing.T) {
 	tree.Build()
 
 	h := newBDPTTestHandler()
-	ray := &optics.Ray{Geometry: h.SceneGeometry}
+	ray := &optics.Ray{Space: h.Space}
 	ray.Init()
 	ray.Origin.CopyVec(mat.NewVecDense(3, []float64{0, 0, 0}))
 	ray.Direction.CopyVec(mat.NewVecDense(3, []float64{0, 0, 1}))
@@ -318,10 +284,6 @@ func TestBDPTSupportedSceneRunsUnifiedSplatDriver(t *testing.T) {
 	h := newBDPTTestHandler()
 	if err := h.TraceScene(cam, tree, 4); err != nil {
 		t.Fatalf("supported BDPT render failed: %v", err)
-	}
-	if h.LastRequestedIntegrator != IntegratorBDPT || h.LastEffectiveIntegrator != IntegratorBDPT {
-		t.Fatalf("unexpected integrator metadata: requested=%q effective=%q",
-			h.LastRequestedIntegrator, h.LastEffectiveIntegrator)
 	}
 	if cam.Film.Samples != 4 {
 		t.Fatalf("BDPT sample accounting = %d, want 4", cam.Film.Samples)

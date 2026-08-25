@@ -1,10 +1,14 @@
 package parser
 
 import (
+	"encoding/json"
+	"fmt"
+
 	modelcamera "github.com/Algo2147483647/ray/engine/model/camera"
 )
 
 type Script struct {
+	Dimension int                               `json:"dimension"`
 	Materials []map[string]interface{}          `json:"materials"`
 	Media     map[string]map[string]interface{} `json:"media"`
 	Objects   []map[string]interface{}          `json:"objects"`
@@ -24,14 +28,25 @@ type CameraScript struct {
 }
 
 type RenderScript struct {
-	Integrator         string `json:"integrator"`
-	BDPTFallbackPolicy string `json:"bdpt_fallback_policy,omitempty"`
-	Dimension          int    `json:"dimension"`
-	Samples            int64  `json:"samples"`
-	ThreadNum          int    `json:"thread_num"`
-	CameraID           string `json:"camera_id"`
-	SpectrumMode       string `json:"spectrum_mode"`
-	WavelengthSamples  int    `json:"wavelength_samples"`
+	Integrator        string `json:"integrator"`
+	LegacyDimension   int    `json:"dimension,omitempty"` // deprecated: use Script.Dimension
+	Samples           int64  `json:"samples"`
+	ThreadNum         int    `json:"thread_num"`
+	CameraID          string `json:"camera_id"`
+	SpectrumMode      string `json:"spectrum_mode"`
+	WavelengthSamples int    `json:"wavelength_samples"`
+}
+
+func (r *RenderScript) UnmarshalJSON(data []byte) error {
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	if _, exists := raw["bdpt_fallback_policy"]; exists {
+		return fmt.Errorf("render field %q was removed; choose integrator explicitly", "bdpt_fallback_policy")
+	}
+	type plain RenderScript
+	return json.Unmarshal(data, (*plain)(r))
 }
 
 type GeometryScript struct {

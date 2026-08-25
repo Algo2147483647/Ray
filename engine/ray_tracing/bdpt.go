@@ -80,7 +80,7 @@ func (h *Handler) prepareBDPT(renderCamera camera.RayCamera, tree *object.Object
 	if h == nil {
 		return nil, fmt.Errorf("BDPT handler is nil")
 	}
-	if geometry.Get(h.SceneGeometry).Kind() != geometry.EuclideanKind {
+	if h.Space.G().Kind() != geometry.EuclideanKind {
 		return nil, fmt.Errorf("BDPT requires three-dimensional Euclidean geometry")
 	}
 	if renderCamera == nil || renderCamera.GetFilm() == nil {
@@ -105,7 +105,6 @@ func (h *Handler) prepareBDPT(renderCamera camera.RayCamera, tree *object.Object
 	}
 
 	if tree != nil {
-		checkedMedia := make(map[medium.MediumID]bool)
 		for _, obj := range tree.Objects {
 			if obj == nil {
 				continue
@@ -126,19 +125,8 @@ func (h *Handler) prepareBDPT(renderCamera camera.RayCamera, tree *object.Object
 				if obj.MediumBoundary.Active() && obj.Material.Surface.DeltaFlags()&bxdf.TransmissionEvent == 0 {
 					return nil, fmt.Errorf("object %q: BDPT medium boundary requires a supported transmission surface", obj.Material.Metadata.Name)
 				}
-				if obj.MediumBoundary.Active() {
-					if obj.MediumBoundary.Thin {
-						return nil, fmt.Errorf("object %q: BDPT thin medium boundaries are not implemented", obj.Material.Metadata.Name)
-					}
-					for _, mediumID := range []medium.MediumID{obj.MediumBoundary.Outside, obj.MediumBoundary.Inside} {
-						if checkedMedia[mediumID] {
-							continue
-						}
-						checkedMedia[mediumID] = true
-						if bdptMediumHasScattering(getMediumRegistry(tree), mediumID) {
-							return nil, fmt.Errorf("object %q: BDPT participating-medium scattering is not implemented", obj.Material.Metadata.Name)
-						}
-					}
+				if obj.MediumBoundary.Active() && obj.MediumBoundary.Thin {
+					return nil, fmt.Errorf("object %q: BDPT thin medium boundaries are not implemented", obj.Material.Metadata.Name)
 				}
 			} else if obj.MediumBoundary.Active() {
 				return nil, fmt.Errorf("object %q: BDPT medium boundary requires a material surface", obj.Material.Metadata.Name)
@@ -159,31 +147,6 @@ func (h *Handler) prepareBDPT(renderCamera camera.RayCamera, tree *object.Object
 		return nil, fmt.Errorf("BDPT scene has no sampleable finite area light")
 	}
 	return state, nil
-}
-
-func bdptMediumHasScattering(registry *medium.Registry, mediumID medium.MediumID) bool {
-	if registry == nil {
-		return false
-	}
-	for _, wavelength := range []float64{medium.WavelengthMinNM, medium.DefaultWavelengthNM, medium.WavelengthMaxNM} {
-		ctx := bxdf.ShadingContext{
-			SpectrumMode:  optics.SpectrumModeSampledWavelengths,
-			WavelengthNM:  wavelength,
-			WavelengthsNM: []float64{wavelength},
-		}
-		coefficient := registry.SigmaS(mediumID, ctx)
-		for _, value := range coefficient.Samples {
-			if value != 0 {
-				return true
-			}
-		}
-		for channel := 0; channel < 3; channel++ {
-			if coefficient.RGBChannel(channel) != 0 {
-				return true
-			}
-		}
-	}
-	return false
 }
 
 func validateBDPTSurface(surface bsdf.BSDF) error {
@@ -358,7 +321,7 @@ func (h *Handler) buildCameraSubpath(
 	if !ok || bdCamera.Endpoint() == nil {
 		return nil
 	}
-	ray := &optics.Ray{Geometry: h.SceneGeometry}
+	ray := &optics.Ray{Space: h.Space}
 	renderCamera.GenerateRay(ray, index...)
 	setBDPTWavelength(ray, wavelengthNM, wavelengthPDF)
 	directionPDF := bdCamera.PDFDirection(ray.Direction)
@@ -468,7 +431,7 @@ func (h *Handler) buildLightSubpath(
 	path := []bdptVertex{root}
 	ray := &optics.Ray{
 		Origin: mat.VecDenseCopyOf(root.Point), Direction: mat.VecDenseCopyOf(worldDirection),
-		Geometry: h.SceneGeometry,
+		Space: h.Space,
 	}
 	ray.Init()
 	ray.Origin.CopyVec(root.Point)

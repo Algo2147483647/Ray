@@ -26,7 +26,7 @@ func AdaptScript(script *schema.StudioScript, source []string, dimension int) (*
 		return nil, err
 	}
 
-	renders, err := rendersToMaps(script, cameraIDs, dimension)
+	renders, err := rendersToMaps(script, cameraIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -38,6 +38,7 @@ func AdaptScript(script *schema.StudioScript, source []string, dimension int) (*
 			GeneratedAt: time.Now().UTC().Format(time.RFC3339),
 			Dimension:   dimension,
 		},
+		Dimension: dimension,
 		Materials: cloneMapSlice(script.Materials),
 		Media:     cloneNestedStringMap(script.Media),
 		Objects:   objects,
@@ -55,12 +56,6 @@ func renderToMap(script *schema.StudioScript, render schema.StudioRenderScript, 
 	}
 	if render.Integrator != "" {
 		result["integrator"] = render.Integrator
-	}
-	if render.BDPTFallbackPolicy != "" {
-		result["bdpt_fallback_policy"] = render.BDPTFallbackPolicy
-	}
-	if render.Dimension > 0 {
-		result["dimension"] = render.Dimension
 	}
 	if render.Samples > 0 {
 		result["samples"] = render.Samples
@@ -155,11 +150,10 @@ func activeFilmIDs(script *schema.StudioScript) []string {
 	return result
 }
 
-func rendersToMaps(script *schema.StudioScript, cameraIDs map[string]string, dimension int) ([]map[string]interface{}, error) {
+func rendersToMaps(script *schema.StudioScript, cameraIDs map[string]string) ([]map[string]interface{}, error) {
 	renders := resolvedRenderScripts(script)
 	result := make([]map[string]interface{}, len(renders))
 	for i, render := range renders {
-		render.Dimension = dimension
 		mapped, err := renderToMap(script, render, cameraIDs)
 		if err != nil {
 			return nil, err

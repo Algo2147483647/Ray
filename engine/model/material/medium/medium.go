@@ -9,7 +9,6 @@ type Medium interface {
 	Name() string
 	IOR(ctx WavelengthContext) float64
 	SigmaA(ctx WavelengthContext) CoefficientSpectrum
-	SigmaS(ctx WavelengthContext) CoefficientSpectrum
 }
 
 type WavelengthContext interface {
@@ -29,29 +28,24 @@ type Homogeneous struct {
 	name   string
 	eta    Model
 	sigmaA Coefficient
-	sigmaS Coefficient
 }
 
 func NewHomogeneous(id MediumID, name string, eta Model) Homogeneous {
-	return NewHomogeneousWithCoefficients(id, name, eta, nil, nil)
+	return NewHomogeneousWithCoefficients(id, name, eta, nil)
 }
 
-func NewHomogeneousWithCoefficients(id MediumID, name string, eta Model, sigmaA, sigmaS Coefficient) Homogeneous {
+func NewHomogeneousWithCoefficients(id MediumID, name string, eta Model, sigmaA Coefficient) Homogeneous {
 	if eta == nil {
 		eta = NewConstant(1)
 	}
 	if sigmaA == nil {
 		sigmaA = ConstantCoefficient(0)
 	}
-	if sigmaS == nil {
-		sigmaS = ConstantCoefficient(0)
-	}
 	return Homogeneous{
 		id:     id,
 		name:   name,
 		eta:    eta,
 		sigmaA: sigmaA,
-		sigmaS: sigmaS,
 	}
 }
 
@@ -88,13 +82,6 @@ func (h Homogeneous) SigmaA(ctx WavelengthContext) CoefficientSpectrum {
 	return h.sigmaA.Eval(ctx)
 }
 
-func (h Homogeneous) SigmaS(ctx WavelengthContext) CoefficientSpectrum {
-	if h.sigmaS == nil {
-		return CoefficientSpectrum{}
-	}
-	return h.sigmaS.Eval(ctx)
-}
-
 type Registry struct {
 	mediaByID map[MediumID]Medium
 	idByName  map[string]MediumID
@@ -123,10 +110,10 @@ func (r *Registry) Set(id MediumID, name string, m Medium) {
 }
 
 func (r *Registry) RegisterHomogeneous(name string, eta Model) (MediumID, error) {
-	return r.RegisterHomogeneousWithCoefficients(name, eta, nil, nil)
+	return r.RegisterHomogeneousWithCoefficients(name, eta, nil)
 }
 
-func (r *Registry) RegisterHomogeneousWithCoefficients(name string, eta Model, sigmaA, sigmaS Coefficient) (MediumID, error) {
+func (r *Registry) RegisterHomogeneousWithCoefficients(name string, eta Model, sigmaA Coefficient) (MediumID, error) {
 	if r == nil {
 		return MediumNone, fmt.Errorf("medium registry is nil")
 	}
@@ -134,11 +121,11 @@ func (r *Registry) RegisterHomogeneousWithCoefficients(name string, eta Model, s
 		return MediumNone, fmt.Errorf("medium name must not be empty")
 	}
 	if existing, ok := r.idByName[name]; ok {
-		r.Set(existing, name, NewHomogeneousWithCoefficients(existing, name, eta, sigmaA, sigmaS))
+		r.Set(existing, name, NewHomogeneousWithCoefficients(existing, name, eta, sigmaA))
 		return existing, nil
 	}
 	id := r.nextID
-	r.Set(id, name, NewHomogeneousWithCoefficients(id, name, eta, sigmaA, sigmaS))
+	r.Set(id, name, NewHomogeneousWithCoefficients(id, name, eta, sigmaA))
 	return id, nil
 }
 
@@ -177,14 +164,6 @@ func (r *Registry) SigmaA(id MediumID, ctx WavelengthContext) CoefficientSpectru
 		return CoefficientSpectrum{}
 	}
 	return m.SigmaA(ctx)
-}
-
-func (r *Registry) SigmaS(id MediumID, ctx WavelengthContext) CoefficientSpectrum {
-	m := r.mediumOrAir(id)
-	if m == nil {
-		return CoefficientSpectrum{}
-	}
-	return m.SigmaS(ctx)
 }
 
 func (r *Registry) mediumOrAir(id MediumID) Medium {

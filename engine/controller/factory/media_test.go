@@ -22,7 +22,7 @@ func (c mediaTestWavelengthContext) SpectralWavelengthsNM() []float64 {
 	return c.wavelengths
 }
 
-func TestParseMediaRegistryKeepsAbsorptionAndScattering(t *testing.T) {
+func TestParseMediaRegistryKeepsAbsorption(t *testing.T) {
 	script := &parser.Script{
 		Media: map[string]map[string]interface{}{
 			"tinted-water": {
@@ -32,7 +32,6 @@ func TestParseMediaRegistryKeepsAbsorptionAndScattering(t *testing.T) {
 					"eta":  1.33,
 				},
 				"sigma_a": []interface{}{0.2, 0.4, 0.8},
-				"sigma_s": []interface{}{0.01, 0.02, 0.03},
 			},
 		},
 	}
@@ -47,17 +46,20 @@ func TestParseMediaRegistryKeepsAbsorptionAndScattering(t *testing.T) {
 	}
 
 	sigmaA := registry.SigmaA(id, mediaTestWavelengthContext{})
-	sigmaS := registry.SigmaS(id, mediaTestWavelengthContext{})
 
 	if math.Abs(sigmaA.RGBChannel(0)-0.2) > 1e-12 ||
 		math.Abs(sigmaA.RGBChannel(1)-0.4) > 1e-12 ||
 		math.Abs(sigmaA.RGBChannel(2)-0.8) > 1e-12 {
 		t.Fatalf("unexpected sigma_a: %+v", sigmaA)
 	}
-	if math.Abs(sigmaS.RGBChannel(0)-0.01) > 1e-12 ||
-		math.Abs(sigmaS.RGBChannel(1)-0.02) > 1e-12 ||
-		math.Abs(sigmaS.RGBChannel(2)-0.03) > 1e-12 {
-		t.Fatalf("unexpected sigma_s: %+v", sigmaS)
+}
+
+func TestParseMediaRegistryRejectsSigmaS(t *testing.T) {
+	script := &parser.Script{Media: map[string]map[string]interface{}{
+		"fog": {"sigma_s": []interface{}{0.01, 0.02, 0.03}},
+	}}
+	if _, err := ParseMediaRegistry(script); err == nil {
+		t.Fatal("sigma_s must be rejected until volume scattering is implemented")
 	}
 }
 

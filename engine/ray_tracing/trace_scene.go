@@ -7,13 +7,6 @@ import (
 	"github.com/Algo2147483647/ray/engine/model/object"
 )
 
-type BDPTFallbackPolicy string
-
-const (
-	BDPTFallbackError BDPTFallbackPolicy = ""
-	BDPTFallbackPath  BDPTFallbackPolicy = "path"
-)
-
 const defaultTileSize = 8
 
 // TraceScene selects one scene-level integrator and delegates the complete
@@ -30,28 +23,13 @@ func (h *Handler) TraceScene(
 		return fmt.Errorf("render camera or Film is nil")
 	}
 
-	requested := h.IntegratorKind
-	effective := requested
-	h.LastRequestedIntegrator = requested
-	h.LastEffectiveIntegrator = requested
-	h.LastFallbackReason = ""
-	if requested == IntegratorBDPT {
-		if h.BDPTFallbackPolicy != BDPTFallbackError && h.BDPTFallbackPolicy != BDPTFallbackPath {
-			return fmt.Errorf("unsupported BDPT fallback policy %q", h.BDPTFallbackPolicy)
-		}
+	if h.IntegratorKind == IntegratorBDPT {
 		if _, err := h.prepareBDPT(renderCamera, objectTree); err != nil {
-			switch h.BDPTFallbackPolicy {
-			case BDPTFallbackPath:
-				effective = IntegratorPathTracing
-				h.LastEffectiveIntegrator = effective
-				h.LastFallbackReason = err.Error()
-			case BDPTFallbackError:
-				return err
-			}
+			return err
 		}
 	}
 
-	integrator, err := NewSceneIntegrator(effective, h)
+	integrator, err := NewSceneIntegrator(h.IntegratorKind, h)
 	if err != nil {
 		return err
 	}

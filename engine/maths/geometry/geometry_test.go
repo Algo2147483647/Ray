@@ -8,7 +8,7 @@ import (
 )
 
 func TestEuclideanDefaultAndArcLength(t *testing.T) {
-	g := Get(nil)
+	g := Euclidean(3)
 	if g.Name() != "euclidean" {
 		t.Fatalf("default geometry = %q, want euclidean", g.Name())
 	}
@@ -23,8 +23,18 @@ func TestEuclideanDefaultAndArcLength(t *testing.T) {
 	}
 }
 
+func TestSceneSpaceKeepsEuclideanEmbeddingDimension(t *testing.T) {
+	space := NewSceneSpace(Euclidean(7), 7)
+	if space.Dimension != 7 {
+		t.Fatalf("scene dimension = %d, want 7", space.Dimension)
+	}
+	if space.G().Kind() != EuclideanKind {
+		t.Fatalf("scene geometry = %v, want Euclidean", space.G().Kind())
+	}
+}
+
 func TestEuclideanExpIsAffine(t *testing.T) {
-	g := Euclidean()
+	g := Euclidean(3)
 	p := mat.NewVecDense(3, []float64{1, 2, 3})
 	v := mat.NewVecDense(3, []float64{0, 1, -1})
 	out := mat.NewVecDense(3, nil)
@@ -147,7 +157,7 @@ func TestSphericalExpAndWrapFollowGreatCircle(t *testing.T) {
 func TestWrapBeyondOnlySpherical(t *testing.T) {
 	p := mat.NewVecDense(3, []float64{0, 0, 0})
 	d := mat.NewVecDense(3, []float64{1, 0, 0})
-	if _, _, ok := Euclidean().WrapBeyond(p, d, 1); ok {
+	if _, _, ok := Euclidean(3).WrapBeyond(p, d, 1); ok {
 		t.Fatal("Euclidean wrap should fail")
 	}
 	if _, _, ok := Klein().WrapBeyond(p, d, 1); ok {

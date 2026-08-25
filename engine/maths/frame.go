@@ -40,7 +40,7 @@ func NewFrameFromNormal(normal *mat.VecDense) (Frame, bool) {
 	}
 
 	return Frame{
-		Geometry:  geometry.Euclidean(),
+		Geometry:  geometry.Euclidean(normal.Len()),
 		Point:     mat.NewVecDense(normal.Len(), nil),
 		Tangent:   tangent,
 		Bitangent: bitangent,

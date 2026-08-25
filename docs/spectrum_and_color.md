@@ -695,7 +695,7 @@ Temperature must be positive and is interpreted in kelvin. Scale is optional, de
 }
 ```
 
-This combines wavelength-dependent refraction with wavelength-dependent Beer--Lambert absorption. `sigma_s` uses the same coefficient schema, but the current integrators do not implement participating-medium scattering events; only absorption affects segment throughput.
+This combines wavelength-dependent refraction with wavelength-dependent Beer--Lambert absorption. Participating-medium scattering is not implemented, so the Engine rejects `sigma_s` instead of retaining an ineffective physical parameter.
 
 ## Correctness, Invertibility, and Gamut
 
@@ -737,7 +737,7 @@ The Engine currently does not provide:
 - ultraviolet or infrared transport outside 380--750 nm;
 - wavelength-changing fluorescence, phosphorescence, or Raman scattering;
 - polarization or Stokes/Mueller transport;
-- participating-medium scattering despite parsing `sigma_s`;
+- participating-medium scattering (`sigma_s` is rejected);
 - a physically constrained spectral reconstruction from RGB;
 - a full ICC/OCIO/ACES color-management stack;
 - explicit chromatic adaptation between D65 and D60 conventions;

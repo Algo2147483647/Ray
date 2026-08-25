@@ -19,14 +19,6 @@ type BxDF interface {
 	Scattering
 }
 
-type ParameterGradients struct {
-	Values map[string]optics.Spectrum
-}
-
-type DifferentiableBxDF interface {
-	ParameterDerivatives(ctx ShadingContext, wi, wo maths.Direction) ParameterGradients
-}
-
 type TransportMode int
 
 const (

@@ -33,7 +33,11 @@ func run(args []string) int {
 		return 1
 	}
 
-	dimension := resolveDimension(script, config)
+	dimension, err := resolveDimension(script, config)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return 1
+	}
 	adapted, err := adapt.AdaptScript(script, config.scriptPaths, dimension)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)

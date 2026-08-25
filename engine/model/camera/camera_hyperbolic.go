@@ -82,7 +82,7 @@ func (c *HyperbolicCamera) GenerateRay(res *renderray.Ray, index ...int) *render
 	res.Direction.AddScaledVec(res.Direction, u*c.halfWidth, c.orthonormalCoordinates[1])
 	res.Direction.AddScaledVec(res.Direction, -v*c.halfHeight, c.orthonormalCoordinates[2])
 	normalizeInGeometry(geometry.Klein(), c.Position, res.Direction)
-	res.Geometry = geometry.Klein()
+	res.Space = geometry.NewSceneSpace(geometry.Klein(), 3)
 	return res
 }
 

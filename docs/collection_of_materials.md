@@ -57,7 +57,7 @@ Media are scene-level optical models rather than subtypes of `material.Material`
 
 | Medium type | JSON `media.<name>.type` | Description and mathematical model | Input parameters | Runtime type | Current transport support |
 | --- | --- | --- | --- | --- | --- |
-| Homogeneous Medium | `homogeneous` or omitted | Spatially invariant IOR and extinction coefficients. Absorption over arc length $d$ is $T(\lambda,d)=\exp[-\sigma_a(\lambda)d]$; extinction data also includes $\sigma_s(\lambda)$. | Optional `ior`: constant $\eta>0$ or Cauchy $\eta(\lambda)=A+B/\lambda^2+C/\lambda^4$, default $\eta=1$. Optional spectral $\sigma_a(\lambda),\sigma_s(\lambda)\ge0$, both default 0. | `medium.Homogeneous` | IOR boundary transitions and Beer-Lambert absorption are active. $\sigma_s$ is parsed and stored, but volumetric scattering events are not implemented. |
+| Homogeneous Medium | `homogeneous` or omitted | Spatially invariant IOR and absorption. Over arc length $d$, $T(\lambda,d)=\exp[-\sigma_a(\lambda)d]$. | Optional `ior`: constant $\eta>0$ or Cauchy $\eta(\lambda)=A+B/\lambda^2+C/\lambda^4$, default $\eta=1$. Optional spectral $\sigma_a(\lambda)\ge0$, default 0. | `medium.Homogeneous` | IOR boundary transitions and Beer-Lambert absorption are active. Participating-medium scattering is not implemented and `sigma_s` is rejected. |
 
 ### Supporting Tagged Types
 
@@ -738,8 +738,7 @@ Media are scene-level definitions but are essential to dielectric material behav
     "glass": {
       "type": "homogeneous", // optional, default homogeneous
       "ior": { /* constant or cauchy; optional, default eta 1 */ },
-      "sigma_a": "spectral parameter", // optional, default zero
-      "sigma_s": "spectral parameter"  // optional, default zero
+      "sigma_a": "spectral parameter" // optional, default zero
     }
   }
 }
@@ -767,7 +766,7 @@ $$
 T(\lambda,d)=\exp\!\left[-\sigma_a(\lambda)d\right].
 $$
 
-`sigma_s` is parsed, stored, and queryable, but no ray-tracing code currently consumes it. The Engine therefore implements homogeneous absorption but not volumetric scattering events.
+The Engine implements homogeneous absorption but not volumetric scattering events. Supplying `sigma_s` is an error.
 
 ## Spectral, Dimensional, and Integrator Behavior
 

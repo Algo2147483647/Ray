@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/Algo2147483647/ray/engine/controller/parser"
+	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"github.com/Algo2147483647/ray/engine/model"
 	"github.com/Algo2147483647/ray/engine/model/camera"
 	"github.com/Algo2147483647/ray/engine/ray_tracing"
@@ -21,7 +22,7 @@ type Handler struct {
 
 func NewHandler() *Handler {
 	return &Handler{
-		Scene: model.NewScene(),
+		Scene: model.NewScene(geometry.DefaultSceneSpace()),
 	}
 }
 
@@ -85,7 +86,7 @@ func (h *Handler) Render() *Handler {
 
 	var err error
 
-	renderHandler := ray_tracing.NewHandler()
+	renderHandler := ray_tracing.NewHandler(h.Scene.Space)
 	renderHandler.IntegratorKind, err = ray_tracing.ParseIntegratorKind(h.Context.Integrator)
 	if err != nil {
 		h.err = err
@@ -94,8 +95,6 @@ func (h *Handler) Render() *Handler {
 	renderHandler.ThreadNum = h.Context.ThreadNum
 	renderHandler.SpectrumMode = renderSpectrumMode(h.Context.SpectrumMode)
 	renderHandler.WavelengthSamples = h.Context.WavelengthSamples
-	renderHandler.BDPTFallbackPolicy = ray_tracing.BDPTFallbackPolicy(h.Context.BDPTFallbackPolicy)
-	renderHandler.SceneGeometry = h.Scene.Geometry
 	renderHandler.MaxArc = h.Scene.MaxArc
 	if err := renderHandler.TraceScene(
 		h.Camera,

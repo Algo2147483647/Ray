@@ -57,7 +57,7 @@ func adaptCamera(def schema.StudioCameraScript, dimension int) (schema.EngineCam
 
 func adaptCamera3D(def schema.StudioCameraScript, dimension int) (schema.EngineCameraScript, error) {
 	if dimension != 3 {
-		return schema.EngineCameraScript{}, fmt.Errorf("camera type %q requires render dimension 3, got %d", displayCameraType(def.Type), dimension)
+		return schema.EngineCameraScript{}, fmt.Errorf("camera type %q requires scene dimension 3, got %d", displayCameraType(def.Type), dimension)
 	}
 
 	position, err := cameraVector("position", def.Position, defaultStudioCameraPosition, dimension)
@@ -105,7 +105,7 @@ func adaptCamera3D(def schema.StudioCameraScript, dimension int) (schema.EngineC
 
 func adaptSphericalCamera(def schema.StudioCameraScript, dimension int) (schema.EngineCameraScript, error) {
 	if dimension != 4 {
-		return schema.EngineCameraScript{}, fmt.Errorf("spherical camera requires render dimension 4, got %d", dimension)
+		return schema.EngineCameraScript{}, fmt.Errorf("spherical camera requires scene dimension 4, got %d", dimension)
 	}
 	camera := cloneCamera(def)
 	position, err := cameraVector("position", def.Position, []float64{1, 0, 0, 0}, dimension)

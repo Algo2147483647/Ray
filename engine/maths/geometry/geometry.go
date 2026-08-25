@@ -70,11 +70,33 @@ type Geometry interface {
 	WrapBeyond(p, dir *mat.VecDense, arcAdvance float64) (newP, newD *mat.VecDense, ok bool)
 }
 
-// Get returns the geometry, falling back to Euclidean if g is nil.
-// This lets call sites be nil-safe without sprinkling checks.
-func Get(g Geometry) Geometry {
-	if g == nil {
-		return Euclidean()
-	}
-	return g
+// SceneSpace is the canonical description of the space occupied by a Scene.
+// Geometry describes the metric while Dimension describes its embedding
+// coordinates. Keeping both values together is important for N-dimensional
+// Euclidean scenes, whose metric implementation is dimension-agnostic.
+type SceneSpace struct {
+	Geometry  Geometry
+	Dimension int
 }
+
+// NewSceneSpace constructs a normalized scene space. SceneSpace always owns a
+// non-nil Geometry; Euclidean is dimensioned per Scene rather than represented
+// by an empty-value sentinel.
+func NewSceneSpace(g Geometry, dimension int) SceneSpace {
+	if dimension <= 0 {
+		dimension = 3
+	}
+	if g == nil {
+		panic("SceneSpace Geometry must not be nil")
+	}
+	if g.Kind() == EuclideanKind {
+		g = Euclidean(dimension)
+	}
+	return SceneSpace{Geometry: g, Dimension: dimension}
+}
+
+// DefaultSceneSpace returns ordinary three-dimensional Euclidean space.
+func DefaultSceneSpace() SceneSpace { return NewSceneSpace(Euclidean(3), 3) }
+
+// G returns the Scene's metric implementation.
+func (s SceneSpace) G() Geometry { return s.Geometry }

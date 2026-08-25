@@ -155,6 +155,7 @@ Camera with `camera_id`; Engine has no top-level `films` or `film_id`.
 
 ```json
 {
+	"dimension": 3,
   "cameras": [{ "id": "main", "position": [0, 0, 0] }],
   "films": [{
     "id": "main-film",
@@ -169,9 +170,13 @@ Camera with `camera_id`; Engine has no top-level `films` or `film_id`.
     "gamma": 2.2,
     "color_space": "linear_srgb"
   }],
-  "render": { "dimension": 3, "samples": 100, "film_id": "main-film" }
+  "render": { "samples": 100, "film_id": "main-film" }
 }
 ```
+
+`dimension` belongs to the Scene and applies to every render job. Studio still
+accepts legacy `render.dimension` input during migration, but conflicting legacy
+values are rejected and generated Engine JSON uses only the top-level field.
 
 `spectral_bin_count` controls the number of wavelength bins stored in the
 scene-linear Film over the 380–750 nm range. It defaults to 64 and may be set
@@ -249,10 +254,12 @@ The next checkpoint in that example is `iteration-000000000400.*`. Endless mode
 currently supports one render job; scenes with `renders` should be split and run
 separately.
 
-The intermediate file contains `_studio` metadata:
+The intermediate file contains the canonical top-level dimension and repeats it
+in `_studio` as generation metadata:
 
 ```json
 {
+	"dimension": 3,
   "_studio": {
     "version": "0.1",
     "source": ["scene.json"],

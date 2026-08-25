@@ -3,7 +3,6 @@ package shape
 import (
 	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/maths/geometry"
-	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 	"math"
 )
@@ -30,7 +29,14 @@ type ImplicitEquation struct {
 }
 
 func NewImplicitEquation(Function func(*mat.VecDense) float64, Range [2]*mat.VecDense) *ImplicitEquation { // Index order: 1, x, y, z
+	dimension := 3
+	if Range[0] != nil && Range[0].Len() > 0 {
+		dimension = Range[0].Len()
+	} else if Range[1] != nil && Range[1].Len() > 0 {
+		dimension = Range[1].Len()
+	}
 	return &ImplicitEquation{
+		BaseShape:   BaseShape{Dimension: dimension},
 		Function:    Function,
 		Range:       Range,
 		Transform:   identityTransform4(),
@@ -63,7 +69,7 @@ func (f *ImplicitEquation) IntersectAffine(raySt, rayDir *mat.VecDense, options 
 	if f == nil || f.Function == nil || raySt == nil || rayDir == nil {
 		return SurfaceInteraction{}, false
 	}
-	if raySt.Len() != rayDir.Len() || raySt.Len() < utils.Dimension || tMax < tMin {
+	if raySt.Len() != rayDir.Len() || raySt.Len() < f.dimension() || tMax < tMin {
 		return SurfaceInteraction{}, false
 	}
 
@@ -237,7 +243,7 @@ func (f *ImplicitEquation) numericalGradient(point, res *mat.VecDense) {
 
 	eps := f.gradientEps()
 	work := mat.VecDenseCopyOf(point)
-	dim := minInt(point.Len(), utils.Dimension)
+	dim := minInt(point.Len(), f.dimension())
 	for axis := 0; axis < dim; axis++ {
 		original := point.AtVec(axis)
 
@@ -265,7 +271,7 @@ func (f *ImplicitEquation) localPoint(point, res *mat.VecDense) *mat.VecDense {
 	if point == nil {
 		return res
 	}
-	dim := minInt(point.Len(), utils.Dimension)
+	dim := minInt(point.Len(), f.dimension())
 	if res == nil || res.Len() != dim {
 		res = mat.NewVecDense(dim, nil)
 	} else {
@@ -286,8 +292,8 @@ func (f *ImplicitEquation) localGradientToWorld(localGradient, res *mat.VecDense
 		return res
 	}
 	res.Zero()
-	localDim := minInt(localGradient.Len(), utils.Dimension)
-	worldDim := minInt(res.Len(), utils.Dimension)
+	localDim := minInt(localGradient.Len(), f.dimension())
+	worldDim := minInt(res.Len(), f.dimension())
 	for localAxis := 0; localAxis < localDim; localAxis++ {
 		value := localGradient.AtVec(localAxis)
 		for worldAxis := 0; worldAxis < worldDim; worldAxis++ {
@@ -301,10 +307,11 @@ func (f *ImplicitEquation) hasValidRange() bool {
 	if f == nil || f.Range[0] == nil || f.Range[1] == nil {
 		return false
 	}
-	if f.Range[0].Len() < utils.Dimension || f.Range[1].Len() < utils.Dimension {
+	dimension := f.dimension()
+	if f.Range[0].Len() < dimension || f.Range[1].Len() < dimension {
 		return false
 	}
-	for i := 0; i < utils.Dimension; i++ {
+	for i := 0; i < dimension; i++ {
 		if f.Range[0].AtVec(i) >= f.Range[1].AtVec(i) {
 			return false
 		}
@@ -318,7 +325,7 @@ func (f *ImplicitEquation) searchStep(tMin, tMax float64) float64 {
 	}
 	if f != nil && f.hasValidRange() {
 		diagonalSquared := 0.0
-		for i := 0; i < utils.Dimension; i++ {
+		for i := 0; i < f.dimension(); i++ {
 			side := f.Range[1].AtVec(i) - f.Range[0].AtVec(i)
 			diagonalSquared += side * side
 		}

@@ -10,8 +10,7 @@ import (
 // n must be an intrinsic tangent-space normal vector (an ambient gradient
 // should first be converted with Geometry.IntrinsicNormal).
 func NewFrameFromNormalInGeometry(g geometry.Geometry, p, n *mat.VecDense) (Frame, bool) {
-	g = geometry.Get(g)
-	if p == nil || n == nil || p.Len() != n.Len() || n.Len() < 2 {
+	if g == nil || p == nil || n == nil || p.Len() != n.Len() || n.Len() < 2 {
 		return Frame{}, false
 	}
 

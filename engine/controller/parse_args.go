@@ -26,7 +26,8 @@ func (h *Handler) ParseArgs(args []string) *Handler {
 
 	scriptPaths = append(scriptPaths, flagSet.Args()...)
 	if len(scriptPaths) == 0 {
-		scriptPaths = append(scriptPaths, defaultScriptPath)
+		h.err = fmt.Errorf("engine requires exactly one --script")
+		return h
 	}
 	if len(scriptPaths) != 1 {
 		h.err = fmt.Errorf("engine accepts exactly one --script; use studio to merge multiple scripts")

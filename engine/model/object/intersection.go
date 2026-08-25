@@ -114,7 +114,10 @@ func (t *ObjectTree) GetSurfaceHit(raySt, rayDir *mat.VecDense) (*SurfaceHit, bo
 }
 
 func (t *ObjectTree) GetSurfaceHitRange(raySt, rayDir *mat.VecDense, tMin, tMax float64) (*SurfaceHit, bool) {
-	return t.GetSurfaceHitRangeInGeometry(raySt, rayDir, geometry.Euclidean(), tMin, tMax)
+	if raySt == nil {
+		return nil, false
+	}
+	return t.GetSurfaceHitRangeInGeometry(raySt, rayDir, geometry.Euclidean(raySt.Len()), tMin, tMax)
 }
 
 func (t *ObjectTree) GetSurfaceHitRangeInGeometry(
@@ -122,6 +125,9 @@ func (t *ObjectTree) GetSurfaceHitRangeInGeometry(
 	g geometry.Geometry,
 	tMin, tMax float64,
 ) (*SurfaceHit, bool) {
+	if g == nil {
+		return nil, false
+	}
 	interaction, obj, ok := t.getClosestInteraction(raySt, rayDir, t.Root, shape.NewIntersectOptions(tMin, tMax))
 	if !ok || obj == nil {
 		return nil, false
@@ -185,7 +191,6 @@ func newSurfaceHitFromInteraction(
 	frontFaceDir *mat.VecDense,
 	g geometry.Geometry,
 ) *SurfaceHit {
-	g = geometry.Get(g)
 	ambientGradient := interaction.GeometricNormal
 	if ambientGradient == nil {
 		ambientGradient = obj.Shape.GetNormalVector(interaction.Point, mat.NewVecDense(interaction.Point.Len(), nil))

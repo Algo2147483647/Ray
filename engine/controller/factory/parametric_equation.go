@@ -8,9 +8,9 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-func parseParametricEquation(objDef map[string]interface{}) ([]shape.Shape, error) {
-	if utils.Dimension != 3 {
-		return nil, fmt.Errorf("shape %q requires render dimension 3, got %d", ShapeParametricEquation, utils.Dimension)
+func parseParametricEquation(objDef map[string]interface{}, dimension int) ([]shape.Shape, error) {
+	if dimension != 3 {
+		return nil, fmt.Errorf("shape %q requires scene dimension 3, got %d", ShapeParametricEquation, dimension)
 	}
 
 	surfaceDef, surfaceType, err := parametricSurfaceDefinition(objDef)
@@ -43,7 +43,7 @@ func parseParametricEquation(objDef map[string]interface{}) ([]shape.Shape, erro
 	if err != nil {
 		return nil, err
 	}
-	function, derivative, err = applyParametricSurfacePlacement(function, derivative, objDef)
+	function, derivative, err = applyParametricSurfacePlacement(function, derivative, objDef, dimension)
 	if err != nil {
 		return nil, err
 	}
@@ -53,15 +53,16 @@ func parseParametricEquation(objDef map[string]interface{}) ([]shape.Shape, erro
 	if err := applyParametricOptions(equation, objDef); err != nil {
 		return nil, err
 	}
-	return wrapSingleShapeWithBounds(equation, objDef)
+	return wrapSingleShapeWithBounds(equation, objDef, dimension)
 }
 
 func applyParametricSurfacePlacement(
 	function shape.ParametricFunction,
 	derivative shape.ParametricDerivative,
 	objDef map[string]interface{},
+	dimension int,
 ) (shape.ParametricFunction, shape.ParametricDerivative, error) {
-	center, scale, err := parsePolynomialCenterScale(objDef)
+	center, scale, err := parsePolynomialCenterScale(objDef, dimension)
 	if err != nil {
 		return nil, nil, err
 	}

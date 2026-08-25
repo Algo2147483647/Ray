@@ -389,19 +389,30 @@ func parseStudioPixelWindowAxis(value string) (int, int, error) {
 	return lo, hi, nil
 }
 
-func resolveDimension(script *schema.StudioScript, config studioConfig) int {
+func resolveDimension(script *schema.StudioScript, config studioConfig) (int, error) {
 	if config.dimension > 0 {
-		return config.dimension
+		return config.dimension, nil
 	}
-	if script != nil && script.Render.Dimension > 0 {
-		return script.Render.Dimension
+	if script == nil {
+		return 3, nil
 	}
-	if script != nil {
-		for _, render := range script.Renders {
-			if render.Dimension > 0 {
-				return render.Dimension
-			}
+	dimension := script.Dimension
+	legacyDimensions := make([]int, 0, 1+len(script.Renders))
+	legacyDimensions = append(legacyDimensions, script.Render.LegacyDimension)
+	for _, render := range script.Renders {
+		legacyDimensions = append(legacyDimensions, render.LegacyDimension)
+	}
+	for i, legacy := range legacyDimensions {
+		if legacy <= 0 {
+			continue
 		}
+		if dimension > 0 && legacy != dimension {
+			return 0, fmt.Errorf("legacy render dimension %d at index %d conflicts with scene dimension %d", legacy, i, dimension)
+		}
+		dimension = legacy
 	}
-	return 3
+	if dimension <= 0 {
+		dimension = 3
+	}
+	return dimension, nil
 }

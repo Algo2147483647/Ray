@@ -6,16 +6,21 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-type euclidean struct{}
+type euclidean struct {
+	dimension int
+}
 
-var euclideanSingleton Geometry = euclidean{}
+// Euclidean returns a K=0 geometry with the requested embedding dimension.
+func Euclidean(dimension int) Geometry {
+	if dimension <= 0 {
+		panic("Euclidean dimension must be positive")
+	}
+	return euclidean{dimension: dimension}
+}
 
-// Euclidean returns the K=0 geometry singleton.
-func Euclidean() Geometry { return euclideanSingleton }
-
-func (euclidean) Name() string   { return "euclidean" }
-func (euclidean) Kind() Kind     { return EuclideanKind }
-func (euclidean) Dimension() int { return 3 }
+func (euclidean) Name() string     { return "euclidean" }
+func (euclidean) Kind() Kind       { return EuclideanKind }
+func (e euclidean) Dimension() int { return e.dimension }
 
 func (euclidean) ProjectTangent(_, v, out *mat.VecDense) *mat.VecDense {
 	if out != v {

@@ -11,6 +11,7 @@ import (
 
 type StudioScript struct {
 	Includes  []string                          `json:"includes"`
+	Dimension int                               `json:"dimension"`
 	Materials []map[string]interface{}          `json:"materials"`
 	Media     map[string]map[string]interface{} `json:"media"`
 	Objects   []map[string]interface{}          `json:"objects"`
@@ -22,14 +23,13 @@ type StudioScript struct {
 }
 
 type StudioRenderScript struct {
-	Integrator         string `json:"integrator"`
-	BDPTFallbackPolicy string `json:"bdpt_fallback_policy,omitempty"`
-	Dimension          int    `json:"dimension"`
-	Samples            int64  `json:"samples"`
-	ThreadNum          int    `json:"thread_num"`
-	FilmID             string `json:"film_id"`
-	SpectrumMode       string `json:"spectrum_mode"`
-	WavelengthSamples  int    `json:"wavelength_samples"`
+	Integrator        string `json:"integrator"`
+	LegacyDimension   int    `json:"dimension"` // deprecated: use StudioScript.Dimension
+	Samples           int64  `json:"samples"`
+	ThreadNum         int    `json:"thread_num"`
+	FilmID            string `json:"film_id"`
+	SpectrumMode      string `json:"spectrum_mode"`
+	WavelengthSamples int    `json:"wavelength_samples"`
 }
 
 const DefaultSampledWavelengthCount = 4
@@ -45,11 +45,8 @@ func MergeRenderScripts(base, override StudioRenderScript) StudioRenderScript {
 	if override.Integrator != "" {
 		base.Integrator = override.Integrator
 	}
-	if override.BDPTFallbackPolicy != "" {
-		base.BDPTFallbackPolicy = override.BDPTFallbackPolicy
-	}
-	if override.Dimension > 0 {
-		base.Dimension = override.Dimension
+	if override.LegacyDimension > 0 {
+		base.LegacyDimension = override.LegacyDimension
 	}
 	if override.Samples > 0 {
 		base.Samples = override.Samples
@@ -71,13 +68,13 @@ func MergeRenderScripts(base, override StudioRenderScript) StudioRenderScript {
 
 func (r *StudioRenderScript) UnmarshalJSON(data []byte) error {
 	type plain StudioRenderScript
-	if err := rejectUnknownFields(data, "render", "integrator", "bdpt_fallback_policy", "dimension", "samples", "thread_num", "film_id", "spectrum_mode", "wavelength_samples"); err != nil {
+	if err := rejectUnknownFields(data, "render", "integrator", "dimension", "samples", "thread_num", "film_id", "spectrum_mode", "wavelength_samples"); err != nil {
 		return err
 	}
 	if err := json.Unmarshal(data, (*plain)(r)); err != nil {
 		return err
 	}
-	if r.Dimension < 0 || r.Dimension == 1 {
+	if r.LegacyDimension < 0 || r.LegacyDimension == 1 {
 		return fmt.Errorf("render dimension must be 0 or >= 2")
 	}
 	if r.ThreadNum < 0 {
@@ -88,9 +85,6 @@ func (r *StudioRenderScript) UnmarshalJSON(data []byte) error {
 	}
 	if _, err := ray_tracing.ParseIntegratorKind(r.Integrator); err != nil {
 		return err
-	}
-	if r.BDPTFallbackPolicy != "" && r.BDPTFallbackPolicy != string(ray_tracing.BDPTFallbackPath) {
-		return fmt.Errorf("unsupported bdpt_fallback_policy %q", r.BDPTFallbackPolicy)
 	}
 	if r.SpectrumMode == "rgb" {
 		r.SpectrumMode = "hero_wavelength"
@@ -184,6 +178,7 @@ type PixelWindowScript struct {
 
 type IntermediateScript struct {
 	Studio    StudioMetadata                    `json:"_studio"`
+	Dimension int                               `json:"dimension"`
 	Materials []map[string]interface{}          `json:"materials,omitempty"`
 	Media     map[string]map[string]interface{} `json:"media,omitempty"`
 	Objects   []map[string]interface{}          `json:"objects,omitempty"`

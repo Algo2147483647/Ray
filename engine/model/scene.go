@@ -9,13 +9,14 @@ import (
 type Scene struct {
 	ObjectTree *object.ObjectTree          `json:"object_tree"`
 	Cameras    map[string]camera.RayCamera `json:"cameras"`
-	Geometry   geometry.Geometry           `json:"-"` // nil ⇒ Euclidean
+	Space      geometry.SceneSpace         `json:"-"`
 	MaxArc     float64                     `json:"-"` // 0 ⇒ unbounded
 }
 
-func NewScene() *Scene {
+func NewScene(space geometry.SceneSpace) *Scene {
 	return &Scene{
 		ObjectTree: &object.ObjectTree{},
 		Cameras:    make(map[string]camera.RayCamera),
+		Space:      geometry.NewSceneSpace(space.Geometry, space.Dimension),
 	}
 }

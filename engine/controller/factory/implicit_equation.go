@@ -23,13 +23,13 @@ var implicitFieldRegistry = map[string]implicitFieldFactory{
 	"metaballs":    parseImplicitMetaballsField,
 }
 
-func parseImplicitEquation(objDef map[string]interface{}) ([]shape.Shape, error) {
-	transform, err := parseImplicitTransform(objDef)
+func parseImplicitEquation(objDef map[string]interface{}, dimension int) ([]shape.Shape, error) {
+	transform, err := parseImplicitTransform(objDef, dimension)
 	if err != nil {
 		return nil, err
 	}
 
-	bounds, ok, err := parseShapeBounds(objDef)
+	bounds, ok, err := parseShapeBounds(objDef, dimension)
 	if err != nil {
 		return nil, err
 	}
@@ -48,6 +48,7 @@ func parseImplicitEquation(objDef map[string]interface{}) ([]shape.Shape, error)
 		gradient,
 		implicitRange,
 	)
+	equation.Dimension = dimension
 	equation.Transform = transform
 	if step, ok, err := utils.OptionalFloat64Field(objDef, "step"); err != nil {
 		return nil, err
@@ -105,12 +106,12 @@ func implicitFieldDefinition(objDef map[string]interface{}) (map[string]interfac
 	return nil, "", fmt.Errorf(`implicit equation requires "field" with type "expr"`)
 }
 
-func parseImplicitTransform(objDef map[string]interface{}) ([4][4]float64, error) {
+func parseImplicitTransform(objDef map[string]interface{}, dimension int) ([4][4]float64, error) {
 	if _, ok := objDef["transform"]; ok {
 		return parsePolynomialSurfaceTransform(objDef)
 	}
 
-	center, scale, err := parsePolynomialCenterScale(objDef)
+	center, scale, err := parsePolynomialCenterScale(objDef, dimension)
 	if err != nil {
 		return [4][4]float64{}, err
 	}
