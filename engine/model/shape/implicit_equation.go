@@ -250,7 +250,7 @@ func (f *ImplicitEquation) numericalGradient(point, res *mat.VecDense) {
 
 	eps := f.gradientEps()
 	work := mat.VecDenseCopyOf(point)
-	dim := maths.MinInt(point.Len(), f.dimension())
+	dim := min(point.Len(), f.dimension())
 	for axis := 0; axis < dim; axis++ {
 		original := point.AtVec(axis)
 
@@ -278,7 +278,7 @@ func (f *ImplicitEquation) localPoint(point, res *mat.VecDense) *mat.VecDense {
 	if point == nil {
 		return res
 	}
-	dim := maths.MinInt(point.Len(), f.dimension())
+	dim := min(point.Len(), f.dimension())
 	if res == nil || res.Len() != dim {
 		res = mat.NewVecDense(dim, nil)
 	} else {
@@ -299,8 +299,8 @@ func (f *ImplicitEquation) localGradientToWorld(localGradient, res *mat.VecDense
 		return res
 	}
 	res.Zero()
-	localDim := maths.MinInt(localGradient.Len(), f.dimension())
-	worldDim := maths.MinInt(res.Len(), f.dimension())
+	localDim := min(localGradient.Len(), f.dimension())
+	worldDim := min(res.Len(), f.dimension())
 	for localAxis := 0; localAxis < localDim; localAxis++ {
 		value := localGradient.AtVec(localAxis)
 		for worldAxis := 0; worldAxis < worldDim; worldAxis++ {

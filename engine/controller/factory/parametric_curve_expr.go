@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/maths/exprdiff"
 	"github.com/Algo2147483647/ray/engine/model/shape"
 	"github.com/Algo2147483647/ray/engine/utils"
@@ -170,7 +171,7 @@ func (c *parametricExprCurve) evaluate(t float64) *mat.VecDense {
 	y := runImplicitExprProgram(c.yProgram, env)
 	z := runImplicitExprProgram(c.zProgram, env)
 	c.Mem.put(env)
-	if !implicitExprIsFinite(x) || !implicitExprIsFinite(y) || !implicitExprIsFinite(z) {
+	if !maths.IsFinite(x) || !maths.IsFinite(y) || !maths.IsFinite(z) {
 		return nil
 	}
 	return mat.NewVecDense(3, []float64{x, y, z})
@@ -202,7 +203,7 @@ func (c *parametricExprCurve) derivativeAt(t float64, res *mat.VecDense) *mat.Ve
 	env := c.Mem.get(t)
 	for axis := 0; axis < 3; axis++ {
 		value := runImplicitExprProgram(c.derivative[axis], env)
-		if !implicitExprIsFinite(value) {
+		if !maths.IsFinite(value) {
 			c.Mem.put(env)
 			return nil
 		}
