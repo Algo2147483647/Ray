@@ -10,17 +10,10 @@ import (
 	"strings"
 	"testing"
 
-	enginecontroller "github.com/Algo2147483647/ray/engine/controller"
-	enginefactory "github.com/Algo2147483647/ray/engine/controller/factory"
-	engineparser "github.com/Algo2147483647/ray/engine/controller/parser"
-	enginegeometry "github.com/Algo2147483647/ray/engine/maths/geometry"
-	enginemodel "github.com/Algo2147483647/ray/engine/model"
-	modelcamera "github.com/Algo2147483647/ray/engine/model/camera"
-	modelshape "github.com/Algo2147483647/ray/engine/model/shape"
 	"github.com/Algo2147483647/ray/studio/adapt"
+	studiofilm "github.com/Algo2147483647/ray/studio/film"
 	"github.com/Algo2147483647/ray/studio/schema"
 	"github.com/Algo2147483647/ray/studio/storage"
-	"gonum.org/v1/gonum/mat"
 )
 
 func TestStudioSchemaRejectsRemovedFields(t *testing.T) {
@@ -72,10 +65,6 @@ func TestIntermediateScriptUsesRenderTarget(t *testing.T) {
 	if err != nil {
 		t.Fatalf("marshal intermediate script: %v", err)
 	}
-	var engineScript engineparser.Script
-	if err := json.Unmarshal(data, &engineScript); err != nil {
-		t.Fatalf("Engine rejected Studio intermediate script: %v", err)
-	}
 	var intermediate map[string]json.RawMessage
 	if err := json.Unmarshal(data, &intermediate); err != nil {
 		t.Fatalf("inspect intermediate script: %v", err)
@@ -86,21 +75,18 @@ func TestIntermediateScriptUsesRenderTarget(t *testing.T) {
 	if _, exists := intermediate["renders"]; !exists {
 		t.Fatal("Engine intermediate script must contain renders")
 	}
-	if engineScript.Dimension != 3 {
-		t.Fatalf("Engine scene dimension = %d, want 3", engineScript.Dimension)
+	if adapted.Dimension != 3 {
+		t.Fatalf("intermediate scene dimension = %d, want 3", adapted.Dimension)
 	}
 	if _, exists := adapted.Renders[0]["dimension"]; exists {
 		t.Fatal("scene dimension leaked into an Engine render job")
 	}
-	if len(engineScript.Renders) != 1 || engineScript.Renders[0].CameraID != "main" || engineScript.Renders[0].Film.Shape[0] != 800 || engineScript.Renders[0].Output != "main.bin" {
-		t.Fatalf("unexpected Engine script: %+v", engineScript)
+	film := intermediateRenderFilm(t, adapted, 0)
+	if len(adapted.Renders) != 1 || adapted.Renders[0]["camera_id"] != "main" || film.Shape[0] != 800 || adapted.Renders[0]["output"] != "main.bin" {
+		t.Fatalf("unexpected intermediate script: %+v", adapted)
 	}
-	scene := enginemodel.NewScene(enginegeometry.DefaultSceneSpace())
-	if err := enginefactory.LoadSceneFromScript(&engineScript, scene); err != nil {
-		t.Fatalf("load Engine scene: %v", err)
-	}
-	if len(scene.Cameras) != 1 || scene.Cameras["main"].RasterDimension() != 2 {
-		t.Fatalf("Camera was not loaded independently: %+v", scene.Cameras)
+	if len(adapted.Cameras) != 1 || adapted.Cameras[0].ID != "main" {
+		t.Fatalf("camera was not emitted independently: %+v", adapted.Cameras)
 	}
 }
 
@@ -137,32 +123,13 @@ func TestStudioConfiguresSpectralBinCount(t *testing.T) {
 	if err != nil {
 		t.Fatalf("adapt script: %v", err)
 	}
-	data, err := json.Marshal(adapted)
-	if err != nil {
-		t.Fatalf("marshal intermediate script: %v", err)
-	}
-	var engineScript engineparser.Script
-	if err := json.Unmarshal(data, &engineScript); err != nil {
-		t.Fatalf("Engine rejected Studio intermediate script: %v", err)
-	}
-	if engineScript.Renders[0].Film.SpectralBinCount != 128 {
-		t.Fatalf("spectral_bin_count = %d, want 128", engineScript.Renders[0].Film.SpectralBinCount)
-	}
-	scene := enginemodel.NewScene(enginegeometry.DefaultSceneSpace())
-	if err := enginefactory.LoadSceneFromScript(&engineScript, scene); err != nil {
-		t.Fatalf("load Engine scene: %v", err)
-	}
-	resolved, err := enginecontroller.ResolveRenderSpec(engineScript.Renders[0])
-	if err != nil {
-		t.Fatalf("resolve Engine render: %v", err)
-	}
-	if got := len(resolved.Film.SpectralBins); got != 128 {
-		t.Fatalf("spectral bins = %d, want 128", got)
+	if got := intermediateRenderFilm(t, adapted, 0).SpectralBinCount; got != 128 {
+		t.Fatalf("spectral_bin_count = %d, want 128", got)
 	}
 }
 
 func TestStudioRejectsInvalidSpectralBinCount(t *testing.T) {
-	for _, count := range []int{-1, modelcamera.MaxSpectralBinCount + 1} {
+	for _, count := range []int{-1, schema.MaxSpectralBinCount + 1} {
 		var script schema.StudioScript
 		source := fmt.Sprintf(`{"films":[{"id":"film","camera_id":"camera","shape":[1,1],"spectral_bin_count":%d}]}`, count)
 		if err := json.Unmarshal([]byte(source), &script); err == nil {
@@ -1462,7 +1429,7 @@ func TestRunFilmConversionWritesConfiguredPNG(t *testing.T) {
 	dir := t.TempDir()
 	filmPath := filepath.Join(dir, "render.bin")
 	imagePath := filepath.Join(dir, "image.png")
-	film := modelcamera.NewFilm(2, 1)
+	film := studiofilm.NewFilm(2, 1)
 	film.InitSpectralBins(64, 380, 750)
 	film.Samples = 1
 	for bin := range film.SpectralBins {
@@ -1697,20 +1664,19 @@ func TestStudioAdaptsFourOrderCenterScaleBasisToWorldCoefficients(t *testing.T) 
 		t.Fatal("four-order intermediate object should not keep basis")
 	}
 
-	quartic := modelshape.NewFourOrderEquation(mustFloatSlice(t, object["a"]))
-	interaction, ok := quartic.IntersectAffine(
-		mat.NewVecDense(3, []float64{2, 0, -6}),
-		mat.NewVecDense(3, []float64{0, 0, 1}),
-		modelshape.NewIntersectOptions(0, math.MaxFloat64),
-	)
-	if !ok {
-		t.Fatal("expected baked four-order equation to hit")
+	coefficients := mustFloatSlice(t, object["a"])
+	hit := []float64{2, 0, -3}
+	if value := evaluateHomogeneousPolynomial(coefficients, hit, 4); math.Abs(value) > 1e-8 {
+		t.Fatalf("expected baked four-order equation to vanish at %v, got %g", hit, value)
 	}
-	if math.Abs(interaction.Distance-3) > 1e-8 {
-		t.Fatalf("expected hit at distance 3, got %f", interaction.Distance)
-	}
-	if math.Abs(interaction.GeometricNormal.AtVec(2)+1) > 1e-8 {
-		t.Fatalf("expected baked normal to face negative z, got %v", interaction.GeometricNormal.RawVector().Data)
+	epsilon := 1e-6
+	forward := append([]float64(nil), hit...)
+	backward := append([]float64(nil), hit...)
+	forward[2] += epsilon
+	backward[2] -= epsilon
+	dz := (evaluateHomogeneousPolynomial(coefficients, forward, 4) - evaluateHomogeneousPolynomial(coefficients, backward, 4)) / (2 * epsilon)
+	if dz >= 0 {
+		t.Fatalf("expected baked surface normal to face negative z, derivative = %g", dz)
 	}
 }
 
@@ -1847,6 +1813,22 @@ func mustFloatSlice(t *testing.T, raw interface{}) []float64 {
 		t.Fatalf("expected []float64, got %T", raw)
 	}
 	return values
+}
+
+func evaluateHomogeneousPolynomial(coefficients, point []float64, order int) float64 {
+	coordinates := append([]float64{1}, point...)
+	dimension := len(coordinates)
+	value := 0.0
+	for flatIndex, coefficient := range coefficients {
+		term := coefficient
+		index := flatIndex
+		for factor := 0; factor < order; factor++ {
+			term *= coordinates[index%dimension]
+			index /= dimension
+		}
+		value += term
+	}
+	return value
 }
 
 func copyDirectory(source, destination string) error {

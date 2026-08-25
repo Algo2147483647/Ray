@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math"
 
-	modelcamera "github.com/Algo2147483647/ray/engine/model/camera"
 	"github.com/Algo2147483647/ray/studio/schema"
 )
 
@@ -17,6 +16,10 @@ var (
 const (
 	defaultStudioFieldOfView = 100.0
 	defaultStudioAspectRatio = 1.0
+	cameraType3D             = "3d"
+	cameraTypeNDim           = "n_dim"
+	cameraTypeHyperbolic     = "hyperbolic"
+	cameraTypeSpherical      = "spherical"
 )
 
 func adaptCameras(cameraDefs []schema.StudioCameraScript, dimension int) ([]schema.EngineCameraScript, error) {
@@ -43,12 +46,12 @@ func adaptCameras(cameraDefs []schema.StudioCameraScript, dimension int) ([]sche
 }
 
 func adaptCamera(def schema.StudioCameraScript, dimension int) (schema.EngineCameraScript, error) {
-	switch modelcamera.CameraType(def.Type) {
-	case "", modelcamera.CameraType3D, modelcamera.CameraTypeHyperbolic:
+	switch def.Type {
+	case "", cameraType3D, cameraTypeHyperbolic:
 		return adaptCamera3D(def, dimension)
-	case modelcamera.CameraTypeSpherical:
+	case cameraTypeSpherical:
 		return adaptSphericalCamera(def, dimension)
-	case modelcamera.CameraTypeNDim:
+	case cameraTypeNDim:
 		return cloneCamera(def), nil
 	default:
 		return schema.EngineCameraScript{}, fmt.Errorf("unsupported camera type %q", def.Type)
@@ -88,7 +91,7 @@ func adaptCamera3D(def schema.StudioCameraScript, dimension int) (schema.EngineC
 
 	camera := cloneCamera(def)
 	if camera.Type == "" {
-		camera.Type = string(modelcamera.CameraType3D)
+		camera.Type = cameraType3D
 	}
 	camera.Position = position
 	camera.Coordinates, err = frameCoordinates(direction, up)
@@ -269,7 +272,7 @@ func cloneCamera(def schema.StudioCameraScript) schema.EngineCameraScript {
 		Ortho: def.Ortho,
 	}
 	camera.Position = append([]float64(nil), def.Position...)
-	if modelcamera.CameraType(def.Type) == modelcamera.CameraTypeNDim {
+	if def.Type == cameraTypeNDim {
 		camera.FieldOfViews = nDimFieldOfViews(def)
 	} else {
 		camera.FieldOfViews = append([]float64(nil), def.FieldOfViews...)

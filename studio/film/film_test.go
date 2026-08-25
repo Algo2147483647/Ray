@@ -5,12 +5,10 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-
-	modelcamera "github.com/Algo2147483647/ray/engine/model/camera"
 )
 
-func spectralFilm(shape []int, bins int, samples int64, value float64) *modelcamera.Film {
-	film := modelcamera.NewFilm(shape...)
+func spectralFilm(shape []int, bins int, samples int64, value float64) *Film {
+	film := NewFilm(shape...)
 	film.InitSpectralBins(bins, 380, 750)
 	film.Samples = samples
 	for bin := range film.SpectralBins {
@@ -66,7 +64,7 @@ func TestMergeFilmFilesWithPixelWindowsLeavesOutsidePixelsUntouched(t *testing.T
 		t.Fatalf("save update film: %v", err)
 	}
 
-	windows := []modelcamera.PixelWindow{{Min: []int{1, 1}, Max: []int{3, 3}}}
+	windows := []PixelWindow{{Min: []int{1, 1}, Max: []int{3, 3}}}
 	if err := MergeFilmFilesWithPixelWindows(basePath, updatePath, outputPath, windows); err != nil {
 		t.Fatalf("merge films with pixel windows: %v", err)
 	}

@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Algo2147483647/ray/engine/ray_tracing"
 	"github.com/Algo2147483647/ray/studio/schema"
 )
 
@@ -23,6 +22,7 @@ const (
 
 type studioConfig struct {
 	scriptPaths        []string
+	engineBin          string
 	inputFilm          string
 	provided           map[string]bool
 	integrator         string
@@ -71,6 +71,7 @@ func parseStudioConfig(args []string) (studioConfig, error) {
 	flagSet := flag.NewFlagSet("ray", flag.ContinueOnError)
 	flagSet.SetOutput(io.Discard)
 	flagSet.Var(&scriptPaths, "script", "path to a scene script; repeat to merge multiple scripts")
+	flagSet.StringVar(&config.engineBin, "engine-bin", "", "Engine executable path or command name (or set RAY_ENGINE_BIN)")
 	flagSet.StringVar(&config.inputFilm, "input-film", "", "existing binary Film to convert to PNG without rendering")
 	flagSet.Var(&pixelWindowFlags, "pixel-window", "pixel render window, for example 100:150,600:650; repeat for multiple windows")
 	flagSet.StringVar(&config.integrator, "integrator", "", "light transport integrator: path, bdpt, light_tracing")
@@ -132,7 +133,7 @@ func parseStudioConfig(args []string) (studioConfig, error) {
 		return studioConfig{}, fmt.Errorf("widths cannot be combined with width or height")
 	}
 	if config.integrator != "" {
-		if _, err := ray_tracing.ParseIntegratorKind(config.integrator); err != nil {
+		if err := schema.ValidateIntegratorKind(config.integrator); err != nil {
 			return studioConfig{}, err
 		}
 	}

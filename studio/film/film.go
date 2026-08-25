@@ -6,8 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
-
-	modelcamera "github.com/Algo2147483647/ray/engine/model/camera"
 )
 
 func MergeFilmFiles(basePath, updatePath, outputPath string) error {
@@ -26,7 +24,7 @@ func MergeFilmFiles(basePath, updatePath, outputPath string) error {
 	return SaveFilm(base, outputPath)
 }
 
-func MergeFilmFilesWithPixelWindows(basePath, updatePath, outputPath string, windows []modelcamera.PixelWindow) error {
+func MergeFilmFilesWithPixelWindows(basePath, updatePath, outputPath string, windows []PixelWindow) error {
 	if len(windows) == 0 {
 		return MergeFilmFiles(basePath, updatePath, outputPath)
 	}
@@ -62,7 +60,7 @@ func SaveFilmImage(filmPath, imagePath string, options ImageOptions) error {
 	return SaveFilmImageFromFilm(film, imagePath, options)
 }
 
-func SaveFilmImageFromFilm(film *modelcamera.Film, imagePath string, options ImageOptions) error {
+func SaveFilmImageFromFilm(film *Film, imagePath string, options ImageOptions) error {
 	if film == nil {
 		return fmt.Errorf("cannot create image from a nil film")
 	}
@@ -86,15 +84,15 @@ func SaveFilmImageFromFilm(film *modelcamera.Film, imagePath string, options Ima
 	return nil
 }
 
-func LoadFilm(path string) (*modelcamera.Film, error) {
-	film := modelcamera.NewFilm()
+func LoadFilm(path string) (*Film, error) {
+	film := NewFilm()
 	if err := film.LoadFromFile(path); err != nil {
 		return nil, err
 	}
 	return film, nil
 }
 
-func SaveFilm(film *modelcamera.Film, path string) error {
+func SaveFilm(film *Film, path string) error {
 	if film == nil {
 		return fmt.Errorf("cannot save a nil film")
 	}
@@ -107,28 +105,28 @@ func SaveFilm(film *modelcamera.Film, path string) error {
 	return nil
 }
 
-func MergeFilms(base, update *modelcamera.Film) error {
+func MergeFilms(base, update *Film) error {
 	if base == nil || update == nil {
 		return fmt.Errorf("merge films: nil film")
 	}
 	return mergeFilmsAtPixelWindows(base, update, nil)
 }
 
-func MergeFilmsWithPixelWindows(base, update *modelcamera.Film, windows []modelcamera.PixelWindow) error {
+func MergeFilmsWithPixelWindows(base, update *Film, windows []PixelWindow) error {
 	if base == nil || update == nil {
 		return fmt.Errorf("merge films: nil film")
 	}
 	if len(windows) == 0 {
 		return MergeFilms(base, update)
 	}
-	normalized, err := modelcamera.NormalizePixelWindows(windows, base.Shape)
+	normalized, err := NormalizePixelWindows(windows, base.Shape)
 	if err != nil {
 		return err
 	}
 	return mergeFilmsAtPixelWindows(base, update, normalized)
 }
 
-func mergeFilmsAtPixelWindows(base, update *modelcamera.Film, windows []modelcamera.PixelWindow) error {
+func mergeFilmsAtPixelWindows(base, update *Film, windows []PixelWindow) error {
 	if !slices.Equal(base.Shape, update.Shape) {
 		return fmt.Errorf("merge films: dimension of a and b is not matched")
 	}
@@ -157,14 +155,14 @@ func mergeFilmsAtPixelWindows(base, update *modelcamera.Film, windows []modelcam
 	return nil
 }
 
-func compatibleSpectralBins(base, update *modelcamera.Film) bool {
+func compatibleSpectralBins(base, update *Film) bool {
 	return len(base.SpectralBins) > 0 &&
 		len(base.SpectralBins) == len(update.SpectralBins) &&
 		base.SpectralMinNM == update.SpectralMinNM &&
 		base.SpectralMaxNM == update.SpectralMaxNM
 }
 
-func pixelWindowIndices(shape []int, windows []modelcamera.PixelWindow) []int {
+func pixelWindowIndices(shape []int, windows []PixelWindow) []int {
 	total := 1
 	strides := make([]int, len(shape))
 	for i, dim := range shape {
@@ -174,8 +172,8 @@ func pixelWindowIndices(shape []int, windows []modelcamera.PixelWindow) []int {
 
 	seen := make([]bool, total)
 	indices := make([]int, 0)
-	var walk func(window modelcamera.PixelWindow, dim, index int)
-	walk = func(window modelcamera.PixelWindow, dim, index int) {
+	var walk func(window PixelWindow, dim, index int)
+	walk = func(window PixelWindow, dim, index int) {
 		if dim == len(shape) {
 			if !seen[index] {
 				seen[index] = true

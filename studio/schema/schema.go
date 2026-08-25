@@ -4,10 +4,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-
-	modelcamera "github.com/Algo2147483647/ray/engine/model/camera"
-	"github.com/Algo2147483647/ray/engine/ray_tracing"
 )
+
+const MaxSpectralBinCount = 4096
+
+func ValidateIntegratorKind(value string) error {
+	switch value {
+	case "", "path", "bdpt", "light_tracing", "light_trace":
+		return nil
+	default:
+		return fmt.Errorf("unsupported integrator %q", value)
+	}
+}
 
 type StudioScript struct {
 	Includes  []string                          `json:"includes"`
@@ -67,7 +75,7 @@ func (r *StudioRenderScript) UnmarshalJSON(data []byte) error {
 	if r.Samples < 0 {
 		return fmt.Errorf("render samples must be >= 0")
 	}
-	if _, err := ray_tracing.ParseIntegratorKind(r.Integrator); err != nil {
+	if err := ValidateIntegratorKind(r.Integrator); err != nil {
 		return err
 	}
 	if r.SpectrumMode != "" && r.SpectrumMode != "hero_wavelength" && r.SpectrumMode != "sampled" {
@@ -105,8 +113,8 @@ func (f *StudioFilmScript) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, (*plain)(f)); err != nil {
 		return err
 	}
-	if f.SpectralBinCount < 0 || f.SpectralBinCount > modelcamera.MaxSpectralBinCount {
-		return fmt.Errorf("film spectral_bin_count must be between 0 and %d", modelcamera.MaxSpectralBinCount)
+	if f.SpectralBinCount < 0 || f.SpectralBinCount > MaxSpectralBinCount {
+		return fmt.Errorf("film spectral_bin_count must be between 0 and %d", MaxSpectralBinCount)
 	}
 	if f.TanhOmega < 0 {
 		return fmt.Errorf("film tanh_omega must be >= 0")

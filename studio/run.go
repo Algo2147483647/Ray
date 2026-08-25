@@ -5,8 +5,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Algo2147483647/ray/engine/controller"
-	modelcamera "github.com/Algo2147483647/ray/engine/model/camera"
 	"github.com/Algo2147483647/ray/studio/adapt"
 	studiofilm "github.com/Algo2147483647/ray/studio/film"
 	"github.com/Algo2147483647/ray/studio/schema"
@@ -52,17 +50,13 @@ func run(args []string) int {
 	}
 	fmt.Printf("Studio wrote intermediate script: %s\n", outputPath)
 
-	root, err := storage.RepoRoot()
+	engine, err := resolveEngineProcess(config)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return 1
 	}
-	if err := os.Chdir(filepath.Join(root, "engine")); err != nil {
-		fmt.Printf("Error: enter engine directory: %v\n", err)
-		return 1
-	}
 	if config.endless {
-		if err := runEndless(adapted, script, config); err != nil {
+		if err := runEndless(engine, adapted, script, config); err != nil {
 			fmt.Printf("Error: %v\n", err)
 			return 1
 		}
@@ -70,7 +64,11 @@ func run(args []string) int {
 	}
 	resumeFilm := resolveResumeFilm(script, config)
 	if resumeFilm == "" {
-		code := controller.Run(config.engineArgs(outputPath))
+		code, err := engine.run(config.engineArgs(outputPath))
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+			return 1
+		}
 		if code != 0 {
 			return code
 		}
@@ -94,7 +92,11 @@ func run(args []string) int {
 		fmt.Printf("Error: %v\n", err)
 		return 1
 	}
-	code := controller.Run(config.engineArgs(outputPath))
+	code, err := engine.run(config.engineArgs(outputPath))
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return 1
+	}
 	if code != 0 {
 		return code
 	}
@@ -122,7 +124,7 @@ func runFilmConversion(config studioConfig) error {
 	return nil
 }
 
-func runEndless(adapted *schema.IntermediateScript, script *schema.StudioScript, config studioConfig) error {
+func runEndless(engine engineProcess, adapted *schema.IntermediateScript, script *schema.StudioScript, config studioConfig) error {
 	if script != nil && len(script.Renders) > 0 {
 		return fmt.Errorf("endless mode supports a single render; remove renders or run them separately")
 	}
@@ -152,7 +154,11 @@ func runEndless(adapted *schema.IntermediateScript, script *schema.StudioScript,
 			os.Remove(tempFilmPath)
 			return err
 		}
-		code := controller.Run(config.engineArgs(scriptPath))
+		code, err := engine.run(config.engineArgs(scriptPath))
+		if err != nil {
+			os.Remove(tempFilmPath)
+			return err
+		}
 		if code != 0 {
 			os.Remove(tempFilmPath)
 			return fmt.Errorf("engine render failed with exit code %d", code)
@@ -233,20 +239,20 @@ func resolveOutputFilm(script *schema.StudioScript, config studioConfig) string 
 	return defaultOutputFilm
 }
 
-func resolvePixelWindows(script *schema.StudioScript, config studioConfig) []modelcamera.PixelWindow {
+func resolvePixelWindows(script *schema.StudioScript, config studioConfig) []studiofilm.PixelWindow {
 	if config.provided["pixel-window"] {
 		return studioPixelWindowsToEngine(config.pixelWindows)
 	}
 	return studioPixelWindowsToEngine(resolveFilm(script, script.Render).PixelWindows)
 }
 
-func studioPixelWindowsToEngine(windows []schema.PixelWindowScript) []modelcamera.PixelWindow {
+func studioPixelWindowsToEngine(windows []schema.PixelWindowScript) []studiofilm.PixelWindow {
 	if len(windows) == 0 {
 		return nil
 	}
-	result := make([]modelcamera.PixelWindow, len(windows))
+	result := make([]studiofilm.PixelWindow, len(windows))
 	for i, window := range windows {
-		result[i] = modelcamera.PixelWindow{
+		result[i] = studiofilm.PixelWindow{
 			Min: append([]int(nil), window.Min...),
 			Max: append([]int(nil), window.Max...),
 		}

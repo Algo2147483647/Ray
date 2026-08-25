@@ -5,8 +5,6 @@ import (
 	"image"
 	"image/color"
 	"math"
-
-	modelcamera "github.com/Algo2147483647/ray/engine/model/camera"
 )
 
 type ToneMapping string
@@ -34,7 +32,7 @@ type ImageOptions struct {
 	ColorSpace  ColorSpace
 }
 
-func ToImage(film *modelcamera.Film, options ImageOptions) (*image.RGBA, error) {
+func ToImage(film *Film, options ImageOptions) (*image.RGBA, error) {
 	if film == nil || !film.HasSpectralBins() || film.ElementCount() == 0 {
 		return nil, fmt.Errorf("cannot image an empty spectral Film")
 	}
@@ -125,7 +123,7 @@ func validateImageOptions(options ImageOptions) error {
 	return nil
 }
 
-func spectralXYZAt(film *modelcamera.Film, pixel int, whiteY float64) (float64, float64, float64) {
+func spectralXYZAt(film *Film, pixel int, whiteY float64) (float64, float64, float64) {
 	var x, y, z float64
 	for bin := range film.SpectralBins {
 		wavelength := film.SpectralBinCenterNM(bin)
@@ -141,7 +139,7 @@ func spectralXYZAt(film *modelcamera.Film, pixel int, whiteY float64) (float64, 
 	return x, y, z
 }
 
-func spectralXYZAndBrightnessAt(film *modelcamera.Film, pixel int, whiteY float64) (float64, float64, float64, float64, error) {
+func spectralXYZAndBrightnessAt(film *Film, pixel int, whiteY float64) (float64, float64, float64, float64, error) {
 	var x, y, z, brightness float64
 	for bin := range film.SpectralBins {
 		value := film.SpectralBins[bin].Data[pixel]
@@ -184,7 +182,7 @@ func fitRGBWithoutChannelClipping(r, g, b float64) (float64, float64, float64) {
 	return r, g, b
 }
 
-func filmSpectralWhiteY(film *modelcamera.Film) float64 {
+func filmSpectralWhiteY(film *Film) float64 {
 	if film == nil || len(film.SpectralBins) == 0 {
 		return 0
 	}
