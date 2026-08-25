@@ -21,12 +21,7 @@ func AdaptScript(script *schema.StudioScript, source []string, dimension int) (*
 	if err != nil {
 		return nil, err
 	}
-	cameras, cameraIDs, err := attachFilms(baseCameras, script)
-	if err != nil {
-		return nil, err
-	}
-
-	renders, err := rendersToMaps(script, cameraIDs)
+	renders, err := rendersToMaps(script, baseCameras)
 	if err != nil {
 		return nil, err
 	}
@@ -42,13 +37,13 @@ func AdaptScript(script *schema.StudioScript, source []string, dimension int) (*
 		Materials: cloneMapSlice(script.Materials),
 		Media:     cloneNestedStringMap(script.Media),
 		Objects:   objects,
-		Cameras:   cameras,
+		Cameras:   baseCameras,
 		Geometry:  cloneMap(script.Geometry),
 		Renders:   renders,
 	}, nil
 }
 
-func renderToMap(script *schema.StudioScript, render schema.StudioRenderScript, cameraIDs map[string]string) (map[string]interface{}, error) {
+func renderToMap(script *schema.StudioScript, render schema.StudioRenderScript, cameraIDs map[string]bool) (map[string]interface{}, error) {
 	result := map[string]interface{}{}
 	film, err := selectedFilm(script, render.FilmID)
 	if err != nil {
@@ -63,11 +58,27 @@ func renderToMap(script *schema.StudioScript, render schema.StudioRenderScript, 
 	if render.ThreadNum > 0 {
 		result["thread_num"] = render.ThreadNum
 	}
-	cameraID, exists := cameraIDs[film.ID]
-	if !exists {
-		return nil, fmt.Errorf("film %q is not attached to an Engine camera", film.ID)
+	if film.CameraID == "" {
+		return nil, fmt.Errorf("film %q must specify camera_id", film.ID)
 	}
-	result["camera_id"] = cameraID
+	if !cameraIDs[film.CameraID] {
+		return nil, fmt.Errorf("film camera_id %q does not exist", film.CameraID)
+	}
+	if len(film.Shape) == 0 {
+		return nil, fmt.Errorf("film %q shape is required", film.ID)
+	}
+	for axis, extent := range film.Shape {
+		if extent <= 0 {
+			return nil, fmt.Errorf("film %q shape[%d] must be > 0", film.ID, axis)
+		}
+	}
+	result["camera_id"] = film.CameraID
+	result["film"] = schema.EngineFilmScript{
+		Shape:            append([]int(nil), film.Shape...),
+		SpectralBinCount: film.SpectralBinCount,
+		PixelWindows:     clonePixelWindows(film.PixelWindows),
+	}
+	result["output"] = film.OutputFilm
 	if render.SpectrumMode != "" {
 		result["spectrum_mode"] = render.SpectrumMode
 	}
@@ -77,79 +88,11 @@ func renderToMap(script *schema.StudioScript, render schema.StudioRenderScript, 
 	return result, nil
 }
 
-func attachFilms(baseCameras []schema.EngineCameraScript, script *schema.StudioScript) ([]schema.EngineCameraScript, map[string]string, error) {
-	filmIDs := activeFilmIDs(script)
-	films := make(map[string]schema.StudioFilmScript, len(script.Films))
-	for _, film := range script.Films {
-		films[film.ID] = film
+func rendersToMaps(script *schema.StudioScript, cameras []schema.EngineCameraScript) ([]map[string]interface{}, error) {
+	cameraIDs := make(map[string]bool, len(cameras))
+	for _, camera := range cameras {
+		cameraIDs[camera.ID] = true
 	}
-	counts := make(map[string]int)
-	for _, filmID := range filmIDs {
-		film, exists := films[filmID]
-		if !exists {
-			return nil, nil, fmt.Errorf("film %q does not exist", filmID)
-		}
-		counts[film.CameraID]++
-	}
-
-	cameras := make([]schema.EngineCameraScript, 0, len(filmIDs))
-	cameraIDs := make(map[string]string, len(filmIDs))
-	for _, filmID := range filmIDs {
-		film := films[filmID]
-		if film.CameraID == "" {
-			return nil, nil, fmt.Errorf("film %q must specify camera_id", film.ID)
-		}
-		index := -1
-		for i := range baseCameras {
-			if baseCameras[i].ID == film.CameraID {
-				index = i
-				break
-			}
-		}
-		if index < 0 {
-			return nil, nil, fmt.Errorf("film camera_id %q does not exist", film.CameraID)
-		}
-		if len(film.Shape) == 0 {
-			return nil, nil, fmt.Errorf("film %q shape is required", film.ID)
-		}
-		for axis, extent := range film.Shape {
-			if extent <= 0 {
-				return nil, nil, fmt.Errorf("film %q shape[%d] must be > 0", film.ID, axis)
-			}
-		}
-		camera := baseCameras[index]
-		if counts[film.CameraID] > 1 {
-			camera.ID = film.CameraID + "@" + film.ID
-		}
-		camera.Film = schema.EngineFilmScript{
-			Shape:            append([]int(nil), film.Shape...),
-			SpectralBinCount: film.SpectralBinCount,
-			OutputFilm:       film.OutputFilm,
-			PixelWindows:     clonePixelWindows(film.PixelWindows),
-		}
-		cameras = append(cameras, camera)
-		cameraIDs[film.ID] = camera.ID
-	}
-	return cameras, cameraIDs, nil
-}
-
-func activeFilmIDs(script *schema.StudioScript) []string {
-	seen := map[string]bool{}
-	result := []string{}
-	add := func(id string) {
-		if id == "" || seen[id] {
-			return
-		}
-		seen[id] = true
-		result = append(result, id)
-	}
-	for _, render := range resolvedRenderScripts(script) {
-		add(render.FilmID)
-	}
-	return result
-}
-
-func rendersToMaps(script *schema.StudioScript, cameraIDs map[string]string) ([]map[string]interface{}, error) {
 	renders := resolvedRenderScripts(script)
 	result := make([]map[string]interface{}, len(renders))
 	for i, render := range renders {

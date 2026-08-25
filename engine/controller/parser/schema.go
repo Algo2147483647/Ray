@@ -24,16 +24,35 @@ type CameraScript struct {
 	FieldOfViews []float64              `json:"field_of_views"` // Per-frame field-of-view values.
 	Coordinates  [][]float64            `json:"coordinates"`    // Camera path or sampled positions.
 	Ortho        bool                   `json:"ortho"`          // Enables orthographic projection.
-	Film         *modelcamera.Film      `json:"film"`           // Film owned by this camera.
+}
+
+func (c *CameraScript) UnmarshalJSON(data []byte) error {
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	allowed := map[string]bool{
+		"id": true, "type": true, "position": true, "field_of_views": true,
+		"coordinates": true, "ortho": true,
+	}
+	for field := range raw {
+		if !allowed[field] {
+			return fmt.Errorf("unsupported camera field %q", field)
+		}
+	}
+	type plain CameraScript
+	return json.Unmarshal(data, (*plain)(c))
 }
 
 type RenderScript struct {
-	Integrator        string `json:"integrator"`
-	Samples           int64  `json:"samples"`
-	ThreadNum         int    `json:"thread_num"`
-	CameraID          string `json:"camera_id"`
-	SpectrumMode      string `json:"spectrum_mode"`
-	WavelengthSamples int    `json:"wavelength_samples"`
+	Integrator        string                `json:"integrator"`
+	Samples           int64                 `json:"samples"`
+	ThreadNum         int                   `json:"thread_num"`
+	CameraID          string                `json:"camera_id"`
+	SpectrumMode      string                `json:"spectrum_mode"`
+	WavelengthSamples int                   `json:"wavelength_samples"`
+	Film              *modelcamera.FilmSpec `json:"film"`
+	Output            string                `json:"output"`
 }
 
 func (r *RenderScript) UnmarshalJSON(data []byte) error {
@@ -44,6 +63,7 @@ func (r *RenderScript) UnmarshalJSON(data []byte) error {
 	allowed := map[string]bool{
 		"integrator": true, "samples": true, "thread_num": true,
 		"camera_id": true, "spectrum_mode": true, "wavelength_samples": true,
+		"film": true, "output": true,
 	}
 	for field := range raw {
 		if !allowed[field] {

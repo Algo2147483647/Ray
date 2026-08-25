@@ -1,6 +1,7 @@
 package ray_tracing
 
 import (
+	"github.com/Algo2147483647/ray/engine/model"
 	"github.com/Algo2147483647/ray/engine/model/object"
 	"math"
 	"sync"
@@ -10,7 +11,7 @@ import (
 
 // RenderContext contains the scene-level inputs shared by all integrators.
 type RenderContext struct {
-	Camera      camera.RayCamera
+	Target      model.RenderTarget
 	ObjectTree  *object.ObjectTree
 	Samples     int64
 	Handler     *Handler

@@ -88,10 +88,9 @@ func (h *Handler) TraceRay(objTree *object.ObjectTree, ray *optics.Ray, level in
 		return
 	}
 
-	// Handle emissive surfaces directly; terminate if there is no scattering to sample.
-	if h.traceEmission(ray, si.Object, si.Context, si.WoEmission) {
-		return
-	} else if !si.Object.Material.HasSurface() {
+	// Accumulate emitted radiance, then continue through any surface scattering.
+	h.traceEmission(ray, si.Object, si.Context, si.WoEmission)
+	if !si.Object.Material.HasSurface() {
 		terminateRay(ray)
 		return
 	}
@@ -244,18 +243,17 @@ func (h *Handler) traceEmission(
 	obj *object.Object,
 	ctx bxdf.ShadingContext,
 	woLocal maths.Direction,
-) bool {
+) {
 	if !obj.Material.HasEmission() {
-		return false
+		return
 	}
 
 	emitted := obj.Material.Emission.Eval(ctx, woLocal)
 	if emitted.IsZero() {
 		// A one-sided emitter can still carry scattering on its dark side.
-		return false
+		return
 	}
-	applySpectrum(ray, emitted)
-	return true
+	accumulateEmission(ray, emitted)
 }
 
 func sampleSurface(

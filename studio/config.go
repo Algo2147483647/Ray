@@ -251,23 +251,24 @@ func (c studioConfig) applyEngineOverrides(script *schema.IntermediateScript, ou
 		if c.provided["wavelength-samples"] {
 			render["wavelength_samples"] = c.wavelengthSamples
 		}
-		normalizeIntermediateRender(render)
-	}
-
-	widths := c.filmShapeOverride()
-	for i := range script.Cameras {
-		film := &script.Cameras[i].Film
+		film, ok := render["film"].(schema.EngineFilmScript)
+		if !ok {
+			film = schema.EngineFilmScript{}
+		}
+		widths := c.filmShapeOverride()
 		if len(widths) > 0 {
 			film.Shape = append([]int(nil), widths...)
 		}
 		if outputFilmOverride != "" {
-			film.OutputFilm = outputFilmOverride
+			render["output"] = outputFilmOverride
 		} else if c.provided["output-film"] {
-			film.OutputFilm = c.outputFilm
+			render["output"] = c.outputFilm
 		}
 		if c.provided["pixel-window"] {
 			film.PixelWindows = cloneStudioPixelWindows(c.pixelWindows)
 		}
+		render["film"] = film
+		normalizeIntermediateRender(render)
 	}
 }
 

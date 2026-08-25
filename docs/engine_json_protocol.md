@@ -38,7 +38,7 @@ dimension. A `renders[].dimension` field is invalid.
 authoring composition; it writes one normalized intermediate JSON file for
 engine execution.
 
-`engine` only writes physical spectral Film data through `output_film`. It does not read
+`engine` only writes physical spectral Film data through `renders[].output`. It does not read
 `resume_film` and does not write image files. Use `studio` when a Film should be
 resumed, merged, converted through CIE XYZ to a color image, tone-mapped, or
 checkpointed over multiple runs.
@@ -330,20 +330,29 @@ features.
   "position": [-4, 0, 1],
   "coordinates": [[4, 0, -1], [0, -4, 0], [0, 0, 1]],
   "field_of_views": [60, 60],
-	"ortho": false,
-	"film": {
-		"shape": [800, 800],
-		"spectral_bin_count": 128,
-		"output_film": "../outputs/main.bin"
-	}
+	"ortho": false
 }
 ```
 
-`film.spectral_bin_count` selects the number of stored wavelength bins over
+Camera describes only the imaging model. Each render binds that reusable Camera
+to a Film and output destination:
+
+```json
+{
+	"camera_id": "main-camera",
+	"film": {
+		"shape": [800, 800],
+		"spectral_bin_count": 128
+	},
+	"output": "../outputs/main.bin"
+}
+```
+
+`render.film.spectral_bin_count` selects the number of stored wavelength bins over
 380–750 nm. The default is 64 and the supported range is 1–4096. This is
 independent of `render.wavelength_samples`.
 
-`film.output_film` is required for every Camera selected by a Render. Engine no
+`render.output` is required for every Render. Engine no
 longer invents a process-relative output filename.
 
 Render defaults are applied exactly once by `ResolveRenderSpec`: `path`, 20
@@ -377,15 +386,18 @@ renders `x = 100..149` and `y = 600..649`:
 ```json
 {
 	"cameras": [{
-		"id": "main-camera",
+		"id": "main-camera"
+	}],
+	"renders": [{
+		"camera_id": "main-camera",
 		"film": {
 			"shape": [800, 800],
     "pixel_windows": [
       { "min": [100, 600], "max": [150, 650] }
     ]
-		}
-	}],
-	"renders": [{ "camera_id": "main-camera" }]
+		},
+		"output": "../outputs/window.bin"
+	}]
 }
 ```
 

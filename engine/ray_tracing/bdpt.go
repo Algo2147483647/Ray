@@ -76,17 +76,16 @@ func (v *bdptVertex) emissionLocal(world *mat.VecDense) maths.Direction {
 // prepareBDPT performs all capability validation before an integrator driver
 // or worker is started. Infinite endpoint measures and non-reciprocal
 // transmission remain explicit capability errors.
-func (h *Handler) prepareBDPT(renderCamera camera.RayCamera, tree *object.ObjectTree) (*bdptSceneState, error) {
+func (h *Handler) prepareBDPT(renderCamera camera.RayCamera, film *camera.Film, tree *object.ObjectTree) (*bdptSceneState, error) {
 	if h == nil {
 		return nil, fmt.Errorf("BDPT handler is nil")
 	}
 	if h.Space.G().Kind() != geometry.EuclideanKind {
 		return nil, fmt.Errorf("BDPT requires three-dimensional Euclidean geometry")
 	}
-	if renderCamera == nil || renderCamera.GetFilm() == nil {
+	if renderCamera == nil || film == nil {
 		return nil, fmt.Errorf("BDPT camera or Film is nil")
 	}
-	film := renderCamera.GetFilm()
 	if len(film.Shape) != 2 || film.Shape[0] <= 0 || film.Shape[1] <= 0 {
 		return nil, fmt.Errorf("BDPT requires a non-empty 2D Film")
 	}
@@ -206,6 +205,7 @@ func prepareBDPTScene(tree *object.ObjectTree) *bdptSceneState {
 func (h *Handler) traceBidirectionalPrepared(
 	state *bdptSceneState,
 	renderCamera camera.RayCamera,
+	filmShape []int,
 	objTree *object.ObjectTree,
 	wavelengthNM, wavelengthPDF float64,
 	index ...int,
@@ -214,7 +214,7 @@ func (h *Handler) traceBidirectionalPrepared(
 	if state == nil || !ok {
 		return zeroSpectrum(wavelengthNM), nil
 	}
-	cameraPath := h.buildCameraSubpath(renderCamera, objTree, wavelengthNM, wavelengthPDF, index...)
+	cameraPath := h.buildCameraSubpath(renderCamera, filmShape, objTree, wavelengthNM, wavelengthPDF, index...)
 	lightPath := h.buildLightSubpath(objTree, state.Lights, state.TotalLightWeight, wavelengthNM, wavelengthPDF)
 	result := zeroSpectrum(wavelengthNM)
 	splats := make([]FilmSplat, 0, len(lightPath))
@@ -226,7 +226,7 @@ func (h *Handler) traceBidirectionalPrepared(
 				continue
 			}
 			value, projection, isSplat, valid := h.connectBDPTStrategy(
-				state, bdCamera, objTree, lightPath, cameraPath, s, t,
+				state, bdCamera, filmShape, objTree, lightPath, cameraPath, s, t,
 			)
 			if !valid {
 				continue
@@ -284,6 +284,7 @@ func collectAreaLights(tree *object.ObjectTree) ([]areaLight, float64) {
 
 func (h *Handler) buildCameraSubpath(
 	renderCamera camera.RayCamera,
+	filmShape []int,
 	tree *object.ObjectTree,
 	wavelengthNM, wavelengthPDF float64,
 	index ...int,
@@ -293,7 +294,7 @@ func (h *Handler) buildCameraSubpath(
 		return nil
 	}
 	ray := &optics.Ray{Space: h.Space}
-	renderCamera.GenerateRay(ray, index...)
+	renderCamera.GenerateRay(ray, filmShape, index...)
 	setBDPTWavelength(ray, wavelengthNM, wavelengthPDF)
 	directionPDF := bdCamera.PDFDirection(ray.Direction)
 	if directionPDF <= 0 {
@@ -502,6 +503,7 @@ func (h *Handler) randomWalk(
 func (h *Handler) connectBDPTStrategy(
 	state *bdptSceneState,
 	renderCamera camera.BidirectionalCamera,
+	filmShape []int,
 	tree *object.ObjectTree,
 	lightPath, cameraPath []bdptVertex,
 	s, t int,
@@ -530,7 +532,7 @@ func (h *Handler) connectBDPTStrategy(
 		if s < 2 {
 			return optics.Spectrum{}, camera.FilmProjection{}, true, false
 		}
-		value, projection, ok := projectLightVertex(renderCamera, tree, &lightPath[s-1])
+		value, projection, ok := projectLightVertex(renderCamera, filmShape, tree, &lightPath[s-1])
 		return value, projection, true, ok
 	}
 	value, ok := h.connectBDPTVertices(tree, &lightPath[s-1], &cameraPath[t-1])

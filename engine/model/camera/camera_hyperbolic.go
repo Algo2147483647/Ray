@@ -60,7 +60,7 @@ func (c *HyperbolicCamera) Prepare() error {
 	return nil
 }
 
-func (c *HyperbolicCamera) GenerateRay(res *renderray.Ray, index ...int) *renderray.Ray {
+func (c *HyperbolicCamera) GenerateRay(res *renderray.Ray, filmShape []int, index ...int) *renderray.Ray {
 	if res == nil {
 		res = &renderray.Ray{}
 	}
@@ -71,7 +71,7 @@ func (c *HyperbolicCamera) GenerateRay(res *renderray.Ray, index ...int) *render
 			panic(err)
 		}
 	}
-	width, height := c.Film.Shape[0], c.Film.Shape[1]
+	width, height := filmShape[0], filmShape[1]
 
 	row, col := index[0], index[1]
 	u := 2*(float64(row)+rand.Float64())/float64(width) - 1

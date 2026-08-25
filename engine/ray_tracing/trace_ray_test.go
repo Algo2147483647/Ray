@@ -9,11 +9,41 @@ import (
 	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"github.com/Algo2147483647/ray/engine/model/material"
 	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
+	"github.com/Algo2147483647/ray/engine/model/material/emission"
 	"github.com/Algo2147483647/ray/engine/model/material/medium"
 	"github.com/Algo2147483647/ray/engine/model/object"
 	"github.com/Algo2147483647/ray/engine/model/shape"
 	"gonum.org/v1/gonum/mat"
 )
+
+func TestTraceRayAccumulatesEmissionAndContinuesSurface(t *testing.T) {
+	tree := (&object.ObjectTree{}).Build()
+	tree.AddObject(&object.Object{
+		Shape: shape.NewSphere(mat.NewVecDense(3, []float64{0, 0, 2}), 0.5),
+		Material: &material.Material{
+			Emission: emission.NewConstant(renderray.ConstantSpectrum(2)),
+			Surface:  bxdf.NewLambert(renderray.ConstantSpectrum(0.5)),
+		},
+	})
+	tree.Build()
+
+	ray := &renderray.Ray{Space: geometry.DefaultSceneSpace()}
+	ray.Init()
+	ray.Origin.CopyVec(mat.NewVecDense(3, []float64{0, 0, 0}))
+	ray.Direction.CopyVec(mat.NewVecDense(3, []float64{0, 0, 1}))
+	ray.SetSpectralWavelength(550)
+
+	h := NewHandler(geometry.DefaultSceneSpace())
+	h.MaxRayLevel = 2
+	h.TraceRay(tree, ray, 0)
+
+	if got := ray.Path.Radiance.Sample(0); got <= 0 {
+		t.Fatalf("emission was not accumulated: %v", ray.Path.Radiance)
+	}
+	if !ray.Path.Throughput.IsZero() {
+		t.Fatalf("surface path did not continue to termination: %v", ray.Path.Throughput)
+	}
+}
 
 func TestPrepareMediumContextKeepsLegacyIORWithoutBoundary(t *testing.T) {
 	ray := &renderray.Ray{RefractionIndex: 1.5}

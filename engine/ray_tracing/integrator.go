@@ -90,8 +90,8 @@ func (d *pixelSceneIntegrator) Run(context *RenderContext, _ PreparedIntegratorS
 	}
 
 	tiles, totalPixels := buildTileCoordinatesForWindows(
-		context.Camera.GetFilm().Shape,
-		context.Camera.GetFilm().PixelWindows,
+		context.Target.Film.Shape,
+		context.Target.Film.PixelWindows,
 		context.Handler.BlockCols,
 		context.Handler.BlockRows,
 	)

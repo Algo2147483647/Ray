@@ -88,5 +88,5 @@ func benchmarkBDPTPaths(tb testing.TB, vertexCount int) ([]bdptVertex, []bdptVer
 		Kind: bdptVertexCamera, Point: renderCamera.Endpoint(), PDFFwdArea: 1,
 		Connectible: true, Camera: renderCamera,
 	}
-	return lightPath, cameraPath, renderCamera, len(lightPath) - 1, len(cameraPath) - 1
+	return lightPath, cameraPath, renderCamera.Camera3D, len(lightPath) - 1, len(cameraPath) - 1
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/maths/geometry"
+	"github.com/Algo2147483647/ray/engine/model"
 	"github.com/Algo2147483647/ray/engine/model/camera"
 	"github.com/Algo2147483647/ray/engine/model/material"
 	"github.com/Algo2147483647/ray/engine/model/material/bsdf"
@@ -19,18 +20,25 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-type nonBidirectionalCamera struct{ camera.Camera }
+type nonBidirectionalCamera struct{ Film *camera.Film }
 
-func (nonBidirectionalCamera) GenerateRay(ray *optics.Ray, _ ...int) *optics.Ray {
+func (nonBidirectionalCamera) GenerateRay(ray *optics.Ray, _ []int, _ ...int) *optics.Ray {
 	ray.Init()
 	ray.Origin.CloneFromVec(mat.NewVecDense(3, []float64{0, 0, 0}))
 	ray.Direction.CloneFromVec(mat.NewVecDense(3, []float64{0, 0, 1}))
 	return ray
 }
 
-func newBDPTTestCamera(t testing.TB, width, height int) *camera.Camera3D {
+func (nonBidirectionalCamera) RasterDimension() int { return 2 }
+
+type bdptTestCamera struct {
+	*camera.Camera3D
+	Film *camera.Film
+}
+
+func newBDPTTestCamera(t testing.TB, width, height int) *bdptTestCamera {
 	t.Helper()
-	result := camera.NewCamera3D()
+	result := &bdptTestCamera{Camera3D: camera.NewCamera3D(), Film: camera.NewFilm(width, height)}
 	result.Position = mat.NewVecDense(3, []float64{0, 0, 0})
 	result.Coordinates = []*mat.VecDense{
 		mat.NewVecDense(3, []float64{0, 0, 1}),
@@ -38,12 +46,15 @@ func newBDPTTestCamera(t testing.TB, width, height int) *camera.Camera3D {
 		mat.NewVecDense(3, []float64{0, 1, 0}),
 	}
 	result.FieldOfViews = []float64{45, 45}
-	result.Film = camera.NewFilm(width, height)
 	result.Film.InitSpectralBins(3, 400, 700)
 	if err := result.Prepare(); err != nil {
 		t.Fatalf("prepare camera: %v", err)
 	}
 	return result
+}
+
+func bdptTarget(c *bdptTestCamera) model.RenderTarget {
+	return model.RenderTarget{Camera: c, Film: c.Film, Output: "test.bin"}
 }
 
 func addTestAreaLight(tree *object.ObjectTree, center []float64) *object.Object {
@@ -74,11 +85,13 @@ func (h *Handler) traceBidirectionalSample(
 	wavelengthNM, wavelengthPDF float64,
 	index ...int,
 ) optics.Spectrum {
-	state, err := h.prepareBDPT(renderCamera, objTree)
+	film := camera.NewFilm(1, 1)
+	film.InitSpectralBins(3, 400, 700)
+	state, err := h.prepareBDPT(renderCamera, film, objTree)
 	if err != nil {
 		return zeroSpectrum(wavelengthNM)
 	}
-	result, _ := h.traceBidirectionalPrepared(state, renderCamera, objTree, wavelengthNM, wavelengthPDF, index...)
+	result, _ := h.traceBidirectionalPrepared(state, renderCamera, film.Shape, objTree, wavelengthNM, wavelengthPDF, index...)
 	return result
 }
 
@@ -89,11 +102,11 @@ func TestBDPTPreflightValidatesBeforeFilmIndexing(t *testing.T) {
 	tree.Build()
 	bad := newBDPTTestCamera(t, 1, 1)
 	bad.Film.Shape = []int{1}
-	if _, err := h.prepareBDPT(bad, tree); err == nil {
+	if _, err := h.prepareBDPT(bad, bad.Film, tree); err == nil {
 		t.Fatal("expected one-dimensional Film to fail BDPT preflight")
 	}
-	unsupported := nonBidirectionalCamera{Camera: camera.Camera{Film: camera.NewFilm(1, 1)}}
-	if _, err := h.prepareBDPT(unsupported, tree); err == nil {
+	unsupported := nonBidirectionalCamera{Film: camera.NewFilm(1, 1)}
+	if _, err := h.prepareBDPT(unsupported, unsupported.Film, tree); err == nil {
 		t.Fatal("expected camera without bidirectional endpoint PDFs to fail")
 	}
 }
@@ -111,7 +124,8 @@ func TestBDPTPreflightAcceptsFiniteCylinderAreaLight(t *testing.T) {
 	})
 	tree.Build()
 
-	state, err := newBDPTTestHandler().prepareBDPT(newBDPTTestCamera(t, 1, 1), tree)
+	cam := newBDPTTestCamera(t, 1, 1)
+	state, err := newBDPTTestHandler().prepareBDPT(cam, cam.Film, tree)
 	if err != nil {
 		t.Fatalf("finite cylinder area light should pass BDPT preflight: %v", err)
 	}
@@ -130,7 +144,7 @@ func TestBDPTUnsupportedSceneFailsWithoutChangingIntegrator(t *testing.T) {
 
 	camera3D := newBDPTTestCamera(t, 1, 1)
 	h := newBDPTTestHandler()
-	if err := h.TraceScene(camera3D, tree, 1); err == nil {
+	if err := h.TraceScene(bdptTarget(camera3D), tree, 1); err == nil {
 		t.Fatal("BDPT must report the unsupported emitter")
 	}
 	if h.IntegratorKind != IntegratorBDPT || camera3D.Film.Samples != 0 {
@@ -154,7 +168,8 @@ func TestBDPTPreflightAcceptsIdealTransmissionAndMediumBoundary(t *testing.T) {
 		MediumBoundary: medium.NewBoundary(medium.MediumAir, glassID),
 	})
 	tree.Build()
-	if _, err := newBDPTTestHandler().prepareBDPT(newBDPTTestCamera(t, 1, 1), tree); err != nil {
+	cam := newBDPTTestCamera(t, 1, 1)
+	if _, err := newBDPTTestHandler().prepareBDPT(cam, cam.Film, tree); err != nil {
 		t.Fatalf("ideal dielectric boundary should be supported: %v", err)
 	}
 }
@@ -172,7 +187,8 @@ func TestBDPTPreflightAcceptsReciprocalRoughReflection(t *testing.T) {
 		)},
 	})
 	tree.Build()
-	if _, err := newBDPTTestHandler().prepareBDPT(newBDPTTestCamera(t, 1, 1), tree); err != nil {
+	cam := newBDPTTestCamera(t, 1, 1)
+	if _, err := newBDPTTestHandler().prepareBDPT(cam, cam.Film, tree); err != nil {
 		t.Fatalf("reciprocal rough reflection should be supported: %v", err)
 	}
 }
@@ -250,11 +266,11 @@ func TestBDPTBuildsRealCameraAndLightEndpoints(t *testing.T) {
 	tree.Build()
 	h := newBDPTTestHandler()
 	cam := newBDPTTestCamera(t, 1, 1)
-	state, err := h.prepareBDPT(cam, tree)
+	state, err := h.prepareBDPT(cam, cam.Film, tree)
 	if err != nil {
 		t.Fatalf("preflight: %v", err)
 	}
-	cameraPath := h.buildCameraSubpath(cam, tree, 0, 0, 0, 0)
+	cameraPath := h.buildCameraSubpath(cam, cam.Film.Shape, tree, 0, 0, 0, 0)
 	lightPath := h.buildLightSubpath(tree, state.Lights, state.TotalLightWeight, 0, 0)
 	if len(cameraPath) < 2 || cameraPath[0].Kind != bdptVertexCamera || cameraPath[0].Camera == nil {
 		t.Fatalf("camera path has no real endpoint: %+v", cameraPath)
@@ -297,7 +313,7 @@ func TestBDPTSupportedSceneRunsUnifiedSplatDriver(t *testing.T) {
 	tree.Build()
 	cam := newBDPTTestCamera(t, 2, 2)
 	h := newBDPTTestHandler()
-	if err := h.TraceScene(cam, tree, 4); err != nil {
+	if err := h.TraceScene(bdptTarget(cam), tree, 4); err != nil {
 		t.Fatalf("supported BDPT render failed: %v", err)
 	}
 	if cam.Film.Samples != 4 {
@@ -422,7 +438,6 @@ func TestBDPTMISPartitionAcrossRandomizedDirectPaths(t *testing.T) {
 			mat.NewVecDense(3, []float64{1, 0, -1}),
 		}
 		cam.FieldOfViews = []float64{45, 45}
-		cam.Film = camera.NewFilm(4, 4)
 		if err := cam.Prepare(); err != nil {
 			t.Fatalf("sample %d camera: %v", sample, err)
 		}
@@ -525,7 +540,7 @@ func TestBDPTUnifiedT1ProjectsPathAfterDeltaEvent(t *testing.T) {
 	lightPath := []bdptVertex{root, delta, screen}
 	cameraPath := []bdptVertex{cameraRoot}
 	value, _, isSplat, ok := newBDPTTestHandler().connectBDPTStrategy(
-		&bdptSceneState{}, cam, nil, lightPath, cameraPath, 3, 1,
+		&bdptSceneState{}, cam, []int{4, 4}, nil, lightPath, cameraPath, 3, 1,
 	)
 	if !ok || !isSplat || !validSpectrum(value) {
 		t.Fatalf("unified t=1 strategy failed after Delta event: value=%+v splat=%v ok=%v", value, isSplat, ok)

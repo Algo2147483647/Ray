@@ -28,11 +28,11 @@ func (k *bdptKernel) Prepare(context *RenderContext) (PreparedIntegratorState, e
 	if k == nil || context == nil {
 		return nil, fmt.Errorf("BDPT kernel or render context is nil")
 	}
-	scene, err := context.Handler.prepareBDPT(context.Camera, context.ObjectTree)
+	scene, err := context.Handler.prepareBDPT(context.Target.Camera, context.Target.Film, context.ObjectTree)
 	if err != nil {
 		return nil, err
 	}
-	film := context.Camera.GetFilm()
+	film := context.Target.Film
 	shape := film.Shape
 	mask := make([]bool, shapeElementCount(shape))
 	if len(film.PixelWindows) == 0 {
@@ -79,7 +79,7 @@ func (k *bdptKernel) TraceSample(context *RenderContext, prepared PreparedIntegr
 	}
 	activeCount := len(state.activePixels)
 	pixel := state.activePixels[int(workIndex%int64(activeCount))]
-	coords := context.Camera.GetFilm().SpectralBins[0].GetCoordinates(pixel)
+	coords := context.Target.Film.SpectralBins[0].GetCoordinates(pixel)
 
 	u := rand.Float64()
 	if context.Handler.SpectrumMode == optics.SpectrumModeSampledWavelengths {
@@ -90,7 +90,8 @@ func (k *bdptKernel) TraceSample(context *RenderContext, prepared PreparedIntegr
 	wavelengthNM, wavelengthPDF := wavelength.LambdaNM, wavelength.PDF
 	local, remoteSplats := context.Handler.traceBidirectionalPrepared(
 		state.scene,
-		context.Camera,
+		context.Target.Camera,
+		context.Target.Film.Shape,
 		context.ObjectTree,
 		wavelengthNM,
 		wavelengthPDF,

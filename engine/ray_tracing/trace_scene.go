@@ -3,7 +3,7 @@ package ray_tracing
 import (
 	"fmt"
 
-	"github.com/Algo2147483647/ray/engine/model/camera"
+	"github.com/Algo2147483647/ray/engine/model"
 	"github.com/Algo2147483647/ray/engine/model/object"
 	"github.com/Algo2147483647/ray/engine/model/optics"
 )
@@ -13,14 +13,14 @@ const defaultTileSize = 8
 // TraceScene selects one scene-level integrator and delegates the complete
 // render schedule to it.
 func (h *Handler) TraceScene(
-	renderCamera camera.RayCamera,
+	target model.RenderTarget,
 	objectTree *object.ObjectTree,
 	samples int64,
 ) error {
 	if h == nil {
 		return fmt.Errorf("render handler is nil")
 	}
-	if renderCamera == nil || renderCamera.GetFilm() == nil {
+	if target.Camera == nil || target.Film == nil {
 		return fmt.Errorf("render camera or Film is nil")
 	}
 	if h.ThreadNum <= 0 {
@@ -37,10 +37,10 @@ func (h *Handler) TraceScene(
 
 	context := &RenderContext{
 		Handler:     h,
-		Camera:      renderCamera,
+		Target:      target,
 		ObjectTree:  objectTree,
 		Samples:     samples,
-		Accumulator: newFilmAccumulator(renderCamera.GetFilm(), integrator.ConcurrentFilmWrites()),
+		Accumulator: newFilmAccumulator(target.Film, integrator.ConcurrentFilmWrites()),
 	}
 
 	prepared, err := integrator.Prepare(context)
@@ -52,6 +52,6 @@ func (h *Handler) TraceScene(
 		return err
 	}
 
-	context.Camera.GetFilm().Samples = integrator.EffectiveSampleCount(context)
+	context.Target.Film.Samples = integrator.EffectiveSampleCount(context)
 	return nil
 }

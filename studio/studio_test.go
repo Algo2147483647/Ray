@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	enginecontroller "github.com/Algo2147483647/ray/engine/controller"
 	enginefactory "github.com/Algo2147483647/ray/engine/controller/factory"
 	engineparser "github.com/Algo2147483647/ray/engine/controller/parser"
 	enginegeometry "github.com/Algo2147483647/ray/engine/maths/geometry"
@@ -58,7 +59,7 @@ func TestStudioSchemaValidatesRenderConfiguration(t *testing.T) {
 	}
 }
 
-func TestIntermediateScriptUsesCameraOwnedFilm(t *testing.T) {
+func TestIntermediateScriptUsesRenderTarget(t *testing.T) {
 	adapted, err := adaptTestScript(&schema.StudioScript{
 		Cameras: []schema.StudioCameraScript{{ID: "main", Type: "3d"}},
 		Films:   []schema.StudioFilmScript{{ID: "main-film", CameraID: "main", Shape: []int{800, 600}, OutputFilm: "main.bin"}},
@@ -91,23 +92,45 @@ func TestIntermediateScriptUsesCameraOwnedFilm(t *testing.T) {
 	if _, exists := adapted.Renders[0]["dimension"]; exists {
 		t.Fatal("scene dimension leaked into an Engine render job")
 	}
-	if len(engineScript.Renders) != 1 || engineScript.Renders[0].CameraID != "main" || engineScript.Cameras[0].Film.Shape[0] != 800 {
+	if len(engineScript.Renders) != 1 || engineScript.Renders[0].CameraID != "main" || engineScript.Renders[0].Film.Shape[0] != 800 || engineScript.Renders[0].Output != "main.bin" {
 		t.Fatalf("unexpected Engine script: %+v", engineScript)
 	}
 	scene := enginemodel.NewScene(enginegeometry.DefaultSceneSpace())
 	if err := enginefactory.LoadSceneFromScript(&engineScript, scene); err != nil {
 		t.Fatalf("load Engine scene: %v", err)
 	}
-	if len(scene.Cameras) != 1 || scene.Cameras["main"].GetFilm() == nil || scene.Cameras["main"].GetFilm().Shape[1] != 600 {
-		t.Fatalf("Film was not loaded into Camera: %+v", scene.Cameras)
+	if len(scene.Cameras) != 1 || scene.Cameras["main"].RasterDimension() != 2 {
+		t.Fatalf("Camera was not loaded independently: %+v", scene.Cameras)
 	}
+}
+
+func TestStudioReusesCameraAcrossRenderTargets(t *testing.T) {
+	adapted, err := adaptTestScript(&schema.StudioScript{
+		Cameras: []schema.StudioCameraScript{{ID: "main", Type: "3d"}},
+		Films: []schema.StudioFilmScript{
+			{ID: "preview", CameraID: "main", Shape: []int{320, 200}, OutputFilm: "preview.bin"},
+			{ID: "final", CameraID: "main", Shape: []int{1920, 1080}, OutputFilm: "final.bin"},
+		},
+		Renders: []schema.StudioRenderScript{{FilmID: "preview"}, {FilmID: "final"}},
+	}, []string{"scene.json"}, 3)
+	if err != nil {
+		t.Fatalf("adapt script: %v", err)
+	}
+	if len(adapted.Cameras) != 1 || adapted.Cameras[0].ID != "main" {
+		t.Fatalf("camera was cloned per Film: %+v", adapted.Cameras)
+	}
+	if adapted.Renders[0]["camera_id"] != "main" || adapted.Renders[1]["camera_id"] != "main" {
+		t.Fatalf("render targets do not share the authored camera: %+v", adapted.Renders)
+	}
+	assertIntSlice(t, intermediateRenderFilm(t, adapted, 0).Shape, []int{320, 200})
+	assertIntSlice(t, intermediateRenderFilm(t, adapted, 1).Shape, []int{1920, 1080})
 }
 
 func TestStudioConfiguresSpectralBinCount(t *testing.T) {
 	adapted, err := adaptTestScript(&schema.StudioScript{
 		Cameras: []schema.StudioCameraScript{{ID: "main", Type: "3d"}},
 		Films: []schema.StudioFilmScript{{
-			ID: "main-film", CameraID: "main", Shape: []int{2, 2}, SpectralBinCount: 128,
+			ID: "main-film", CameraID: "main", Shape: []int{2, 2}, SpectralBinCount: 128, OutputFilm: "main.bin",
 		}},
 		Render: schema.StudioRenderScript{FilmID: "main-film"},
 	}, []string{"scene.json"}, 3)
@@ -122,14 +145,18 @@ func TestStudioConfiguresSpectralBinCount(t *testing.T) {
 	if err := json.Unmarshal(data, &engineScript); err != nil {
 		t.Fatalf("Engine rejected Studio intermediate script: %v", err)
 	}
-	if engineScript.Cameras[0].Film.SpectralBinCount != 128 {
-		t.Fatalf("spectral_bin_count = %d, want 128", engineScript.Cameras[0].Film.SpectralBinCount)
+	if engineScript.Renders[0].Film.SpectralBinCount != 128 {
+		t.Fatalf("spectral_bin_count = %d, want 128", engineScript.Renders[0].Film.SpectralBinCount)
 	}
 	scene := enginemodel.NewScene(enginegeometry.DefaultSceneSpace())
 	if err := enginefactory.LoadSceneFromScript(&engineScript, scene); err != nil {
 		t.Fatalf("load Engine scene: %v", err)
 	}
-	if got := len(scene.Cameras["main"].GetFilm().SpectralBins); got != 128 {
+	resolved, err := enginecontroller.ResolveRenderSpec(engineScript.Renders[0])
+	if err != nil {
+		t.Fatalf("resolve Engine render: %v", err)
+	}
+	if got := len(resolved.Film.SpectralBins); got != 128 {
 		t.Fatalf("spectral bins = %d, want 128", got)
 	}
 }
@@ -1156,8 +1183,8 @@ func TestStudioDoesNotEmitResumeFilmToIntermediateScript(t *testing.T) {
 	if _, ok := adapted.Renders[0]["output_image"]; ok {
 		t.Fatal("output_image must stay in studio and not be emitted to engine intermediate scripts")
 	}
-	if adapted.Cameras[0].Film.OutputFilm != "final.bin" {
-		t.Fatalf("expected output_film on the Engine camera film, got %v", adapted.Cameras[0].Film.OutputFilm)
+	if adapted.Renders[0]["output"] != "final.bin" {
+		t.Fatalf("expected output on the Engine render target, got %v", adapted.Renders[0]["output"])
 	}
 }
 
@@ -1209,7 +1236,7 @@ func TestStudioEmitsPixelWindowsToIntermediateScript(t *testing.T) {
 		t.Fatalf("adapt script: %v", err)
 	}
 
-	windows := adapted.Cameras[0].Film.PixelWindows
+	windows := intermediateRenderFilm(t, adapted, 0).PixelWindows
 	if len(windows) != 1 {
 		t.Fatalf("expected one pixel window, got %d", len(windows))
 	}
@@ -1254,9 +1281,9 @@ func TestStudioEmbedsFilmShapeOverrideInIntermediateScript(t *testing.T) {
 		width:    1920,
 		height:   1080,
 	}
-	intermediate := &schema.IntermediateScript{Cameras: []schema.EngineCameraScript{{}}}
+	intermediate := &schema.IntermediateScript{Renders: []map[string]interface{}{{"film": schema.EngineFilmScript{}}}}
 	config.applyEngineOverrides(intermediate, "", 0)
-	assertIntSlice(t, intermediate.Cameras[0].Film.Shape, []int{1920, 1080})
+	assertIntSlice(t, intermediateRenderFilm(t, intermediate, 0).Shape, []int{1920, 1080})
 }
 
 func TestStudioEmbedsRenderOverridesInIntermediateScript(t *testing.T) {
@@ -1291,8 +1318,8 @@ func TestStudioEmbedsRenderOverridesInIntermediateScript(t *testing.T) {
 		render["spectrum_mode"] != "sampled" || render["wavelength_samples"] != 8 {
 		t.Fatalf("render overrides were not embedded in JSON: %v", render)
 	}
-	if intermediate.Cameras[0].Film.OutputFilm != "override.bin" {
-		t.Fatalf("film override was not embedded in JSON: %+v", intermediate.Cameras[0].Film)
+	if intermediate.Renders[0]["output"] != "override.bin" {
+		t.Fatalf("target output override was not embedded in JSON: %+v", intermediate.Renders[0])
 	}
 }
 
@@ -1311,7 +1338,7 @@ func TestStudioAcceptsLegacyEngineRenderFlags(t *testing.T) {
 	assertIntSlice(t, config.widths, []int{16, 12, 8})
 }
 
-func TestStudioAdaptAttachesFilmShapeToCamera(t *testing.T) {
+func TestStudioAdaptAttachesFilmShapeToRenderTarget(t *testing.T) {
 	adapted, err := adaptTestScript(&schema.StudioScript{
 		Render:  schema.StudioRenderScript{FilmID: "test-film"},
 		Films:   []schema.StudioFilmScript{{ID: "test-film", CameraID: "test-camera", Shape: []int{1280, 720}}},
@@ -1320,7 +1347,7 @@ func TestStudioAdaptAttachesFilmShapeToCamera(t *testing.T) {
 	if err != nil {
 		t.Fatalf("adapt script: %v", err)
 	}
-	assertIntSlice(t, adapted.Cameras[0].Film.Shape, []int{1280, 720})
+	assertIntSlice(t, intermediateRenderFilm(t, adapted, 0).Shape, []int{1280, 720})
 	if adapted.Renders[0]["camera_id"] != "test-camera" {
 		t.Fatalf("render camera_id = %v, want test-camera", adapted.Renders[0]["camera_id"])
 	}
@@ -1347,6 +1374,18 @@ func adaptTestScript(script *schema.StudioScript, source []string, dimension int
 		script.Render.FilmID = script.Films[0].ID
 	}
 	return adapt.AdaptScript(script, source, dimension)
+}
+
+func intermediateRenderFilm(t testing.TB, script *schema.IntermediateScript, index int) schema.EngineFilmScript {
+	t.Helper()
+	if script == nil || index < 0 || index >= len(script.Renders) {
+		t.Fatalf("render index %d does not exist", index)
+	}
+	film, ok := script.Renders[index]["film"].(schema.EngineFilmScript)
+	if !ok {
+		t.Fatalf("render[%d] film has unexpected type %T", index, script.Renders[index]["film"])
+	}
+	return film
 }
 
 func TestStudioOwnsLatestColorAndSpectrumCLI(t *testing.T) {
@@ -1483,9 +1522,9 @@ func TestStudioEmbedsPixelWindowsInIntermediateScript(t *testing.T) {
 		},
 	}
 
-	intermediate := &schema.IntermediateScript{Cameras: []schema.EngineCameraScript{{}}}
+	intermediate := &schema.IntermediateScript{Renders: []map[string]interface{}{{"film": schema.EngineFilmScript{}}}}
 	config.applyEngineOverrides(intermediate, "", 0)
-	windows := intermediate.Cameras[0].Film.PixelWindows
+	windows := intermediateRenderFilm(t, intermediate, 0).PixelWindows
 	if len(windows) != 2 {
 		t.Fatalf("expected two embedded pixel windows, got %v", windows)
 	}
@@ -1553,8 +1592,8 @@ func TestStudioEmbedsEndlessSampleAndFilmOverrides(t *testing.T) {
 	if intermediate.Renders[0]["samples"] != int64(100) {
 		t.Fatalf("expected endless sample override in JSON: %v", intermediate.Renders[0])
 	}
-	if intermediate.Cameras[0].Film.OutputFilm != "checkpoint.bin" {
-		t.Fatalf("expected checkpoint film override in JSON: %+v", intermediate.Cameras[0].Film)
+	if intermediate.Renders[0]["output"] != "checkpoint.bin" {
+		t.Fatalf("expected checkpoint output override in JSON: %+v", intermediate.Renders[0])
 	}
 }
 

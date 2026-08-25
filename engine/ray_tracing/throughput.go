@@ -26,6 +26,21 @@ func applySpectrum(ray *renderray.Ray, spectrum optics.Spectrum) {
 	ray.Path.Throughput = ray.Path.Throughput.Mul(spectrum)
 }
 
+// accumulateEmission adds beta * Le to the path result without changing beta.
+func accumulateEmission(ray *renderray.Ray, emitted optics.Spectrum) {
+	if ray == nil || emitted.IsZero() {
+		return
+	}
+	if ray.Path.Wavelength != nil {
+		if !emitted.HasSamples() {
+			emitted = emitted.UpliftRGBToSampled([]float64{ray.Path.Wavelength.LambdaNM})
+		}
+	} else if emitted.HasSamples() {
+		return
+	}
+	ray.Path.Radiance = ray.Path.Radiance.Add(ray.Path.Throughput.Mul(emitted))
+}
+
 func terminateRay(ray *renderray.Ray) {
 	if ray == nil {
 		return

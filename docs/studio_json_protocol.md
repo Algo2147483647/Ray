@@ -142,16 +142,16 @@ go -C studio run . --script ../examples/scenes/default.json \
   --output-image ../outputs/render.next.png
 ```
 
-If `output_film` is omitted, studio uses the engine default Film path. If
+If `output_film` is omitted, studio uses its command-layer default Film path. If
 `output_image` is omitted, studio uses the default image path.
 
 ### Films
 
 Films own the image grid, camera association, Film path, and image presentation
-options. A render selects one with `film_id`; `camera_id` is resolved to the
-corresponding camera when Studio emits canonical Engine JSON. In that Engine
-JSON the Film is embedded directly in the Camera, and Render selects the
-Camera with `camera_id`; Engine has no top-level `films` or `film_id`.
+options. A render selects one with `film_id`; Studio emits one canonical Engine
+render target containing `camera_id`, `film`, and `output`. Cameras are emitted
+once and can be shared by any number of render targets; Engine has no top-level
+`films` or `film_id`.
 
 ```json
 {

@@ -3,26 +3,27 @@ package ray_tracing
 import (
 	"math/rand/v2"
 
+	"github.com/Algo2147483647/ray/engine/model"
 	rendercamera "github.com/Algo2147483647/ray/engine/model/camera"
 	"github.com/Algo2147483647/ray/engine/model/object"
 	"github.com/Algo2147483647/ray/engine/model/optics"
 )
 
 type pixelKernel interface {
-	sampleSpectral(*Handler, rendercamera.RayCamera, *object.ObjectTree, *optics.Ray, optics.WavelengthSample, ...int) rendercamera.SpectralSample
+	sampleSpectral(*Handler, model.RenderTarget, *object.ObjectTree, *optics.Ray, optics.WavelengthSample, ...int) rendercamera.SpectralSample
 }
 
 type pathTracingKernel struct{}
 
 func (pathTracingKernel) sampleSpectral(
 	h *Handler,
-	renderCamera rendercamera.RayCamera,
+	target model.RenderTarget,
 	objTree *object.ObjectTree,
 	ray *optics.Ray,
 	wavelength optics.WavelengthSample,
 	index ...int,
 ) rendercamera.SpectralSample {
-	renderCamera.GenerateRay(ray, index...)
+	target.Camera.GenerateRay(ray, target.Film.Shape, index...)
 	ray.SetSpectralSample(wavelength)
 	h.TraceRay(objTree, ray, 0)
 	return rendercamera.SpectralSample{
@@ -42,7 +43,7 @@ func (h *Handler) tracePixel(
 ) {
 	for _, sample := range h.traceSpectral(
 		kernel,
-		context.Camera,
+		context.Target,
 		context.ObjectTree,
 		context.Samples,
 		index...,
@@ -52,17 +53,17 @@ func (h *Handler) tracePixel(
 }
 
 func (h *Handler) TraceSpectral(
-	renderCamera rendercamera.RayCamera,
+	target model.RenderTarget,
 	objTree *object.ObjectTree,
 	samples int64,
 	index ...int,
 ) []rendercamera.SpectralSample {
-	return h.traceSpectral(pathTracingKernel{}, renderCamera, objTree, samples, index...)
+	return h.traceSpectral(pathTracingKernel{}, target, objTree, samples, index...)
 }
 
 func (h *Handler) traceSpectral(
 	kernel pixelKernel,
-	renderCamera rendercamera.RayCamera,
+	target model.RenderTarget,
 	objTree *object.ObjectTree,
 	samples int64,
 	index ...int,
@@ -85,7 +86,7 @@ func (h *Handler) traceSpectral(
 				u := (float64(w) + rand.Float64()) / float64(wavelengthSamples)
 
 				wavelengthBatch = append(wavelengthBatch, kernel.sampleSpectral(
-					h, renderCamera, objTree, ray, wavelengthSampler.Sample(u), index...,
+					h, target, objTree, ray, wavelengthSampler.Sample(u), index...,
 				))
 			}
 
@@ -95,7 +96,7 @@ func (h *Handler) traceSpectral(
 	case optics.SpectrumModeHeroWavelength:
 		for s := int64(0); s < samples; s++ {
 			spectralSamples = append(spectralSamples, kernel.sampleSpectral(
-				h, renderCamera, objTree, ray, wavelengthSampler.Sample(rand.Float64()), index...,
+				h, target, objTree, ray, wavelengthSampler.Sample(rand.Float64()), index...,
 			))
 		}
 
@@ -107,7 +108,7 @@ func (h *Handler) traceSpectral(
 }
 
 func (h *Handler) TraceSpectralSample(
-	renderCamera rendercamera.RayCamera,
+	target model.RenderTarget,
 	objTree *object.ObjectTree,
 	ray *optics.Ray,
 	wavelengthSampler optics.WavelengthSampler,
@@ -115,7 +116,7 @@ func (h *Handler) TraceSpectralSample(
 	index ...int,
 ) rendercamera.SpectralSample {
 	return pathTracingKernel{}.sampleSpectral(
-		h, renderCamera, objTree, ray, wavelengthSampler.Sample(u), index...,
+		h, target, objTree, ray, wavelengthSampler.Sample(u), index...,
 	)
 }
 

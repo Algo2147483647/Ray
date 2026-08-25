@@ -10,7 +10,6 @@ import (
 )
 
 type Camera3D struct {
-	Camera
 	Position               *mat.VecDense   // Camera origin in scene space.
 	Coordinates            []*mat.VecDense // Camera basis vectors: forward, right, up.
 	FieldOfViews           []float64       // Vertical and horizontal field-of-view angles in degrees.
@@ -24,6 +23,8 @@ type Camera3D struct {
 func NewCamera3D() *Camera3D {
 	return &Camera3D{}
 }
+
+func (c *Camera3D) RasterDimension() int { return 2 }
 
 func (c *Camera3D) Prepare() error {
 	if c.Position == nil {
@@ -46,7 +47,7 @@ func (c *Camera3D) Prepare() error {
 	return nil
 }
 
-func (c *Camera3D) GenerateRay(res *renderray.Ray, index ...int) *renderray.Ray {
+func (c *Camera3D) GenerateRay(res *renderray.Ray, filmShape []int, index ...int) *renderray.Ray {
 	if res == nil {
 		res = &renderray.Ray{}
 	}
@@ -57,7 +58,7 @@ func (c *Camera3D) GenerateRay(res *renderray.Ray, index ...int) *renderray.Ray 
 			panic(err)
 		}
 	}
-	width, height := c.Film.Shape[0], c.Film.Shape[1]
+	width, height := filmShape[0], filmShape[1]
 
 	var (
 		row, col = index[0], index[1]
@@ -105,7 +106,7 @@ func (c *Camera3D) PDFDirection(direction *mat.VecDense) float64 {
 // ProjectPoint maps a world-space point to the box-filtered pinhole film.
 // The returned Jacobian omits the receiving surface cosine because the camera
 // does not know that surface's normal.
-func (c *Camera3D) ProjectPoint(point *mat.VecDense) (FilmProjection, bool) {
+func (c *Camera3D) ProjectPoint(point *mat.VecDense, filmShape []int) (FilmProjection, bool) {
 	if point == nil || point.Len() != 3 {
 		return FilmProjection{}, false
 	}
@@ -114,7 +115,7 @@ func (c *Camera3D) ProjectPoint(point *mat.VecDense) (FilmProjection, bool) {
 			return FilmProjection{}, false
 		}
 	}
-	width, height := c.Film.Shape[0], c.Film.Shape[1]
+	width, height := filmShape[0], filmShape[1]
 
 	fromCamera := mat.NewVecDense(3, nil)
 	fromCamera.SubVec(point, c.Position)

@@ -26,8 +26,7 @@ func TestCamera3DPrepareCachesDerivedData(t *testing.T) {
 	}
 
 	cachedRight := camera.orthonormalCoordinates[1]
-	camera.Film = NewFilm(100, 50)
-	ray := camera.GenerateRay(nil, 5, 5)
+	ray := camera.GenerateRay(nil, []int{100, 50}, 5, 5)
 	if ray == nil {
 		t.Fatal("expected ray to be generated")
 	}
@@ -45,12 +44,10 @@ func TestCamera3DGenerateRayUsesFilmDimensions(t *testing.T) {
 	if err := camera.Prepare(); err != nil {
 		t.Fatalf("Prepare returned error: %v", err)
 	}
-	camera.Film = NewFilm(100, 50)
-	if ray := camera.GenerateRay(nil, 50, 25); ray == nil {
+	if ray := camera.GenerateRay(nil, []int{100, 50}, 50, 25); ray == nil {
 		t.Fatal("expected ray from first film")
 	}
-	camera.Film = NewFilm(200, 100)
-	if ray := camera.GenerateRay(nil, 100, 50); ray == nil {
+	if ray := camera.GenerateRay(nil, []int{200, 100}, 100, 50); ray == nil {
 		t.Fatal("expected ray from second film")
 	}
 }

@@ -88,4 +88,5 @@ BDPT scene traversal, surface validation, and finite-area-light collection occur
 only in its single Prepare call.
 
 Film shape, spectral bins, output path, and pixel windows belong to the selected
-Camera's Film. Geometry and dimension belong to the Scene.
+RenderTarget. Cameras are reusable imaging models; geometry and dimension belong
+to the Scene.

@@ -7,7 +7,6 @@ import (
 	"github.com/Algo2147483647/ray/engine/controller/parser"
 	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"github.com/Algo2147483647/ray/engine/model"
-	"github.com/Algo2147483647/ray/engine/model/camera"
 	"github.com/Algo2147483647/ray/engine/ray_tracing"
 )
 
@@ -16,7 +15,7 @@ type Handler struct {
 	Scene      *model.Scene
 	Script     *parser.Script
 	ScriptPath string
-	Camera     camera.RayCamera
+	Target     model.RenderTarget
 	Context    RenderContext
 }
 
@@ -60,7 +59,7 @@ func (h *Handler) Renders() *Handler {
 		}
 		h.ConfigureRenderContext(context).
 			Render().
-			SaveFilm(h.Context.OutputFilm)
+			SaveFilm(h.Target.Output)
 		if h.err != nil {
 			return h
 		}
@@ -73,12 +72,12 @@ func (h *Handler) Render() *Handler {
 		return h
 	}
 
-	if h.Camera == nil {
+	if h.Target.Camera == nil {
 		h.err = fmt.Errorf("render camera is not configured")
 		return h
 	}
 
-	film := h.Camera.GetFilm()
+	film := h.Target.Film
 	if film == nil {
 		h.err = fmt.Errorf("film is not initialized")
 		return h
@@ -101,7 +100,7 @@ func (h *Handler) Render() *Handler {
 	renderHandler.WavelengthSamples = h.Context.WavelengthSamples
 	renderHandler.MaxArc = h.Scene.MaxArc
 	if err := renderHandler.TraceScene(
-		h.Camera,
+		h.Target,
 		h.Scene.ObjectTree,
 		h.Context.Samples,
 	); err != nil {
@@ -118,7 +117,7 @@ func (h *Handler) SaveFilm(filename string) *Handler {
 		return h
 	}
 
-	err := h.Camera.GetFilm().SaveToFile(filename)
+	err := h.Target.Film.SaveToFile(filename)
 	if err != nil {
 		h.err = err
 		return h

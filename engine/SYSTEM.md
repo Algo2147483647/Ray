@@ -21,8 +21,8 @@ distributions, and IOR models use validated discriminators. Unknown fields and
 fields belonging to a different discriminator variant are rejected at this
 boundary. Raw JSON is confined to genuinely polymorphic leaves such as
 spectral parameters, expression fields, parametric functions, and sparse
-coefficient encodings. Each Camera owns its Film. Each Render selects a Camera
-and an Integrator.
+coefficient encodings. Each Camera describes an imaging model. Each Render
+binds a Camera, Film, output destination, and Integrator as one RenderTarget.
 
 ## Compile
 
@@ -55,12 +55,13 @@ light collection therefore happen once per render.
 A Material surface is one `bxdf.Scattering` value. Atomic scattering models,
 weighted mixtures, and procedural mixtures implement the same interface
 directly; there is no BSDF/BxDF interface split or single-model wrapper. A Ray
-owns one `PathState{Throughput, Wavelength}`. RGB and wavelength-selected paths
+owns one `PathState{Throughput, Radiance, Wavelength}`. RGB and wavelength-selected paths
 share this state instead of maintaining parallel compatibility products.
 
 ## Film
 
-A Camera owns one spectral `camera.Film`. Integrators write wavelength samples
+A `RenderTarget` binds a reusable Camera to one spectral `camera.Film` and an
+output destination. Integrators write wavelength samples
 through `FilmAccumulator`; splat-based algorithms use per-pixel synchronization.
 After a successful Render, the effective sample count is recorded on the Film
 and the controller writes its configured binary Film file. PNG conversion,

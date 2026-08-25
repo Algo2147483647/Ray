@@ -4,10 +4,17 @@ import (
 	"testing"
 
 	"github.com/Algo2147483647/ray/engine/controller/parser"
+	"github.com/Algo2147483647/ray/engine/model/camera"
 )
 
+func testRenderSpec() parser.RenderScript {
+	return parser.RenderScript{CameraID: "main", Film: &camera.FilmSpec{Shape: []int{4, 4}}, Output: "test.bin"}
+}
+
 func TestResolveRenderSpecOwnsRenderDefaults(t *testing.T) {
-	resolved, err := ResolveRenderSpec(parser.RenderScript{CameraID: "main", SpectrumMode: "sampled"})
+	spec := testRenderSpec()
+	spec.SpectrumMode = "sampled"
+	resolved, err := ResolveRenderSpec(spec)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -18,7 +25,7 @@ func TestResolveRenderSpecOwnsRenderDefaults(t *testing.T) {
 		t.Fatalf("sampled wavelength default = %d, want 4", resolved.WavelengthSamples)
 	}
 
-	hero, err := ResolveRenderSpec(parser.RenderScript{CameraID: "main"})
+	hero, err := ResolveRenderSpec(testRenderSpec())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -28,9 +35,9 @@ func TestResolveRenderSpecOwnsRenderDefaults(t *testing.T) {
 }
 
 func TestResolveRenderSpecPreservesExplicitSampleCount(t *testing.T) {
-	resolved, err := ResolveRenderSpec(parser.RenderScript{
-		CameraID: "main", SpectrumMode: "sampled", WavelengthSamples: 1,
-	})
+	spec := testRenderSpec()
+	spec.SpectrumMode, spec.WavelengthSamples = "sampled", 1
+	resolved, err := ResolveRenderSpec(spec)
 	if err != nil {
 		t.Fatal(err)
 	}

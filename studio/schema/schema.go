@@ -177,18 +177,16 @@ type StudioMetadata struct {
 }
 
 type EngineCameraScript struct {
-	ID           string           `json:"id,omitempty"`
-	Type         string           `json:"type,omitempty"`
-	Position     []float64        `json:"position,omitempty"`
-	FieldOfViews []float64        `json:"field_of_views,omitempty"`
-	Coordinates  [][]float64      `json:"coordinates,omitempty"`
-	Ortho        bool             `json:"ortho,omitempty"`
-	Film         EngineFilmScript `json:"film"`
+	ID           string      `json:"id,omitempty"`
+	Type         string      `json:"type,omitempty"`
+	Position     []float64   `json:"position,omitempty"`
+	FieldOfViews []float64   `json:"field_of_views,omitempty"`
+	Coordinates  [][]float64 `json:"coordinates,omitempty"`
+	Ortho        bool        `json:"ortho,omitempty"`
 }
 
 type EngineFilmScript struct {
 	Shape            []int               `json:"shape"`
 	SpectralBinCount int                 `json:"spectral_bin_count,omitempty"`
-	OutputFilm       string              `json:"output_film,omitempty"`
 	PixelWindows     []PixelWindowScript `json:"pixel_windows,omitempty"`
 }

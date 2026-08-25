@@ -16,7 +16,6 @@ const (
 
 type Film struct {
 	Shape            []int                   `json:"shape"`
-	OutputFilm       string                  `json:"output_film,omitempty"`
 	PixelWindows     []PixelWindow           `json:"pixel_windows,omitempty"`
 	Samples          int64                   `json:"samples"`
 	SpectralBinCount int                     `json:"spectral_bin_count,omitempty"`

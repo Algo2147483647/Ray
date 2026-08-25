@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/Algo2147483647/ray/engine/maths/geometry"
+	"github.com/Algo2147483647/ray/engine/model"
 	"github.com/Algo2147483647/ray/engine/model/camera"
 	"github.com/Algo2147483647/ray/engine/model/material"
 	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
@@ -150,7 +151,6 @@ func renderDirectAreaLight(t *testing.T, sigmaA float64, samples int64) float64 
 	tree.Build()
 
 	renderCamera := &camera.Camera3D{
-		Camera:       camera.Camera{Film: camera.NewFilm(1, 1)},
 		Position:     mat.NewVecDense(3, []float64{0, 0, 0}),
 		Coordinates:  []*mat.VecDense{mat.NewVecDense(3, []float64{0, 0, 1}), mat.NewVecDense(3, []float64{-1, 0, 0}), mat.NewVecDense(3, []float64{0, 1, 0})},
 		FieldOfViews: []float64{60, 60},
@@ -161,10 +161,10 @@ func renderDirectAreaLight(t *testing.T, sigmaA float64, samples int64) float64 
 	handler.WavelengthSamples = 1
 	handler.ThreadNum = 1
 	handler.MaxRayLevel = 0
-	film := renderCamera.Film
+	film := camera.NewFilm(1, 1)
 	film.InitSpectralBins(64, optics.WavelengthMin, optics.WavelengthMax)
 
-	if err := handler.TraceScene(renderCamera, tree, samples); err != nil {
+	if err := handler.TraceScene(model.RenderTarget{Camera: renderCamera, Film: film, Output: "test.bin"}, tree, samples); err != nil {
 		t.Fatalf("light-tracing render: %v", err)
 	}
 	if film.Samples != samples {

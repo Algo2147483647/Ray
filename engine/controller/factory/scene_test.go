@@ -96,7 +96,6 @@ func TestLoadSceneFromScriptRejectsKleinCameraMismatch(t *testing.T) {
 			Position:     []float64{0, 0, 0},
 			Coordinates:  [][]float64{{1, 0, 0}, {0, -1, 0}, {0, 0, 1}},
 			FieldOfViews: []float64{60, 60},
-			Film:         &camera.Film{Shape: []int{400, 400}},
 		}},
 	}
 

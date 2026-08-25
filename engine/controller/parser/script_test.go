@@ -29,19 +29,37 @@ func TestReadScriptFilePreservesGeometry(t *testing.T) {
 	}
 }
 
-func TestReadScriptFileAcceptsCameraOwnedFilm(t *testing.T) {
+func TestReadScriptFileAcceptsRenderTarget(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "main.json")
 	writeTestScript(t, path, `{
-		"cameras":[{"id":"main","film":{"shape":[800,600],"output_film":"main.bin"}}],
-		"renders":[{"camera_id":"main"}]
+		"cameras":[{"id":"main"}],
+		"renders":[{"camera_id":"main","film":{"shape":[800,600]},"output":"main.bin"}]
 	}`)
 	script, err := ReadScriptFile(path)
 	if err != nil {
 		t.Fatalf("read script: %v", err)
 	}
-	if len(script.Renders) != 1 || script.Renders[0].CameraID != "main" || len(script.Cameras) != 1 || script.Cameras[0].Film.Shape[0] != 800 {
-		t.Fatalf("unexpected camera-owned film: %+v", script)
+	if len(script.Renders) != 1 || script.Renders[0].CameraID != "main" || len(script.Cameras) != 1 || script.Renders[0].Film.Shape[0] != 800 || script.Renders[0].Output != "main.bin" {
+		t.Fatalf("unexpected render target: %+v", script)
+	}
+}
+
+func TestReadScriptFileRejectsCameraOwnedFilm(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "main.json")
+	writeTestScript(t, path, `{"cameras":[{"id":"main","film":{"shape":[1,1]}}]}`)
+	if _, err := ReadScriptFile(path); err == nil {
+		t.Fatal("expected removed camera film field to be rejected")
+	}
+}
+
+func TestReadScriptFileRejectsOutputInsideFilm(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "main.json")
+	writeTestScript(t, path, `{"renders":[{"camera_id":"main","film":{"shape":[1,1],"output_film":"old.bin"},"output":"main.bin"}]}`)
+	if _, err := ReadScriptFile(path); err == nil {
+		t.Fatal("expected removed film output_film field to be rejected")
 	}
 }
 

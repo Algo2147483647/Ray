@@ -15,8 +15,7 @@ func TestCamera3DProjectPointMapsViewCenter(t *testing.T) {
 		FieldOfViews: []float64{60, 90},
 	}
 	film := NewFilm(100, 50)
-	camera.Film = film
-	projection, ok := camera.ProjectPoint(mat.NewVecDense(3, []float64{0, 0, -2}))
+	projection, ok := camera.ProjectPoint(mat.NewVecDense(3, []float64{0, 0, -2}), film.Shape)
 	if !ok {
 		t.Fatal("view-center point did not project")
 	}
@@ -42,11 +41,10 @@ func TestCamera3DProjectPointRejectsOutsideFilm(t *testing.T) {
 		FieldOfViews: []float64{60, 90},
 	}
 	film := NewFilm(100, 50)
-	camera.Film = film
-	if _, ok := camera.ProjectPoint(mat.NewVecDense(3, []float64{3, 0, -2})); ok {
+	if _, ok := camera.ProjectPoint(mat.NewVecDense(3, []float64{3, 0, -2}), film.Shape); ok {
 		t.Fatal("point outside horizontal FOV projected onto film")
 	}
-	if _, ok := camera.ProjectPoint(mat.NewVecDense(3, []float64{0, 0, 1})); ok {
+	if _, ok := camera.ProjectPoint(mat.NewVecDense(3, []float64{0, 0, 1}), film.Shape); ok {
 		t.Fatal("point behind camera projected onto film")
 	}
 }
@@ -94,8 +92,7 @@ func TestCamera3DProjectPointMapsOpticalAxisToCenterWithWorldUp(t *testing.T) {
 	point := mat.VecDenseCopyOf(camera.Position)
 	point.AddScaledVec(point, 4, camera.orthonormalCoordinates[0])
 	film := NewFilm(800, 800)
-	camera.Film = film
-	projection, ok := camera.ProjectPoint(point)
+	projection, ok := camera.ProjectPoint(point, film.Shape)
 	if !ok {
 		t.Fatal("point on optical axis did not project")
 	}
@@ -116,15 +113,14 @@ func TestCamera3DGenerateRayProjectPointRoundTripWithWorldUp(t *testing.T) {
 		t.Fatalf("Prepare returned error: %v", err)
 	}
 	film := NewFilm(80, 80)
-	camera.Film = film
 
 	for _, pixel := range [][2]int{{0, 0}, {79, 0}, {0, 79}, {79, 79}, {40, 40}, {17, 63}} {
 		x, y := pixel[0], pixel[1]
 		for sample := 0; sample < 16; sample++ {
-			ray := camera.GenerateRay(nil, x, y)
+			ray := camera.GenerateRay(nil, film.Shape, x, y)
 			point := mat.VecDenseCopyOf(ray.Origin)
 			point.AddScaledVec(point, 3, ray.Direction)
-			projection, ok := camera.ProjectPoint(point)
+			projection, ok := camera.ProjectPoint(point, film.Shape)
 			if !ok {
 				t.Fatalf("ray from pixel (%d, %d) did not project", x, y)
 			}

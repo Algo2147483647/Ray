@@ -28,13 +28,13 @@ type lightTracingPreparedState struct {
 func (*lightTracingPreparedState) preparedIntegratorState() {}
 
 func (k *lightTracingKernel) Prepare(context *RenderContext) (PreparedIntegratorState, error) {
-	projective, ok := context.Camera.(camera.ProjectiveCamera)
+	projective, ok := context.Target.Camera.(camera.ProjectiveCamera)
 	if !ok {
-		return nil, fmt.Errorf("light tracing requires a projective camera, got %T", context.Camera)
+		return nil, fmt.Errorf("light tracing requires a projective camera, got %T", context.Target.Camera)
 	}
 	state := &lightTracingPreparedState{projective: projective}
 	state.lights, state.totalWeight = collectAreaLights(context.ObjectTree)
-	film := context.Camera.GetFilm()
+	film := context.Target.Film
 	if len(film.Shape) != 2 {
 		return nil, fmt.Errorf("light tracing requires a 2D Film")
 	}
@@ -86,6 +86,7 @@ func (k *lightTracingKernel) TraceSample(context *RenderContext, prepared Prepar
 	for vertexIndex := range path {
 		value, projection, valid := projectLightVertex(
 			state.projective,
+			context.Target.Film.Shape,
 			context.ObjectTree,
 			&path[vertexIndex],
 		)
@@ -106,13 +107,14 @@ func (k *lightTracingKernel) TraceSample(context *RenderContext, prepared Prepar
 
 func projectLightVertex(
 	renderCamera camera.ProjectiveCamera,
+	filmShape []int,
 	tree *object.ObjectTree,
 	vertex *bdptVertex,
 ) (optics.Spectrum, camera.FilmProjection, bool) {
 	if vertex == nil || vertex.Point == nil || vertex.GeometricNormal == nil || vertex.Object == nil || vertex.Object.Material == nil {
 		return optics.Spectrum{}, camera.FilmProjection{}, false
 	}
-	projection, ok := renderCamera.ProjectPoint(vertex.Point)
+	projection, ok := renderCamera.ProjectPoint(vertex.Point, filmShape)
 	if !ok {
 		return optics.Spectrum{}, camera.FilmProjection{}, false
 	}

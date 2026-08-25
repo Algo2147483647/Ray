@@ -19,11 +19,12 @@ type Ray struct {
 	ArcTraveled     float64             `json:"-"` // geodesic arc length traveled so far (S^3 wrap)
 }
 
-// PathState is the sole representation of path throughput and spectral mode.
+// PathState is the sole representation of transport state and spectral mode.
 // A nil Wavelength means RGB transport. A non-nil Wavelength means Throughput
-// is a sampled Spectrum aligned to that wavelength.
+// and Radiance are sampled Spectra aligned to that wavelength.
 type PathState struct {
 	Throughput Spectrum          `json:"throughput"`
+	Radiance   Spectrum          `json:"radiance"`
 	Wavelength *WavelengthSample `json:"wavelength,omitempty"`
 }
 
@@ -50,7 +51,7 @@ func (r *Ray) Init() {
 		r.Direction.Zero()
 	}
 
-	r.Path = PathState{Throughput: ConstantSpectrum(1)}
+	r.Path = PathState{Throughput: ConstantSpectrum(1), Radiance: ConstantSpectrum(0)}
 	r.RefractionIndex = 1
 	r.MediumStack.Reset(0)
 
@@ -90,12 +91,13 @@ func (r *Ray) SetSpectralSample(sample WavelengthSample) {
 	}
 	r.Path = PathState{
 		Throughput: NewSampledSpectrum([]float64{1}),
+		Radiance:   NewSampledSpectrum([]float64{0}),
 		Wavelength: &sample,
 	}
 }
 
 func (r *Ray) DisableSpectralSampling() {
-	r.Path = PathState{Throughput: ConstantSpectrum(1)}
+	r.Path = PathState{Throughput: ConstantSpectrum(1), Radiance: ConstantSpectrum(0)}
 }
 
 // G returns the ray's geometry, falling back to Euclidean if unset.

@@ -5,6 +5,8 @@ import (
 	"runtime"
 
 	"github.com/Algo2147483647/ray/engine/controller/parser"
+	"github.com/Algo2147483647/ray/engine/model"
+	"github.com/Algo2147483647/ray/engine/model/camera"
 	"github.com/Algo2147483647/ray/engine/model/optics"
 	"github.com/Algo2147483647/ray/engine/ray_tracing"
 )
@@ -19,7 +21,8 @@ type RenderContext struct {
 	CameraID          string
 	ThreadNum         int
 	Samples           int64
-	OutputFilm        string
+	Output            string
+	Film              *camera.Film
 	SpectrumMode      string
 	WavelengthSamples int
 }
@@ -35,9 +38,45 @@ func ResolveRenderSpec(render parser.RenderScript) (RenderContext, error) {
 		Samples:           render.Samples,
 		SpectrumMode:      render.SpectrumMode,
 		WavelengthSamples: render.WavelengthSamples,
+		Output:            render.Output,
 	}
 	if resolved.Integrator == "" {
 		resolved.Integrator = "path"
+	}
+	if render.Film == nil {
+		return RenderContext{}, fmt.Errorf("render film is required")
+	}
+	resolved.Film = &camera.Film{
+		Shape:            append([]int(nil), render.Film.Shape...),
+		SpectralBinCount: render.Film.SpectralBinCount,
+	}
+	for _, window := range render.Film.PixelWindows {
+		resolved.Film.PixelWindows = append(resolved.Film.PixelWindows, camera.PixelWindow{
+			Min: append([]int(nil), window.Min...), Max: append([]int(nil), window.Max...),
+		})
+	}
+	if resolved.Film.ElementCount() == 0 {
+		return RenderContext{}, fmt.Errorf("render film shape must contain positive extents")
+	}
+	windows, err := camera.NormalizePixelWindows(resolved.Film.PixelWindows, resolved.Film.Shape)
+	if err != nil {
+		return RenderContext{}, err
+	}
+	resolved.Film.PixelWindows = windows
+	binCount := resolved.Film.SpectralBinCount
+	if binCount == 0 {
+		binCount = camera.DefaultSpectralBinCount
+	}
+	if binCount < 0 || binCount > camera.MaxSpectralBinCount {
+		return RenderContext{}, fmt.Errorf("film spectral_bin_count must be between 1 and %d", camera.MaxSpectralBinCount)
+	}
+	if !resolved.Film.HasSpectralBins() {
+		resolved.Film.InitSpectralBins(binCount, optics.WavelengthMin, optics.WavelengthMax)
+	} else if len(resolved.Film.SpectralBins) != binCount {
+		return RenderContext{}, fmt.Errorf("film spectral_bin_count %d does not match %d supplied spectral bins", binCount, len(resolved.Film.SpectralBins))
+	}
+	if resolved.Output == "" {
+		return RenderContext{}, fmt.Errorf("render output is required")
 	}
 	if _, err := ray_tracing.ParseIntegratorKind(resolved.Integrator); err != nil {
 		return RenderContext{}, err
@@ -72,20 +111,23 @@ func (h *Handler) ConfigureRenderContext(context RenderContext) *Handler {
 		h.err = fmt.Errorf("render camera_id %q does not exist", context.CameraID)
 		return h
 	}
+	if context.Film == nil {
+		h.err = fmt.Errorf("render film is not resolved")
+		return h
+	}
 
 	var exists bool
-	h.Camera, exists = h.Scene.Cameras[context.CameraID]
+	renderCamera, exists := h.Scene.Cameras[context.CameraID]
 	if !exists {
 		h.err = fmt.Errorf("camera %q does not exist", context.CameraID)
 		return h
 	}
 
-	film := h.Camera.GetFilm()
-	context.OutputFilm = film.OutputFilm
-	if context.OutputFilm == "" {
-		h.err = fmt.Errorf("camera %q Film requires output_film", context.CameraID)
+	if renderCamera.RasterDimension() != len(context.Film.Shape) {
+		h.err = fmt.Errorf("camera %q expects a %dD film, got %dD", context.CameraID, renderCamera.RasterDimension(), len(context.Film.Shape))
 		return h
 	}
+	h.Target = model.RenderTarget{Camera: renderCamera, Film: context.Film, Output: context.Output}
 	h.Context = context
 	return h
 }
