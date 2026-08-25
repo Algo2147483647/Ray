@@ -8,11 +8,18 @@ import (
 func worldToLocalTransformMatrix(ctx groupContext, localCenter, localScale []float64, basis [][]float64) [4][4]float64 {
 	matrix := [4][4]float64{{1, 0, 0, 0}}
 	for localAxis := 0; localAxis < 3; localAxis++ {
-		scale := localScale[localAxis]
+		localInverseScale := 1 / localScale[localAxis]
+		for groupAxis := 0; groupAxis < 3; groupAxis++ {
+			matrix[localAxis+1][0] -= basis[localAxis][groupAxis] * localCenter[groupAxis] * localInverseScale
+		}
 		for worldAxis := 0; worldAxis < 3; worldAxis++ {
-			groupScale := ctx.scale[worldAxis]
-			matrix[localAxis+1][0] -= basis[localAxis][worldAxis] * (ctx.center[worldAxis] + groupScale*localCenter[worldAxis]) / (groupScale * scale)
-			matrix[localAxis+1][worldAxis+1] = basis[localAxis][worldAxis] / (groupScale * scale)
+			coefficient := 0.0
+			for groupAxis := 0; groupAxis < 3; groupAxis++ {
+				coefficient += basis[localAxis][groupAxis] * ctx.basis[worldAxis][groupAxis] / ctx.scale[groupAxis]
+			}
+			coefficient *= localInverseScale
+			matrix[localAxis+1][worldAxis+1] = coefficient
+			matrix[localAxis+1][0] -= coefficient * ctx.center[worldAxis]
 		}
 	}
 	return matrix
@@ -88,9 +95,12 @@ func composeWithGroupInverse(transform [4][4]float64, ctx groupContext) [4][4]fl
 		return transform
 	}
 	groupInverse := [4][4]float64{{1, 0, 0, 0}}
-	for axis := 0; axis < 3; axis++ {
-		groupInverse[axis+1][0] = -ctx.center[axis] / ctx.scale[axis]
-		groupInverse[axis+1][axis+1] = 1 / ctx.scale[axis]
+	for groupAxis := 0; groupAxis < 3; groupAxis++ {
+		for worldAxis := 0; worldAxis < 3; worldAxis++ {
+			coefficient := ctx.basis[worldAxis][groupAxis] / ctx.scale[groupAxis]
+			groupInverse[groupAxis+1][worldAxis+1] = coefficient
+			groupInverse[groupAxis+1][0] -= coefficient * ctx.center[worldAxis]
+		}
 	}
 	return multiplyTransform4(transform, groupInverse)
 }

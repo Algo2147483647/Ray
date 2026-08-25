@@ -54,7 +54,17 @@ func TestStudioIntermediateContractRunsInEngineProcess(t *testing.T) {
 	filmPath := filepath.Join(dir, "contract.bin")
 	adapted, err := adaptTestScript(&schema.StudioScript{
 		Dimension: 3,
-		Cameras:   []schema.StudioCameraScript{{ID: "main", Type: "3d"}},
+		Materials: []map[string]interface{}{{
+			"id": "matte",
+			"surface": map[string]interface{}{
+				"type": "lambert", "albedo": []interface{}{0.5, 0.5, 0.5},
+			},
+		}},
+		Objects: []map[string]interface{}{{
+			"id": "studio-plane", "shape": "plane", "material_id": "matte",
+			"normal": []interface{}{0, 0, 1}, "offset": 2,
+		}},
+		Cameras: []schema.StudioCameraScript{{ID: "main", Type: "3d"}},
 		Films: []schema.StudioFilmScript{{
 			ID: "main-film", CameraID: "main", Shape: []int{1, 1},
 			SpectralBinCount: 4, OutputFilm: filmPath,

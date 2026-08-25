@@ -1627,6 +1627,36 @@ func TestStudioCompilesFriendlyPlaneToLinearPolynomial(t *testing.T) {
 	}
 }
 
+func TestStudioRotatesFriendlyPlaneWithGroup(t *testing.T) {
+	script := &schema.StudioScript{Objects: []map[string]interface{}{
+		{
+			"id":     "rotated",
+			"shape":  "group",
+			"center": []interface{}{2, 3, 4},
+			"basis": []interface{}{
+				[]interface{}{0, -1, 0},
+				[]interface{}{1, 0, 0},
+				[]interface{}{0, 0, 1},
+			},
+			"objects": []interface{}{
+				map[string]interface{}{
+					"id": "wall", "shape": "plane",
+					"normal": []interface{}{1, 0, 0},
+				},
+			},
+		},
+	}}
+	adapted, err := adaptTestScript(script, []string{"scene.json"}, 3)
+	if err != nil {
+		t.Fatalf("adapt rotated plane: %v", err)
+	}
+	transform, ok := adapted.Objects[0]["transform"].([][]float64)
+	if !ok {
+		t.Fatalf("expected transform matrix, got %T", adapted.Objects[0]["transform"])
+	}
+	assertFloatSlice(t, transform[1], []float64{-3, 0, 1, 0})
+}
+
 func TestStudioCompilesFriendlyQuadraticSurfaceToPolynomial(t *testing.T) {
 	script := &schema.StudioScript{Objects: []map[string]interface{}{
 		{
