@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 )
@@ -40,8 +41,8 @@ var supportedShapeKinds = map[ShapeKind]bool{
 }
 
 type BoundsSpec struct {
-	PMin []float64 `json:"pmin"`
-	PMax []float64 `json:"pmax"`
+	PMin []float64 `json:"pmin,omitempty"`
+	PMax []float64 `json:"pmax,omitempty"`
 }
 
 func (s *BoundsSpec) UnmarshalJSON(data []byte) error {
@@ -67,69 +68,135 @@ func (s *MediumBoundarySpec) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, (*plain)(s))
 }
 
-// ObjectSpec is the typed Engine object protocol. Raw JSON remains only at
-// genuinely polymorphic leaves: expressions, coefficient encodings and
-// parameterized field/surface/curve definitions.
+// ObjectSpec is a discriminated union. Definition always contains one of the
+// concrete shape specs below; builders must switch on that concrete type rather
+// than converting the protocol back to a string-keyed map.
 type ObjectSpec struct {
 	ID             string              `json:"id,omitempty"`
 	MaterialID     string              `json:"material_id"`
 	Shape          ShapeKind           `json:"shape"`
 	MediumBoundary *MediumBoundarySpec `json:"medium_boundary,omitempty"`
 	Bounds         *BoundsSpec         `json:"bounds,omitempty"`
+	Definition     ObjectDefinition    `json:"-"`
+}
 
-	PMin      []float64 `json:"pmin,omitempty"`
-	PMax      []float64 `json:"pmax,omitempty"`
+type ObjectDefinition interface{ objectDefinition() }
+
+type CuboidSpec struct {
+	PMin []float64 `json:"pmin,omitempty"`
+	PMax []float64 `json:"pmax,omitempty"`
+}
+type SphereSpec struct {
+	Center []float64 `json:"center,omitempty"`
+	R      *float64  `json:"r,omitempty"`
+}
+type CircleSpec struct {
+	Center   []float64 `json:"center,omitempty"`
+	Position []float64 `json:"position,omitempty"`
+	Normal   []float64 `json:"normal,omitempty"`
+	R        *float64  `json:"r,omitempty"`
+}
+type FiniteCylinderSpec struct {
+	Center   []float64 `json:"center,omitempty"`
+	Position []float64 `json:"position,omitempty"`
+	Axis     []float64 `json:"axis,omitempty"`
+	R        *float64  `json:"r,omitempty"`
+	Height   *float64  `json:"height,omitempty"`
+}
+type TriangleSpec struct {
+	P1 []float64 `json:"p1,omitempty"`
+	P2 []float64 `json:"p2,omitempty"`
+	P3 []float64 `json:"p3,omitempty"`
+}
+type PlaneSpec struct{}
+type QuadraticEquationSpec struct {
+	A []float64 `json:"a,omitempty"`
+	B []float64 `json:"b,omitempty"`
+	C *float64  `json:"c,omitempty"`
+}
+type PolynomialEquationSpec struct {
+	A      json.RawMessage `json:"a,omitempty"`
+	UpperA json.RawMessage `json:"A,omitempty"`
+	Center []float64       `json:"center,omitempty"`
+	Scale  json.RawMessage `json:"scale,omitempty"`
+	Basis  json.RawMessage `json:"basis,omitempty"`
+}
+type ImplicitEquationSpec struct {
+	Field     json.RawMessage `json:"field,omitempty"`
+	Transform json.RawMessage `json:"transform,omitempty"`
+	Basis     json.RawMessage `json:"basis,omitempty"`
+	Step      *float64        `json:"step,omitempty"`
+	ValueTol  *float64        `json:"value_tol,omitempty"`
+	Center    []float64       `json:"center,omitempty"`
+	Scale     json.RawMessage `json:"scale,omitempty"`
+}
+type ParametricEquationSpec struct {
+	Surface       json.RawMessage `json:"surface,omitempty"`
+	URange        []float64       `json:"u_range,omitempty"`
+	VRange        []float64       `json:"v_range,omitempty"`
+	SamplesU      *int            `json:"samples_u,omitempty"`
+	SamplesV      *int            `json:"samples_v,omitempty"`
+	NewtonMaxIter *int            `json:"newton_max_iter,omitempty"`
+	NewtonTol     *float64        `json:"newton_tol,omitempty"`
+	DerivativeEps *float64        `json:"derivative_eps,omitempty"`
+	BoundsPadding *float64        `json:"bounds_padding,omitempty"`
+	ResidualTol   *float64        `json:"residual_tol,omitempty"`
+	Center        []float64       `json:"center,omitempty"`
+	Scale         json.RawMessage `json:"scale,omitempty"`
+}
+type ParametricCurveSpec struct {
+	Curve         json.RawMessage `json:"curve,omitempty"`
+	TRange        []float64       `json:"t_range,omitempty"`
+	Samples       *int            `json:"samples,omitempty"`
+	RefineIter    *int            `json:"refine_iter,omitempty"`
+	DerivativeEps *float64        `json:"derivative_eps,omitempty"`
+	BoundsPadding *float64        `json:"bounds_padding,omitempty"`
+	Center        []float64       `json:"center,omitempty"`
+	Scale         json.RawMessage `json:"scale,omitempty"`
+}
+type PolynomialSurfaceSpec struct {
+	Mode         string          `json:"mode,omitempty"`
+	ExplicitAxis *int            `json:"explicit_axis,omitempty"`
+	InputDim     *int            `json:"input_dim,omitempty"`
+	Degree       *int            `json:"degree,omitempty"`
+	Coefficients json.RawMessage `json:"coefficients,omitempty"`
+	Transform    json.RawMessage `json:"transform,omitempty"`
+	Scale        json.RawMessage `json:"scale,omitempty"`
+	Center       []float64       `json:"center,omitempty"`
+}
+type KleinBottleSpec struct {
 	Center    []float64 `json:"center,omitempty"`
-	Normal    []float64 `json:"normal,omitempty"`
-	Axis      []float64 `json:"axis,omitempty"`
-	P1        []float64 `json:"p1,omitempty"`
-	P2        []float64 `json:"p2,omitempty"`
-	P3        []float64 `json:"p3,omitempty"`
-	B         []float64 `json:"b,omitempty"`
-	ZDir      []float64 `json:"z_dir,omitempty"`
-	XDir      []float64 `json:"x_dir,omitempty"`
-	R         *float64  `json:"r,omitempty"`
-	Height    *float64  `json:"height,omitempty"`
 	RMajor    *float64  `json:"r_major,omitempty"`
 	RMinor    *float64  `json:"r_minor,omitempty"`
 	Thickness *float64  `json:"thickness,omitempty"`
-	C         *float64  `json:"c,omitempty"`
-
-	A            json.RawMessage `json:"a,omitempty"`
-	UpperA       json.RawMessage `json:"A,omitempty"`
-	Scale        json.RawMessage `json:"scale,omitempty"`
-	Field        json.RawMessage `json:"field,omitempty"`
-	Transform    json.RawMessage `json:"transform,omitempty"`
-	Basis        json.RawMessage `json:"basis,omitempty"`
-	Surface      json.RawMessage `json:"surface,omitempty"`
-	Curve        json.RawMessage `json:"curve,omitempty"`
-	Coefficients json.RawMessage `json:"coefficients,omitempty"`
-
-	Mode          string    `json:"mode,omitempty"`
-	File          string    `json:"file,omitempty"`
-	URange        []float64 `json:"u_range,omitempty"`
-	VRange        []float64 `json:"v_range,omitempty"`
-	TRange        []float64 `json:"t_range,omitempty"`
-	ExplicitAxis  *int      `json:"explicit_axis,omitempty"`
-	InputDim      *int      `json:"input_dim,omitempty"`
-	Degree        *int      `json:"degree,omitempty"`
-	Samples       *int      `json:"samples,omitempty"`
-	SamplesU      *int      `json:"samples_u,omitempty"`
-	SamplesV      *int      `json:"samples_v,omitempty"`
-	RefineIter    *int      `json:"refine_iter,omitempty"`
-	NewtonMaxIter *int      `json:"newton_max_iter,omitempty"`
-	Step          *float64  `json:"step,omitempty"`
-	ValueTol      *float64  `json:"value_tol,omitempty"`
-	NewtonTol     *float64  `json:"newton_tol,omitempty"`
-	DerivativeEps *float64  `json:"derivative_eps,omitempty"`
-	BoundsPadding *float64  `json:"bounds_padding,omitempty"`
-	ResidualTol   *float64  `json:"residual_tol,omitempty"`
 }
+type STLSpec struct {
+	File   string    `json:"file,omitempty"`
+	Center []float64 `json:"center,omitempty"`
+	ZDir   []float64 `json:"z_dir,omitempty"`
+	XDir   []float64 `json:"x_dir,omitempty"`
+	Scale  []float64 `json:"scale,omitempty"`
+}
+
+func (*CuboidSpec) objectDefinition()             {}
+func (*SphereSpec) objectDefinition()             {}
+func (*CircleSpec) objectDefinition()             {}
+func (*FiniteCylinderSpec) objectDefinition()     {}
+func (*TriangleSpec) objectDefinition()           {}
+func (*PlaneSpec) objectDefinition()              {}
+func (*QuadraticEquationSpec) objectDefinition()  {}
+func (*PolynomialEquationSpec) objectDefinition() {}
+func (*ImplicitEquationSpec) objectDefinition()   {}
+func (*ParametricEquationSpec) objectDefinition() {}
+func (*ParametricCurveSpec) objectDefinition()    {}
+func (*PolynomialSurfaceSpec) objectDefinition()  {}
+func (*KleinBottleSpec) objectDefinition()        {}
+func (*STLSpec) objectDefinition()                {}
 
 func (s *ObjectSpec) UnmarshalJSON(data []byte) error {
 	if err := rejectSpecFields(data, "object",
 		"id", "material_id", "shape", "medium_boundary", "bounds",
-		"pmin", "pmax", "center", "normal", "axis", "p1", "p2", "p3",
+		"pmin", "pmax", "center", "position", "normal", "axis", "p1", "p2", "p3",
 		"b", "z_dir", "x_dir", "r", "height", "r_major", "r_minor",
 		"thickness", "c", "a", "A", "scale", "field", "transform",
 		"basis", "surface", "curve", "coefficients", "mode", "file",
@@ -139,25 +206,76 @@ func (s *ObjectSpec) UnmarshalJSON(data []byte) error {
 		"derivative_eps", "bounds_padding", "residual_tol"); err != nil {
 		return err
 	}
-	type plain ObjectSpec
-	var decoded plain
-	if err := json.Unmarshal(data, &decoded); err != nil {
+	var header struct {
+		ID             string              `json:"id"`
+		MaterialID     string              `json:"material_id"`
+		Shape          ShapeKind           `json:"shape"`
+		MediumBoundary *MediumBoundarySpec `json:"medium_boundary"`
+		Bounds         *BoundsSpec         `json:"bounds"`
+	}
+	if err := json.Unmarshal(data, &header); err != nil {
 		return err
 	}
-	if decoded.Shape == "" {
+	if header.Shape == "" {
 		return fmt.Errorf("object: missing required field %q", "shape")
 	}
-	if !supportedShapeKinds[decoded.Shape] {
-		return fmt.Errorf("object: unsupported shape %q", decoded.Shape)
+	if !supportedShapeKinds[header.Shape] {
+		return fmt.Errorf("object: unsupported shape %q", header.Shape)
 	}
-	if err := rejectObjectVariantFields(data, decoded.Shape); err != nil {
+	if err := rejectObjectVariantFields(data, header.Shape); err != nil {
 		return err
 	}
-	if decoded.MaterialID == "" {
+	if header.MaterialID == "" {
 		return fmt.Errorf("object: missing required field %q", "material_id")
 	}
-	*s = ObjectSpec(decoded)
+	var definition ObjectDefinition
+	switch header.Shape {
+	case ShapeCuboid, ShapeHypercuboid:
+		definition = &CuboidSpec{}
+	case ShapeSphere, ShapeHypersphere:
+		definition = &SphereSpec{}
+	case ShapeCircle:
+		definition = &CircleSpec{}
+	case ShapeCylinder, ShapeFiniteCylinder:
+		definition = &FiniteCylinderSpec{}
+	case ShapeTriangle:
+		definition = &TriangleSpec{}
+	case ShapePlane:
+		definition = &PlaneSpec{}
+	case ShapeQuadraticEquation:
+		definition = &QuadraticEquationSpec{}
+	case ShapeCubicEquation, ShapeFourOrderEquation:
+		definition = &PolynomialEquationSpec{}
+	case ShapeImplicitEquation:
+		definition = &ImplicitEquationSpec{}
+	case ShapeParametricEquation:
+		definition = &ParametricEquationSpec{}
+	case ShapeParametricCurve:
+		definition = &ParametricCurveSpec{}
+	case ShapePolynomialSurface:
+		definition = &PolynomialSurfaceSpec{}
+	case ShapeKleinBottle:
+		definition = &KleinBottleSpec{}
+	case ShapeSTL:
+		definition = &STLSpec{}
+	}
+	if err := json.Unmarshal(data, definition); err != nil {
+		return err
+	}
+	*s = ObjectSpec{ID: header.ID, MaterialID: header.MaterialID, Shape: header.Shape,
+		MediumBoundary: header.MediumBoundary, Bounds: header.Bounds, Definition: definition}
 	return nil
+}
+
+func (s ObjectSpec) MarshalJSON() ([]byte, error) {
+	header := struct {
+		ID             string              `json:"id,omitempty"`
+		MaterialID     string              `json:"material_id"`
+		Shape          ShapeKind           `json:"shape"`
+		MediumBoundary *MediumBoundarySpec `json:"medium_boundary,omitempty"`
+		Bounds         *BoundsSpec         `json:"bounds,omitempty"`
+	}{s.ID, s.MaterialID, s.Shape, s.MediumBoundary, s.Bounds}
+	return marshalDiscriminated(header, s.Definition)
 }
 
 type SurfaceKind string
@@ -211,31 +329,67 @@ func (s *IORSpec) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// SurfaceSpec is a discriminated surface union. Spectral parameters remain
-// RawMessage because their value may be a scalar, RGB vector, sampled curve,
-// blackbody, or a typed parameter object.
 type SurfaceSpec struct {
-	Type            SurfaceKind           `json:"type"`
-	Components      []WeightedSurfaceSpec `json:"components,omitempty"`
-	Albedo          json.RawMessage       `json:"albedo,omitempty"`
-	Reflectance     json.RawMessage       `json:"reflectance,omitempty"`
-	Transmittance   json.RawMessage       `json:"transmittance,omitempty"`
-	Eta             json.RawMessage       `json:"eta,omitempty"`
-	K               json.RawMessage       `json:"k,omitempty"`
-	Weight          json.RawMessage       `json:"weight,omitempty"`
-	IOR             *IORSpec              `json:"ior,omitempty"`
-	EtaInside       *float64              `json:"eta_inside,omitempty"`
-	EtaOutside      *float64              `json:"eta_outside,omitempty"`
-	Roughness       *float64              `json:"roughness,omitempty"`
-	LineSurface     *SurfaceSpec          `json:"line_surface,omitempty"`
-	Origin          []float64             `json:"origin,omitempty"`
-	Axis            []float64             `json:"axis,omitempty"`
-	ReferenceAxis   []float64             `json:"reference_axis,omitempty"`
-	LineWidth       *float64              `json:"line_width,omitempty"`
-	GapWidth        *float64              `json:"gap_width,omitempty"`
-	GapHeight       *float64              `json:"gap_height,omitempty"`
-	ReferenceRadius *float64              `json:"reference_radius,omitempty"`
+	Type       SurfaceKind       `json:"type"`
+	Definition SurfaceDefinition `json:"-"`
 }
+
+type SurfaceDefinition interface{ surfaceDefinition() }
+type WeightedMixtureSurfaceSpec struct {
+	Components []WeightedSurfaceSpec `json:"components"`
+}
+type LambertSurfaceSpec struct {
+	Albedo json.RawMessage `json:"albedo"`
+}
+type SpecularReflectionSurfaceSpec struct {
+	Reflectance json.RawMessage `json:"reflectance"`
+}
+type SpecularDielectricSurfaceSpec struct {
+	Reflectance   json.RawMessage `json:"reflectance"`
+	Transmittance json.RawMessage `json:"transmittance"`
+	IOR           *IORSpec        `json:"ior"`
+	EtaInside     *float64        `json:"eta_inside"`
+	EtaOutside    *float64        `json:"eta_outside"`
+}
+type RoughConductorSurfaceSpec struct {
+	Eta       json.RawMessage `json:"eta"`
+	K         json.RawMessage `json:"k"`
+	Weight    json.RawMessage `json:"weight"`
+	Roughness *float64        `json:"roughness"`
+}
+type RoughDielectricReflectionSurfaceSpec struct {
+	Reflectance json.RawMessage `json:"reflectance"`
+	IOR         *IORSpec        `json:"ior"`
+	EtaInside   *float64        `json:"eta_inside"`
+	EtaOutside  *float64        `json:"eta_outside"`
+	Roughness   *float64        `json:"roughness"`
+}
+type RoughDielectricTransmissionSurfaceSpec struct {
+	Transmittance json.RawMessage `json:"transmittance"`
+	IOR           *IORSpec        `json:"ior"`
+	EtaInside     *float64        `json:"eta_inside"`
+	EtaOutside    *float64        `json:"eta_outside"`
+	Roughness     *float64        `json:"roughness"`
+}
+type CylindricalGridSurfaceSpec struct {
+	LineSurface     *SurfaceSpec `json:"line_surface"`
+	Origin          []float64    `json:"origin"`
+	Axis            []float64    `json:"axis"`
+	ReferenceAxis   []float64    `json:"reference_axis"`
+	LineWidth       *float64     `json:"line_width"`
+	GapWidth        *float64     `json:"gap_width"`
+	GapHeight       *float64     `json:"gap_height"`
+	ReferenceRadius *float64     `json:"reference_radius"`
+}
+
+func (*WeightedMixtureSurfaceSpec) surfaceDefinition()             {}
+func (*LambertSurfaceSpec) surfaceDefinition()                     {}
+func (*SpecularReflectionSurfaceSpec) surfaceDefinition()          {}
+func (*SpecularDielectricSurfaceSpec) surfaceDefinition()          {}
+func (*RoughConductorSurfaceSpec) surfaceDefinition()              {}
+func (*RoughDielectricReflectionSurfaceSpec) surfaceDefinition()   {}
+func (*RoughDielectricTransmissionSurfaceSpec) surfaceDefinition() {}
+func (*CylindricalGridSurfaceSpec) surfaceDefinition()             {}
 
 func (s *SurfaceSpec) UnmarshalJSON(data []byte) error {
 	if err := rejectSpecFields(data, "surface", "type", "components", "albedo",
@@ -245,19 +399,48 @@ func (s *SurfaceSpec) UnmarshalJSON(data []byte) error {
 		"reference_radius"); err != nil {
 		return err
 	}
-	type plain SurfaceSpec
-	var decoded plain
-	if err := json.Unmarshal(data, &decoded); err != nil {
+	var header struct {
+		Type SurfaceKind `json:"type"`
+	}
+	if err := json.Unmarshal(data, &header); err != nil {
 		return err
 	}
-	if !supportedSurfaceKinds[decoded.Type] {
-		return fmt.Errorf("unsupported surface type %q", decoded.Type)
+	if !supportedSurfaceKinds[header.Type] {
+		return fmt.Errorf("unsupported surface type %q", header.Type)
 	}
-	if err := rejectSurfaceVariantFields(data, decoded.Type); err != nil {
+	if err := rejectSurfaceVariantFields(data, header.Type); err != nil {
 		return err
 	}
-	*s = SurfaceSpec(decoded)
+	var definition SurfaceDefinition
+	switch header.Type {
+	case SurfaceWeightedMixture:
+		definition = &WeightedMixtureSurfaceSpec{}
+	case SurfaceLambert:
+		definition = &LambertSurfaceSpec{}
+	case SurfaceSpecularReflection:
+		definition = &SpecularReflectionSurfaceSpec{}
+	case SurfaceSpecularDielectric:
+		definition = &SpecularDielectricSurfaceSpec{}
+	case SurfaceRoughConductor:
+		definition = &RoughConductorSurfaceSpec{}
+	case SurfaceRoughDielectricReflection:
+		definition = &RoughDielectricReflectionSurfaceSpec{}
+	case SurfaceRoughDielectricTransmission:
+		definition = &RoughDielectricTransmissionSurfaceSpec{}
+	case SurfaceCylindricalGridCutout, SurfaceWireMesh:
+		definition = &CylindricalGridSurfaceSpec{}
+	}
+	if err := json.Unmarshal(data, definition); err != nil {
+		return err
+	}
+	*s = SurfaceSpec{Type: header.Type, Definition: definition}
 	return nil
+}
+
+func (s SurfaceSpec) MarshalJSON() ([]byte, error) {
+	return marshalDiscriminated(struct {
+		Type SurfaceKind `json:"type"`
+	}{s.Type}, s.Definition)
 }
 
 type EmissionKind string
@@ -292,20 +475,34 @@ func (s *EmissionDistributionSpec) UnmarshalJSON(data []byte) error {
 }
 
 type EmissionSpec struct {
-	Type          EmissionKind              `json:"type"`
-	Radiance      json.RawMessage           `json:"radiance,omitempty"`
-	Color         json.RawMessage           `json:"color,omitempty"`
-	Exitance      json.RawMessage           `json:"exitance,omitempty"`
-	Distribution  *EmissionDistributionSpec `json:"distribution,omitempty"`
-	Palette       [][]float64               `json:"palette,omitempty"`
-	GridColor     []float64                 `json:"grid_color,omitempty"`
-	Intensity     *float64                  `json:"intensity,omitempty"`
-	Saturation    *float64                  `json:"saturation,omitempty"`
-	Lightness     *float64                  `json:"lightness,omitempty"`
-	VStripes      *float64                  `json:"v_stripes,omitempty"`
-	Shading       string                    `json:"shading,omitempty"`
-	GridThickness *float64                  `json:"grid_thickness,omitempty"`
+	Type         EmissionKind              `json:"type"`
+	Distribution *EmissionDistributionSpec `json:"distribution,omitempty"`
+	Definition   EmissionDefinition        `json:"-"`
 }
+
+type EmissionDefinition interface{ emissionDefinition() }
+type ConstantEmissionSpec struct {
+	Radiance json.RawMessage `json:"radiance"`
+	Color    json.RawMessage `json:"color"`
+	Exitance json.RawMessage `json:"exitance"`
+}
+type CellPaletteEmissionSpec struct {
+	Palette       [][]float64 `json:"palette"`
+	GridColor     []float64   `json:"grid_color"`
+	Intensity     *float64    `json:"intensity"`
+	Shading       string      `json:"shading"`
+	GridThickness *float64    `json:"grid_thickness"`
+}
+type UVKleinEmissionSpec struct {
+	Saturation *float64 `json:"saturation"`
+	Lightness  *float64 `json:"lightness"`
+	VStripes   *float64 `json:"v_stripes"`
+	Intensity  *float64 `json:"intensity"`
+}
+
+func (*ConstantEmissionSpec) emissionDefinition()    {}
+func (*CellPaletteEmissionSpec) emissionDefinition() {}
+func (*UVKleinEmissionSpec) emissionDefinition()     {}
 
 func (s *EmissionSpec) UnmarshalJSON(data []byte) error {
 	if err := rejectSpecFields(data, "emission", "type", "radiance", "color",
@@ -313,21 +510,68 @@ func (s *EmissionSpec) UnmarshalJSON(data []byte) error {
 		"saturation", "lightness", "v_stripes", "shading", "grid_thickness"); err != nil {
 		return err
 	}
-	type plain EmissionSpec
-	var decoded plain
-	if err := json.Unmarshal(data, &decoded); err != nil {
+	var header struct {
+		Type         EmissionKind              `json:"type"`
+		Distribution *EmissionDistributionSpec `json:"distribution"`
+	}
+	if err := json.Unmarshal(data, &header); err != nil {
 		return err
 	}
-	switch decoded.Type {
+	var definition EmissionDefinition
+	switch header.Type {
 	case EmissionConstant, EmissionCellPalette, EmissionUVKlein:
 	default:
-		return fmt.Errorf("unsupported emission type %q", decoded.Type)
+		return fmt.Errorf("unsupported emission type %q", header.Type)
 	}
-	if err := rejectEmissionVariantFields(data, decoded.Type); err != nil {
+	if err := rejectEmissionVariantFields(data, header.Type); err != nil {
 		return err
 	}
-	*s = EmissionSpec(decoded)
+	switch header.Type {
+	case EmissionConstant:
+		definition = &ConstantEmissionSpec{}
+	case EmissionCellPalette:
+		definition = &CellPaletteEmissionSpec{}
+	case EmissionUVKlein:
+		definition = &UVKleinEmissionSpec{}
+	}
+	if err := json.Unmarshal(data, definition); err != nil {
+		return err
+	}
+	*s = EmissionSpec{Type: header.Type, Distribution: header.Distribution, Definition: definition}
 	return nil
+}
+
+func (s EmissionSpec) MarshalJSON() ([]byte, error) {
+	header := struct {
+		Type         EmissionKind              `json:"type"`
+		Distribution *EmissionDistributionSpec `json:"distribution,omitempty"`
+	}{s.Type, s.Distribution}
+	return marshalDiscriminated(header, s.Definition)
+}
+
+func marshalDiscriminated(header, definition interface{}) ([]byte, error) {
+	headerJSON, err := json.Marshal(header)
+	if err != nil {
+		return nil, err
+	}
+	if definition == nil {
+		return headerJSON, nil
+	}
+	definitionJSON, err := json.Marshal(definition)
+	if err != nil {
+		return nil, err
+	}
+	headerBody := bytes.TrimSpace(headerJSON)[1 : len(bytes.TrimSpace(headerJSON))-1]
+	definitionBody := bytes.TrimSpace(definitionJSON)[1 : len(bytes.TrimSpace(definitionJSON))-1]
+	result := make([]byte, 0, len(headerBody)+len(definitionBody)+3)
+	result = append(result, '{')
+	result = append(result, headerBody...)
+	if len(headerBody) > 0 && len(definitionBody) > 0 {
+		result = append(result, ',')
+	}
+	result = append(result, definitionBody...)
+	result = append(result, '}')
+	return result, nil
 }
 
 type MaterialSpec struct {
@@ -381,22 +625,22 @@ func rejectObjectVariantFields(data []byte, kind ShapeKind) error {
 	case ShapeSphere, ShapeHypersphere:
 		fields = []string{"center", "r"}
 	case ShapeCircle:
-		fields = []string{"center", "normal", "r"}
+		fields = []string{"center", "position", "normal", "r"}
 	case ShapeCylinder, ShapeFiniteCylinder:
-		fields = []string{"center", "axis", "r", "height"}
+		fields = []string{"center", "position", "axis", "r", "height"}
 	case ShapeTriangle:
 		fields = []string{"p1", "p2", "p3"}
 	case ShapePlane:
 	case ShapeQuadraticEquation:
 		fields = []string{"a", "b", "c"}
 	case ShapeCubicEquation, ShapeFourOrderEquation:
-		fields = []string{"a", "A"}
+		fields = []string{"a", "A", "center", "scale", "basis"}
 	case ShapeImplicitEquation:
-		fields = []string{"field", "transform", "basis", "step", "value_tol"}
+		fields = []string{"field", "transform", "basis", "center", "scale", "step", "value_tol"}
 	case ShapeParametricEquation:
-		fields = []string{"surface", "u_range", "v_range", "samples_u", "samples_v", "newton_max_iter", "newton_tol", "derivative_eps", "bounds_padding", "residual_tol"}
+		fields = []string{"surface", "center", "scale", "u_range", "v_range", "samples_u", "samples_v", "newton_max_iter", "newton_tol", "derivative_eps", "bounds_padding", "residual_tol"}
 	case ShapeParametricCurve:
-		fields = []string{"curve", "t_range", "samples", "refine_iter", "derivative_eps", "bounds_padding"}
+		fields = []string{"curve", "center", "scale", "t_range", "samples", "refine_iter", "derivative_eps", "bounds_padding"}
 	case ShapePolynomialSurface:
 		fields = []string{"mode", "explicit_axis", "input_dim", "degree", "coefficients", "transform", "center", "scale"}
 	case ShapeKleinBottle:

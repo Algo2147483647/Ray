@@ -1,10 +1,12 @@
 package factory
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"strings"
 
+	"github.com/Algo2147483647/ray/engine/controller/parser"
 	"github.com/Algo2147483647/ray/engine/model/shape"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
@@ -23,18 +25,18 @@ var implicitFieldRegistry = map[string]implicitFieldFactory{
 	"metaballs":    parseImplicitMetaballsField,
 }
 
-func parseImplicitEquation(objDef map[string]interface{}, dimension int) ([]shape.Shape, error) {
-	transform, err := parseImplicitTransform(objDef, dimension)
+func parseImplicitEquation(spec *parser.ImplicitEquationSpec, boundsSpec *parser.BoundsSpec, dimension int) ([]shape.Shape, error) {
+	transform, err := parseImplicitTransform(spec, dimension)
 	if err != nil {
 		return nil, err
 	}
 
-	bounds, ok, err := parseShapeBounds(objDef, dimension)
+	bounds, ok, err := parseShapeBounds(boundsSpec, dimension)
 	if err != nil {
 		return nil, err
 	}
 
-	function, gradient, err := buildImplicitField(objDef)
+	function, gradient, err := buildImplicitField(spec.Field)
 	if err != nil {
 		return nil, err
 	}
@@ -50,34 +52,34 @@ func parseImplicitEquation(objDef map[string]interface{}, dimension int) ([]shap
 	)
 	equation.Dimension = dimension
 	equation.Transform = transform
-	if step, ok, err := utils.OptionalFloat64Field(objDef, "step"); err != nil {
-		return nil, err
-	} else if ok {
-		if step <= 0 {
+	if spec.Step != nil {
+		if *spec.Step <= 0 {
 			return nil, fmt.Errorf("step must be > 0")
 		}
-		equation.Step = step
+		equation.Step = *spec.Step
 	}
-	if valueTol, ok, err := utils.OptionalFloat64Field(objDef, "value_tol"); err != nil {
-		return nil, err
-	} else if ok {
-		if valueTol <= 0 {
+	if spec.ValueTol != nil {
+		if *spec.ValueTol <= 0 {
 			return nil, fmt.Errorf("value_tol must be > 0")
 		}
-		equation.ValueTol = valueTol
+		equation.ValueTol = *spec.ValueTol
 	}
 
 	return []shape.Shape{equation}, nil
 }
 
 func buildImplicitField(
-	objDef map[string]interface{},
+	raw json.RawMessage,
 ) (
 	func(*mat.VecDense) float64,
 	func(point, res *mat.VecDense) *mat.VecDense,
 	error,
 ) {
-	fieldDef, fieldType, err := implicitFieldDefinition(objDef)
+	fieldDef, err := decodeRawObject(raw, "field")
+	if err != nil {
+		return nil, nil, err
+	}
+	fieldType, err := utils.RequiredStringField(fieldDef, "type")
 	if err != nil {
 		return nil, nil, err
 	}
@@ -89,33 +91,15 @@ func buildImplicitField(
 	return factory(fieldDef)
 }
 
-func implicitFieldDefinition(objDef map[string]interface{}) (map[string]interface{}, string, error) {
-	if fieldDef, ok, err := utils.OptionalMapField(objDef, "field"); err != nil {
-		return nil, "", err
-	} else if ok {
-		fieldType, err := utils.RequiredStringField(fieldDef, "type")
-		if err != nil {
-			return nil, "", err
-		}
-		return fieldDef, fieldType, nil
+func parseImplicitTransform(spec *parser.ImplicitEquationSpec, dimension int) ([4][4]float64, error) {
+	if len(spec.Transform) > 0 {
+		return parsePolynomialSurfaceTransform(spec.Transform)
 	}
-
-	if _, ok := objDef["function"]; ok {
-		return nil, "", fmt.Errorf(`field "function" is no longer supported; use "field" with type "expr"`)
-	}
-	return nil, "", fmt.Errorf(`implicit equation requires "field" with type "expr"`)
-}
-
-func parseImplicitTransform(objDef map[string]interface{}, dimension int) ([4][4]float64, error) {
-	if _, ok := objDef["transform"]; ok {
-		return parsePolynomialSurfaceTransform(objDef)
-	}
-
-	center, scale, err := parsePolynomialCenterScale(objDef, dimension)
+	center, scale, err := parsePlacement(spec.Center, spec.Scale, dimension)
 	if err != nil {
 		return [4][4]float64{}, err
 	}
-	basis, err := parseImplicitBasis(objDef)
+	basis, err := parseImplicitBasis(spec.Basis)
 	if err != nil {
 		return [4][4]float64{}, err
 	}
@@ -131,28 +115,23 @@ func parseImplicitTransform(objDef map[string]interface{}, dimension int) ([4][4
 	return transform, nil
 }
 
-func parseImplicitBasis(objDef map[string]interface{}) ([3][3]float64, error) {
+func parseImplicitBasis(raw json.RawMessage) ([3][3]float64, error) {
 	basis := [3][3]float64{
 		{1, 0, 0},
 		{0, 1, 0},
 		{0, 0, 1},
 	}
-	raw, ok := objDef["basis"]
-	if !ok {
+	if len(raw) == 0 {
 		return basis, nil
 	}
-	rows, ok := raw.([]interface{})
-	if !ok {
-		return [3][3]float64{}, fmt.Errorf("field %q: expected array, got %T", "basis", raw)
+	var rows [][]float64
+	if err := json.Unmarshal(raw, &rows); err != nil {
+		return [3][3]float64{}, fmt.Errorf("field %q: expected array: %w", "basis", err)
 	}
 	if len(rows) != 3 {
 		return [3][3]float64{}, fmt.Errorf("field %q must contain 3 vectors, got %d", "basis", len(rows))
 	}
-	for row, rawRow := range rows {
-		values, err := utils.ToFloat64Slice(rawRow)
-		if err != nil {
-			return [3][3]float64{}, fmt.Errorf("basis[%d]: %w", row, err)
-		}
+	for row, values := range rows {
 		if len(values) != 3 {
 			return [3][3]float64{}, fmt.Errorf("basis[%d] must contain 3 values, got %d", row, len(values))
 		}

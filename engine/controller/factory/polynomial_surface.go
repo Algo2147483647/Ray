@@ -1,58 +1,58 @@
 package factory
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 
+	"github.com/Algo2147483647/ray/engine/controller/parser"
 	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/model/shape"
 	"github.com/Algo2147483647/ray/engine/utils"
 )
 
-func parsePolynomialSurface(objDef map[string]interface{}, dimension int) ([]shape.Shape, error) {
-	if modeText, ok, err := utils.OptionalStringField(objDef, "mode"); err != nil {
-		return nil, err
-	} else if ok && modeText != "implicit" {
-		return nil, fmt.Errorf(`field "mode" no longer supports %q; use implicit coefficients F(x,y,z)=0`, modeText)
+func parsePolynomialSurface(spec *parser.PolynomialSurfaceSpec, bounds *parser.BoundsSpec, dimension int) ([]shape.Shape, error) {
+	if spec.Mode != "" && spec.Mode != "implicit" {
+		return nil, fmt.Errorf(`field "mode" no longer supports %q; use implicit coefficients F(x,y,z)=0`, spec.Mode)
 	}
-	if _, ok := objDef["explicit_axis"]; ok {
+	if spec.ExplicitAxis != nil {
 		return nil, fmt.Errorf(`field "explicit_axis" is no longer supported; use implicit coefficients F(x,y,z)=0`)
 	}
 
-	inputDim, err := requiredPositiveIntField(objDef, "input_dim")
-	if err != nil {
-		return nil, err
+	if spec.InputDim == nil {
+		return nil, fmt.Errorf("missing required field %q", "input_dim")
+	}
+	inputDim := *spec.InputDim
+	if inputDim <= 0 {
+		return nil, fmt.Errorf("field %q must be > 0", "input_dim")
 	}
 	if inputDim > 3 {
 		return nil, fmt.Errorf("field %q must be <= 3 when using a 4x4 transform", "input_dim")
 	}
 
-	coefficients, err := parsePolynomialSurfaceCoefficients(objDef, inputDim)
+	coefficients, err := parsePolynomialSurfaceCoefficients(spec.Coefficients, inputDim)
 	if err != nil {
 		return nil, err
 	}
 
 	surface := shape.NewPolynomialSurface(inputDim, coefficients)
 
-	transform, err := parsePolynomialSurfaceTransform(objDef)
+	transform, err := parsePolynomialSurfaceTransform(spec.Transform)
 	if err != nil {
 		return nil, err
 	}
 	surface.Transform = transform
 
-	return wrapSingleShapeWithBounds(surface, objDef, dimension)
+	return wrapSingleShapeWithBounds(surface, bounds, dimension)
 }
 
 func parsePolynomialSurfaceCoefficients(
-	objDef map[string]interface{},
+	raw json.RawMessage,
 	inputDim int,
 ) (*maths.SparseTensor[float64], error) {
-	coeffDef, ok, err := utils.OptionalMapField(objDef, "coefficients")
+	coeffDef, err := decodeRawObject(raw, "coefficients")
 	if err != nil {
 		return nil, err
-	}
-	if !ok {
-		coeffDef = objDef
 	}
 
 	formatText, ok, err := utils.OptionalStringField(coeffDef, "format")
@@ -160,12 +160,15 @@ func polynomialSurfaceTensorShape(coeffDef map[string]interface{}, inputDim int,
 	return tensorShape, nil
 }
 
-func parsePolynomialSurfaceTransform(objDef map[string]interface{}) ([4][4]float64, error) {
-	raw, ok := objDef["transform"]
-	if !ok {
+func parsePolynomialSurfaceTransform(raw json.RawMessage) ([4][4]float64, error) {
+	if len(raw) == 0 {
 		return identityTransform4(), nil
 	}
-	values, err := transformRows(raw)
+	var value interface{}
+	if err := json.Unmarshal(raw, &value); err != nil {
+		return [4][4]float64{}, fmt.Errorf("field %q: %w", "transform", err)
+	}
+	values, err := transformRows(value)
 	if err != nil {
 		return [4][4]float64{}, err
 	}

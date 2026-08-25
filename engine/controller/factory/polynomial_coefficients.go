@@ -1,6 +1,7 @@
 package factory
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"strconv"
@@ -8,6 +9,24 @@ import (
 
 	"github.com/Algo2147483647/ray/engine/utils"
 )
+
+func requiredPolynomialCoefficientsRaw(lower, upper json.RawMessage, order int) ([]float64, error) {
+	if len(lower) > 0 && len(upper) > 0 {
+		return nil, fmt.Errorf(`fields "a" and "A" cannot both be provided`)
+	}
+	raw, name := lower, "a"
+	if len(raw) == 0 {
+		raw, name = upper, "A"
+	}
+	if len(raw) == 0 {
+		return nil, fmt.Errorf(`missing required field "a"`)
+	}
+	var value interface{}
+	if err := json.Unmarshal(raw, &value); err != nil {
+		return nil, fmt.Errorf("field %q: %w", name, err)
+	}
+	return requiredPolynomialCoefficients(map[string]interface{}{name: value}, order)
+}
 
 func requiredPolynomialCoefficients(objDef map[string]interface{}, order int) ([]float64, error) {
 	value, fieldName, err := requiredPolynomialCoefficientValue(objDef)

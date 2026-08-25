@@ -3,17 +3,21 @@ package factory
 import (
 	"fmt"
 
+	"github.com/Algo2147483647/ray/engine/controller/parser"
 	"github.com/Algo2147483647/ray/engine/model/shape"
-	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 )
 
-func parseParametricEquation(objDef map[string]interface{}, dimension int) ([]shape.Shape, error) {
+func parseParametricEquation(spec *parser.ParametricEquationSpec, bounds *parser.BoundsSpec, dimension int) ([]shape.Shape, error) {
 	if dimension != 3 {
 		return nil, fmt.Errorf("shape %q requires scene dimension 3, got %d", ShapeParametricEquation, dimension)
 	}
 
-	surfaceDef, surfaceType, err := parametricSurfaceDefinition(objDef)
+	surfaceDef, err := decodeRawObject(spec.Surface, "surface")
+	if err != nil {
+		return nil, err
+	}
+	surfaceType, err := requiredLeafType(surfaceDef)
 	if err != nil {
 		return nil, err
 	}
@@ -35,34 +39,34 @@ func parseParametricEquation(objDef map[string]interface{}, dimension int) ([]sh
 		return nil, fmt.Errorf("unsupported parametric surface %q", surfaceType)
 	}
 
-	uRange, err := optionalRange(objDef, "u_range", [2]float64{0, 1})
+	uRange, err := optionalRangeValues(spec.URange, "u_range", [2]float64{0, 1})
 	if err != nil {
 		return nil, err
 	}
-	vRange, err := optionalRange(objDef, "v_range", [2]float64{0, 1})
+	vRange, err := optionalRangeValues(spec.VRange, "v_range", [2]float64{0, 1})
 	if err != nil {
 		return nil, err
 	}
-	function, derivative, err = applyParametricSurfacePlacement(function, derivative, objDef, dimension)
+	function, derivative, err = applyParametricSurfacePlacement(function, derivative, spec, dimension)
 	if err != nil {
 		return nil, err
 	}
 
 	equation := shape.NewParametricEquation(function, uRange, vRange)
 	equation.Derivative = derivative
-	if err := applyParametricOptions(equation, objDef); err != nil {
+	if err := applyParametricOptions(equation, spec); err != nil {
 		return nil, err
 	}
-	return wrapSingleShapeWithBounds(equation, objDef, dimension)
+	return wrapSingleShapeWithBounds(equation, bounds, dimension)
 }
 
 func applyParametricSurfacePlacement(
 	function shape.ParametricFunction,
 	derivative shape.ParametricDerivative,
-	objDef map[string]interface{},
+	spec *parser.ParametricEquationSpec,
 	dimension int,
 ) (shape.ParametricFunction, shape.ParametricDerivative, error) {
-	center, scale, err := parsePolynomialCenterScale(objDef, dimension)
+	center, scale, err := parsePlacement(spec.Center, spec.Scale, dimension)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -96,76 +100,71 @@ func applyParametricSurfacePlacement(
 	return placedFunction, placedDerivative, nil
 }
 
-func parametricSurfaceDefinition(objDef map[string]interface{}) (map[string]interface{}, string, error) {
-	if surfaceDef, ok, err := utils.OptionalMapField(objDef, "surface"); err != nil {
-		return nil, "", err
-	} else if ok {
-		surfaceType, err := utils.RequiredStringField(surfaceDef, "type")
-		if err != nil {
-			return nil, "", err
-		}
-		return surfaceDef, surfaceType, nil
-	}
-
-	if _, ok := objDef["function"]; ok {
-		return nil, "", fmt.Errorf(`field "function" is no longer supported; use "surface"`)
-	}
-	return nil, "", fmt.Errorf(`parametric equation requires "surface"`)
-}
-
-func applyParametricOptions(equation *shape.ParametricEquation, objDef map[string]interface{}) error {
-	var err error
-	if equation.SamplesU, err = optionalPositiveIntField(objDef, "samples_u", equation.SamplesU); err != nil {
+func applyParametricOptions(equation *shape.ParametricEquation, spec *parser.ParametricEquationSpec) error {
+	if err := assignPositiveInt("samples_u", spec.SamplesU, &equation.SamplesU); err != nil {
 		return err
 	}
-	if equation.SamplesV, err = optionalPositiveIntField(objDef, "samples_v", equation.SamplesV); err != nil {
+	if err := assignPositiveInt("samples_v", spec.SamplesV, &equation.SamplesV); err != nil {
 		return err
 	}
-	if equation.NewtonMaxIter, err = optionalPositiveIntField(objDef, "newton_max_iter", equation.NewtonMaxIter); err != nil {
+	if err := assignPositiveInt("newton_max_iter", spec.NewtonMaxIter, &equation.NewtonMaxIter); err != nil {
 		return err
 	}
-	if value, ok, err := utils.OptionalFloat64Field(objDef, "newton_tol"); err != nil {
-		return err
-	} else if ok {
-		if value <= 0 {
+	if spec.NewtonTol != nil {
+		if *spec.NewtonTol <= 0 {
 			return fmt.Errorf("newton_tol must be > 0")
 		}
-		equation.NewtonTol = value
+		equation.NewtonTol = *spec.NewtonTol
 	}
-	if value, ok, err := utils.OptionalFloat64Field(objDef, "derivative_eps"); err != nil {
-		return err
-	} else if ok {
-		if value <= 0 {
+	if spec.DerivativeEps != nil {
+		if *spec.DerivativeEps <= 0 {
 			return fmt.Errorf("derivative_eps must be > 0")
 		}
-		equation.DerivativeEps = value
+		equation.DerivativeEps = *spec.DerivativeEps
 	}
-	if value, ok, err := utils.OptionalFloat64Field(objDef, "bounds_padding"); err != nil {
-		return err
-	} else if ok {
-		if value < 0 {
+	if spec.BoundsPadding != nil {
+		if *spec.BoundsPadding < 0 {
 			return fmt.Errorf("bounds_padding must be >= 0")
 		}
-		equation.BoundsPadding = value
+		equation.BoundsPadding = *spec.BoundsPadding
 	}
-	if value, ok, err := utils.OptionalFloat64Field(objDef, "residual_tol"); err != nil {
-		return err
-	} else if ok {
-		if value <= 0 {
+	if spec.ResidualTol != nil {
+		if *spec.ResidualTol <= 0 {
 			return fmt.Errorf("residual_tol must be > 0")
 		}
-		equation.ResidualTol = value
+		equation.ResidualTol = *spec.ResidualTol
 	}
 	return nil
 }
 
-func optionalRange(objDef map[string]interface{}, key string, fallback [2]float64) ([2]float64, error) {
-	values, ok, err := utils.OptionalFloat64SliceField(objDef, key, 2)
-	if err != nil || !ok {
-		return fallback, err
+func optionalRangeValues(values []float64, key string, fallback [2]float64) ([2]float64, error) {
+	if values == nil {
+		return fallback, nil
+	}
+	if _, err := requiredVector(key, values, 2); err != nil {
+		return [2]float64{}, err
 	}
 	if values[0] >= values[1] {
 		return [2]float64{}, fmt.Errorf("%s must be increasing", key)
 	}
 	return [2]float64{values[0], values[1]}, nil
+}
+
+func assignPositiveInt(name string, value *int, target *int) error {
+	if value == nil {
+		return nil
+	}
+	if *value <= 0 {
+		return fmt.Errorf("field %q must be > 0", name)
+	}
+	*target = *value
+	return nil
+}
+
+func requiredLeafType(def map[string]interface{}) (string, error) {
+	value, ok := def["type"].(string)
+	if !ok || value == "" {
+		return "", fmt.Errorf("missing required field %q", "type")
+	}
+	return value, nil
 }

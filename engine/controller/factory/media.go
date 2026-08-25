@@ -51,17 +51,12 @@ func ParseMediaRegistry(script *parser.Script) (*medium.Registry, error) {
 	return registry, nil
 }
 
-func parseMediumBoundary(def map[string]interface{}, registry *medium.Registry) (medium.Boundary, error) {
-	boundaryDef, ok, err := utils.OptionalMapField(def, "medium_boundary")
-	if err != nil || !ok {
-		return medium.Boundary{}, err
+func parseMediumBoundary(spec *parser.MediumBoundarySpec, registry *medium.Registry) (medium.Boundary, error) {
+	if spec == nil {
+		return medium.Boundary{}, nil
 	}
-
-	outsideName, ok, err := utils.OptionalStringField(boundaryDef, "outside")
-	if err != nil {
-		return medium.Boundary{}, err
-	}
-	if !ok {
+	outsideName := spec.Outside
+	if outsideName == "" {
 		outsideName = "air"
 	}
 	outside, ok := registry.ID(outsideName)
@@ -69,40 +64,25 @@ func parseMediumBoundary(def map[string]interface{}, registry *medium.Registry) 
 		return medium.Boundary{}, fmt.Errorf("unknown outside medium %q", outsideName)
 	}
 
-	insideName, err := utils.RequiredStringField(boundaryDef, "inside")
-	if err != nil {
-		return medium.Boundary{}, err
+	insideName := spec.Inside
+	if insideName == "" {
+		return medium.Boundary{}, fmt.Errorf("missing required field %q", "inside")
 	}
 	inside, ok := registry.ID(insideName)
 	if !ok {
 		return medium.Boundary{}, fmt.Errorf("unknown inside medium %q", insideName)
 	}
 
-	priorityValue, ok, err := utils.OptionalFloat64Field(boundaryDef, "priority")
-	if err != nil {
-		return medium.Boundary{}, err
-	}
 	priority := 0
-	if ok {
-		priority = int(priorityValue)
-		if float64(priority) != priorityValue {
-			return medium.Boundary{}, fmt.Errorf("priority must be an integer")
-		}
-	}
-
-	thin, ok, err := utils.OptionalBoolField(boundaryDef, "thin")
-	if err != nil {
-		return medium.Boundary{}, err
-	}
-	if !ok {
-		thin = false
+	if spec.Priority != nil {
+		priority = *spec.Priority
 	}
 
 	return medium.Boundary{
 		Outside:  outside,
 		Inside:   inside,
 		Priority: priority,
-		Thin:     thin,
+		Thin:     spec.Thin,
 	}, nil
 }
 

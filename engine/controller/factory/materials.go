@@ -1,6 +1,7 @@
 package factory
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -21,469 +22,321 @@ func ParseMaterials(script *parser.Script) (map[string]*material.Material, error
 	if script == nil {
 		return nil, errors.New("script is nil")
 	}
-
 	materials := make(map[string]*material.Material, len(script.Materials))
 	var parseErrors []error
-
-	for idx, matDef := range script.Materials {
-		context := fmt.Sprintf("material[%d]", idx)
-
-		id := matDef.ID
-		context = fmt.Sprintf("material[%d] id=%q", idx, id)
-
-		if _, exists := materials[id]; exists {
+	for index, spec := range script.Materials {
+		context := fmt.Sprintf("material[%d] id=%q", index, spec.ID)
+		if _, exists := materials[spec.ID]; exists {
 			parseErrors = append(parseErrors, fmt.Errorf("%s: duplicate material id", context))
 			continue
 		}
-
-		material := &material.Material{
-			Metadata: material.MaterialMetadata{
-				Name:         id,
-				SpectrumMode: optics.SpectrumModeRGB,
-			},
-		}
-
-		if matDef.Surface != nil {
-			surfaceDef, err := specMap(matDef.Surface)
+		result := &material.Material{Metadata: material.MaterialMetadata{Name: spec.ID, SpectrumMode: optics.SpectrumModeRGB}}
+		if spec.Surface != nil {
+			surface, err := parseSurface(spec.Surface)
 			if err != nil {
 				parseErrors = append(parseErrors, fmt.Errorf("%s surface: %w", context, err))
 				continue
 			}
-			surface, err := parseSurface(surfaceDef)
-			if err != nil {
-				parseErrors = append(parseErrors, fmt.Errorf("%s surface: %w", context, err))
-				continue
-			}
-			material.Surface = surface
+			result.Surface = surface
 		}
-
-		if matDef.Emission != nil {
-			emissionDef, err := specMap(matDef.Emission)
+		if spec.Emission != nil {
+			emitter, err := parseEmission(spec.Emission)
 			if err != nil {
 				parseErrors = append(parseErrors, fmt.Errorf("%s emission: %w", context, err))
 				continue
 			}
-			emitter, err := parseEmission(emissionDef)
-			if err != nil {
-				parseErrors = append(parseErrors, fmt.Errorf("%s emission: %w", context, err))
-				continue
-			}
-			material.Emission = emitter
+			result.Emission = emitter
 		}
-
-		if !material.HasSurface() && !material.HasEmission() {
+		if !result.HasSurface() && !result.HasEmission() {
 			parseErrors = append(parseErrors, fmt.Errorf("%s: material requires surface or emission", context))
 			continue
 		}
-
-		materials[id] = material
+		materials[spec.ID] = result
 	}
-
 	if len(parseErrors) > 0 {
 		return nil, errors.Join(parseErrors...)
 	}
-
 	return materials, nil
 }
 
-func parseSurface(def map[string]interface{}) (bxdf.Scattering, error) {
-	surfaceType, err := utils.RequiredStringField(def, "type")
-	if err != nil {
-		return nil, err
-	}
-
-	switch surfaceType {
-	case "weighted_mixture":
-		componentsRaw, ok := def["components"]
-		if !ok {
-			return nil, fmt.Errorf("missing required field %q", "components")
-		}
-		componentDefs, ok := componentsRaw.([]interface{})
-		if !ok {
-			return nil, fmt.Errorf("field %q: expected array, got %T", "components", componentsRaw)
-		}
-		if len(componentDefs) == 0 {
+func parseSurface(spec *parser.SurfaceSpec) (bxdf.Scattering, error) {
+	switch definition := spec.Definition.(type) {
+	case *parser.WeightedMixtureSurfaceSpec:
+		if len(definition.Components) == 0 {
 			return nil, fmt.Errorf("field %q must not be empty", "components")
 		}
-
-		components := make([]bsdf.WeightedScattering, 0, len(componentDefs))
-		for index, componentRaw := range componentDefs {
-			component, ok := componentRaw.(map[string]interface{})
-			if !ok {
-				return nil, fmt.Errorf("components[%d]: expected object, got %T", index, componentRaw)
-			}
-			weight, err := utils.RequiredFloat64Field(component, "weight")
-			if err != nil {
-				return nil, fmt.Errorf("components[%d]: %w", index, err)
-			}
-			if weight <= 0 || math.IsNaN(weight) || math.IsInf(weight, 0) {
+		components := make([]bsdf.WeightedScattering, 0, len(definition.Components))
+		for index, component := range definition.Components {
+			if component.Weight <= 0 || math.IsNaN(component.Weight) || math.IsInf(component.Weight, 0) {
 				return nil, fmt.Errorf("components[%d] weight must be finite and > 0", index)
 			}
-			surfaceDef, ok, err := utils.OptionalMapField(component, "surface")
-			if err != nil {
-				return nil, fmt.Errorf("components[%d]: %w", index, err)
-			}
-			if !ok {
-				return nil, fmt.Errorf("components[%d]: missing required field %q", index, "surface")
-			}
-			surface, err := parseSurface(surfaceDef)
+			surface, err := parseSurface(&component.Surface)
 			if err != nil {
 				return nil, fmt.Errorf("components[%d] surface: %w", index, err)
 			}
-			components = append(components, bsdf.WeightedScattering{Weight: weight, Scattering: surface})
+			components = append(components, bsdf.WeightedScattering{Weight: component.Weight, Scattering: surface})
 		}
 		return bsdf.NewWeightedMixture(components...), nil
-
-	case "lambert":
-		albedo, err := requiredSpectralParameterField(def, "albedo")
+	case *parser.LambertSurfaceSpec:
+		albedo, err := requiredSpectralParameterRaw(definition.Albedo, "albedo")
 		if err != nil {
 			return nil, err
 		}
 		return bxdf.NewLambertParameter(albedo), nil
-
-	case "specular_reflection":
-		reflectance, _, err := optionalSpectralParameterField(def, "reflectance", spectrum_parameter.NewConstantParameter(1))
+	case *parser.SpecularReflectionSurfaceSpec:
+		reflectance, err := optionalSpectralParameterRaw(definition.Reflectance, "reflectance", spectrum_parameter.NewConstantParameter(1))
 		if err != nil {
 			return nil, err
 		}
 		return bxdf.NewSpecularReflectionParameter(reflectance), nil
-
-	case "specular_dielectric":
-		reflectance, _, err := optionalSpectralParameterField(def, "reflectance", spectrum_parameter.NewConstantParameter(1))
+	case *parser.SpecularDielectricSurfaceSpec:
+		reflectance, err := optionalSpectralParameterRaw(definition.Reflectance, "reflectance", spectrum_parameter.NewConstantParameter(1))
 		if err != nil {
 			return nil, err
 		}
-		transmittance, _, err := optionalSpectralParameterField(def, "transmittance", spectrum_parameter.NewConstantParameter(1))
+		transmittance, err := optionalSpectralParameterRaw(definition.Transmittance, "transmittance", spectrum_parameter.NewConstantParameter(1))
 		if err != nil {
 			return nil, err
 		}
-		etaOutside, ok, err := utils.OptionalFloat64Field(def, "eta_outside")
+		outside, err := parseEtaOutside(definition.EtaOutside)
 		if err != nil {
 			return nil, err
 		}
-		if !ok {
-			etaOutside = 1
-		}
-		if !medium.IsValidEta(etaOutside) {
-			return nil, fmt.Errorf("eta_outside must be > 0")
-		}
-		insideIOR, err := parseIORModel(def)
+		inside, err := parseIORModel(definition.IOR, definition.EtaInside)
 		if err != nil {
 			return nil, err
 		}
-		return bxdf.NewSpecularDielectricParameter(reflectance, transmittance, etaOutside, insideIOR), nil
-
-	case "rough_conductor":
-		eta, err := requiredSpectralParameterField(def, "eta")
+		return bxdf.NewSpecularDielectricParameter(reflectance, transmittance, outside, inside), nil
+	case *parser.RoughConductorSurfaceSpec:
+		eta, err := requiredSpectralParameterRaw(definition.Eta, "eta")
 		if err != nil {
 			return nil, err
 		}
-		k, err := requiredSpectralParameterField(def, "k")
+		k, err := requiredSpectralParameterRaw(definition.K, "k")
 		if err != nil {
 			return nil, err
 		}
-		roughness, ok, err := utils.OptionalFloat64Field(def, "roughness")
+		rough, err := parseRoughness(definition.Roughness)
 		if err != nil {
 			return nil, err
 		}
-		if !ok {
-			roughness = 0.25
-		}
-		if roughness < 0 || roughness > 1 {
-			return nil, fmt.Errorf("roughness must be in [0, 1]")
-		}
-		alpha := roughness * roughness
-		weight, _, err := optionalSpectralParameterField(def, "weight", spectrum_parameter.NewConstantParameter(1))
+		weight, err := optionalSpectralParameterRaw(definition.Weight, "weight", spectrum_parameter.NewConstantParameter(1))
 		if err != nil {
 			return nil, err
 		}
-		conductor := bxdf.NewRoughConductorParameter(eta, k, alpha)
-		conductor.Weight = weight
-		return conductor, nil
-
-	case "rough_dielectric_reflection":
-		reflectance, _, err := optionalSpectralParameterField(def, "reflectance", spectrum_parameter.NewConstantParameter(1))
+		result := bxdf.NewRoughConductorParameter(eta, k, rough*rough)
+		result.Weight = weight
+		return result, nil
+	case *parser.RoughDielectricReflectionSurfaceSpec:
+		reflectance, err := optionalSpectralParameterRaw(definition.Reflectance, "reflectance", spectrum_parameter.NewConstantParameter(1))
 		if err != nil {
 			return nil, err
 		}
-		etaOutside, ok, err := utils.OptionalFloat64Field(def, "eta_outside")
+		outside, err := parseEtaOutside(definition.EtaOutside)
 		if err != nil {
 			return nil, err
 		}
-		if !ok {
-			etaOutside = 1
-		}
-		if !medium.IsValidEta(etaOutside) {
-			return nil, fmt.Errorf("eta_outside must be > 0")
-		}
-		insideIOR, err := parseIORModel(def)
+		inside, err := parseIORModel(definition.IOR, definition.EtaInside)
 		if err != nil {
 			return nil, err
 		}
-		roughness, ok, err := utils.OptionalFloat64Field(def, "roughness")
+		rough, err := parseRoughness(definition.Roughness)
 		if err != nil {
 			return nil, err
 		}
-		if !ok {
-			roughness = 0.25
-		}
-		if roughness < 0 || roughness > 1 {
-			return nil, fmt.Errorf("roughness must be in [0, 1]")
-		}
-		return bxdf.NewRoughDielectricReflectionParameter(
-			reflectance,
-			etaOutside,
-			insideIOR,
-			roughness*roughness,
-		), nil
-
-	case "cylindrical_grid_cutout", "wire_mesh":
-		return parseCylindricalGridCutoutSurface(def)
-
-	case "rough_dielectric_transmission":
-		transmittance, _, err := optionalSpectralParameterField(def, "transmittance", spectrum_parameter.NewConstantParameter(1))
+		return bxdf.NewRoughDielectricReflectionParameter(reflectance, outside, inside, rough*rough), nil
+	case *parser.RoughDielectricTransmissionSurfaceSpec:
+		transmittance, err := optionalSpectralParameterRaw(definition.Transmittance, "transmittance", spectrum_parameter.NewConstantParameter(1))
 		if err != nil {
 			return nil, err
 		}
-		etaOutside, ok, err := utils.OptionalFloat64Field(def, "eta_outside")
+		outside, err := parseEtaOutside(definition.EtaOutside)
 		if err != nil {
 			return nil, err
 		}
-		if !ok {
-			etaOutside = 1
-		}
-		if !medium.IsValidEta(etaOutside) {
-			return nil, fmt.Errorf("eta_outside must be > 0")
-		}
-		insideIOR, err := parseIORModel(def)
+		inside, err := parseIORModel(definition.IOR, definition.EtaInside)
 		if err != nil {
 			return nil, err
 		}
-		roughness, ok, err := utils.OptionalFloat64Field(def, "roughness")
+		rough, err := parseRoughness(definition.Roughness)
 		if err != nil {
 			return nil, err
 		}
-		if !ok {
-			roughness = 0.25
-		}
-		if roughness < 0 || roughness > 1 {
-			return nil, fmt.Errorf("roughness must be in [0, 1]")
-		}
-		alpha := roughness * roughness
-		return bxdf.NewRoughDielectricTransmissionParameter(transmittance, etaOutside, insideIOR, alpha), nil
-
+		return bxdf.NewRoughDielectricTransmissionParameter(transmittance, outside, inside, rough*rough), nil
+	case *parser.CylindricalGridSurfaceSpec:
+		return parseCylindricalGridCutoutSurface(definition)
 	default:
-		return nil, fmt.Errorf("unsupported surface type %q", surfaceType)
+		return nil, fmt.Errorf("unsupported surface type %q", spec.Type)
 	}
 }
 
-func parseCylindricalGridCutoutSurface(def map[string]interface{}) (bxdf.Scattering, error) {
-	lineSurface, err := parseGridLineSurface(def)
-	if err != nil {
-		return nil, err
+func parseRoughness(value *float64) (float64, error) {
+	result := 0.25
+	if value != nil {
+		result = *value
 	}
+	if result < 0 || result > 1 || math.IsNaN(result) || math.IsInf(result, 0) {
+		return 0, fmt.Errorf("roughness must be in [0, 1]")
+	}
+	return result, nil
+}
+func parseEtaOutside(value *float64) (float64, error) {
+	result := 1.0
+	if value != nil {
+		result = *value
+	}
+	if !medium.IsValidEta(result) {
+		return 0, fmt.Errorf("eta_outside must be > 0")
+	}
+	return result, nil
+}
 
-	origin, err := optionalDirectionField(def, "origin", maths.NewDirection(0, 0, 0))
+func parseCylindricalGridCutoutSurface(spec *parser.CylindricalGridSurfaceSpec) (bxdf.Scattering, error) {
+	lineSurface, err := parseGridLineSurface(spec)
 	if err != nil {
 		return nil, err
 	}
-	axis, err := optionalDirectionField(def, "axis", maths.NewDirection(0, 0, 1))
+	origin, err := optionalDirection("origin", spec.Origin, maths.NewDirection(0, 0, 0))
+	if err != nil {
+		return nil, err
+	}
+	axis, err := optionalDirection("axis", spec.Axis, maths.NewDirection(0, 0, 1))
 	if err != nil {
 		return nil, err
 	}
 	if axis.Length() == 0 {
 		return nil, fmt.Errorf("axis must have non-zero length")
 	}
-	referenceAxis, err := optionalDirectionField(def, "reference_axis", maths.NewDirection(1, 0, 0))
+	referenceAxis, err := optionalDirection("reference_axis", spec.ReferenceAxis, maths.NewDirection(1, 0, 0))
 	if err != nil {
 		return nil, err
 	}
-
-	lineWidth, ok, err := utils.OptionalFloat64Field(def, "line_width")
+	lineWidth, err := optionalNonNegative("line_width", spec.LineWidth, 0.006)
 	if err != nil {
 		return nil, err
 	}
-	if !ok {
-		lineWidth = 0.006
-	}
-	if lineWidth < 0 {
-		return nil, fmt.Errorf("line_width must be >= 0")
-	}
-
-	gapWidth, ok, err := utils.OptionalFloat64Field(def, "gap_width")
+	gapWidth, err := optionalNonNegative("gap_width", spec.GapWidth, 0.03)
 	if err != nil {
 		return nil, err
 	}
-	if !ok {
-		gapWidth = 0.03
-	}
-	if gapWidth < 0 {
-		return nil, fmt.Errorf("gap_width must be >= 0")
-	}
-
-	gapHeight, ok, err := utils.OptionalFloat64Field(def, "gap_height")
+	gapHeight, err := optionalNonNegative("gap_height", spec.GapHeight, 0.03)
 	if err != nil {
 		return nil, err
 	}
-	if !ok {
-		gapHeight = 0.03
-	}
-	if gapHeight < 0 {
-		return nil, fmt.Errorf("gap_height must be >= 0")
-	}
-
-	referenceRadius, ok, err := utils.OptionalFloat64Field(def, "reference_radius")
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		referenceRadius = 1
+	referenceRadius := 1.0
+	if spec.ReferenceRadius != nil {
+		referenceRadius = *spec.ReferenceRadius
 	}
 	if referenceRadius <= 0 {
 		return nil, fmt.Errorf("reference_radius must be > 0")
 	}
-
-	return bsdf.NewCylindricalGridCutout(
-		lineSurface,
-		origin,
-		axis,
-		referenceAxis,
-		gapWidth,
-		gapHeight,
-		lineWidth,
-		referenceRadius,
-	), nil
+	return bsdf.NewCylindricalGridCutout(lineSurface, origin, axis, referenceAxis, gapWidth, gapHeight, lineWidth, referenceRadius), nil
 }
 
-func parseGridLineSurface(def map[string]interface{}) (bxdf.Scattering, error) {
-	lineSurfaceDef, ok, err := utils.OptionalMapField(def, "line_surface")
-	if err != nil {
-		return nil, err
+func parseGridLineSurface(spec *parser.CylindricalGridSurfaceSpec) (bxdf.Scattering, error) {
+	if spec.LineSurface != nil {
+		return parseSurface(spec.LineSurface)
 	}
-	if !ok {
-		lineSurfaceDef = map[string]interface{}{
-			"type":      "rough_conductor",
-			"eta":       []interface{}{0.15, 0.14, 0.13},
-			"k":         []interface{}{4.1, 3.5, 2.7},
-			"roughness": 0.22,
-			"weight":    []interface{}{0.88, 0.9, 0.92},
-		}
-	}
-	return parseSurface(lineSurfaceDef)
+	return parseSurface(&parser.SurfaceSpec{Type: parser.SurfaceRoughConductor, Definition: &parser.RoughConductorSurfaceSpec{Eta: json.RawMessage(`[0.15,0.14,0.13]`), K: json.RawMessage(`[4.1,3.5,2.7]`), Weight: json.RawMessage(`[0.88,0.9,0.92]`), Roughness: float64Pointer(0.22)}})
 }
+func float64Pointer(value float64) *float64 { return &value }
 
-func optionalDirectionField(def map[string]interface{}, key string, fallback maths.Direction) (maths.Direction, error) {
-	values, ok, err := utils.OptionalFloat64SliceField(def, key, 3)
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
+func optionalDirection(name string, values []float64, fallback maths.Direction) (maths.Direction, error) {
+	if values == nil {
 		return fallback, nil
 	}
-	for i, value := range values {
+	if len(values) != 3 {
+		return nil, fmt.Errorf("field %q must contain 3 values, got %d", name, len(values))
+	}
+	for index, value := range values {
 		if math.IsNaN(value) || math.IsInf(value, 0) {
-			return nil, fmt.Errorf("%s index %d must be finite", key, i)
+			return nil, fmt.Errorf("%s index %d must be finite", name, index)
 		}
 	}
 	return maths.NewDirection(values[0], values[1], values[2]), nil
 }
-
-func parseEmission(def map[string]interface{}) (emission.Emitter, error) {
-	emissionType, err := utils.RequiredStringField(def, "type")
-	if err != nil {
-		return nil, err
+func optionalNonNegative(name string, value *float64, fallback float64) (float64, error) {
+	result := fallback
+	if value != nil {
+		result = *value
 	}
+	if result < 0 || math.IsNaN(result) || math.IsInf(result, 0) {
+		return 0, fmt.Errorf("%s must be >= 0", name)
+	}
+	return result, nil
+}
 
+func parseEmission(spec *parser.EmissionSpec) (emission.Emitter, error) {
 	var field emission.RadianceField
 	quantity := emission.PeakRadiance
-	switch emissionType {
-	case "constant":
-		_, hasRadiance := def["radiance"]
-		_, hasColor := def["color"]
-		_, hasExitance := def["exitance"]
+	var err error
+	switch definition := spec.Definition.(type) {
+	case *parser.ConstantEmissionSpec:
+		hasRadiance, hasColor, hasExitance := len(definition.Radiance) > 0, len(definition.Color) > 0, len(definition.Exitance) > 0
 		if hasExitance && (hasRadiance || hasColor) {
 			return nil, fmt.Errorf("radiance/color and exitance are mutually exclusive")
 		}
 		var strength optics.SpectralParameter
 		if hasExitance {
-			strength, err = requiredSpectralParameterField(def, "exitance")
+			strength, err = requiredSpectralParameterRaw(definition.Exitance, "exitance")
 			quantity = emission.TotalExitance
+		} else if hasRadiance {
+			strength, err = requiredSpectralParameterRaw(definition.Radiance, "radiance")
 		} else {
-			strength, err = requiredEmissionRadianceField(def)
+			strength, err = requiredSpectralParameterRaw(definition.Color, "color")
 		}
 		if err != nil {
 			return nil, err
 		}
 		field = emission.Constant{Radiance: strength}
-	case "cell_palette":
-		field, err = parseCellPaletteEmission(def)
-	case "uv_klein":
-		field, err = parseUVKleinEmission(def)
+	case *parser.CellPaletteEmissionSpec:
+		field, err = parseCellPaletteEmission(definition)
+	case *parser.UVKleinEmissionSpec:
+		field, err = parseUVKleinEmission(definition)
 	default:
-		return nil, fmt.Errorf("unsupported emission type %q", emissionType)
+		return nil, fmt.Errorf("unsupported emission type %q", spec.Type)
 	}
 	if err != nil {
 		return nil, err
 	}
-	distribution, err := parseEmissionDistribution(def)
+	distribution, err := parseEmissionDistribution(spec.Distribution)
 	if err != nil {
 		return nil, err
 	}
 	return emission.NewSurfaceEmitter(field, distribution, quantity), nil
 }
 
-func parseEmissionDistribution(def map[string]interface{}) (emission.AngularDistribution, error) {
-	distributionDef, ok, err := utils.OptionalMapField(def, "distribution")
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
+func parseEmissionDistribution(spec *parser.EmissionDistributionSpec) (emission.AngularDistribution, error) {
+	if spec == nil {
 		return emission.NewUniform(emission.TwoSided), nil
 	}
-
-	distributionType, err := utils.RequiredStringField(distributionDef, "type")
-	if err != nil {
-		return nil, fmt.Errorf("distribution: %w", err)
-	}
 	sidedness := emission.FrontSide
-	if side, ok, err := utils.OptionalStringField(distributionDef, "sidedness"); err != nil {
-		return nil, fmt.Errorf("distribution: %w", err)
-	} else if ok {
-		switch side {
-		case "front":
-			sidedness = emission.FrontSide
-		case "back":
-			sidedness = emission.BackSide
-		case "two_sided":
-			sidedness = emission.TwoSided
-		default:
-			return nil, fmt.Errorf("distribution sidedness must be front, back, or two_sided")
-		}
+	switch spec.Sidedness {
+	case "", "front":
+	case "back":
+		sidedness = emission.BackSide
+	case "two_sided":
+		sidedness = emission.TwoSided
+	default:
+		return nil, fmt.Errorf("distribution sidedness must be front, back, or two_sided")
 	}
-
-	switch distributionType {
+	switch spec.Type {
 	case "uniform":
 		return emission.NewUniform(sidedness), nil
 	case "cosine_power":
-		exponent, hasExponent, err := utils.OptionalFloat64Field(distributionDef, "exponent")
-		if err != nil {
-			return nil, fmt.Errorf("distribution: %w", err)
-		}
-		halfAngle, hasHalfAngle, err := utils.OptionalFloat64Field(distributionDef, "half_angle_degrees")
-		if err != nil {
-			return nil, fmt.Errorf("distribution: %w", err)
-		}
-		if hasExponent == hasHalfAngle {
+		if (spec.Exponent == nil) == (spec.HalfAngleDegrees == nil) {
 			return nil, fmt.Errorf("distribution requires exactly one of exponent or half_angle_degrees")
 		}
-		if hasHalfAngle {
-			if halfAngle <= 0 || halfAngle > 90 || math.IsNaN(halfAngle) || math.IsInf(halfAngle, 0) {
+		exponent := 0.0
+		if spec.Exponent != nil {
+			exponent = *spec.Exponent
+		} else {
+			angle := *spec.HalfAngleDegrees
+			if angle <= 0 || angle > 90 || math.IsNaN(angle) || math.IsInf(angle, 0) {
 				return nil, fmt.Errorf("distribution half_angle_degrees must be finite and in (0, 90]")
 			}
-			if halfAngle == 90 {
-				exponent = 0
-			} else {
-				exponent = math.Log(0.5) / math.Log(math.Cos(halfAngle*math.Pi/180))
+			if angle != 90 {
+				exponent = math.Log(0.5) / math.Log(math.Cos(angle*math.Pi/180))
 			}
 		}
 		result, err := emission.NewCosinePower(exponent, sidedness)
@@ -492,225 +345,156 @@ func parseEmissionDistribution(def map[string]interface{}) (emission.AngularDist
 		}
 		return result, nil
 	default:
-		return nil, fmt.Errorf("unsupported emission distribution type %q", distributionType)
+		return nil, fmt.Errorf("unsupported emission distribution type %q", spec.Type)
 	}
 }
 
-func parseUVKleinEmission(def map[string]interface{}) (emission.RadianceField, error) {
-	saturation, ok, err := utils.OptionalFloat64Field(def, "saturation")
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		saturation = 1
+func parseUVKleinEmission(spec *parser.UVKleinEmissionSpec) (emission.RadianceField, error) {
+	saturation := 1.0
+	if spec.Saturation != nil {
+		saturation = *spec.Saturation
 	}
 	if saturation < 0 || saturation > 1 {
 		return nil, fmt.Errorf("saturation must be in [0, 1]")
 	}
-
-	lightness, ok, err := utils.OptionalFloat64Field(def, "lightness")
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		lightness = 0.55
+	lightness := 0.55
+	if spec.Lightness != nil {
+		lightness = *spec.Lightness
 	}
 	if lightness < 0 || lightness > 1 {
 		return nil, fmt.Errorf("lightness must be in [0, 1]")
 	}
-
-	vStripeValue, ok, err := utils.OptionalFloat64Field(def, "v_stripes")
-	if err != nil {
-		return nil, err
+	vStripes := 1
+	if spec.VStripes != nil {
+		vStripes = int(*spec.VStripes)
+		if vStripes <= 0 || float64(vStripes) != *spec.VStripes {
+			return nil, fmt.Errorf("v_stripes must be a positive integer")
+		}
 	}
-	vStripes := int(vStripeValue)
-	if !ok {
-		vStripes = 1
-	}
-	if vStripes <= 0 || float64(vStripes) != vStripeValue {
-		return nil, fmt.Errorf("v_stripes must be a positive integer")
-	}
-
-	intensity, ok, err := utils.OptionalFloat64Field(def, "intensity")
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		intensity = 1
+	intensity := 1.0
+	if spec.Intensity != nil {
+		intensity = *spec.Intensity
 	}
 	if intensity < 0 {
 		return nil, fmt.Errorf("intensity must be >= 0")
 	}
-
 	return emission.NewUVKlein(saturation, lightness, vStripes, intensity), nil
 }
 
-// parseCellPaletteEmission builds a CellPalette debug emitter from a scene
-// definition. All fields are optional:
-//
-//   - "palette":         array of N RGB triples (defaults to DefaultCellPalette;
-//     cells beyond palette length wrap modulo).
-//   - "intensity":       scalar applied to every palette entry.
-//   - "shading":         "solid" (default) or "boundary_grid".
-//   - "grid_color":      RGB triple for boundary stripes (defaults to white).
-//   - "grid_thickness":  world-space half-width of the grid in scene units
-//     (defaults to 0.02 of the smallest object extent at parse
-//     time — but here we just default to a small absolute value
-//     of 0.02 and rely on the user to tune).
-func parseCellPaletteEmission(def map[string]interface{}) (emission.RadianceField, error) {
-	cp := emission.NewCellPalette()
-
-	if rawPalette, ok := def["palette"]; ok {
-		entries, ok := rawPalette.([]interface{})
-		if !ok {
-			return nil, fmt.Errorf("palette: expected an array of RGB triples")
-		}
-		if len(entries) == 0 {
+func parseCellPaletteEmission(spec *parser.CellPaletteEmissionSpec) (emission.RadianceField, error) {
+	result := emission.NewCellPalette()
+	if spec.Palette != nil {
+		if len(spec.Palette) == 0 {
 			return nil, fmt.Errorf("palette: must contain at least one color")
 		}
-		palette := make([]optics.Spectrum, 0, len(entries))
-		for i, entry := range entries {
-			values, err := utils.ToFloat64Slice(entry)
-			if err != nil {
-				return nil, fmt.Errorf("palette[%d]: %w", i, err)
-			}
+		palette := make([]optics.Spectrum, len(spec.Palette))
+		for index, values := range spec.Palette {
 			if len(values) != 3 {
-				return nil, fmt.Errorf("palette[%d]: expected 3 RGB values, got %d", i, len(values))
+				return nil, fmt.Errorf("palette[%d]: expected 3 RGB values, got %d", index, len(values))
 			}
-			if err := utils.ValidateNonNegativeSlice(fmt.Sprintf("palette[%d]", i), values); err != nil {
+			if err := utils.ValidateNonNegativeSlice(fmt.Sprintf("palette[%d]", index), values); err != nil {
 				return nil, err
 			}
-			palette = append(palette, optics.NewSpectrum(values[0], values[1], values[2]))
+			palette[index] = optics.NewSpectrum(values[0], values[1], values[2])
 		}
-		cp.Palette = palette
+		result.Palette = palette
 	}
-
-	if intensity, ok, err := utils.OptionalFloat64Field(def, "intensity"); err != nil {
-		return nil, err
-	} else if ok {
-		if intensity < 0 {
-			return nil, fmt.Errorf("intensity must be >= 0")
-		}
-		for i := range cp.Palette {
-			cp.Palette[i] = cp.Palette[i].MulScalar(intensity)
-		}
+	intensity := 1.0
+	if spec.Intensity != nil {
+		intensity = *spec.Intensity
 	}
-
-	if shading, ok, err := utils.OptionalStringField(def, "shading"); err != nil {
-		return nil, err
-	} else if ok {
-		switch shading {
-		case "solid", "emission", "":
-			cp.Shading = emission.CellPaletteShadingEmission
-		case "boundary_grid", "grid":
-			cp.Shading = emission.CellPaletteShadingBoundaryGrid
-		default:
-			return nil, fmt.Errorf("shading must be \"solid\" or \"boundary_grid\", got %q", shading)
+	if intensity < 0 {
+		return nil, fmt.Errorf("intensity must be >= 0")
+	}
+	if intensity != 1 {
+		for index := range result.Palette {
+			result.Palette[index] = result.Palette[index].MulScalar(intensity)
 		}
 	}
-
-	if cp.Shading == emission.CellPaletteShadingBoundaryGrid {
-		if rawGrid, ok := def["grid_color"]; ok {
-			values, err := utils.ToFloat64Slice(rawGrid)
-			if err != nil {
-				return nil, fmt.Errorf("grid_color: %w", err)
-			}
-			if len(values) != 3 {
+	switch spec.Shading {
+	case "", "solid", "emission":
+		result.Shading = emission.CellPaletteShadingEmission
+	case "boundary_grid", "grid":
+		result.Shading = emission.CellPaletteShadingBoundaryGrid
+	default:
+		return nil, fmt.Errorf("shading must be \"solid\" or \"boundary_grid\", got %q", spec.Shading)
+	}
+	if result.Shading == emission.CellPaletteShadingBoundaryGrid {
+		if spec.GridColor != nil {
+			if len(spec.GridColor) != 3 {
 				return nil, fmt.Errorf("grid_color: expected 3 RGB values")
 			}
-			if err := utils.ValidateNonNegativeSlice("grid_color", values); err != nil {
+			if err := utils.ValidateNonNegativeSlice("grid_color", spec.GridColor); err != nil {
 				return nil, err
 			}
-			cp.GridColor = optics.NewSpectrum(values[0], values[1], values[2])
+			result.GridColor = optics.NewSpectrum(spec.GridColor[0], spec.GridColor[1], spec.GridColor[2])
 		}
-
-		thickness, ok, err := utils.OptionalFloat64Field(def, "grid_thickness")
+		thickness, err := optionalNonNegative("grid_thickness", spec.GridThickness, 0.02)
 		if err != nil {
 			return nil, err
 		}
-		if !ok {
-			thickness = 0.02
-		}
-		if thickness < 0 {
-			return nil, fmt.Errorf("grid_thickness must be >= 0")
-		}
-		cp.GridThickness = thickness
+		result.GridThickness = thickness
 	}
-
-	return cp, nil
-
+	return result, nil
 }
 
-func parseIORModel(def map[string]interface{}) (medium.Model, error) {
-	if iorDef, ok, err := utils.OptionalMapField(def, "ior"); err != nil {
-		return nil, err
-	} else if ok {
-		iorType, err := utils.RequiredStringField(iorDef, "type")
-		if err != nil {
-			return nil, fmt.Errorf("ior: %w", err)
-		}
-		switch iorType {
+func parseIORModel(spec *parser.IORSpec, etaInside *float64) (medium.Model, error) {
+	if spec != nil {
+		switch spec.Type {
 		case "constant":
-			eta, err := utils.RequiredFloat64Field(iorDef, "eta")
-			if err != nil {
-				return nil, fmt.Errorf("ior: %w", err)
+			if spec.Eta == nil {
+				return nil, fmt.Errorf("ior: missing required field %q", "eta")
 			}
-			if !medium.IsValidEta(eta) {
+			if !medium.IsValidEta(*spec.Eta) {
 				return nil, fmt.Errorf("ior eta must be > 0")
 			}
-			return medium.NewConstant(eta), nil
+			return medium.NewConstant(*spec.Eta), nil
 		case "cauchy":
-			a, err := utils.RequiredFloat64Field(iorDef, "a")
-			if err != nil {
-				return nil, fmt.Errorf("ior: %w", err)
+			if spec.A == nil {
+				return nil, fmt.Errorf("ior: missing required field %q", "a")
 			}
-			b, err := utils.RequiredFloat64Field(iorDef, "b")
-			if err != nil {
-				return nil, fmt.Errorf("ior: %w", err)
+			if spec.B == nil {
+				return nil, fmt.Errorf("ior: missing required field %q", "b")
 			}
-			c, ok, err := utils.OptionalFloat64Field(iorDef, "c")
-			if err != nil {
-				return nil, fmt.Errorf("ior: %w", err)
+			c := 0.0
+			if spec.C != nil {
+				c = *spec.C
 			}
-			if !ok {
-				c = 0
-			}
-			model := medium.NewCauchy(a, b, c)
-			if !medium.IsValidEta(model.Evaluate(medium.WavelengthMinNM)) ||
-				!medium.IsValidEta(model.Evaluate(medium.DefaultWavelengthNM)) ||
-				!medium.IsValidEta(model.Evaluate(medium.WavelengthMaxNM)) {
+			model := medium.NewCauchy(*spec.A, *spec.B, c)
+			if !medium.IsValidEta(model.Evaluate(medium.WavelengthMinNM)) || !medium.IsValidEta(model.Evaluate(medium.DefaultWavelengthNM)) || !medium.IsValidEta(model.Evaluate(medium.WavelengthMaxNM)) {
 				return nil, fmt.Errorf("ior cauchy coefficients produce invalid eta")
 			}
 			return model, nil
 		default:
-			return nil, fmt.Errorf("unsupported ior type %q", iorType)
+			return nil, fmt.Errorf("unsupported ior type %q", spec.Type)
 		}
 	}
-
-	etaInside, ok, err := utils.OptionalFloat64Field(def, "eta_inside")
-	if err != nil {
-		return nil, err
+	value := 1.5
+	if etaInside != nil {
+		value = *etaInside
 	}
-	if !ok {
-		etaInside = 1.5
-	}
-	if !medium.IsValidEta(etaInside) {
+	if !medium.IsValidEta(value) {
 		return nil, fmt.Errorf("eta_inside must be > 0")
 	}
-	return medium.NewConstant(etaInside), nil
+	return medium.NewConstant(value), nil
 }
 
-func requiredEmissionRadianceField(data map[string]interface{}) (optics.SpectralParameter, error) {
-	if _, ok := data["radiance"]; ok {
-		return requiredSpectralParameterField(data, "radiance")
-	}
-	return requiredSpectralParameterField(data, "color")
-}
-
-func requiredSpectralParameterField(data map[string]interface{}, key string) (optics.SpectralParameter, error) {
-	value, ok := data[key]
-	if !ok {
+func requiredSpectralParameterRaw(raw json.RawMessage, key string) (optics.SpectralParameter, error) {
+	if len(raw) == 0 {
 		return nil, fmt.Errorf("missing required field %q", key)
+	}
+	return parseSpectralParameterRaw(raw, key)
+}
+func optionalSpectralParameterRaw(raw json.RawMessage, key string, fallback optics.SpectralParameter) (optics.SpectralParameter, error) {
+	if len(raw) == 0 {
+		return fallback, nil
+	}
+	return parseSpectralParameterRaw(raw, key)
+}
+func parseSpectralParameterRaw(raw json.RawMessage, key string) (optics.SpectralParameter, error) {
+	var value interface{}
+	if err := json.Unmarshal(raw, &value); err != nil {
+		return nil, fmt.Errorf("field %q: %w", key, err)
 	}
 	parameter, err := parseSpectralParameterValue(key, value)
 	if err != nil {
@@ -719,23 +503,10 @@ func requiredSpectralParameterField(data map[string]interface{}, key string) (op
 	return parameter, nil
 }
 
-func optionalSpectralParameterField(data map[string]interface{}, key string, fallback optics.SpectralParameter) (optics.SpectralParameter, bool, error) {
-	value, ok := data[key]
-	if !ok {
-		return fallback, false, nil
-	}
-	parameter, err := parseSpectralParameterValue(key, value)
-	if err != nil {
-		return nil, true, fmt.Errorf("field %q: %w", key, err)
-	}
-	return parameter, true, nil
-}
-
 func parseSpectralParameterValue(key string, value interface{}) (optics.SpectralParameter, error) {
 	if mapped, ok := value.(map[string]interface{}); ok {
 		return parseSpectralParameterObject(mapped)
 	}
-
 	values, err := utils.ToFloat64Slice(value)
 	if err != nil {
 		return nil, err
@@ -749,12 +520,24 @@ func parseSpectralParameterValue(key string, value interface{}) (optics.Spectral
 	return spectrum_parameter.NewRGBParameter(optics.NewSpectrum(values[0], values[1], values[2])), nil
 }
 
+// Media is still a map-based protocol and shares the polymorphic spectral leaf parser.
+func optionalSpectralParameterField(data map[string]interface{}, key string, fallback optics.SpectralParameter) (optics.SpectralParameter, bool, error) {
+	value, ok := data[key]
+	if !ok {
+		return fallback, false, nil
+	}
+	parameter, err := parseSpectralParameterValue(key, value)
+	if err != nil {
+		return nil, true, fmt.Errorf("field %q: %w", key, err)
+	}
+	return parameter, true, nil
+}
+
 func parseSpectralParameterObject(def map[string]interface{}) (optics.SpectralParameter, error) {
 	parameterType, err := utils.RequiredStringField(def, "type")
 	if err != nil {
 		return nil, err
 	}
-
 	switch parameterType {
 	case "rgb":
 		values, err := utils.RequiredFloat64SliceField(def, "value", 3)
@@ -782,7 +565,6 @@ func parseSpectralParameterObject(def map[string]interface{}) (optics.SpectralPa
 		default:
 			return nil, fmt.Errorf("unsupported rgb color space %q", space)
 		}
-
 	case "constant":
 		value, err := utils.RequiredFloat64Field(def, "value")
 		if err != nil {
@@ -792,7 +574,6 @@ func parseSpectralParameterObject(def map[string]interface{}) (optics.SpectralPa
 			return nil, fmt.Errorf("value must be >= 0")
 		}
 		return spectrum_parameter.NewConstantParameter(value), nil
-
 	case "sampled":
 		wavelengths, err := utils.RequiredFloat64SliceField(def, "wavelengths_nm")
 		if err != nil {
@@ -822,7 +603,6 @@ func parseSpectralParameterObject(def map[string]interface{}) (optics.SpectralPa
 			return nil, fmt.Errorf("unsupported interpolation %q", interpolation)
 		}
 		return spectrum_parameter.NewSampledParameter(wavelengths, values), nil
-
 	case "blackbody":
 		temperature, err := utils.RequiredFloat64Field(def, "temperature")
 		if err != nil {
@@ -842,7 +622,6 @@ func parseSpectralParameterObject(def map[string]interface{}) (optics.SpectralPa
 			return nil, fmt.Errorf("scale must be >= 0")
 		}
 		return spectrum_parameter.NewBlackbodyParameter(temperature, scale), nil
-
 	default:
 		return nil, fmt.Errorf("unsupported spectral parameter type %q", parameterType)
 	}

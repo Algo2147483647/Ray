@@ -31,14 +31,16 @@ func TestScriptDecodesTypedMaterialAndObjectSpecs(t *testing.T) {
 	if script.Materials[0].Surface.Type != SurfaceLambert {
 		t.Fatalf("surface type = %q", script.Materials[0].Surface.Type)
 	}
-	if len(script.Materials[0].Surface.Albedo) == 0 {
+	lambert, ok := script.Materials[0].Surface.Definition.(*LambertSurfaceSpec)
+	if !ok || len(lambert.Albedo) == 0 {
 		t.Fatal("spectral parameter leaf was not preserved")
 	}
 	if len(script.Objects) != 1 || script.Objects[0].Shape != ShapeSphere {
 		t.Fatalf("unexpected objects: %+v", script.Objects)
 	}
-	if script.Objects[0].R == nil || *script.Objects[0].R != 1 {
-		t.Fatalf("sphere radius = %v", script.Objects[0].R)
+	sphere, ok := script.Objects[0].Definition.(*SphereSpec)
+	if !ok || sphere.R == nil || *sphere.R != 1 {
+		t.Fatalf("sphere definition = %#v", script.Objects[0].Definition)
 	}
 }
 

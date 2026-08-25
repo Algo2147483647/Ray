@@ -100,12 +100,7 @@ func LoadSceneFromScript(script *parser.Script, scene *model.Scene) error {
 			continue
 		}
 
-		itemDef, err := specMap(item)
-		if err != nil {
-			parseErrors = append(parseErrors, fmt.Errorf("%s: %w", objectLabel, err))
-			continue
-		}
-		mediumBoundary, err := parseMediumBoundary(itemDef, mediaRegistry)
+		mediumBoundary, err := parseMediumBoundary(item.MediumBoundary, mediaRegistry)
 		if err != nil {
 			parseErrors = append(parseErrors, fmt.Errorf("%s medium_boundary: %w", objectLabel, err))
 			continue

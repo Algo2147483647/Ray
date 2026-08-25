@@ -4,17 +4,21 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/Algo2147483647/ray/engine/controller/parser"
 	"github.com/Algo2147483647/ray/engine/model/shape"
-	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 )
 
-func parseParametricCurve(objDef map[string]interface{}, dimension int) ([]shape.Shape, error) {
+func parseParametricCurve(spec *parser.ParametricCurveSpec, bounds *parser.BoundsSpec, dimension int) ([]shape.Shape, error) {
 	if dimension != 3 {
 		return nil, fmt.Errorf("shape %q requires scene dimension 3, got %d", ShapeParametricCurve, dimension)
 	}
 
-	curveDef, curveType, err := parametricCurveDefinition(objDef)
+	curveDef, err := decodeRawObject(spec.Curve, "curve")
+	if err != nil {
+		return nil, err
+	}
+	curveType, err := requiredLeafType(curveDef)
 	if err != nil {
 		return nil, err
 	}
@@ -32,21 +36,21 @@ func parseParametricCurve(objDef map[string]interface{}, dimension int) ([]shape
 		return nil, fmt.Errorf("unsupported parametric curve %q", curveType)
 	}
 
-	tRange, err := optionalRange(objDef, "t_range", [2]float64{0, 1})
+	tRange, err := optionalRangeValues(spec.TRange, "t_range", [2]float64{0, 1})
 	if err != nil {
 		return nil, err
 	}
-	function, derivative, radius, err = applyParametricCurvePlacement(function, derivative, radius, objDef, dimension)
+	function, derivative, radius, err = applyParametricCurvePlacement(function, derivative, radius, spec, dimension)
 	if err != nil {
 		return nil, err
 	}
 
 	curve := shape.NewParametricCurve(function, radius, tRange)
 	curve.Derivative = derivative
-	if err := applyParametricCurveOptions(curve, objDef); err != nil {
+	if err := applyParametricCurveOptions(curve, spec); err != nil {
 		return nil, err
 	}
-	return wrapSingleShapeWithBounds(curve, objDef, dimension)
+	return wrapSingleShapeWithBounds(curve, bounds, dimension)
 }
 
 // Parametric curves are represented as capsules, so their circular cross-section
@@ -55,10 +59,10 @@ func applyParametricCurvePlacement(
 	function shape.ParametricCurveFunction,
 	derivative shape.ParametricCurveDerivative,
 	radius shape.ParametricCurveRadius,
-	objDef map[string]interface{},
+	spec *parser.ParametricCurveSpec,
 	dimension int,
 ) (shape.ParametricCurveFunction, shape.ParametricCurveDerivative, shape.ParametricCurveRadius, error) {
-	center, scale, err := parsePolynomialCenterScale(objDef, dimension)
+	center, scale, err := parsePlacement(spec.Center, spec.Scale, dimension)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -96,46 +100,24 @@ func applyParametricCurvePlacement(
 	return placedFunction, placedDerivative, placedRadius, nil
 }
 
-func parametricCurveDefinition(objDef map[string]interface{}) (map[string]interface{}, string, error) {
-	if curveDef, ok, err := utils.OptionalMapField(objDef, "curve"); err != nil {
-		return nil, "", err
-	} else if ok {
-		curveType, err := utils.RequiredStringField(curveDef, "type")
-		if err != nil {
-			return nil, "", err
-		}
-		return curveDef, curveType, nil
-	}
-
-	if _, ok := objDef["function"]; ok {
-		return nil, "", fmt.Errorf(`field "function" is no longer supported; use "curve"`)
-	}
-	return nil, "", fmt.Errorf(`parametric curve requires "curve"`)
-}
-
-func applyParametricCurveOptions(curve *shape.ParametricCurve, objDef map[string]interface{}) error {
-	var err error
-	if curve.Samples, err = optionalPositiveIntField(objDef, "samples", curve.Samples); err != nil {
+func applyParametricCurveOptions(curve *shape.ParametricCurve, spec *parser.ParametricCurveSpec) error {
+	if err := assignPositiveInt("samples", spec.Samples, &curve.Samples); err != nil {
 		return err
 	}
-	if curve.RefineIter, err = optionalPositiveIntField(objDef, "refine_iter", curve.RefineIter); err != nil {
+	if err := assignPositiveInt("refine_iter", spec.RefineIter, &curve.RefineIter); err != nil {
 		return err
 	}
-	if value, ok, err := utils.OptionalFloat64Field(objDef, "derivative_eps"); err != nil {
-		return err
-	} else if ok {
-		if value <= 0 {
+	if spec.DerivativeEps != nil {
+		if *spec.DerivativeEps <= 0 {
 			return fmt.Errorf("derivative_eps must be > 0")
 		}
-		curve.DerivativeEps = value
+		curve.DerivativeEps = *spec.DerivativeEps
 	}
-	if value, ok, err := utils.OptionalFloat64Field(objDef, "bounds_padding"); err != nil {
-		return err
-	} else if ok {
-		if value < 0 {
+	if spec.BoundsPadding != nil {
+		if *spec.BoundsPadding < 0 {
 			return fmt.Errorf("bounds_padding must be >= 0")
 		}
-		curve.BoundsPadding = value
+		curve.BoundsPadding = *spec.BoundsPadding
 	}
 	return nil
 }

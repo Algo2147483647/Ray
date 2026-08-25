@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/binary"
 	"fmt"
+	"math"
 	"os"
 	"strings"
 
@@ -11,7 +12,6 @@ import (
 	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"github.com/Algo2147483647/ray/engine/model/shape"
-	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -36,180 +36,150 @@ const (
 	ShapeSTL                = "stl"
 )
 
-func parseShapeMapInSpace(objDef map[string]interface{}, space geometry.SceneSpace) ([]shape.Shape, error) {
-	dimension := geometry.NewSceneSpace(space.Geometry, space.Dimension).Dimension
-	shapeName, err := utils.RequiredStringField(objDef, "shape")
-	if err != nil {
-		return nil, err
-	}
-	return parseShapeDefinition(shapeName, objDef, space, dimension)
-}
-
-// ParseObjectSpecInSpace is the Engine protocol entry point. The discriminator
-// has already been validated by parser.ObjectSpec; numerical validation stays
-// with the individual shape compiler.
+// ParseObjectSpecInSpace dispatches the already-decoded discriminated union.
+// Each numerical builder receives its concrete spec, never a string-keyed map.
 func ParseObjectSpecInSpace(spec parser.ObjectSpec, space geometry.SceneSpace) ([]shape.Shape, error) {
 	dimension := geometry.NewSceneSpace(space.Geometry, space.Dimension).Dimension
-	objDef, err := specMap(spec)
-	if err != nil {
-		return nil, err
-	}
-	return parseShapeDefinition(string(spec.Shape), objDef, space, dimension)
-}
-
-func parseShapeDefinition(shapeName string, objDef map[string]interface{}, space geometry.SceneSpace, dimension int) ([]shape.Shape, error) {
-
-	switch shapeName {
-	case ShapeCuboid, ShapeHypercuboid:
-		return parseCuboid(objDef, dimension)
-
-	case ShapeSphere, ShapeHypersphere:
-		return parseSphere(objDef, dimension)
-
-	case ShapeCircle:
-		return parseCircle(objDef, dimension)
-
-	case ShapeCylinder, ShapeFiniteCylinder:
-		return parseFiniteCylinder(objDef, dimension)
-
-	case ShapeTriangle:
-		return parseTriangle(objDef, dimension)
-
-	case ShapePlane:
-		return nil, fmt.Errorf("shape %q is declared but not implemented", shapeName)
-
-	case ShapeQuadraticEquation:
-		return parseQuadraticEquation(objDef, dimension)
-
-	case ShapeCubicEquation:
-		return parseCubicEquation(objDef, dimension)
-
-	case ShapeFourOrderEquation:
-		return parseFourOrderEquation(objDef, dimension)
-
-	case ShapeImplicitEquation:
-		return parseImplicitEquation(objDef, dimension)
-
-	case ShapeParametricEquation:
-		return parseParametricEquation(objDef, dimension)
-
-	case ShapeParametricCurve:
-		return parseParametricCurve(objDef, dimension)
-
-	case ShapePolynomialSurface:
-		return parsePolynomialSurface(objDef, dimension)
-
-	case ShapeKleinBottle:
-		return parseKleinBottle4D(objDef, dimension)
-
-	case ShapeSTL:
-		shapes, err := parseShapeForSTLInSpace(objDef, space)
+	switch definition := spec.Definition.(type) {
+	case *parser.CuboidSpec:
+		return parseCuboid(definition, spec.Bounds, dimension)
+	case *parser.SphereSpec:
+		return parseSphere(definition, spec.Bounds, dimension)
+	case *parser.CircleSpec:
+		return parseCircle(definition, spec.Bounds, dimension)
+	case *parser.FiniteCylinderSpec:
+		return parseFiniteCylinder(definition, spec.Bounds, dimension)
+	case *parser.TriangleSpec:
+		return parseTriangle(definition, spec.Bounds, dimension)
+	case *parser.PlaneSpec:
+		return nil, fmt.Errorf("shape %q is declared but not implemented", spec.Shape)
+	case *parser.QuadraticEquationSpec:
+		return parseQuadraticEquation(definition, spec.Bounds, dimension)
+	case *parser.PolynomialEquationSpec:
+		return parsePolynomialEquation(definition, spec.Bounds, spec.Shape, dimension)
+	case *parser.ImplicitEquationSpec:
+		return parseImplicitEquation(definition, spec.Bounds, dimension)
+	case *parser.ParametricEquationSpec:
+		return parseParametricEquation(definition, spec.Bounds, dimension)
+	case *parser.ParametricCurveSpec:
+		return parseParametricCurve(definition, spec.Bounds, dimension)
+	case *parser.PolynomialSurfaceSpec:
+		return parsePolynomialSurface(definition, spec.Bounds, dimension)
+	case *parser.KleinBottleSpec:
+		return parseKleinBottle4D(definition, spec.Bounds, dimension)
+	case *parser.STLSpec:
+		shapes, err := parseShapeForSTLInSpace(definition, space)
 		if err != nil {
 			return nil, err
 		}
-		return wrapShapesWithBounds(shapes, objDef, dimension)
-
+		return wrapShapesWithBounds(shapes, spec.Bounds, dimension)
 	default:
-		return nil, fmt.Errorf("unsupported shape %q", shapeName)
+		return nil, fmt.Errorf("unsupported shape %q", spec.Shape)
 	}
 }
 
-func parseCuboid(objDef map[string]interface{}, dimension int) ([]shape.Shape, error) {
-	pmin, err := utils.RequiredFloat64SliceField(objDef, "pmin", dimension)
+func parseCuboid(spec *parser.CuboidSpec, bounds *parser.BoundsSpec, dimension int) ([]shape.Shape, error) {
+	pmin, err := requiredVector("pmin", spec.PMin, dimension)
 	if err != nil {
 		return nil, err
 	}
-
-	pmax, err := utils.RequiredFloat64SliceField(objDef, "pmax", dimension)
+	pmax, err := requiredVector("pmax", spec.PMax, dimension)
 	if err != nil {
 		return nil, err
 	}
-
-	cuboid := shape.NewCuboid(utils.NewVec(pmin), utils.NewVec(pmax))
-	return wrapSingleShapeWithBounds(cuboid, objDef, dimension)
+	cuboid := shape.NewCuboid(mat.NewVecDense(len(pmin), pmin), mat.NewVecDense(len(pmax), pmax))
+	return wrapSingleShapeWithBounds(cuboid, bounds, dimension)
 }
 
-func parseSphere(objDef map[string]interface{}, dimension int) ([]shape.Shape, error) {
-	center, err := utils.RequiredVec(objDef, "center", dimension)
+func parseSphere(spec *parser.SphereSpec, bounds *parser.BoundsSpec, dimension int) ([]shape.Shape, error) {
+	center, err := requiredVec("center", spec.Center, dimension)
 	if err != nil {
 		return nil, err
 	}
 
-	radius, err := utils.RequiredPositiveFloat(objDef, "r")
+	radius, err := requiredPositive("r", spec.R)
 	if err != nil {
 		return nil, err
 	}
 
 	sphere := shape.NewSphere(center, radius)
-	return wrapSingleShapeWithBounds(sphere, objDef, dimension)
+	return wrapSingleShapeWithBounds(sphere, bounds, dimension)
 }
 
-func parseCircle(objDef map[string]interface{}, dimension int) ([]shape.Shape, error) {
-	center, err := utils.RequiredVec(objDef, "center", dimension)
+func parseCircle(spec *parser.CircleSpec, bounds *parser.BoundsSpec, dimension int) ([]shape.Shape, error) {
+	centerValues := spec.Center
+	if centerValues == nil {
+		centerValues = spec.Position
+	}
+	center, err := requiredVec("center", centerValues, dimension)
 	if err != nil {
 		return nil, err
 	}
 
-	normal, err := utils.RequiredNonZeroVec(objDef, "normal", dimension)
+	normal, err := requiredNonZeroVec("normal", spec.Normal, dimension)
 	if err != nil {
 		return nil, err
 	}
 
-	radius, err := utils.RequiredPositiveFloat(objDef, "r")
+	radius, err := requiredPositive("r", spec.R)
 	if err != nil {
 		return nil, err
 	}
 
 	circle := shape.NewCircle(center, normal, radius)
-	return wrapSingleShapeWithBounds(circle, objDef, dimension)
+	return wrapSingleShapeWithBounds(circle, bounds, dimension)
 }
 
-func parseFiniteCylinder(objDef map[string]interface{}, dimension int) ([]shape.Shape, error) {
-	center, err := utils.RequiredVec(objDef, "center", dimension)
+func parseFiniteCylinder(spec *parser.FiniteCylinderSpec, bounds *parser.BoundsSpec, dimension int) ([]shape.Shape, error) {
+	centerValues := spec.Center
+	if centerValues == nil {
+		centerValues = spec.Position
+	}
+	center, err := requiredVec("center", centerValues, dimension)
 	if err != nil {
 		return nil, err
 	}
 
-	axis, err := utils.RequiredNonZeroVec(objDef, "axis", dimension)
+	axis, err := requiredNonZeroVec("axis", spec.Axis, dimension)
 	if err != nil {
 		return nil, err
 	}
 
-	radius, err := utils.RequiredPositiveFloat(objDef, "r")
+	radius, err := requiredPositive("r", spec.R)
 	if err != nil {
 		return nil, err
 	}
 
-	height, err := utils.RequiredPositiveFloat(objDef, "height")
+	height, err := requiredPositive("height", spec.Height)
 	if err != nil {
 		return nil, err
 	}
 
 	cylinder := shape.NewFiniteCylinder(center, axis, radius, height)
-	return wrapSingleShapeWithBounds(cylinder, objDef, dimension)
+	return wrapSingleShapeWithBounds(cylinder, bounds, dimension)
 }
 
-func parseKleinBottle4D(objDef map[string]interface{}, dimension int) ([]shape.Shape, error) {
+func parseKleinBottle4D(spec *parser.KleinBottleSpec, bounds *parser.BoundsSpec, dimension int) ([]shape.Shape, error) {
 	if dimension != 4 {
 		return nil, fmt.Errorf("shape %q requires scene dimension 4, got %d", ShapeKleinBottle, dimension)
 	}
 
-	center, err := utils.RequiredVec(objDef, "center", dimension)
+	center, err := requiredVec("center", spec.Center, dimension)
 	if err != nil {
 		return nil, err
 	}
 
-	majorR, err := utils.RequiredPositiveFloat(objDef, "r_major")
+	majorR, err := requiredPositive("r_major", spec.RMajor)
 	if err != nil {
 		return nil, err
 	}
 
-	minorR, err := utils.RequiredPositiveFloat(objDef, "r_minor")
+	minorR, err := requiredPositive("r_minor", spec.RMinor)
 	if err != nil {
 		return nil, err
 	}
 
-	thickness, err := utils.RequiredPositiveFloat(objDef, "thickness")
+	thickness, err := requiredPositive("thickness", spec.Thickness)
 	if err != nil {
 		return nil, err
 	}
@@ -219,75 +189,73 @@ func parseKleinBottle4D(objDef map[string]interface{}, dimension int) ([]shape.S
 	}
 
 	klein := shape.NewKleinBottle4D(center, majorR, minorR, thickness)
-	return wrapSingleShapeWithBounds(klein, objDef, dimension)
+	return wrapSingleShapeWithBounds(klein, bounds, dimension)
 }
 
-func parseTriangle(objDef map[string]interface{}, dimension int) ([]shape.Shape, error) {
-	p1, err := utils.RequiredVec(objDef, "p1", dimension)
+func parseTriangle(spec *parser.TriangleSpec, bounds *parser.BoundsSpec, dimension int) ([]shape.Shape, error) {
+	p1, err := requiredVec("p1", spec.P1, dimension)
 	if err != nil {
 		return nil, err
 	}
 
-	p2, err := utils.RequiredVec(objDef, "p2", dimension)
+	p2, err := requiredVec("p2", spec.P2, dimension)
 	if err != nil {
 		return nil, err
 	}
 
-	p3, err := utils.RequiredVec(objDef, "p3", dimension)
+	p3, err := requiredVec("p3", spec.P3, dimension)
 	if err != nil {
 		return nil, err
 	}
 
 	triangle := shape.NewTriangle(p1, p2, p3)
-	return wrapSingleShapeWithBounds(triangle, objDef, dimension)
+	return wrapSingleShapeWithBounds(triangle, bounds, dimension)
 }
 
-func parseQuadraticEquation(objDef map[string]interface{}, dimension int) ([]shape.Shape, error) {
-	a, err := utils.RequiredFloat64SliceField(objDef, "a", 9)
+func parseQuadraticEquation(spec *parser.QuadraticEquationSpec, bounds *parser.BoundsSpec, dimension int) ([]shape.Shape, error) {
+	a, err := requiredVector("a", spec.A, 9)
 	if err != nil {
 		return nil, err
 	}
 
-	b, err := utils.RequiredFloat64SliceField(objDef, "b", dimension)
+	b, err := requiredVector("b", spec.B, dimension)
 	if err != nil {
 		return nil, err
 	}
 
-	c, err := utils.RequiredFloat64Field(objDef, "c")
+	c, err := requiredNumber("c", spec.C)
 	if err != nil {
 		return nil, err
 	}
 
-	equation := shape.NewQuadraticEquation(mat.NewDense(3, 3, a), utils.NewVec(b), c)
-	return wrapSingleShapeWithBounds(equation, objDef, dimension)
+	equation := shape.NewQuadraticEquation(mat.NewDense(3, 3, a), mat.NewVecDense(len(b), b), c)
+	return wrapSingleShapeWithBounds(equation, bounds, dimension)
 }
 
-func parseCubicEquation(objDef map[string]interface{}, dimension int) ([]shape.Shape, error) {
-	a, err := requiredPolynomialCoefficients(objDef, 3)
+func parsePolynomialEquation(spec *parser.PolynomialEquationSpec, bounds *parser.BoundsSpec, kind parser.ShapeKind, dimension int) ([]shape.Shape, error) {
+	order := 3
+	if kind == parser.ShapeFourOrderEquation {
+		order = 4
+	}
+	a, err := requiredPolynomialCoefficientsRaw(spec.A, spec.UpperA, order)
 	if err != nil {
 		return nil, err
 	}
-
-	equation := shape.NewCubicEquation(a)
-	return wrapSingleShapeWithBounds(equation, objDef, dimension)
-}
-
-func parseFourOrderEquation(objDef map[string]interface{}, dimension int) ([]shape.Shape, error) {
-	a, err := requiredPolynomialCoefficients(objDef, 4)
-	if err != nil {
-		return nil, err
+	var equation shape.Shape
+	if order == 3 {
+		equation = shape.NewCubicEquation(a)
+	} else {
+		equation = shape.NewFourOrderEquation(a)
 	}
-
-	equation := shape.NewFourOrderEquation(a)
-	return wrapSingleShapeWithBounds(equation, objDef, dimension)
+	return wrapSingleShapeWithBounds(equation, bounds, dimension)
 }
 
-func wrapSingleShapeWithBounds(s shape.Shape, objDef map[string]interface{}, dimension int) ([]shape.Shape, error) {
-	return wrapShapesWithBounds([]shape.Shape{s}, objDef, dimension)
+func wrapSingleShapeWithBounds(s shape.Shape, bounds *parser.BoundsSpec, dimension int) ([]shape.Shape, error) {
+	return wrapShapesWithBounds([]shape.Shape{s}, bounds, dimension)
 }
 
-func wrapShapesWithBounds(shapes []shape.Shape, objDef map[string]interface{}, dimension int) ([]shape.Shape, error) {
-	bounds, ok, err := parseShapeBounds(objDef, dimension)
+func wrapShapesWithBounds(shapes []shape.Shape, spec *parser.BoundsSpec, dimension int) ([]shape.Shape, error) {
+	bounds, ok, err := parseShapeBounds(spec, dimension)
 	if err != nil || !ok {
 		return shapes, err
 	}
@@ -299,17 +267,15 @@ func wrapShapesWithBounds(shapes []shape.Shape, objDef map[string]interface{}, d
 	return wrapped, nil
 }
 
-func parseShapeBounds(objDef map[string]interface{}, dimension int) (*shape.Cuboid, bool, error) {
-	boundsDef, ok, err := utils.OptionalMapField(objDef, "bounds")
-	if err != nil || !ok {
-		return nil, ok, err
+func parseShapeBounds(spec *parser.BoundsSpec, dimension int) (*shape.Cuboid, bool, error) {
+	if spec == nil {
+		return nil, false, nil
 	}
-
-	pmin, err := utils.RequiredFloat64SliceField(boundsDef, "pmin", dimension)
+	pmin, err := requiredVector("pmin", spec.PMin, dimension)
 	if err != nil {
 		return nil, true, fmt.Errorf("bounds requires pmin+pmax: %w", err)
 	}
-	pmax, err := utils.RequiredFloat64SliceField(boundsDef, "pmax", dimension)
+	pmax, err := requiredVector("pmax", spec.PMax, dimension)
 	if err != nil {
 		return nil, true, fmt.Errorf("bounds requires pmin+pmax: %w", err)
 	}
@@ -331,73 +297,87 @@ func validateBoundsMinMax(pmin, pmax []float64) error {
 	return nil
 }
 
-func parsePolynomialCenterScale(objDef map[string]interface{}, dimension int) ([3]float64, [3]float64, error) {
-	center, hasCenter, err := utils.OptionalFloat64SliceField(objDef, "center", dimension)
-	if err != nil {
-		return [3]float64{}, [3]float64{}, err
+func requiredVector(name string, values []float64, lengths ...int) ([]float64, error) {
+	if values == nil {
+		return nil, fmt.Errorf("missing required field %q", name)
 	}
-
-	scale, err := parsePolynomialScale(objDef, dimension)
-	if err != nil {
-		return [3]float64{}, [3]float64{}, err
+	validLength := len(lengths) == 0
+	for _, length := range lengths {
+		if len(values) == length {
+			validLength = true
+			break
+		}
 	}
-	if err := validatePolynomialScale(scale); err != nil {
-		return [3]float64{}, [3]float64{}, err
+	if !validLength {
+		return nil, fmt.Errorf("field %q: expected length %v, got %d", name, lengths, len(values))
 	}
-	if !hasCenter {
-		center = nil
+	for index, value := range values {
+		if math.IsNaN(value) || math.IsInf(value, 0) {
+			return nil, fmt.Errorf("field %q index %d must be finite", name, index)
+		}
 	}
-	return normalizePolynomialCenterScale(center, scale, dimension)
+	return values, nil
 }
 
-func parsePolynomialScale(objDef map[string]interface{}, dimension int) ([]float64, error) {
-	value, ok := objDef["scale"]
-	if !ok {
-		return nil, nil
-	}
-
-	if values, err := utils.ToFloat64Slice(value); err == nil {
-		if err := utils.RequireSliceLength("scale", values, dimension); err != nil {
-			return nil, err
-		}
-		return values, nil
-	}
-
-	scale, err := utils.RequiredFloat64Field(map[string]interface{}{"scale": value}, "scale")
+func requiredVec(name string, values []float64, dimension int) (*mat.VecDense, error) {
+	values, err := requiredVector(name, values, dimension)
 	if err != nil {
 		return nil, err
 	}
-	return []float64{scale, scale, scale}, nil
+	return mat.NewVecDense(len(values), values), nil
 }
 
-func validatePolynomialScale(scale []float64) error {
-	for i, value := range scale {
-		if value <= 0 {
-			return fmt.Errorf("scale index %d must be > 0", i)
-		}
+func requiredNonZeroVec(name string, values []float64, dimension int) (*mat.VecDense, error) {
+	vector, err := requiredVec(name, values, dimension)
+	if err != nil {
+		return nil, err
 	}
-	return nil
+	if mat.Norm(vector, 2) == 0 {
+		return nil, fmt.Errorf("field %q must be non-zero", name)
+	}
+	return vector, nil
 }
 
-func parseShapeForSTLInSpace(objDef map[string]interface{}, space geometry.SceneSpace) ([]shape.Shape, error) {
+func requiredNumber(name string, value *float64) (float64, error) {
+	if value == nil {
+		return 0, fmt.Errorf("missing required field %q", name)
+	}
+	if math.IsNaN(*value) || math.IsInf(*value, 0) {
+		return 0, fmt.Errorf("field %q must be finite", name)
+	}
+	return *value, nil
+}
+
+func requiredPositive(name string, value *float64) (float64, error) {
+	result, err := requiredNumber(name, value)
+	if err != nil {
+		return 0, err
+	}
+	if result <= 0 {
+		return 0, fmt.Errorf("field %q must be > 0", name)
+	}
+	return result, nil
+}
+
+func parseShapeForSTLInSpace(spec *parser.STLSpec, space geometry.SceneSpace) ([]shape.Shape, error) {
 	dimension := geometry.NewSceneSpace(space.Geometry, space.Dimension).Dimension
-	filePath, err := utils.RequiredStringField(objDef, "file")
+	if spec.File == "" {
+		return nil, fmt.Errorf("missing required field %q", "file")
+	}
+	filePath := spec.File
+	center, err := requiredVector("center", spec.Center, dimension)
 	if err != nil {
 		return nil, err
 	}
-	center, err := utils.RequiredFloat64SliceField(objDef, "center", dimension)
+	zDir, err := requiredVector("z_dir", spec.ZDir, dimension)
 	if err != nil {
 		return nil, err
 	}
-	zDir, err := utils.RequiredFloat64SliceField(objDef, "z_dir", dimension)
+	xDir, err := requiredVector("x_dir", spec.XDir, dimension)
 	if err != nil {
 		return nil, err
 	}
-	xDir, err := utils.RequiredFloat64SliceField(objDef, "x_dir", dimension)
-	if err != nil {
-		return nil, err
-	}
-	scale, err := utils.RequiredFloat64SliceField(objDef, "scale", dimension)
+	scale, err := requiredVector("scale", spec.Scale, dimension)
 	if err != nil {
 		return nil, err
 	}
