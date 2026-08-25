@@ -81,6 +81,15 @@ func TestReadScriptFileRejectsRenderDimension(t *testing.T) {
 	}
 }
 
+func TestReadScriptFileRejectsRemovedSpectrumMode(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "main.json")
+	writeTestScript(t, path, `{"renders":[{"spectrum_mode":"hero_wavelength"}]}`)
+	if _, err := ReadScriptFile(path); err == nil {
+		t.Fatal("expected removed spectrum_mode to be rejected")
+	}
+}
+
 func writeTestScript(t *testing.T, path, data string) {
 	t.Helper()
 	if err := os.WriteFile(path, []byte(data), 0o644); err != nil {

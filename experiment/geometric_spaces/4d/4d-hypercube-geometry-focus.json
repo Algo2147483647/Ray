@@ -119,6 +119,6 @@
     "film_id": "hypercube-focus-film",
     "samples": 160,
     "thread_num": 8,
-    "spectrum_mode": "hero_wavelength"
+    "wavelength_samples": 1
   }
 }

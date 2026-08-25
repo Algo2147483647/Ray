@@ -3,6 +3,9 @@ package factory
 import (
 	"encoding/json"
 	"fmt"
+	"math"
+
+	"github.com/Algo2147483647/ray/engine/utils"
 )
 
 // decodeRawObject is restricted to intentionally polymorphic leaf protocols
@@ -32,5 +35,29 @@ func parsePlacement(center []float64, scaleRaw json.RawMessage, dimension int) (
 			}
 		}
 	}
-	return normalizePolynomialCenterScale(center, scale, dimension)
+	return normalizePlacement(center, scale, dimension)
+}
+
+func normalizePlacement(center, scale []float64, dimension int) ([3]float64, [3]float64, error) {
+	normalizedCenter := [3]float64{}
+	normalizedScale := [3]float64{1, 1, 1}
+
+	if center != nil {
+		if err := utils.RequireSliceLength("center", center, dimension); err != nil {
+			return normalizedCenter, normalizedScale, err
+		}
+		copy(normalizedCenter[:], center)
+	}
+	if scale != nil {
+		if err := utils.RequireSliceLength("scale", scale, dimension); err != nil {
+			return normalizedCenter, normalizedScale, err
+		}
+		for i, value := range scale {
+			if value <= 0 || math.IsNaN(value) || math.IsInf(value, 0) {
+				return normalizedCenter, normalizedScale, fmt.Errorf("scale index %d must be a finite positive number", i)
+			}
+			normalizedScale[i] = value
+		}
+	}
+	return normalizedCenter, normalizedScale, nil
 }

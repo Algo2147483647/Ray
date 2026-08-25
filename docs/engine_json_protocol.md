@@ -93,10 +93,7 @@ Canonical shape fields for normalized engine JSON:
 | `circle` | `center`, `normal`, `r` |
 | `cylinder`, `finite cylinder` | `center`, `axis`, `r`, `height` |
 | `triangle` | `p1`, `p2`, `p3` |
-| `quadratic equation` | `a` length 9, `b` length `dimension`, `c` |
-| `cubic equation` | `a` length 64, or sparse `a`/`A` object |
-| `four-order equation` | `a` length 256, or sparse `a`/`A` object |
-| `polynomial surface` | `mode`, `input_dim`, `degree`, `coefficients` |
+| `polynomial` | `degree`, sparse `terms`, optional `transform` |
 | `implicit equation` | `field`, `bounds` |
 | `parametric equation` | `surface`, `u_range`, `v_range` |
 | `parametric curve` | `curve`, `t_range`, optional `samples` |
@@ -128,24 +125,16 @@ Canonical form:
 Authoring forms such as `bounds.center` + `bounds.size` belong in `studio`.
 Engine JSON must use `bounds.pmin` + `bounds.pmax`.
 
-### Polynomial Equations
+### Polynomial
 
-For cubic and four-order equations, tensor index `0` is the constant factor `1`,
-while `1`, `2`, and `3` are `x`, `y`, and `z`.
-
-`quadratic equation`, `cubic equation`, and `four-order equation` are expected
-to arrive with baked world-space coefficients. `studio` is responsible for
-applying authoring `center`/`scale`/`basis` before invoking `engine`.
-
-### Polynomial Surface
-
-`polynomial surface` is the generic sparse polynomial shape. It represents one
-implicit zero level set `F(x,y,z)=0`.
+`polynomial` represents one implicit zero level set `F(x,y,z)=0`. Every term
+uses three non-negative exponents and one finite coefficient. `degree` must
+equal the highest total degree present in `terms`; duplicate exponent tuples
+are rejected. `transform` is the world-to-local homogeneous transform.
 
 ```json
 {
-  "shape": "polynomial surface",
-  "input_dim": 3,
+  "shape": "polynomial",
   "degree": 2,
   "transform": [
     [1, 0, 0, 0],
@@ -153,16 +142,12 @@ implicit zero level set `F(x,y,z)=0`.
     [0, 0, 1, 0],
     [0, 0, 0, 1]
   ],
-  "coefficients": {
-    "format": "coo",
-    "shape": [3, 3, 3],
-    "terms": [
-      { "index": [2, 0, 0], "value": 1 },
-      { "index": [0, 2, 0], "value": 1 },
-      { "index": [0, 0, 2], "value": 1 },
-      { "index": [0, 0, 0], "value": -1 }
-    ]
-  }
+  "terms": [
+    { "exponents": [2, 0, 0], "coefficient": 1 },
+    { "exponents": [0, 2, 0], "coefficient": 1 },
+    { "exponents": [0, 0, 2], "coefficient": 1 },
+    { "exponents": [0, 0, 0], "coefficient": -1 }
+  ]
 }
 ```
 
@@ -356,10 +341,10 @@ independent of `render.wavelength_samples`.
 longer invents a process-relative output filename.
 
 Render defaults are applied exactly once by `ResolveRenderSpec`: `path`, 20
-camera samples, the available CPU count, and `hero_wavelength` with one
-wavelength sample. In `sampled` mode an omitted `wavelength_samples` resolves to
-four; any explicit positive value is preserved. Runtime renderer and Film
-objects do not apply a second set of render defaults.
+camera samples, the available CPU count, and one wavelength sample. Increasing
+`wavelength_samples` stratifies that many wavelengths per camera sample; there
+is no separate public spectrum mode. Runtime renderer and Film objects do not
+apply a second set of render defaults.
 
 If the scene has no cameras, engine returns an error. Use studio to generate the
 default authoring camera.

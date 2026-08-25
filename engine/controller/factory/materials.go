@@ -289,10 +289,10 @@ func parseEmission(spec *parser.EmissionSpec) (emission.Emitter, error) {
 			return nil, err
 		}
 		field = emission.Constant{Radiance: strength}
-	case *parser.CellPaletteEmissionSpec:
-		field, err = parseCellPaletteEmission(definition)
-	case *parser.UVKleinEmissionSpec:
-		field, err = parseUVKleinEmission(definition)
+	case *parser.NormalPaletteEmissionSpec:
+		field, err = parseNormalPaletteEmission(definition)
+	case *parser.UVHSLEmissionSpec:
+		field, err = parseUVHSLEmission(definition)
 	default:
 		return nil, fmt.Errorf("unsupported emission type %q", spec.Type)
 	}
@@ -349,7 +349,7 @@ func parseEmissionDistribution(spec *parser.EmissionDistributionSpec) (emission.
 	}
 }
 
-func parseUVKleinEmission(spec *parser.UVKleinEmissionSpec) (emission.RadianceField, error) {
+func parseUVHSLEmission(spec *parser.UVHSLEmissionSpec) (emission.RadianceField, error) {
 	saturation := 1.0
 	if spec.Saturation != nil {
 		saturation = *spec.Saturation
@@ -378,11 +378,11 @@ func parseUVKleinEmission(spec *parser.UVKleinEmissionSpec) (emission.RadianceFi
 	if intensity < 0 {
 		return nil, fmt.Errorf("intensity must be >= 0")
 	}
-	return emission.NewUVKlein(saturation, lightness, vStripes, intensity), nil
+	return emission.NewUVHSL(saturation, lightness, vStripes, intensity), nil
 }
 
-func parseCellPaletteEmission(spec *parser.CellPaletteEmissionSpec) (emission.RadianceField, error) {
-	result := emission.NewCellPalette()
+func parseNormalPaletteEmission(spec *parser.NormalPaletteEmissionSpec) (emission.RadianceField, error) {
+	result := emission.NewNormalPalette()
 	if spec.Palette != nil {
 		if len(spec.Palette) == 0 {
 			return nil, fmt.Errorf("palette: must contain at least one color")
@@ -410,30 +410,6 @@ func parseCellPaletteEmission(spec *parser.CellPaletteEmissionSpec) (emission.Ra
 		for index := range result.Palette {
 			result.Palette[index] = result.Palette[index].MulScalar(intensity)
 		}
-	}
-	switch spec.Shading {
-	case "", "solid", "emission":
-		result.Shading = emission.CellPaletteShadingEmission
-	case "boundary_grid", "grid":
-		result.Shading = emission.CellPaletteShadingBoundaryGrid
-	default:
-		return nil, fmt.Errorf("shading must be \"solid\" or \"boundary_grid\", got %q", spec.Shading)
-	}
-	if result.Shading == emission.CellPaletteShadingBoundaryGrid {
-		if spec.GridColor != nil {
-			if len(spec.GridColor) != 3 {
-				return nil, fmt.Errorf("grid_color: expected 3 RGB values")
-			}
-			if err := utils.ValidateNonNegativeSlice("grid_color", spec.GridColor); err != nil {
-				return nil, err
-			}
-			result.GridColor = optics.NewSpectrum(spec.GridColor[0], spec.GridColor[1], spec.GridColor[2])
-		}
-		thickness, err := optionalNonNegative("grid_thickness", spec.GridThickness, 0.02)
-		if err != nil {
-			return nil, err
-		}
-		result.GridThickness = thickness
 	}
 	return result, nil
 }

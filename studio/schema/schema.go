@@ -35,7 +35,6 @@ type StudioRenderScript struct {
 	Samples           int64  `json:"samples"`
 	ThreadNum         int    `json:"thread_num"`
 	FilmID            string `json:"film_id"`
-	SpectrumMode      string `json:"spectrum_mode"`
 	WavelengthSamples int    `json:"wavelength_samples"`
 }
 
@@ -52,9 +51,6 @@ func MergeRenderScripts(base, override StudioRenderScript) StudioRenderScript {
 	if override.FilmID != "" {
 		base.FilmID = override.FilmID
 	}
-	if override.SpectrumMode != "" {
-		base.SpectrumMode = override.SpectrumMode
-	}
 	if override.WavelengthSamples > 0 {
 		base.WavelengthSamples = override.WavelengthSamples
 	}
@@ -63,7 +59,7 @@ func MergeRenderScripts(base, override StudioRenderScript) StudioRenderScript {
 
 func (r *StudioRenderScript) UnmarshalJSON(data []byte) error {
 	type plain StudioRenderScript
-	if err := rejectUnknownFields(data, "render", "integrator", "samples", "thread_num", "film_id", "spectrum_mode", "wavelength_samples"); err != nil {
+	if err := rejectUnknownFields(data, "render", "integrator", "samples", "thread_num", "film_id", "wavelength_samples"); err != nil {
 		return err
 	}
 	if err := json.Unmarshal(data, (*plain)(r)); err != nil {
@@ -77,9 +73,6 @@ func (r *StudioRenderScript) UnmarshalJSON(data []byte) error {
 	}
 	if err := ValidateIntegratorKind(r.Integrator); err != nil {
 		return err
-	}
-	if r.SpectrumMode != "" && r.SpectrumMode != "hero_wavelength" && r.SpectrumMode != "sampled" {
-		return fmt.Errorf("unsupported spectrum_mode %q", r.SpectrumMode)
 	}
 	if r.WavelengthSamples < 0 {
 		return fmt.Errorf("render wavelength_samples must be >= 0")

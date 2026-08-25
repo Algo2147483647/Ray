@@ -28,19 +28,13 @@
         "2,1": [
           {
             "id": "geo-ding-dong-surface-bell-shaped-self-intersecting-cubic",
-            "shape": "cubic equation",
+            "shape": "polynomial",
             "center": [
               0,
               0,
               -0.027
             ],
             "scale": 0.27,
-            "a": {
-              "1,1,0": 1,
-              "2,2,0": 1,
-              "3,3,3": 1,
-              "3,3,0": -1
-            },
             "bounds": {
               "pmin": [
                 -0.243,
@@ -53,7 +47,42 @@
                 0.243
               ]
             },
-            "material_id": "blue-glass"
+            "material_id": "blue-glass",
+            "degree": 3,
+            "terms": [
+              {
+                "exponents": [
+                  2,
+                  0,
+                  0
+                ],
+                "coefficient": 1
+              },
+              {
+                "exponents": [
+                  0,
+                  2,
+                  0
+                ],
+                "coefficient": 1
+              },
+              {
+                "exponents": [
+                  0,
+                  0,
+                  3
+                ],
+                "coefficient": 1
+              },
+              {
+                "exponents": [
+                  0,
+                  0,
+                  2
+                ],
+                "coefficient": -1
+              }
+            ]
           }
         ],
         "2,2": [
@@ -82,13 +111,7 @@
             "objects": [
               {
                 "id": "geo-l4-unit-superellipsoid",
-                "shape": "four-order equation",
-                "a": {
-                  "0, 0, 0, 0": -1,
-                  "1, 1, 1, 1": 1,
-                  "2, 2, 2, 2": 1,
-                  "3, 3, 3, 3": 1
-                },
+                "shape": "polynomial",
                 "center": [
                   0,
                   0,
@@ -106,7 +129,42 @@
                     1.2
                   ]
                 },
-                "material_id": "clear-glass"
+                "material_id": "clear-glass",
+                "degree": 4,
+                "terms": [
+                  {
+                    "exponents": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "coefficient": -1
+                  },
+                  {
+                    "exponents": [
+                      4,
+                      0,
+                      0
+                    ],
+                    "coefficient": 1
+                  },
+                  {
+                    "exponents": [
+                      0,
+                      4,
+                      0
+                    ],
+                    "coefficient": 1
+                  },
+                  {
+                    "exponents": [
+                      0,
+                      0,
+                      4
+                    ],
+                    "coefficient": 1
+                  }
+                ]
               },
               {
                 "id": "geo-matte-amethyst-sphere",
@@ -125,13 +183,7 @@
         "2,4": [
           {
             "id": "geo-roman-surface",
-            "shape": "four-order equation",
-            "a": {
-              "1, 1, 2, 2": 1,
-              "2, 2, 3, 3": 1,
-              "1, 1, 3, 3": 1,
-              "1, 2, 3, 0": -1
-            },
+            "shape": "polynomial",
             "center": [
               0,
               0,
@@ -171,22 +223,48 @@
                 0.4
               ]
             },
-            "material_id": "pale-pink-sheen"
+            "material_id": "pale-pink-sheen",
+            "degree": 4,
+            "terms": [
+              {
+                "exponents": [
+                  2,
+                  2,
+                  0
+                ],
+                "coefficient": 1
+              },
+              {
+                "exponents": [
+                  0,
+                  2,
+                  2
+                ],
+                "coefficient": 1
+              },
+              {
+                "exponents": [
+                  2,
+                  0,
+                  2
+                ],
+                "coefficient": 1
+              },
+              {
+                "exponents": [
+                  1,
+                  1,
+                  1
+                ],
+                "coefficient": -1
+              }
+            ]
           }
         ],
         "2,5": [
           {
             "id": "geo-tanglecube",
-            "shape": "four-order equation",
-            "a": {
-              "0, 0, 0, 0": 11.8,
-              "1, 1, 0, 0": -5,
-              "1, 1, 1, 1": 1,
-              "2, 2, 0, 0": -5,
-              "2, 2, 2, 2": 1,
-              "3, 3, 0, 0": -5,
-              "3, 3, 3, 3": 1
-            },
+            "shape": "polynomial",
             "center": [
               0,
               0,
@@ -209,13 +287,72 @@
                 0.28
               ]
             },
-            "material_id": "plastic-red"
+            "material_id": "plastic-red",
+            "degree": 4,
+            "terms": [
+              {
+                "exponents": [
+                  0,
+                  0,
+                  0
+                ],
+                "coefficient": 11.8
+              },
+              {
+                "exponents": [
+                  2,
+                  0,
+                  0
+                ],
+                "coefficient": -5
+              },
+              {
+                "exponents": [
+                  4,
+                  0,
+                  0
+                ],
+                "coefficient": 1
+              },
+              {
+                "exponents": [
+                  0,
+                  2,
+                  0
+                ],
+                "coefficient": -5
+              },
+              {
+                "exponents": [
+                  0,
+                  4,
+                  0
+                ],
+                "coefficient": 1
+              },
+              {
+                "exponents": [
+                  0,
+                  0,
+                  2
+                ],
+                "coefficient": -5
+              },
+              {
+                "exponents": [
+                  0,
+                  0,
+                  4
+                ],
+                "coefficient": 1
+              }
+            ]
           }
         ],
         "2,6": [
           {
             "id": "geo-dupin-cyclide-equation",
-            "shape": "four-order equation",
+            "shape": "polynomial",
             "center": [
               0,
               0,
@@ -239,22 +376,6 @@
                 0.8660254037844386
               ]
             ],
-            "a": {
-              "0,0,0,0": -0.0241476435720371,
-              "1,0,0,0": -0.526006963093939,
-              "3,3,0,0": 0.7744,
-              "2,2,0,0": -0.968,
-              "1,1,0,0": -0.968000000000004,
-              "1,3,3,0": 1.80048,
-              "1,2,2,0": 1.80048,
-              "1,1,1,0": 1.80048,
-              "3,3,3,3": 3.59631009,
-              "2,2,3,3": 7.19262018,
-              "2,2,2,2": 3.59631009,
-              "1,1,3,3": 7.19262018,
-              "1,1,2,2": 7.19262018,
-              "1,1,1,1": 3.59631009
-            },
             "bounds": {
               "pmin": [
                 -0.32,
@@ -267,13 +388,128 @@
                 0.32
               ]
             },
-            "material_id": "jade-glass"
+            "material_id": "jade-glass",
+            "degree": 4,
+            "terms": [
+              {
+                "exponents": [
+                  0,
+                  0,
+                  0
+                ],
+                "coefficient": -0.0241476435720371
+              },
+              {
+                "exponents": [
+                  1,
+                  0,
+                  0
+                ],
+                "coefficient": -0.526006963093939
+              },
+              {
+                "exponents": [
+                  0,
+                  0,
+                  2
+                ],
+                "coefficient": 0.7744
+              },
+              {
+                "exponents": [
+                  0,
+                  2,
+                  0
+                ],
+                "coefficient": -0.968
+              },
+              {
+                "exponents": [
+                  2,
+                  0,
+                  0
+                ],
+                "coefficient": -0.968000000000004
+              },
+              {
+                "exponents": [
+                  1,
+                  0,
+                  2
+                ],
+                "coefficient": 1.80048
+              },
+              {
+                "exponents": [
+                  1,
+                  2,
+                  0
+                ],
+                "coefficient": 1.80048
+              },
+              {
+                "exponents": [
+                  3,
+                  0,
+                  0
+                ],
+                "coefficient": 1.80048
+              },
+              {
+                "exponents": [
+                  0,
+                  0,
+                  4
+                ],
+                "coefficient": 3.59631009
+              },
+              {
+                "exponents": [
+                  0,
+                  2,
+                  2
+                ],
+                "coefficient": 7.19262018
+              },
+              {
+                "exponents": [
+                  0,
+                  4,
+                  0
+                ],
+                "coefficient": 3.59631009
+              },
+              {
+                "exponents": [
+                  2,
+                  0,
+                  2
+                ],
+                "coefficient": 7.19262018
+              },
+              {
+                "exponents": [
+                  2,
+                  2,
+                  0
+                ],
+                "coefficient": 7.19262018
+              },
+              {
+                "exponents": [
+                  4,
+                  0,
+                  0
+                ],
+                "coefficient": 3.59631009
+              }
+            ]
           }
         ],
         "2,7": [
           {
             "id": "geo-tilted-torus",
-            "shape": "four-order equation",
+            "shape": "polynomial",
             "center": [
               0,
               0,
@@ -301,18 +537,6 @@
                 0.766044443119
               ]
             ],
-            "a": {
-              "0,0,0,0": 0.1521,
-              "1,1,0,0": -1.22,
-              "2,2,0,0": -1.22,
-              "3,3,0,0": 0.78,
-              "1,1,1,1": 1,
-              "2,2,2,2": 1,
-              "3,3,3,3": 1,
-              "1,1,2,2": 2,
-              "1,1,3,3": 2,
-              "2,2,3,3": 2
-            },
             "bounds": {
               "pmin": [
                 -0.243,
@@ -325,7 +549,90 @@
                 0.243
               ]
             },
-            "material_id": "rough-gold"
+            "material_id": "rough-gold",
+            "degree": 4,
+            "terms": [
+              {
+                "exponents": [
+                  0,
+                  0,
+                  0
+                ],
+                "coefficient": 0.1521
+              },
+              {
+                "exponents": [
+                  2,
+                  0,
+                  0
+                ],
+                "coefficient": -1.22
+              },
+              {
+                "exponents": [
+                  0,
+                  2,
+                  0
+                ],
+                "coefficient": -1.22
+              },
+              {
+                "exponents": [
+                  0,
+                  0,
+                  2
+                ],
+                "coefficient": 0.78
+              },
+              {
+                "exponents": [
+                  4,
+                  0,
+                  0
+                ],
+                "coefficient": 1
+              },
+              {
+                "exponents": [
+                  0,
+                  4,
+                  0
+                ],
+                "coefficient": 1
+              },
+              {
+                "exponents": [
+                  0,
+                  0,
+                  4
+                ],
+                "coefficient": 1
+              },
+              {
+                "exponents": [
+                  2,
+                  2,
+                  0
+                ],
+                "coefficient": 2
+              },
+              {
+                "exponents": [
+                  2,
+                  0,
+                  2
+                ],
+                "coefficient": 2
+              },
+              {
+                "exponents": [
+                  0,
+                  2,
+                  2
+                ],
+                "coefficient": 2
+              }
+            ]
           }
         ]
       }

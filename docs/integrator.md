@@ -76,7 +76,6 @@ Each item in top-level `renders` may select:
 - `camera_id`;
 - `samples`;
 - `thread_num`;
-- `spectrum_mode`;
 - `wavelength_samples`.
 
 These values are complete before the Integrator is created. Runtime handlers do

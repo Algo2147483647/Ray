@@ -97,24 +97,7 @@
             "objects": [
               {
                 "id": "geo-vertical-finite-cone-opening-reference",
-                "shape": "quadratic equation",
-                "a": [
-                  1,
-                  0,
-                  0,
-                  0,
-                  1,
-                  0,
-                  0,
-                  0,
-                  -0.28444444444444444
-                ],
-                "b": [
-                  0,
-                  0,
-                  -0.1024
-                ],
-                "c": -0.009216,
+                "shape": "polynomial",
                 "bounds": {
                   "pmin": [
                     -0.192,
@@ -127,7 +110,50 @@
                     0.18
                   ]
                 },
-                "material_id": "rough-gold"
+                "material_id": "rough-gold",
+                "degree": 2,
+                "terms": [
+                  {
+                    "exponents": [
+                      2,
+                      0,
+                      0
+                    ],
+                    "coefficient": 1
+                  },
+                  {
+                    "exponents": [
+                      0,
+                      2,
+                      0
+                    ],
+                    "coefficient": 1
+                  },
+                  {
+                    "exponents": [
+                      0,
+                      0,
+                      2
+                    ],
+                    "coefficient": -0.28444444444444444
+                  },
+                  {
+                    "exponents": [
+                      0,
+                      0,
+                      1
+                    ],
+                    "coefficient": -0.1024
+                  },
+                  {
+                    "exponents": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "coefficient": -0.009216
+                  }
+                ]
               },
               {
                 "id": "geo-vertical-cylinder-high-dispersion-crystal",
@@ -165,29 +191,12 @@
         "6,4": [
           {
             "id": "geo-triaxial-ellipsoid",
-            "shape": "quadratic equation",
+            "shape": "polynomial",
             "center": [
               0,
               0,
               0
             ],
-            "a": [
-              20.66115702479339,
-              0,
-              0,
-              0,
-              51.0204081632653,
-              0,
-              0,
-              0,
-              100
-            ],
-            "b": [
-              0,
-              0,
-              0
-            ],
-            "c": -1,
             "bounds": {
               "pmin": [
                 -0.22,
@@ -200,35 +209,53 @@
                 0.1
               ]
             },
-            "material_id": "blue-glass"
+            "material_id": "blue-glass",
+            "degree": 2,
+            "terms": [
+              {
+                "exponents": [
+                  2,
+                  0,
+                  0
+                ],
+                "coefficient": 20.66115702479339
+              },
+              {
+                "exponents": [
+                  0,
+                  2,
+                  0
+                ],
+                "coefficient": 51.0204081632653
+              },
+              {
+                "exponents": [
+                  0,
+                  0,
+                  2
+                ],
+                "coefficient": 100
+              },
+              {
+                "exponents": [
+                  0,
+                  0,
+                  0
+                ],
+                "coefficient": -1
+              }
+            ]
           }
         ],
         "6,5": [
           {
             "id": "geo-elliptic-paraboloid-quadric",
-            "shape": "quadratic equation",
+            "shape": "polynomial",
             "center": [
               0,
               0,
               0
             ],
-            "a": [
-              30.8641975308642,
-              0,
-              0,
-              0,
-              44.4444444444444,
-              0,
-              0,
-              0,
-              0
-            ],
-            "b": [
-              0,
-              0,
-              -2.777777777778
-            ],
-            "c": -0.500000000001073,
             "bounds": {
               "pmin": [
                 -0.18,
@@ -241,35 +268,53 @@
                 0.18
               ]
             },
-            "material_id": "ceramic-white"
+            "material_id": "ceramic-white",
+            "degree": 2,
+            "terms": [
+              {
+                "exponents": [
+                  2,
+                  0,
+                  0
+                ],
+                "coefficient": 30.8641975308642
+              },
+              {
+                "exponents": [
+                  0,
+                  2,
+                  0
+                ],
+                "coefficient": 44.4444444444444
+              },
+              {
+                "exponents": [
+                  0,
+                  0,
+                  1
+                ],
+                "coefficient": -2.777777777778
+              },
+              {
+                "exponents": [
+                  0,
+                  0,
+                  0
+                ],
+                "coefficient": -0.500000000001073
+              }
+            ]
           }
         ],
         "6,6": [
           {
             "id": "geo-hyperbolic-paraboloid-quadric",
-            "shape": "quadratic equation",
+            "shape": "polynomial",
             "center": [
               0,
               0,
               0
             ],
-            "a": [
-              39.0625,
-              0,
-              0,
-              0,
-              -39.0625,
-              0,
-              0,
-              0,
-              0
-            ],
-            "b": [
-              0,
-              0,
-              -3.571428571429
-            ],
-            "c": 0,
             "bounds": {
               "pmin": [
                 -0.17,
@@ -282,7 +327,34 @@
                 0.16
               ]
             },
-            "material_id": "brushed-aluminum"
+            "material_id": "brushed-aluminum",
+            "degree": 2,
+            "terms": [
+              {
+                "exponents": [
+                  2,
+                  0,
+                  0
+                ],
+                "coefficient": 39.0625
+              },
+              {
+                "exponents": [
+                  0,
+                  2,
+                  0
+                ],
+                "coefficient": -39.0625
+              },
+              {
+                "exponents": [
+                  0,
+                  0,
+                  1
+                ],
+                "coefficient": -3.571428571429
+              }
+            ]
           }
         ],
         "6,7": [
@@ -312,7 +384,7 @@
                 "id": "geo-r6-c7-catenoid",
                 "shape": "implicit equation",
                 "step": 0.01,
-                "value_tol": 1e-06,
+                "value_tol": 0.000001,
                 "material_id": "pale-cyan-catenoid-metal-r6-c7",
                 "field": {
                   "type": "expr",
@@ -329,36 +401,54 @@
               },
               {
                 "id": "geo-r6-c7-hyperboloid-matched-catenoid",
-                "shape": "quadratic equation",
-                "a": [
-                  1,
-                  0,
-                  0,
-                  0,
-                  1,
-                  0,
-                  0,
-                  0,
-                  -1.66
-                ],
-                "b": [
-                  0,
-                  0,
-                  0
-                ],
-                "c": -1,
+                "shape": "polynomial",
                 "material_id": "red-reflective-fine-wire-mesh",
                 "metadata": {
                   "matched_catenoid_a": 0.55,
                   "matched_opening_z": 0.9,
                   "waist_radius": 0.84
-                }
+                },
+                "degree": 2,
+                "terms": [
+                  {
+                    "exponents": [
+                      2,
+                      0,
+                      0
+                    ],
+                    "coefficient": 1
+                  },
+                  {
+                    "exponents": [
+                      0,
+                      2,
+                      0
+                    ],
+                    "coefficient": 1
+                  },
+                  {
+                    "exponents": [
+                      0,
+                      0,
+                      2
+                    ],
+                    "coefficient": -1.66
+                  },
+                  {
+                    "exponents": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "coefficient": -1
+                  }
+                ]
               }
             ],
             "metadata": {
               "source": "geo_example catenoid/hyperboloid group, scaled for matrix cell r6-c7",
               "cell_world_center": [
-                2.0,
+                2,
                 -1.68,
                 3.26
               ],

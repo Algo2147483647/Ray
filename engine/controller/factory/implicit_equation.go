@@ -93,7 +93,7 @@ func buildImplicitField(
 
 func parseImplicitTransform(spec *parser.ImplicitEquationSpec, dimension int) ([4][4]float64, error) {
 	if len(spec.Transform) > 0 {
-		return parsePolynomialSurfaceTransform(spec.Transform)
+		return parsePolynomialTransform(spec.Transform)
 	}
 	center, scale, err := parsePlacement(spec.Center, spec.Scale, dimension)
 	if err != nil {

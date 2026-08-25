@@ -207,231 +207,15 @@ func TestParseShapeInSpaceSupportsConcurrentDimensions(t *testing.T) {
 	}
 }
 
-func TestParseShapeWrapsOptionalBounds(t *testing.T) {
+func TestParseShapePolynomial(t *testing.T) {
 	shapes, err := ParseShape(map[string]interface{}{
-		"shape": "quadratic equation",
-		"a": []interface{}{
-			1, 0, 0,
-			0, 1, 0,
-			0, 0, 1,
-		},
-		"b": []interface{}{0, 0, 0},
-		"c": -1,
-		"bounds": map[string]interface{}{
-			"pmin": []interface{}{-0.5, -0.25, -0.75},
-			"pmax": []interface{}{0.5, 0.25, 0.75},
-		},
-	})
-	if err != nil {
-		t.Fatalf("parse bounded quadratic: %v", err)
-	}
-	if len(shapes) != 1 {
-		t.Fatalf("expected one shape, got %d", len(shapes))
-	}
-	bounded, ok := shapes[0].(*shape.BoundedShape)
-	if !ok {
-		t.Fatalf("expected *shape.BoundedShape, got %T", shapes[0])
-	}
-	if _, ok := bounded.Shape.(*shape.QuadraticEquation); !ok {
-		t.Fatalf("expected bounded quadratic equation, got %T", bounded.Shape)
-	}
-
-	pmin, pmax := bounded.BuildBoundingBox()
-	if pmin.AtVec(0) != -0.5 || pmin.AtVec(2) != -0.75 || pmax.AtVec(0) != 0.5 || pmax.AtVec(2) != 0.75 {
-		t.Fatalf("unexpected bounds: pmin=%v pmax=%v", pmin.RawVector().Data, pmax.RawVector().Data)
-	}
-}
-
-func TestParseShapeCubicEquation(t *testing.T) {
-	coeffs := make([]interface{}, 64)
-	for i := range coeffs {
-		coeffs[i] = 0
-	}
-	coeffs[(1*4+1)*4+1] = 1
-	coeffs[0] = -1
-
-	shapes, err := ParseShape(map[string]interface{}{
-		"shape": "cubic equation",
-		"a":     coeffs,
-	})
-	if err != nil {
-		t.Fatalf("parse cubic equation: %v", err)
-	}
-	if len(shapes) != 1 {
-		t.Fatalf("expected one shape, got %d", len(shapes))
-	}
-	if _, ok := shapes[0].(*shape.CubicEquation); !ok {
-		t.Fatalf("expected *shape.CubicEquation, got %T", shapes[0])
-	}
-}
-
-func TestParseShapeCubicEquationSparseFlatCoefficients(t *testing.T) {
-	shapes, err := ParseShape(map[string]interface{}{
-		"shape": "cubic equation",
-		"A": map[string]interface{}{
-			"21": 1,
-			"0":  -1,
-		},
-	})
-	if err != nil {
-		t.Fatalf("parse sparse cubic equation: %v", err)
-	}
-	cubic, ok := shapes[0].(*shape.CubicEquation)
-	if !ok {
-		t.Fatalf("expected *shape.CubicEquation, got %T", shapes[0])
-	}
-
-	interaction, ok := cubic.IntersectAffine(
-		mat.NewVecDense(3, []float64{0, 0, 0}),
-		mat.NewVecDense(3, []float64{1, 0, 0}),
-		shape.NewIntersectOptions(0, math.MaxFloat64),
-	)
-	if !ok {
-		t.Fatal("expected sparse cubic to hit")
-	}
-	if math.Abs(interaction.Distance-1) > 1e-8 {
-		t.Fatalf("expected hit at distance 1, got %f", interaction.Distance)
-	}
-}
-
-func TestParseShapeFourOrderEquationSparseCoordinateCoefficients(t *testing.T) {
-	shapes, err := ParseShape(map[string]interface{}{
-		"shape": "four-order equation",
-		"a": map[string]interface{}{
-			"1, 1, 1, 1": 1,
-			"1, 1, 1, 0": -12,
-			"1, 1, 0, 0": 54,
-			"1, 0, 0, 0": -108,
-			"0, 0, 0, 0": 80,
-		},
-	})
-	if err != nil {
-		t.Fatalf("parse sparse four-order equation: %v", err)
-	}
-	quartic, ok := shapes[0].(*shape.FourOrderEquation)
-	if !ok {
-		t.Fatalf("expected *shape.FourOrderEquation, got %T", shapes[0])
-	}
-
-	interaction, ok := quartic.IntersectAffine(
-		mat.NewVecDense(3, []float64{0, 0, 0}),
-		mat.NewVecDense(3, []float64{1, 0, 0}),
-		shape.NewIntersectOptions(0, math.MaxFloat64),
-	)
-	if !ok {
-		t.Fatal("expected sparse four-order equation to hit")
-	}
-	if math.Abs(interaction.Distance-2) > 1e-8 {
-		t.Fatalf("expected hit at distance 2, got %f", interaction.Distance)
-	}
-}
-
-func TestParseShapeFourOrderEquationIgnoresAuthoringTransform(t *testing.T) {
-	shapes, err := ParseShape(map[string]interface{}{
-		"shape": "four-order equation",
-		"a": map[string]interface{}{
-			"1, 1, 1, 1": 1,
-			"0, 0, 0, 0": -1,
-		},
-		"center": []interface{}{2, 0, 0},
-		"scale":  []interface{}{3, 1, 1},
-		"basis": []interface{}{
-			[]interface{}{0, 0, 1},
-			[]interface{}{0, 1, 0},
-			[]interface{}{-1, 0, 0},
-		},
-	})
-	if err != nil {
-		t.Fatalf("parse four-order equation basis: %v", err)
-	}
-	quartic, ok := shapes[0].(*shape.FourOrderEquation)
-	if !ok {
-		t.Fatalf("expected *shape.FourOrderEquation, got %T", shapes[0])
-	}
-
-	interaction, ok := quartic.IntersectAffine(
-		mat.NewVecDense(3, []float64{0, 0, 0}),
-		mat.NewVecDense(3, []float64{1, 0, 0}),
-		shape.NewIntersectOptions(0, math.MaxFloat64),
-	)
-	if !ok {
-		t.Fatal("expected canonical four-order equation to hit")
-	}
-	if math.Abs(interaction.Distance-1) > 1e-8 {
-		t.Fatalf("expected hit at distance 1, got %f", interaction.Distance)
-	}
-}
-
-func TestParseShapeRejectsInvalidSparsePolynomialCoefficientKey(t *testing.T) {
-	_, err := ParseShape(map[string]interface{}{
-		"shape": "cubic equation",
-		"a": map[string]interface{}{
-			"8, 4, 5": 123,
-		},
-	})
-	if err == nil {
-		t.Fatal("expected invalid sparse coordinate key to fail")
-	}
-}
-
-func TestParseShapeRejectsDuplicatePolynomialCoefficientFields(t *testing.T) {
-	_, err := ParseShape(map[string]interface{}{
-		"shape": "cubic equation",
-		"a":     map[string]interface{}{"0": -1},
-		"A":     map[string]interface{}{"21": 1},
-	})
-	if err == nil {
-		t.Fatal("expected duplicate coefficient fields to fail")
-	}
-}
-
-func TestParseShapeCubicEquationUsesBakedCoefficientsDirectly(t *testing.T) {
-	coeffs := make([]interface{}, 64)
-	for i := range coeffs {
-		coeffs[i] = 0
-	}
-	coeffs[(1*4+1)*4+1] = 1
-	coeffs[0] = -1
-
-	shapes, err := ParseShape(map[string]interface{}{
-		"shape":  "cubic equation",
-		"a":      coeffs,
-		"center": []interface{}{2, 0, 0},
-		"scale":  3,
-	})
-	if err != nil {
-		t.Fatalf("parse transformed cubic equation: %v", err)
-	}
-	cubic, ok := shapes[0].(*shape.CubicEquation)
-	if !ok {
-		t.Fatalf("expected *shape.CubicEquation, got %T", shapes[0])
-	}
-
-	interaction, ok := cubic.IntersectAffine(
-		mat.NewVecDense(3, []float64{0, 0, 0}),
-		mat.NewVecDense(3, []float64{1, 0, 0}),
-		shape.NewIntersectOptions(0, math.MaxFloat64),
-	)
-	if !ok {
-		t.Fatal("expected cubic to hit")
-	}
-	if math.Abs(interaction.Distance-1) > 1e-8 {
-		t.Fatalf("expected engine to use coefficients directly and hit at x=1, got distance %f", interaction.Distance)
-	}
-}
-
-func TestParseShapePolynomialSurface(t *testing.T) {
-	shapes, err := ParseShape(map[string]interface{}{
-		"shape":     "polynomial surface",
-		"input_dim": 3,
-		"coefficients": map[string]interface{}{
-			"format": "coo",
-			"terms": []interface{}{
-				map[string]interface{}{"index": []interface{}{2, 0, 0}, "value": 1},
-				map[string]interface{}{"index": []interface{}{0, 2, 0}, "value": 1},
-				map[string]interface{}{"index": []interface{}{0, 0, 2}, "value": 1},
-				map[string]interface{}{"index": []interface{}{0, 0, 0}, "value": -1},
-			},
+		"shape":  "polynomial",
+		"degree": 2,
+		"terms": []interface{}{
+			map[string]interface{}{"exponents": []interface{}{2, 0, 0}, "coefficient": 1},
+			map[string]interface{}{"exponents": []interface{}{0, 2, 0}, "coefficient": 1},
+			map[string]interface{}{"exponents": []interface{}{0, 0, 2}, "coefficient": 1},
+			map[string]interface{}{"exponents": []interface{}{0, 0, 0}, "coefficient": -1},
 		},
 		"bounds": map[string]interface{}{
 			"pmin": []interface{}{-1, -1, -1},
@@ -439,7 +223,7 @@ func TestParseShapePolynomialSurface(t *testing.T) {
 		},
 	})
 	if err != nil {
-		t.Fatalf("parse polynomial surface: %v", err)
+		t.Fatalf("parse polynomial: %v", err)
 	}
 	if len(shapes) != 1 {
 		t.Fatalf("expected one shape, got %d", len(shapes))
@@ -447,81 +231,79 @@ func TestParseShapePolynomialSurface(t *testing.T) {
 
 	bounded, ok := shapes[0].(*shape.BoundedShape)
 	if !ok {
-		t.Fatalf("expected bounded polynomial surface, got %T", shapes[0])
+		t.Fatalf("expected bounded polynomial, got %T", shapes[0])
 	}
-	if _, ok := bounded.Shape.(*shape.PolynomialSurface); !ok {
-		t.Fatalf("expected polynomial surface, got %T", bounded.Shape)
+	if _, ok := bounded.Shape.(*shape.Polynomial); !ok {
+		t.Fatalf("expected polynomial, got %T", bounded.Shape)
 	}
 }
 
-func TestParseShapePolynomialSurfaceTransform(t *testing.T) {
+func TestParseShapePolynomialTransform(t *testing.T) {
 	shapes, err := ParseShape(map[string]interface{}{
-		"shape":     "polynomial surface",
-		"input_dim": 3,
+		"shape":  "polynomial",
+		"degree": 1,
 		"transform": []interface{}{
 			[]interface{}{1, 0, 0, 0},
 			[]interface{}{0, math.Sqrt(3) / 2, 0, 0.5},
 			[]interface{}{0, 0, 1, 0},
 			[]interface{}{0, -0.5, 0, math.Sqrt(3) / 2},
 		},
-		"coefficients": map[string]interface{}{
-			"format": "coo",
-			"terms": []interface{}{
-				map[string]interface{}{"index": []interface{}{0, 0, 1}, "value": 1},
-			},
+		"terms": []interface{}{
+			map[string]interface{}{"exponents": []interface{}{0, 0, 1}, "coefficient": 1},
 		},
 		"material_id": "unused",
 	})
 	if err != nil {
-		t.Fatalf("parse polynomial surface basis: %v", err)
+		t.Fatalf("parse polynomial transform: %v", err)
 	}
-	surface, ok := shapes[0].(*shape.PolynomialSurface)
+	surface, ok := shapes[0].(*shape.Polynomial)
 	if !ok {
-		t.Fatalf("expected polynomial surface, got %T", shapes[0])
+		t.Fatalf("expected polynomial, got %T", shapes[0])
 	}
 	if math.Abs(surface.Transform[3][1]+0.5) > 1e-12 {
 		t.Fatalf("expected parsed transform to be preserved, got %v", surface.Transform)
 	}
 }
 
-func TestParseShapeRejectsInvalidPolynomialSurfaceTransform(t *testing.T) {
+func TestParseShapeRejectsInvalidPolynomialTransform(t *testing.T) {
 	_, err := ParseShape(map[string]interface{}{
-		"shape":     "polynomial surface",
-		"input_dim": 3,
+		"shape":  "polynomial",
+		"degree": 1,
 		"transform": []interface{}{
 			[]interface{}{1, 0, 0, 0},
 			[]interface{}{0, 1, 0, 0},
 			[]interface{}{0, 0, 1},
 			[]interface{}{0, 0, 0, 1},
 		},
-		"coefficients": map[string]interface{}{
-			"format": "coo",
-			"terms": []interface{}{
-				map[string]interface{}{"index": []interface{}{0, 0, 1}, "value": 1},
-			},
+		"terms": []interface{}{
+			map[string]interface{}{"exponents": []interface{}{0, 0, 1}, "coefficient": 1},
 		},
 		"material_id": "unused",
 	})
 	if err == nil {
-		t.Fatal("expected non-orthogonal polynomial surface basis to fail")
+		t.Fatal("expected malformed polynomial transform to fail")
 	}
 }
 
-func TestParseShapeRejectsExplicitPolynomialSurfaceMode(t *testing.T) {
+func TestParseShapeRejectsZeroSparsePolynomialTerm(t *testing.T) {
 	_, err := ParseShape(map[string]interface{}{
-		"shape":         "polynomial surface",
-		"mode":          "explicit",
-		"input_dim":     2,
-		"explicit_axis": 2,
-		"coefficients": map[string]interface{}{
-			"format": "coo",
-			"terms": []interface{}{
-				map[string]interface{}{"index": []interface{}{2, 0}, "value": 1},
-			},
+		"shape":  "polynomial",
+		"degree": 1,
+		"terms": []interface{}{
+			map[string]interface{}{"exponents": []interface{}{1, 0, 0}, "coefficient": 0},
 		},
+		"material_id": "unused",
 	})
 	if err == nil {
-		t.Fatal("expected explicit polynomial surface mode to fail")
+		t.Fatal("expected a zero sparse polynomial term to fail")
+	}
+}
+
+func TestParseShapeRejectsLegacyPolynomialKinds(t *testing.T) {
+	for _, kind := range []string{"quadratic equation", "cubic equation", "four-order equation", "polynomial surface"} {
+		if _, err := ParseShape(map[string]interface{}{"shape": kind}); err == nil {
+			t.Fatalf("expected legacy shape %q to fail", kind)
+		}
 	}
 }
 

@@ -131,12 +131,12 @@ func TestMaterialVariantsRejectFieldsFromOtherVariants(t *testing.T) {
 		{"lambert rejects conductor field", `{"type":"lambert","albedo":[1,1,1],"roughness":0.2}`, `unsupported surface field "roughness"`},
 		{"conductor rejects dielectric field", `{"type":"rough_conductor","eta":[1,1,1],"k":[1,1,1],"eta_inside":1.5}`, `unsupported surface field "eta_inside"`},
 		{"constant emission rejects palette", `{"type":"constant","color":[1,1,1],"palette":[[1,0,0]]}`, `unsupported emission field "palette"`},
-		{"palette emission rejects radiance", `{"type":"cell_palette","radiance":[1,1,1]}`, `unsupported emission field "radiance"`},
+		{"normal palette rejects radiance", `{"type":"normal_palette","radiance":[1,1,1]}`, `unsupported emission field "radiance"`},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			var err error
-			if strings.Contains(test.data, `"type":"constant"`) || strings.Contains(test.data, `"type":"cell_palette"`) {
+			if strings.Contains(test.data, `"type":"constant"`) || strings.Contains(test.data, `"type":"normal_palette"`) {
 				var spec EmissionSpec
 				err = json.Unmarshal([]byte(test.data), &spec)
 			} else {
@@ -147,5 +147,14 @@ func TestMaterialVariantsRejectFieldsFromOtherVariants(t *testing.T) {
 				t.Fatalf("error = %v, want %q", err, test.contains)
 			}
 		})
+	}
+}
+
+func TestEmissionSpecRejectsGeometrySpecificLegacyTypes(t *testing.T) {
+	for _, kind := range []string{"cell_palette", "uv_klein"} {
+		var spec EmissionSpec
+		if err := json.Unmarshal([]byte(`{"type":"`+kind+`"}`), &spec); err == nil {
+			t.Fatalf("expected legacy emission type %q to fail", kind)
+		}
 	}
 }

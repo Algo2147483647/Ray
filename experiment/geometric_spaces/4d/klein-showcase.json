@@ -5,7 +5,7 @@
     {
       "id": "klein-showcase-uv",
       "emission": {
-        "type": "uv_klein",
+        "type": "uv_hsl",
         "saturation": 0.96,
         "lightness": 0.6,
         "v_stripes": 2,
@@ -93,6 +93,6 @@
     "film_id": "klein-showcase-film",
     "samples": 128,
     "thread_num": 16,
-    "spectrum_mode": "hero_wavelength"
+    "wavelength_samples": 1
   }
 }

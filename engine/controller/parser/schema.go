@@ -49,7 +49,6 @@ type RenderScript struct {
 	Samples           int64                 `json:"samples"`
 	ThreadNum         int                   `json:"thread_num"`
 	CameraID          string                `json:"camera_id"`
-	SpectrumMode      string                `json:"spectrum_mode"`
 	WavelengthSamples int                   `json:"wavelength_samples"`
 	Film              *modelcamera.FilmSpec `json:"film"`
 	Output            string                `json:"output"`
@@ -62,7 +61,7 @@ func (r *RenderScript) UnmarshalJSON(data []byte) error {
 	}
 	allowed := map[string]bool{
 		"integrator": true, "samples": true, "thread_num": true,
-		"camera_id": true, "spectrum_mode": true, "wavelength_samples": true,
+		"camera_id": true, "wavelength_samples": true,
 		"film": true, "output": true,
 	}
 	for field := range raw {

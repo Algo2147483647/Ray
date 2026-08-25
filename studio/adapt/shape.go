@@ -39,20 +39,19 @@ func adaptObject(object map[string]interface{}, ctx groupContext, index, dimensi
 	case strings.EqualFold(shapeName, "cylinder"),
 		strings.EqualFold(shapeName, "finite cylinder"):
 		return adaptFiniteCylinder(adapted, ctx, dimension)
-	case strings.EqualFold(shapeName, "quadratic equation"):
-		return adaptQuadraticEquation(adapted, ctx, dimension)
-	case strings.EqualFold(shapeName, "cubic equation"):
-		return adaptCubicEquation(adapted, ctx, dimension)
-	case strings.EqualFold(shapeName, "four-order equation"):
-		return adaptFourOrderEquation(adapted, ctx, dimension)
+	case strings.EqualFold(shapeName, "quadratic equation"),
+		strings.EqualFold(shapeName, "cubic equation"),
+		strings.EqualFold(shapeName, "four-order equation"),
+		strings.EqualFold(shapeName, "polynomial surface"):
+		return nil, fmt.Errorf("legacy polynomial shape %q is not supported; use shape %q with degree, terms, and transform", shapeName, "polynomial")
 	case strings.EqualFold(shapeName, "implicit equation"):
 		return adaptImplicitEquation(adapted, ctx, dimension)
 	case strings.EqualFold(shapeName, "parametric equation"):
 		return adaptParametricEquation(adapted, ctx, dimension)
 	case strings.EqualFold(shapeName, "parametric curve"):
 		return adaptParametricCurve(adapted, ctx, dimension)
-	case strings.EqualFold(shapeName, "polynomial surface"):
-		return adaptPolynomialSurface(adapted, ctx, dimension)
+	case strings.EqualFold(shapeName, "polynomial"):
+		return adaptPolynomial(adapted, ctx, dimension)
 	case strings.EqualFold(shapeName, "stl"):
 		return adaptSTL(adapted, ctx, dimension)
 	}
@@ -307,11 +306,10 @@ func adaptSphere(object map[string]interface{}, ctx groupContext, dimension int)
 		return adapted, nil
 	}
 
-	a, b, c := ellipsoidQuadratic(worldCenter, ctx.scale, radius)
-	adapted["shape"] = "quadratic equation"
-	adapted["a"] = a
-	adapted["b"] = b
-	adapted["c"] = c
+	adapted["shape"] = "polynomial"
+	adapted["degree"] = 2
+	adapted["terms"] = spherePolynomialTerms()
+	adapted["transform"] = transformToSlices(spherePolynomialTransform(ctx, center, radius))
 	delete(adapted, "center")
 	delete(adapted, "position")
 	delete(adapted, "r")
@@ -374,116 +372,6 @@ func adaptFiniteCylinder(object map[string]interface{}, ctx groupContext, dimens
 	adapted["r"] = radius * scale
 	adapted["height"] = height * scale
 	delete(adapted, "position")
-	return adapted, nil
-}
-
-func adaptQuadraticEquation(object map[string]interface{}, ctx groupContext, dimension int) (map[string]interface{}, error) {
-	if dimension != 3 {
-		return nil, fmt.Errorf("quadratic equation adapter requires dimension 3, got %d", dimension)
-	}
-
-	localCenter, err := optionalVector(object, "center", dimension, zeroVector(dimension))
-	if err != nil {
-		return nil, err
-	}
-	localScale, err := optionalScale(object, "scale", dimension, unitVector(dimension))
-	if err != nil {
-		return nil, err
-	}
-
-	worldCenter := make([]float64, dimension)
-	worldScale := make([]float64, dimension)
-	for i := 0; i < dimension; i++ {
-		worldCenter[i] = ctx.center[i] + ctx.scale[i]*localCenter[i]
-		worldScale[i] = ctx.scale[i] * localScale[i]
-	}
-
-	a, err := vectorField(object, "a", 9)
-	if err != nil {
-		return nil, err
-	}
-	b, err := vectorField(object, "b", dimension)
-	if err != nil {
-		return nil, err
-	}
-	c, err := floatField(object, "c")
-	if err != nil {
-		return nil, err
-	}
-	worldA, worldB, worldC := bakeQuadraticCoefficients(a, b, c, toArray3(worldCenter), toArray3(worldScale))
-
-	adapted := cloneMap(object)
-	adapted["a"] = worldA
-	adapted["b"] = worldB
-	adapted["c"] = worldC
-	delete(adapted, "center")
-	delete(adapted, "scale")
-	return adapted, nil
-}
-
-func adaptCubicEquation(object map[string]interface{}, ctx groupContext, dimension int) (map[string]interface{}, error) {
-	if dimension != 3 {
-		return nil, fmt.Errorf("cubic equation adapter requires dimension 3, got %d", dimension)
-	}
-
-	localCenter, err := optionalVector(object, "center", dimension, zeroVector(dimension))
-	if err != nil {
-		return nil, err
-	}
-	localScale, err := optionalScale(object, "scale", dimension, unitVector(dimension))
-	if err != nil {
-		return nil, err
-	}
-
-	worldCenter := make([]float64, dimension)
-	worldScale := make([]float64, dimension)
-	for i := 0; i < dimension; i++ {
-		worldCenter[i] = ctx.center[i] + ctx.scale[i]*localCenter[i]
-		worldScale[i] = ctx.scale[i] * localScale[i]
-	}
-
-	coefficients, err := requiredPolynomialCoefficients(object, 3)
-	if err != nil {
-		return nil, err
-	}
-
-	adapted := cloneMap(object)
-	adapted["a"] = bakeCubicCoefficients(coefficients, toArray3(worldCenter), toArray3(worldScale))
-	delete(adapted, "A")
-	delete(adapted, "center")
-	delete(adapted, "scale")
-	return adapted, nil
-}
-
-func adaptFourOrderEquation(object map[string]interface{}, ctx groupContext, dimension int) (map[string]interface{}, error) {
-	if dimension != 3 {
-		return nil, fmt.Errorf("four-order equation adapter requires dimension 3, got %d", dimension)
-	}
-
-	localCenter, err := optionalVector(object, "center", dimension, zeroVector(dimension))
-	if err != nil {
-		return nil, err
-	}
-	localScale, err := optionalScale(object, "scale", dimension, unitVector(dimension))
-	if err != nil {
-		return nil, err
-	}
-	basis, err := optionalBasis(object, dimension)
-	if err != nil {
-		return nil, err
-	}
-
-	coefficients, err := requiredPolynomialCoefficients(object, 4)
-	if err != nil {
-		return nil, err
-	}
-
-	adapted := cloneMap(object)
-	adapted["a"] = bakeFourOrderCoefficients(coefficients, ctx, localCenter, localScale, basis)
-	delete(adapted, "A")
-	delete(adapted, "center")
-	delete(adapted, "scale")
-	delete(adapted, "basis")
 	return adapted, nil
 }
 
@@ -595,9 +483,9 @@ func adaptParametricCurve(object map[string]interface{}, ctx groupContext, dimen
 	return adapted, nil
 }
 
-func adaptPolynomialSurface(object map[string]interface{}, ctx groupContext, dimension int) (map[string]interface{}, error) {
+func adaptPolynomial(object map[string]interface{}, ctx groupContext, dimension int) (map[string]interface{}, error) {
 	if dimension != 3 {
-		return nil, fmt.Errorf("polynomial surface adapter requires dimension 3, got %d", dimension)
+		return nil, fmt.Errorf("polynomial adapter requires dimension 3, got %d", dimension)
 	}
 
 	adapted := cloneMap(object)
@@ -669,16 +557,25 @@ func uniformPlacementScale(ctx groupContext) (float64, bool) {
 	return scale, true
 }
 
-func ellipsoidQuadratic(center, scale []float64, radius float64) ([]float64, []float64, float64) {
-	a := make([]float64, 9)
-	b := make([]float64, 3)
-	c := -1.0
-	for axis := 0; axis < 3; axis++ {
-		axisScale := scale[axis] * radius
-		coefficient := 1 / (axisScale * axisScale)
-		a[axis*3+axis] = coefficient
-		b[axis] = -2 * center[axis] * coefficient
-		c += center[axis] * center[axis] * coefficient
+func spherePolynomialTerms() []map[string]interface{} {
+	return []map[string]interface{}{
+		{"exponents": []int{2, 0, 0}, "coefficient": 1.0},
+		{"exponents": []int{0, 2, 0}, "coefficient": 1.0},
+		{"exponents": []int{0, 0, 2}, "coefficient": 1.0},
+		{"exponents": []int{0, 0, 0}, "coefficient": -1.0},
 	}
-	return a, b, c
+}
+
+func spherePolynomialTransform(ctx groupContext, localCenter []float64, radius float64) [4][4]float64 {
+	worldCenter := applyPlacement(ctx, localCenter)
+	transform := [4][4]float64{{1, 0, 0, 0}}
+	for localAxis := 0; localAxis < 3; localAxis++ {
+		axisScale := ctx.scale[localAxis] * radius
+		for worldAxis := 0; worldAxis < 3; worldAxis++ {
+			coefficient := ctx.basis[worldAxis][localAxis] / axisScale
+			transform[localAxis+1][worldAxis+1] = coefficient
+			transform[localAxis+1][0] -= coefficient * worldCenter[worldAxis]
+		}
+	}
+	return transform
 }

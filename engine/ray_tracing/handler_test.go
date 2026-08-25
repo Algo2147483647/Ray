@@ -4,12 +4,10 @@ import (
 	"testing"
 
 	"github.com/Algo2147483647/ray/engine/maths/geometry"
-	"github.com/Algo2147483647/ray/engine/model/optics"
 )
 
 func TestEffectiveSampleCountUsesWavelengthSubsamples(t *testing.T) {
 	handler := NewHandler(geometry.DefaultSceneSpace())
-	handler.SpectrumMode = optics.SpectrumModeSampledWavelengths
 	handler.WavelengthSamples = 3
 
 	if got := handler.EffectiveSampleCount(10); got != 30 {
@@ -19,7 +17,6 @@ func TestEffectiveSampleCountUsesWavelengthSubsamples(t *testing.T) {
 
 func TestEffectiveSampleCountDoesNotInventWavelengthSubsamples(t *testing.T) {
 	handler := NewHandler(geometry.DefaultSceneSpace())
-	handler.SpectrumMode = optics.SpectrumModeSampledWavelengths
 	handler.WavelengthSamples = 0
 
 	if got := handler.EffectiveSampleCount(10); got != 0 {

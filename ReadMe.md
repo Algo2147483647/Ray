@@ -182,7 +182,7 @@ Scenes are JSON files containing optional media, materials, objects, cameras, an
   ],
   "render": {
     "samples": 64,
-    "spectrum_mode": "hero_wavelength"
+    "wavelength_samples": 1
   }
 }
 ```

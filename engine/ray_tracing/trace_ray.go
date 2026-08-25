@@ -180,13 +180,6 @@ func (h *Handler) prepareSurfaceInteraction(
 		ctx.HitPoint = maths.NewDirectionFromComponents(hit.Point.RawVector().Data)
 	}
 	ctx.UV = hit.UV
-	if obj.Shape != nil {
-		pmin, pmax := obj.Shape.BuildBoundingBox()
-		if pmin != nil && pmax != nil {
-			ctx.HitObjectAABBMin = maths.NewDirectionFromComponents(pmin.RawVector().Data)
-			ctx.HitObjectAABBMax = maths.NewDirectionFromComponents(pmax.RawVector().Data)
-		}
-	}
 
 	prepareMediumContext(&ctx, media, ray, obj.MediumBoundary, hit.FrontFace)
 
@@ -225,11 +218,10 @@ func getMediumRegistry(objTree *object.ObjectTree) *medium.Registry {
 }
 
 func (h *Handler) newShadingContext(ray *optics.Ray) bxdf.ShadingContext {
-	ctx := bxdf.ShadingContext{
-		SpectrumMode: h.SpectrumMode,
-	}
+	ctx := bxdf.ShadingContext{SpectrumMode: optics.SpectrumModeRGB}
 
 	if ray.Path.Wavelength != nil {
+		ctx.SpectrumMode = optics.SpectrumModeSpectral
 		ctx.WavelengthNM = ray.Path.Wavelength.LambdaNM
 		ctx.WavelengthPDF = ray.Path.Wavelength.PDF
 		ctx.WavelengthsNM = []float64{ray.Path.Wavelength.LambdaNM}

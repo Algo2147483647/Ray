@@ -9,32 +9,35 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-type PolynomialSurface struct {
+type Polynomial struct {
 	BaseShape
 	InputDim     int                          // Number of local input coordinates used by the implicit polynomial.
 	Coefficients *maths.SparseTensor[float64] // Sparse polynomial coefficients indexed by exponents.
 	Transform    [4][4]float64                // World-to-local homogeneous transform matrix.
-	Mem          PolynomialSurfaceCalculateStorage
+	Mem          PolynomialCalculateStorage
 }
 
-type PolynomialSurfaceCalculateStorage struct {
-	Degree        int
-	HasOutputAxis bool
-	Terms         []polynomialSurfaceTerm
+type PolynomialCalculateStorage struct {
+	Degree    int
+	Terms     []polynomialTerm
+	Quadratic quadraticPolynomialKernel
 }
 
-type polynomialSurfaceTerm struct {
-	Output    int
+type polynomialTerm struct {
 	Exponents []int
 	Value     float64
 }
 
-func NewPolynomialSurface(
-	inputDim int,
-	coefficients *maths.SparseTensor[float64],
-) *PolynomialSurface {
-	surface := &PolynomialSurface{
-		InputDim:     inputDim,
+type quadraticPolynomialKernel struct {
+	Constant float64
+	Linear   [3]float64
+	Square   [3]float64
+	Cross    [3][3]float64
+}
+
+func NewPolynomial(coefficients *maths.SparseTensor[float64]) *Polynomial {
+	surface := &Polynomial{
+		InputDim:     3,
 		Coefficients: coefficients,
 		Transform:    identityTransform4(),
 	}
@@ -42,18 +45,18 @@ func NewPolynomialSurface(
 	return surface
 }
 
-func (p *PolynomialSurface) RebuildCalculateStorage() {
+func (p *Polynomial) RebuildCalculateStorage() {
 	if p == nil {
 		return
 	}
-	p.Mem = buildPolynomialSurfaceCalculateStorage(p.InputDim, p.Coefficients)
+	p.Mem = buildPolynomialCalculateStorage(p.InputDim, p.Coefficients)
 }
 
-func (p *PolynomialSurface) Name() string {
-	return "Polynomial Surface"
+func (p *Polynomial) Name() string {
+	return "Polynomial"
 }
 
-func (p *PolynomialSurface) IntersectAffine(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
+func (p *Polynomial) IntersectAffine(raySt, rayDir *mat.VecDense, options IntersectOptions) (SurfaceInteraction, bool) {
 	if !options.valid() {
 		return SurfaceInteraction{}, false
 	}
@@ -86,7 +89,7 @@ func (p *PolynomialSurface) IntersectAffine(raySt, rayDir *mat.VecDense, options
 	return newSurfaceInteractionAt(point, bestT, normal), true
 }
 
-func (p *PolynomialSurface) IntersectGeodesic(rayStart, rayDir *mat.VecDense, g geometry.Geometry, options IntersectOptions) (SurfaceInteraction, bool) {
+func (p *Polynomial) IntersectGeodesic(rayStart, rayDir *mat.VecDense, g geometry.Geometry, options IntersectOptions) (SurfaceInteraction, bool) {
 	if !supportsSphericalGeodesic(g, options) {
 		return SurfaceInteraction{}, false
 	}
@@ -102,23 +105,19 @@ func (p *PolynomialSurface) IntersectGeodesic(rayStart, rayDir *mat.VecDense, g 
 	})
 }
 
-func (p *PolynomialSurface) Evaluate(input []float64) float64 {
-	return p.EvaluateOutput(input, 0)
-}
-
-func (p *PolynomialSurface) EvaluateOutput(input []float64, output int) float64 {
+func (p *Polynomial) Evaluate(input []float64) float64 {
 	if p == nil || p.Coefficients == nil || len(input) != p.InputDim {
 		return math.NaN()
 	}
 
 	mem := p.calculateStorage()
+	if mem.Degree <= 2 {
+		return mem.Quadratic.evaluate(input)
+	}
 	powers := precomputePowers(input, mem.Degree)
 	result := 0.0
 
 	for _, polynomialTerm := range mem.Terms {
-		if mem.HasOutputAxis && polynomialTerm.Output != output {
-			continue
-		}
 		term := polynomialTerm.Value
 		for axis, exponent := range polynomialTerm.Exponents {
 			term *= powers[axis][exponent]
@@ -128,23 +127,19 @@ func (p *PolynomialSurface) EvaluateOutput(input []float64, output int) float64 
 	return result
 }
 
-func (p *PolynomialSurface) Gradient(input []float64) []float64 {
-	return p.GradientOutput(input, 0)
-}
-
-func (p *PolynomialSurface) GradientOutput(input []float64, output int) []float64 {
+func (p *Polynomial) Gradient(input []float64) []float64 {
 	gradient := make([]float64, p.InputDim)
 	if p == nil || p.Coefficients == nil || len(input) != p.InputDim {
 		return gradient
 	}
 
 	mem := p.calculateStorage()
+	if mem.Degree <= 2 {
+		return mem.Quadratic.gradient(input)
+	}
 	powers := precomputePowers(input, mem.Degree)
 
 	for _, polynomialTerm := range mem.Terms {
-		if mem.HasOutputAxis && polynomialTerm.Output != output {
-			continue
-		}
 		for derivativeAxis, derivativeExponent := range polynomialTerm.Exponents {
 			if derivativeExponent == 0 {
 				continue
@@ -165,7 +160,7 @@ func (p *PolynomialSurface) GradientOutput(input []float64, output int) []float6
 	return gradient
 }
 
-func (p *PolynomialSurface) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {
+func (p *Polynomial) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {
 	if res == nil || res.Len() != intersect.Len() {
 		res = mat.NewVecDense(intersect.Len(), nil)
 	} else {
@@ -185,28 +180,29 @@ func (p *PolynomialSurface) GetNormalVector(intersect, res *mat.VecDense) *mat.V
 	return maths.Normalize(res)
 }
 
-func (p *PolynomialSurface) BuildBoundingBox() (pmin, pmax *mat.VecDense) {
+func (p *Polynomial) BuildBoundingBox() (pmin, pmax *mat.VecDense) {
 	return p.BaseShape.BuildBoundingBox()
 }
 
-func (p *PolynomialSurface) rayPolynomial(raySt, rayDir *mat.VecDense) ([]float64, error) {
+func (p *Polynomial) rayPolynomial(raySt, rayDir *mat.VecDense) ([]float64, error) {
 	localSt := p.localPoint(raySt)
 	localDir := p.localDirection(rayDir)
 	if p.InputDim > len(localSt) {
-		return nil, fmt.Errorf("%w: polynomial surface dimension mismatch", maths.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: polynomial dimension mismatch", maths.ErrInvalidInput)
 	}
-	ascending := make([]float64, p.calculateStorage().Degree+1)
-	p.addTermsToRayPolynomial(ascending, localSt[:p.InputDim], localDir[:p.InputDim], 0)
+	mem := p.calculateStorage()
+	if mem.Degree <= 2 {
+		return mem.Quadratic.rayPolynomial(localSt[:p.InputDim], localDir[:p.InputDim]), nil
+	}
+	ascending := make([]float64, mem.Degree+1)
+	p.addTermsToRayPolynomial(ascending, localSt[:p.InputDim], localDir[:p.InputDim])
 	return descendingPolynomial(ascending), nil
 }
 
-func (p *PolynomialSurface) addTermsToRayPolynomial(ascending, starts, dirs []float64, output int) {
+func (p *Polynomial) addTermsToRayPolynomial(ascending, starts, dirs []float64) {
 	mem := p.calculateStorage()
 	maxDegree := len(ascending) - 1
 	for _, polynomialTerm := range mem.Terms {
-		if mem.HasOutputAxis && polynomialTerm.Output != output {
-			continue
-		}
 		termPoly := []float64{polynomialTerm.Value}
 		for axis, exponent := range polynomialTerm.Exponents {
 			factor := linearPowerPolynomial(starts[axis], dirs[axis], exponent)
@@ -218,13 +214,13 @@ func (p *PolynomialSurface) addTermsToRayPolynomial(ascending, starts, dirs []fl
 	}
 }
 
-func (p *PolynomialSurface) localSurfaceGradient(local []float64) []float64 {
+func (p *Polynomial) localSurfaceGradient(local []float64) []float64 {
 	return p.Gradient(local[:p.InputDim])
 }
 
-func (p *PolynomialSurface) calculateStorage() PolynomialSurfaceCalculateStorage {
+func (p *Polynomial) calculateStorage() PolynomialCalculateStorage {
 	if p == nil {
-		return PolynomialSurfaceCalculateStorage{}
+		return PolynomialCalculateStorage{}
 	}
 	if p.Mem.Terms == nil && p.Coefficients != nil && p.Coefficients.NNZ() > 0 {
 		p.RebuildCalculateStorage()
@@ -232,27 +228,13 @@ func (p *PolynomialSurface) calculateStorage() PolynomialSurfaceCalculateStorage
 	return p.Mem
 }
 
-func coefficientsHavePolynomialOutputAxis(inputDim int, coefficients *maths.SparseTensor[float64]) bool {
-	if coefficients == nil {
-		return false
-	}
-	return len(coefficients.Shape) == inputDim+1
-}
-
-func buildPolynomialSurfaceCalculateStorage(inputDim int, coefficients *maths.SparseTensor[float64]) PolynomialSurfaceCalculateStorage {
-	mem := PolynomialSurfaceCalculateStorage{
-		HasOutputAxis: coefficientsHavePolynomialOutputAxis(inputDim, coefficients),
-	}
+func buildPolynomialCalculateStorage(inputDim int, coefficients *maths.SparseTensor[float64]) PolynomialCalculateStorage {
+	mem := PolynomialCalculateStorage{}
 	if coefficients == nil {
 		return mem
 	}
 
 	coefficients.IterNonZero(func(index []int, value float64) {
-		output := 0
-		if mem.HasOutputAxis {
-			output = index[0]
-			index = index[1:]
-		}
 		if len(index) != inputDim {
 			return
 		}
@@ -265,16 +247,92 @@ func buildPolynomialSurfaceCalculateStorage(inputDim int, coefficients *maths.Sp
 		if totalDegree > mem.Degree {
 			mem.Degree = totalDegree
 		}
-		mem.Terms = append(mem.Terms, polynomialSurfaceTerm{
-			Output:    output,
+		mem.Terms = append(mem.Terms, polynomialTerm{
 			Exponents: exponents,
 			Value:     value,
 		})
+		if totalDegree <= 2 {
+			mem.Quadratic.add(exponents, value)
+		}
 	})
 	return mem
 }
 
-func (p *PolynomialSurface) localPoint(point *mat.VecDense) []float64 {
+func (q *quadraticPolynomialKernel) add(exponents []int, value float64) {
+	total := exponents[0] + exponents[1] + exponents[2]
+	switch total {
+	case 0:
+		q.Constant += value
+	case 1:
+		for axis, exponent := range exponents {
+			if exponent == 1 {
+				q.Linear[axis] += value
+				return
+			}
+		}
+	case 2:
+		for axis, exponent := range exponents {
+			if exponent == 2 {
+				q.Square[axis] += value
+				return
+			}
+		}
+		for first := 0; first < 3; first++ {
+			for second := first + 1; second < 3; second++ {
+				if exponents[first] == 1 && exponents[second] == 1 {
+					q.Cross[first][second] += value
+					return
+				}
+			}
+		}
+	}
+}
+
+func (q quadraticPolynomialKernel) evaluate(point []float64) float64 {
+	value := q.Constant
+	for axis := 0; axis < 3; axis++ {
+		value += q.Linear[axis]*point[axis] + q.Square[axis]*point[axis]*point[axis]
+		for other := axis + 1; other < 3; other++ {
+			value += q.Cross[axis][other] * point[axis] * point[other]
+		}
+	}
+	return value
+}
+
+func (q quadraticPolynomialKernel) gradient(point []float64) []float64 {
+	gradient := make([]float64, 3)
+	for axis := 0; axis < 3; axis++ {
+		gradient[axis] = q.Linear[axis] + 2*q.Square[axis]*point[axis]
+		for other := 0; other < 3; other++ {
+			if other < axis {
+				gradient[axis] += q.Cross[other][axis] * point[other]
+			} else if other > axis {
+				gradient[axis] += q.Cross[axis][other] * point[other]
+			}
+		}
+	}
+	return gradient
+}
+
+func (q quadraticPolynomialKernel) rayPolynomial(start, direction []float64) []float64 {
+	a, b, c := 0.0, 0.0, q.Constant
+	for axis := 0; axis < 3; axis++ {
+		s, d := start[axis], direction[axis]
+		c += q.Linear[axis]*s + q.Square[axis]*s*s
+		b += q.Linear[axis]*d + 2*q.Square[axis]*s*d
+		a += q.Square[axis] * d * d
+		for other := axis + 1; other < 3; other++ {
+			coefficient := q.Cross[axis][other]
+			so, do := start[other], direction[other]
+			c += coefficient * s * so
+			b += coefficient * (s*do + so*d)
+			a += coefficient * d * do
+		}
+	}
+	return []float64{a, b, c}
+}
+
+func (p *Polynomial) localPoint(point *mat.VecDense) []float64 {
 	local := make([]float64, minInt(point.Len(), 3))
 	for localAxis := range local {
 		local[localAxis] = p.Transform[localAxis+1][0]
@@ -285,7 +343,7 @@ func (p *PolynomialSurface) localPoint(point *mat.VecDense) []float64 {
 	return local
 }
 
-func (p *PolynomialSurface) localDirection(direction *mat.VecDense) []float64 {
+func (p *Polynomial) localDirection(direction *mat.VecDense) []float64 {
 	local := make([]float64, minInt(direction.Len(), 3))
 	for localAxis := range local {
 		for worldAxis := 0; worldAxis < direction.Len() && worldAxis < 3; worldAxis++ {

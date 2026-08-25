@@ -476,189 +476,53 @@ $$
 
 Although this equation admits an analytic trigonometric solution, the current code delegates to the shared scalar scan-and-bisection routine. This capability is reachable only through direct Go construction because scene JSON cannot construct `shape.Plane`.
 
-## Quadratic Surface
+## Polynomial
 
 ### Mathematical Definition
 
-A quadric is the algebraic level set
+Every algebraic surface uses the same sparse three-variable polynomial:
 
 $$
-Q=\left\{x\in\mathbb{R}^3\mid
-F(x)=x^TAx+b^Tx+c=0\right\}.
+F(x,y,z)=\sum_e c_e x^{e_x}y^{e_y}z^{e_z}.
 $$
 
-The symmetric part $(A+A^T)/2$ determines the scalar quadratic form. Depending on its rank, signature, linear term, and constant, the level set can represent ellipsoids, hyperboloids, paraboloids, cones, cylinders, planes, or degenerate unions. Its exact differential is
-
-$$
-\nabla F(x)=(A+A^T)x+b.
-$$
-
-The implementation uses $2Ax+b$, so exact agreement requires symmetric $A$.
-
-### Ray Intersection
-
-Substituting $x=o+td$ produces
-
-$$
-\alpha=d^TAd,
-\qquad
-\beta=o^TAd+d^TAo+b^Td,
-\qquad
-\gamma=o^TAo+b^To+c.
-$$
-
-The real quadratic roots are solved and the nearest root in range is selected. The Spherical path scans the same scalar function along a great circle.
-
-It has no tight intrinsic AABB, so external bounds are strongly recommended.
-
-### Parameters and Schema
-
-- $A\in\mathbb{R}^{3\times3}$ is encoded row-major by exactly nine finite values.
-- $b\in\mathbb{R}^3$ and $c\in\mathbb{R}$.
-- Symmetric $A$ is required for the implemented normal to equal the mathematical gradient.
-- Although `b` is read with length $D$, the fixed $3\times3$ matrix makes safe use three-dimensional.
-
-```jsonc
-{
-  "shape": "quadratic equation",
-  "a": [/* exactly 9 finite numbers, 3 by 3 row-major */],
-  "b": [/* exactly 3 finite numbers in safe use */],
-  "c": "finite number",
-  "bounds": { "pmin": [/* 3 */], "pmax": [/* 3 */] } // strongly recommended
-}
-```
-
-### Spherical Great-Circle Geometry
-
-For a Spherical scene, the code evaluates
-
-$$
-G(s)=\gamma(s)^TA\gamma(s)+b^T\gamma(s)+c,
-\qquad
-\gamma(s)=o\cos s+v\sin s,
-$$
-
-with the shared 2048-segment scalar root scanner and bisection refinement. The implementation does not derive the equivalent trigonometric polynomial analytically. Consequently, tangent or even-multiplicity contacts may be missed when the scan does not land near zero.
-
-## Cubic Algebraic Surface
-
-### Mathematical Definition
-
-Let the factor vector be $f=[1,x,y,z]^T$. The mathematical form is:
-
-$$
-F(x,y,z)=\sum\limits_{i,j,k=0}^{3}A_{ijk}f_if_jf_k.
-$$
-
-Every index is in $[0,3]$. Different tensor permutations may represent the same monomial, so construction merges non-zero entries by their $(x\text{ power},y\text{ power},z\text{ power})$ tuple.
-
-The zero set $F^{-1}(0)$ is a degree-at-most-three algebraic surface. It may be unbounded, disconnected, singular, or reducible. At regular points, the normal direction is $\nabla F/\|\nabla F\|$.
-
-### Ray Intersection
-
-For intersection, the implementation precomputes coefficient tables for powers such as $(o_x+td_x)^k$, accumulates a univariate polynomial of degree at most three, calls the general real polynomial solver, and selects the nearest valid root. The normal is the normalized gradient obtained by differentiating the merged monomials.
-
-There is no Spherical intersection or tight intrinsic AABB.
-
-### Parameters and Schema
-
-- $A\in\mathbb{R}^{4\times4\times4}$ has 64 entries.
-- Dense arrays and sparse objects are accepted.
-- Sparse keys must use either flat indexes `0..63` exclusively or three comma-separated coordinates exclusively; the styles cannot be mixed.
-- Only coordinates $(x,y,z)$ participate in the equation.
-
-```jsonc
-{
-  "shape": "cubic equation",
-  "a": [/* exactly 64 finite numbers */],
-  // "A" may be used instead, but a and A cannot both be present.
-  // A sparse object may use exclusively flat or exclusively "i,j,k" keys.
-  "bounds": { "pmin": [/* D */], "pmax": [/* D */] } // strongly recommended
-}
-```
-
-## Four-order Surface
-
-### Mathematical Definition
-
-Using the same $f=[1,x,y,z]^T$ factor vector:
-
-$$
-F(x,y,z)=\sum\limits_{i,j,k,l=0}^{3}A_{ijkl}f_if_jf_kf_l.
-$$
-
-Index permutations are merged into ordinary monomials with combined exponent tuples.
-
-The zero set is a degree-at-most-four algebraic surface and may contain multiple components, singularities, self-intersections, or repeated factors. At regular points, $\nabla F$ defines its normal.
-
-### Ray Intersection
-
-Substituting $x(t)=o+td$ expands the merged monomials into a univariate polynomial of degree at most four. The implementation solves all real roots, selects the nearest root in range, and evaluates the normalized monomial gradient at the hit.
-
-This type has neither Spherical intersection nor a tight intrinsic AABB.
-
-### Parameters and Schema
-
-- $A\in\mathbb{R}^{4\times4\times4\times4}$ has 256 entries.
-- Sparse flat indexes range from `0` through `255`.
-- Coordinate keys contain exactly four coordinates, each in `[0,3]`.
-- Only $(x,y,z)$ participate. `FourOrder` and `four-order` are source/schema names for a quartic.
-
-```jsonc
-{
-  "shape": "four-order equation",
-  "a": [/* exactly 256 finite numbers */],
-  // "A" may be used instead. A sparse object may use one key style only.
-  "bounds": { "pmin": [/* D */], "pmax": [/* D */] } // strongly recommended
-}
-```
-
-## Polynomial Surface
-
-### Mathematical Definition
-
-Without an output axis, the polynomial is:
-
-$$
-F(q)=\sum\limits_e c_e\prod\limits_i q_i^{e_i}.
-$$
-
-When the index rank is $\mathtt{input\_dim}+1$, the first index is an output channel. Shape intersection uses output channel 0 only. Other channels are stored but do not participate in geometry intersection.
-
-The geometric degree is inferred from the support of the coefficient tensor:
+The declared degree must equal the highest non-zero term degree:
 
 $$
 \deg F=\max_{e:c_e\ne0}\sum\limits_i e_i.
 $$
 
-The zero set may be unbounded, disconnected, singular, or reducible. At every regular point, $\nabla F$ is normal to the hypersurface. Although `input_dim` may be 1 through 3, the current affine-ray integration expects at least three ray coordinates.
+The zero set may be unbounded, disconnected, singular, or reducible. At every regular point, $\nabla F$ is normal to the surface.
 
 ### Ray Intersection
 
-The transform is world-to-local. The local ray origin includes translation, while the local direction uses only the linear part. Every term expands $(q_{0,i}+tq_{d,i})^{e_i}$; polynomial convolution accumulates the final univariate ray polynomial, whose real roots are solved before the nearest valid root is selected. The local polynomial gradient is mapped back with the transpose of the world-to-local linear part.
+The transform is world-to-local. The local ray origin includes translation, while the local direction uses only the linear part. Substitution of the local ray produces a univariate polynomial whose nearest valid real root is selected. The local gradient is mapped back with the transpose of the world-to-local linear part.
+
+The external model is unified, but the numerical kernels remain degree-aware:
+
+- degree 1 and 2 use a cached direct kernel for evaluation, gradient, and the ray coefficients $a t^2+b t+c$;
+- degree 3 and 4 use the shared sparse expansion followed by dedicated cubic and quartic real-root solvers;
+- higher degrees use the general numerical real-root solver.
 
 The Spherical path scans $F(\operatorname{local}(\gamma(s)))$ along a great circle. The Shape's intrinsic AABB is approximately infinite, so external bounds are strongly recommended in practical scenes.
 
 ### Parameters and Schema
 
-- `input_dim` is an integer $d\in\{1,2,3\}$.
-- Each exponent index $e\in\mathbb{N}_0^d$ has a finite coefficient $c_e\in\mathbb{R}$.
-- An optional leading output-channel index is stored, but only channel 0 defines geometry.
-- The `coefficients` wrapper is optional; `format`, `shape`, and `terms` may be top-level.
-- No `degree` field is read. Legacy non-implicit `mode` values and every `explicit_axis` field are rejected.
+- `degree` is a positive integer and must match the greatest exponent sum.
+- `terms` is a non-empty sparse list. Every term has exactly three non-negative exponents and one finite, non-zero coefficient.
+- Duplicate exponent triples and terms above the declared degree are rejected.
+- `transform` is an optional finite world-to-local 4 by 4 matrix; nested rows and flat 16-value encoding are accepted.
 
 ```jsonc
 {
-  "shape": "polynomial surface",
-  "input_dim": "integer in [1,3]",
-  "coefficients": {
-    "format": "hash | coo",                           // optional, default hash
-    "shape": [/* input_dim or input_dim+1 positive integers */], // optional
-    "terms": [{
-      "index": [/* input_dim or input_dim+1 non-negative integers */],
-      "value": "finite number"
-    }]
-  },
+  "shape": "polynomial",
+  "degree": 2,
+  "terms": [
+    { "exponents": [2, 0, 0], "coefficient": 1 },
+    { "exponents": [0, 2, 0], "coefficient": 1 },
+    { "exponents": [0, 0, 2], "coefficient": 1 },
+    { "exponents": [0, 0, 0], "coefficient": -1 }
+  ],
   "transform": [[/* 4 */], [/* 4 */], [/* 4 */], [/* 4 */]], // optional; flat 16 also accepted
   "bounds": { "pmin": [/* D */], "pmax": [/* D */] } // strongly recommended
 }
@@ -674,7 +538,7 @@ $$
 \binom{e_i}{k}q_{0,i}^{e_i-k}q_{d,i}^{k}t^k.
 $$
 
-Polynomial convolution then evaluates the product over coordinates and accumulation over sparse terms. Thus the multivariate level-set equation becomes one exact univariate polynomial in $t$, up to floating-point arithmetic. The solver enumerates its real roots and applies the query interval afterward.
+For degree three and above, polynomial convolution evaluates the product over coordinates and accumulates sparse terms. Thus the multivariate level-set equation becomes one univariate polynomial in $t$, up to floating-point arithmetic. Degree two bypasses that generic expansion with its direct cached kernel.
 
 ### Spherical Great-Circle Geometry
 

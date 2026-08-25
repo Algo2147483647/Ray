@@ -96,7 +96,6 @@ func (h *Handler) Render() *Handler {
 		return h
 	}
 	renderHandler.ThreadNum = h.Context.ThreadNum
-	renderHandler.SpectrumMode = renderSpectrumMode(h.Context.SpectrumMode)
 	renderHandler.WavelengthSamples = h.Context.WavelengthSamples
 	renderHandler.MaxArc = h.Scene.MaxArc
 	if err := renderHandler.TraceScene(

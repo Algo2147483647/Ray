@@ -264,13 +264,28 @@ def cylinder_object(object_id, material_id, start, end, radius):
 
 def ball_object(object_id, material_id, center, intrinsic_radius):
     matrix, linear, constant = hyperbolic_ball(center, intrinsic_radius)
+    terms = {}
+    for row in range(3):
+        for column in range(3):
+            exponents = [0, 0, 0]
+            exponents[row] += 1
+            exponents[column] += 1
+            key = tuple(exponents)
+            terms[key] = terms.get(key, 0.0) + matrix[row * 3 + column]
+        exponents = [0, 0, 0]
+        exponents[row] = 1
+        terms[tuple(exponents)] = terms.get(tuple(exponents), 0.0) + linear[row]
+    terms[(0, 0, 0)] = terms.get((0, 0, 0), 0.0) + constant
     return {
         "id": object_id,
         "material_id": material_id,
-        "shape": "quadratic equation",
-        "a": matrix,
-        "b": linear,
-        "c": constant,
+        "shape": "polynomial",
+        "degree": 2,
+        "terms": [
+            {"exponents": list(exponents), "coefficient": coefficient}
+            for exponents, coefficient in terms.items()
+            if coefficient != 0
+        ],
     }
 
 
@@ -296,15 +311,11 @@ def horizontal_frame_object(obj):
     if result["shape"] == "finite cylinder":
         result["center"] = list(horizontal_frame_point(result["center"]))
         result["axis"] = list(horizontal_frame_point(result["axis"]))
-    elif result["shape"] == "quadratic equation":
+    elif result["shape"] == "polynomial":
         permutation = (1, 2, 0)
-        matrix = result["a"]
-        result["a"] = [
-            matrix[permutation[row] * 3 + permutation[column]]
-            for row in range(3)
-            for column in range(3)
-        ]
-        result["b"] = [result["b"][index] for index in permutation]
+        for term in result["terms"]:
+            old = term["exponents"]
+            term["exponents"] = [old[index] for index in permutation]
     return result
 
 
@@ -603,7 +614,7 @@ def build_scene(width, height, samples):
             "exposure": 1.0,
             "tone_mapping": "aces",
             "gamma": 2.2,
-            "spectrum_mode": "rgb",
+            "wavelength_samples": 1,
             "color_space": "linear_srgb",
         },
         "geometry": {"type": "klein", "max_arc": 0},

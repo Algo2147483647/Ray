@@ -1567,7 +1567,6 @@
     "film_id": "material-benchmark-film",
     "samples": 200,
     "thread_num": 0,
-    "spectrum_mode": "sampled",
     "wavelength_samples": 4
   }
 }

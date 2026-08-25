@@ -30,7 +30,6 @@
     "integrator": "bdpt",
     "samples": 1,
     "thread_num": 16,
-    "spectrum_mode": "sampled",
     "wavelength_samples": 8
   }
 }

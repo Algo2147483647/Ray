@@ -366,7 +366,7 @@ materials. Groups may nest. Studio applies group placement to child geometry and
 flattens every group before engine execution. Primitives that cannot represent
 non-uniform scaling without changing type, such as circles, cylinders, and STL
 meshes, require uniform group scale. In 3D, a non-uniformly scaled sphere is
-converted to an equivalent `quadratic equation` ellipsoid.
+converted to an equivalent degree-two `polynomial` with a world-to-local transform.
 
 Placement composition:
 
@@ -510,38 +510,29 @@ Studio splits the shape along the `p1`-`p3` diagonal into triangles
 fields apply to both triangles, and Engine never receives a `quadrilateral`
 shape.
 
-### Quadratic Equation
+### Polynomial
 
-Authoring input may use local `center` and `scale`:
+All algebraic surfaces use one sparse authoring form:
 
 ```json
 {
-  "shape": "quadratic equation",
-  "a": [1, 0, 0, 0, 1, 0, 0, 0, 1],
-  "b": [0, 0, 0],
-  "c": -1,
+  "shape": "polynomial",
+  "degree": 2,
+  "terms": [
+    { "exponents": [2, 0, 0], "coefficient": 1 },
+    { "exponents": [0, 2, 0], "coefficient": 1 },
+    { "exponents": [0, 0, 2], "coefficient": 1 },
+    { "exponents": [0, 0, 0], "coefficient": -1 }
+  ],
   "center": [2, 0, 0],
   "scale": 3
 }
 ```
 
-Studio bakes the placement into world-space `a`, `b`, and `c`, then removes
-`center` and `scale`.
-
-### Cubic Equation
-
-Authoring input may use local `center`, `scale`, and sparse `A` coefficients.
-Studio resolves coefficients, bakes placement into world-space `a`, and removes
-`A`, `center`, and `scale`.
-
-### Four-Order Equation
-
-Authoring input may use local `center`, `scale`, `basis`, and sparse `A`
-coefficients. Studio resolves coefficients, bakes placement and basis into
-world-space `a`, and removes `A`, `center`, `scale`, and `basis` before calling
-engine.
-
-### Polynomial Surface
+Studio converts `center`, `scale`, and `basis` into the canonical world-to-local
+`transform`, then removes those authoring placement fields. Engine receives only
+`degree`, `terms`, and `transform`. Degrees two through four use specialized
+real-root solvers internally; the public shape does not expose separate variants.
 
 Authoring input may use local `center`, `scale`, and `basis` fields. Studio
 combines them into engine-native `transform`, a 4 x 4 world-to-local homogeneous

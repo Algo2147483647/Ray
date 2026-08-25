@@ -16,7 +16,6 @@ type Handler struct {
 	ThreadNum            int                      `json:"thread_num"`
 	BlockCols            int                      `json:"block_cols"`
 	BlockRows            int                      `json:"block_rows"`
-	SpectrumMode         optics.SpectrumMode      `json:"spectrum_mode"`
 	WavelengthSamples    int                      `json:"wavelength_samples"`
 	WavelengthSampler    optics.WavelengthSampler `json:"-"`
 	RayPool              sync.Pool                `json:"ray_pool"`
@@ -53,9 +52,6 @@ func (h *Handler) wavelengthSampler() optics.WavelengthSampler {
 func (h *Handler) EffectiveSampleCount(cameraSamples int64) int64 {
 	if cameraSamples <= 0 {
 		return 0
-	}
-	if h.SpectrumMode != optics.SpectrumModeSampledWavelengths {
-		return cameraSamples
 	}
 	return cameraSamples * int64(h.WavelengthSamples)
 }

@@ -8,7 +8,7 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-func TestPolynomialSurfaceSphereIntersection(t *testing.T) {
+func TestPolynomialSphereIntersection(t *testing.T) {
 	coefficients, err := maths.NewSparseTensorFromEntries([]int{3, 3, 3}, maths.SparseTensorHash, []maths.SparseTensorEntry[float64]{
 		{Index: []int{2, 0, 0}, Value: 1},
 		{Index: []int{0, 2, 0}, Value: 1},
@@ -19,7 +19,7 @@ func TestPolynomialSurfaceSphereIntersection(t *testing.T) {
 		t.Fatalf("create coefficients: %v", err)
 	}
 
-	surface := NewPolynomialSurface(3, coefficients)
+	surface := NewPolynomial(coefficients)
 	interaction, ok := surface.IntersectAffine(
 		mat.NewVecDense(3, []float64{0, 0, -3}),
 		mat.NewVecDense(3, []float64{0, 0, 1}),
@@ -36,7 +36,37 @@ func TestPolynomialSurfaceSphereIntersection(t *testing.T) {
 	}
 }
 
-func TestPolynomialSurfaceParaboloid(t *testing.T) {
+func TestPolynomialQuadraticFastPathBuildsDirectRayCoefficients(t *testing.T) {
+	coefficients, err := maths.NewSparseTensorFromEntries([]int{3, 3, 3}, maths.SparseTensorHash, []maths.SparseTensorEntry[float64]{
+		{Index: []int{2, 0, 0}, Value: 2},
+		{Index: []int{1, 1, 0}, Value: 3},
+		{Index: []int{0, 0, 1}, Value: 5},
+		{Index: []int{0, 0, 0}, Value: 7},
+	})
+	if err != nil {
+		t.Fatalf("create coefficients: %v", err)
+	}
+
+	surface := NewPolynomial(coefficients)
+	if surface.Mem.Degree != 2 {
+		t.Fatalf("expected degree-2 cached kernel, got degree %d", surface.Mem.Degree)
+	}
+	got, err := surface.rayPolynomial(
+		mat.NewVecDense(3, []float64{1, 2, 3}),
+		mat.NewVecDense(3, []float64{4, 5, 6}),
+	)
+	if err != nil {
+		t.Fatalf("build ray polynomial: %v", err)
+	}
+	want := []float64{92, 85, 30}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("coefficient %d: expected %v, got %v", i, want[i], got[i])
+		}
+	}
+}
+
+func TestPolynomialParaboloid(t *testing.T) {
 	coefficients, err := maths.NewSparseTensorFromEntries([]int{3, 3, 2}, maths.SparseTensorHash, []maths.SparseTensorEntry[float64]{
 		{Index: []int{2, 0, 0}, Value: 1},
 		{Index: []int{0, 2, 0}, Value: 1},
@@ -46,7 +76,7 @@ func TestPolynomialSurfaceParaboloid(t *testing.T) {
 		t.Fatalf("create coefficients: %v", err)
 	}
 
-	surface := NewPolynomialSurface(3, coefficients)
+	surface := NewPolynomial(coefficients)
 	if got := surface.Evaluate([]float64{2, 3, 13}); got != 0 {
 		t.Fatalf("expected polynomial value 0, got %v", got)
 	}
@@ -62,14 +92,14 @@ func TestPolynomialSurfaceParaboloid(t *testing.T) {
 		NewIntersectOptions(0, 10),
 	)
 	if !ok {
-		t.Fatal("expected ray to hit polynomial surface")
+		t.Fatal("expected ray to hit polynomial")
 	}
 	if math.Abs(interaction.Distance-3) > 1e-9 {
 		t.Fatalf("expected distance 3, got %.12f", interaction.Distance)
 	}
 }
 
-func TestPolynomialSurfaceTransformRotatesImplicitSurface(t *testing.T) {
+func TestPolynomialTransformRotatesImplicitSurface(t *testing.T) {
 	coefficients, err := maths.NewSparseTensorFromEntries([]int{2, 2, 2}, maths.SparseTensorHash, []maths.SparseTensorEntry[float64]{
 		{Index: []int{0, 0, 1}, Value: 1},
 	})
@@ -77,7 +107,7 @@ func TestPolynomialSurfaceTransformRotatesImplicitSurface(t *testing.T) {
 		t.Fatalf("create coefficients: %v", err)
 	}
 
-	surface := NewPolynomialSurface(3, coefficients)
+	surface := NewPolynomial(coefficients)
 	surface.Transform = [4][4]float64{
 		{1, 0, 0, 0},
 		{0, math.Sqrt(3) / 2, 0, 0.5},
@@ -109,31 +139,28 @@ func TestPolynomialSurfaceTransformRotatesImplicitSurface(t *testing.T) {
 	}
 }
 
-func TestPolynomialSurfaceCalculateStorageCachesTerms(t *testing.T) {
-	coefficients, err := maths.NewSparseTensorFromEntries([]int{2, 4, 3}, maths.SparseTensorHash, []maths.SparseTensorEntry[float64]{
+func TestPolynomialCalculateStorageCachesTerms(t *testing.T) {
+	coefficients, err := maths.NewSparseTensorFromEntries([]int{4, 4, 4}, maths.SparseTensorHash, []maths.SparseTensorEntry[float64]{
 		{Index: []int{0, 3, 0}, Value: 2},
-		{Index: []int{1, 1, 2}, Value: 5},
+		{Index: []int{1, 0, 2}, Value: 5},
 	})
 	if err != nil {
 		t.Fatalf("create coefficients: %v", err)
 	}
 
-	surface := NewPolynomialSurface(2, coefficients)
-	if !surface.Mem.HasOutputAxis {
-		t.Fatal("expected output axis to be cached")
-	}
+	surface := NewPolynomial(coefficients)
 	if surface.Mem.Degree != 3 {
 		t.Fatalf("expected cached degree 3, got %d", surface.Mem.Degree)
 	}
 	if len(surface.Mem.Terms) != 2 {
 		t.Fatalf("expected two cached terms, got %d", len(surface.Mem.Terms))
 	}
-	if got := surface.EvaluateOutput([]float64{2, 3}, 1); got != 90 {
-		t.Fatalf("expected output 1 value 90, got %v", got)
+	if got := surface.Evaluate([]float64{2, 3, 4}); got != 214 {
+		t.Fatalf("expected polynomial value 214, got %v", got)
 	}
 }
 
-func TestPolynomialSurfaceTaubinHeartRayPolynomialMatchesEvaluation(t *testing.T) {
+func TestPolynomialTaubinHeartRayPolynomialMatchesEvaluation(t *testing.T) {
 	surface := newTaubinHeartSurface(t)
 
 	rays := []struct {
@@ -177,7 +204,7 @@ func TestPolynomialSurfaceTaubinHeartRayPolynomialMatchesEvaluation(t *testing.T
 	}
 }
 
-func TestPolynomialSurfaceTaubinHeartIntersection(t *testing.T) {
+func TestPolynomialTaubinHeartIntersection(t *testing.T) {
 	surface := newTaubinHeartSurface(t)
 
 	interaction, ok := surface.IntersectAffine(
@@ -202,7 +229,7 @@ func TestPolynomialSurfaceTaubinHeartIntersection(t *testing.T) {
 	}
 }
 
-func newTaubinHeartSurface(t *testing.T) *PolynomialSurface {
+func newTaubinHeartSurface(t *testing.T) *Polynomial {
 	t.Helper()
 
 	terms := map[[3]int]float64{}
@@ -235,7 +262,7 @@ func newTaubinHeartSurface(t *testing.T) *PolynomialSurface {
 	if err != nil {
 		t.Fatalf("create Taubin heart coefficients: %v", err)
 	}
-	return NewPolynomialSurface(3, coefficients)
+	return NewPolynomial(coefficients)
 }
 
 func multiplyTermMaps(a, b map[[3]int]float64) map[[3]int]float64 {

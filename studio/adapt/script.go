@@ -79,9 +79,6 @@ func renderToMap(script *schema.StudioScript, render schema.StudioRenderScript, 
 		PixelWindows:     clonePixelWindows(film.PixelWindows),
 	}
 	result["output"] = film.OutputFilm
-	if render.SpectrumMode != "" {
-		result["spectrum_mode"] = render.SpectrumMode
-	}
 	if render.WavelengthSamples > 0 {
 		result["wavelength_samples"] = render.WavelengthSamples
 	}

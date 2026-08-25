@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	defaultSamples                = int64(20)
-	defaultSampledWavelengthCount = 4
+	defaultSamples               = int64(20)
+	defaultWavelengthSampleCount = 1
 )
 
 type RenderContext struct {
@@ -23,7 +23,6 @@ type RenderContext struct {
 	Samples           int64
 	Output            string
 	Film              *camera.Film
-	SpectrumMode      string
 	WavelengthSamples int
 }
 
@@ -36,7 +35,6 @@ func ResolveRenderSpec(render parser.RenderScript) (RenderContext, error) {
 		CameraID:          render.CameraID,
 		ThreadNum:         render.ThreadNum,
 		Samples:           render.Samples,
-		SpectrumMode:      render.SpectrumMode,
 		WavelengthSamples: render.WavelengthSamples,
 		Output:            render.Output,
 	}
@@ -87,18 +85,8 @@ func ResolveRenderSpec(render parser.RenderScript) (RenderContext, error) {
 	if resolved.Samples <= 0 {
 		resolved.Samples = defaultSamples
 	}
-	if resolved.SpectrumMode == "" {
-		resolved.SpectrumMode = "hero_wavelength"
-	}
-	switch resolved.SpectrumMode {
-	case "hero_wavelength":
-		resolved.WavelengthSamples = 1
-	case "sampled":
-		if resolved.WavelengthSamples <= 0 {
-			resolved.WavelengthSamples = defaultSampledWavelengthCount
-		}
-	default:
-		return RenderContext{}, fmt.Errorf("unsupported spectrum_mode %q", resolved.SpectrumMode)
+	if resolved.WavelengthSamples <= 0 {
+		resolved.WavelengthSamples = defaultWavelengthSampleCount
 	}
 	return resolved, nil
 }
@@ -130,15 +118,4 @@ func (h *Handler) ConfigureRenderContext(context RenderContext) *Handler {
 	h.Target = model.RenderTarget{Camera: renderCamera, Film: context.Film, Output: context.Output}
 	h.Context = context
 	return h
-}
-
-func renderSpectrumMode(value string) optics.SpectrumMode {
-	switch value {
-	case "sampled":
-		return optics.SpectrumModeSampledWavelengths
-	case "hero_wavelength":
-		return optics.SpectrumModeHeroWavelength
-	default:
-		panic("unresolved spectrum mode")
-	}
 }

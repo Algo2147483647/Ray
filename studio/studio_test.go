@@ -164,10 +164,9 @@ func TestStudioExpandsLegacyRenderDefaultsIntoEveryEngineJob(t *testing.T) {
 	}
 }
 
-func TestStudioPreservesExplicitSampledWavelengthCount(t *testing.T) {
+func TestStudioPreservesExplicitWavelengthCount(t *testing.T) {
 	adapted, err := adaptTestScript(&schema.StudioScript{
 		Render: schema.StudioRenderScript{
-			SpectrumMode:      "sampled",
 			WavelengthSamples: 1,
 		},
 	}, []string{"scene.json"}, 3)
@@ -179,13 +178,11 @@ func TestStudioPreservesExplicitSampledWavelengthCount(t *testing.T) {
 	}
 }
 
-func TestStudioPreservesExplicitSampledWavelengthCountAfterCLIOverrides(t *testing.T) {
+func TestStudioPreservesExplicitWavelengthCountAfterCLIOverrides(t *testing.T) {
 	config := studioConfig{
 		provided: map[string]bool{
-			"spectrum-mode":      true,
 			"wavelength-samples": true,
 		},
-		spectrumMode:      "sampled",
 		wavelengthSamples: 1,
 	}
 	intermediate := &schema.IntermediateScript{Renders: []map[string]interface{}{{}}}
@@ -272,8 +269,12 @@ func TestFlattenNestedGroupAndInheritFields(t *testing.T) {
 						"objects": []interface{}{
 							map[string]interface{}{
 								"id":     "surface",
-								"shape":  "cubic equation",
-								"a":      unitCubicCoefficients(),
+								"shape":  "polynomial",
+								"degree": 3,
+								"terms": []interface{}{
+									map[string]interface{}{"exponents": []interface{}{3, 0, 0}, "coefficient": 1},
+									map[string]interface{}{"exponents": []interface{}{0, 0, 0}, "coefficient": -1},
+								},
 								"center": []interface{}{0, 0, 0},
 								"scale":  1,
 							},
@@ -297,26 +298,25 @@ func TestFlattenNestedGroupAndInheritFields(t *testing.T) {
 		t.Fatalf("expected two flattened objects, got %d", len(adapted.Objects))
 	}
 
-	cubic := adapted.Objects[0]
-	if cubic["id"] != "outer/inner/surface" {
-		t.Fatalf("unexpected cubic id: %v", cubic["id"])
+	polynomial := adapted.Objects[0]
+	if polynomial["id"] != "outer/inner/surface" {
+		t.Fatalf("unexpected polynomial id: %v", polynomial["id"])
 	}
-	if cubic["material_id"] != "glass" {
-		t.Fatalf("expected inherited material_id, got %v", cubic["material_id"])
+	if polynomial["material_id"] != "glass" {
+		t.Fatalf("expected inherited material_id, got %v", polynomial["material_id"])
 	}
-	if _, ok := cubic["center"]; ok {
-		t.Fatal("cubic intermediate object should not keep center")
+	if _, ok := polynomial["center"]; ok {
+		t.Fatal("polynomial intermediate object should not keep center")
 	}
-	if _, ok := cubic["scale"]; ok {
-		t.Fatal("cubic intermediate object should not keep scale")
+	if _, ok := polynomial["scale"]; ok {
+		t.Fatal("polynomial intermediate object should not keep scale")
 	}
-	coefficients, ok := cubic["a"].([]float64)
+	transform, ok := polynomial["transform"].([][]float64)
 	if !ok {
-		t.Fatalf("expected baked coefficients, got %T", cubic["a"])
+		t.Fatalf("expected polynomial transform, got %T", polynomial["transform"])
 	}
-	if math.Abs(coefficients[0]+152.0/27.0) > 1e-10 {
-		t.Fatalf("expected baked constant -152/27, got %f", coefficients[0])
-	}
+	assertFloatSlice(t, transform[1], []float64{-5.0 / 3.0, 1.0 / 3.0, 0, 0})
+	assertFloatSlice(t, transform[2], []float64{0, 0, 1.0 / 6.0, 0})
 
 	sphere := adapted.Objects[1]
 	if sphere["id"] != "outer/inner/marker" {
@@ -1261,7 +1261,6 @@ func TestStudioEmbedsRenderOverridesInIntermediateScript(t *testing.T) {
 			"threads":            true,
 			"samples":            true,
 			"output-film":        true,
-			"spectrum-mode":      true,
 			"wavelength-samples": true,
 		},
 		integrator:        "bdpt",
@@ -1269,7 +1268,6 @@ func TestStudioEmbedsRenderOverridesInIntermediateScript(t *testing.T) {
 		threadNum:         6,
 		samples:           48,
 		outputFilm:        "override.bin",
-		spectrumMode:      "sampled",
 		wavelengthSamples: 8,
 	}
 	intermediate := &schema.IntermediateScript{
@@ -1282,7 +1280,7 @@ func TestStudioEmbedsRenderOverridesInIntermediateScript(t *testing.T) {
 	render := intermediate.Renders[0]
 	if render["integrator"] != "bdpt" || render["camera_id"] != "camera-override" ||
 		render["thread_num"] != 6 || render["samples"] != int64(48) ||
-		render["spectrum_mode"] != "sampled" || render["wavelength_samples"] != 8 {
+		render["wavelength_samples"] != 8 {
 		t.Fatalf("render overrides were not embedded in JSON: %v", render)
 	}
 	if intermediate.Renders[0]["output"] != "override.bin" {
@@ -1355,19 +1353,19 @@ func intermediateRenderFilm(t testing.TB, script *schema.IntermediateScript, ind
 	return film
 }
 
-func TestStudioOwnsLatestColorAndSpectrumCLI(t *testing.T) {
-	config, err := parseStudioConfig([]string{"--color-space", "acescg", "--spectrum-mode", "sampled"})
+func TestStudioOwnsColorAndWavelengthSampleCLI(t *testing.T) {
+	config, err := parseStudioConfig([]string{"--color-space", "acescg", "--wavelength-samples", "4"})
 	if err != nil {
 		t.Fatalf("parse Studio color pipeline: %v", err)
 	}
-	if config.colorSpace != "acescg" || config.spectrumMode != "sampled" {
+	if config.colorSpace != "acescg" || config.wavelengthSamples != 4 {
 		t.Fatalf("unexpected Studio color pipeline: %+v", config)
 	}
 	if _, err := parseStudioConfig([]string{"--working-space", "acescg"}); err == nil {
 		t.Fatal("expected removed working-space alias to fail")
 	}
-	if _, err := parseStudioConfig([]string{"--spectrum-mode", "rgb"}); err == nil {
-		t.Fatal("expected removed RGB Film mode to fail")
+	if _, err := parseStudioConfig([]string{"--spectrum-mode", "sampled"}); err == nil {
+		t.Fatal("expected removed spectrum-mode flag to fail")
 	}
 }
 
@@ -1591,53 +1589,25 @@ func TestStudioRejectsUnequalHypercubeExtents(t *testing.T) {
 	}
 }
 
-func TestStudioAdaptsQuadraticCenterScaleToWorldCoefficients(t *testing.T) {
-	script := &schema.StudioScript{
-		Objects: []map[string]interface{}{
-			{
-				"id":     "quad",
-				"shape":  "quadratic equation",
-				"a":      []interface{}{1, 0, 0, 0, 0, 0, 0, 0, 0},
-				"b":      []interface{}{0, 0, 0},
-				"c":      -1,
-				"center": []interface{}{2, 0, 0},
-				"scale":  3,
-			},
-		},
-	}
-
-	adapted, err := adaptTestScript(script, []string{"scene.json"}, 3)
-	if err != nil {
-		t.Fatalf("adapt quadratic: %v", err)
-	}
-	quadratic := adapted.Objects[0]
-	a := mustFloatSlice(t, quadratic["a"])
-	b := mustFloatSlice(t, quadratic["b"])
-	c, ok := quadratic["c"].(float64)
-	if !ok {
-		t.Fatalf("expected quadratic c float64, got %T", quadratic["c"])
-	}
-	if math.Abs(a[0]-1.0/9.0) > 1e-10 || math.Abs(b[0]+4.0/9.0) > 1e-10 || math.Abs(c+5.0/9.0) > 1e-10 {
-		t.Fatalf("unexpected baked quadratic coefficients: a=%v b=%v c=%v", a, b, c)
-	}
-	if _, ok := quadratic["center"]; ok {
-		t.Fatal("quadratic intermediate object should not keep center")
-	}
-	if _, ok := quadratic["scale"]; ok {
-		t.Fatal("quadratic intermediate object should not keep scale")
+func TestStudioRejectsLegacyPolynomialShapeKinds(t *testing.T) {
+	for _, kind := range []string{"quadratic equation", "cubic equation", "four-order equation", "polynomial surface"} {
+		script := &schema.StudioScript{Objects: []map[string]interface{}{{"id": "legacy", "shape": kind}}}
+		if _, err := adaptTestScript(script, []string{"scene.json"}, 3); err == nil {
+			t.Fatalf("expected legacy polynomial shape %q to fail", kind)
+		}
 	}
 }
 
-func TestStudioAdaptsFourOrderCenterScaleBasisToWorldCoefficients(t *testing.T) {
+func TestStudioAdaptsPolynomialCenterScaleBasisToTransform(t *testing.T) {
 	script := &schema.StudioScript{
 		Objects: []map[string]interface{}{
 			{
-				"id":    "quartic",
-				"shape": "four-order equation",
-				"a": fourOrderCoefficients(map[[4]int]float64{
-					[4]int{1, 1, 1, 1}: 1,
-					[4]int{0, 0, 0, 0}: -1,
-				}),
+				"id":     "surface",
+				"shape":  "polynomial",
+				"degree": 1,
+				"terms": []interface{}{
+					map[string]interface{}{"exponents": []interface{}{0, 0, 1}, "coefficient": 1},
+				},
 				"center": []interface{}{2, 0, 0},
 				"scale":  []interface{}{3, 1, 1},
 				"basis": []interface{}{
@@ -1651,72 +1621,17 @@ func TestStudioAdaptsFourOrderCenterScaleBasisToWorldCoefficients(t *testing.T) 
 
 	adapted, err := adaptTestScript(script, []string{"scene.json"}, 3)
 	if err != nil {
-		t.Fatalf("adapt four-order equation: %v", err)
+		t.Fatalf("adapt polynomial: %v", err)
 	}
 	object := adapted.Objects[0]
 	if _, ok := object["center"]; ok {
-		t.Fatal("four-order intermediate object should not keep center")
+		t.Fatal("polynomial intermediate object should not keep center")
 	}
 	if _, ok := object["scale"]; ok {
-		t.Fatal("four-order intermediate object should not keep scale")
+		t.Fatal("polynomial intermediate object should not keep scale")
 	}
 	if _, ok := object["basis"]; ok {
-		t.Fatal("four-order intermediate object should not keep basis")
-	}
-
-	coefficients := mustFloatSlice(t, object["a"])
-	hit := []float64{2, 0, -3}
-	if value := evaluateHomogeneousPolynomial(coefficients, hit, 4); math.Abs(value) > 1e-8 {
-		t.Fatalf("expected baked four-order equation to vanish at %v, got %g", hit, value)
-	}
-	epsilon := 1e-6
-	forward := append([]float64(nil), hit...)
-	backward := append([]float64(nil), hit...)
-	forward[2] += epsilon
-	backward[2] -= epsilon
-	dz := (evaluateHomogeneousPolynomial(coefficients, forward, 4) - evaluateHomogeneousPolynomial(coefficients, backward, 4)) / (2 * epsilon)
-	if dz >= 0 {
-		t.Fatalf("expected baked surface normal to face negative z, derivative = %g", dz)
-	}
-}
-
-func TestStudioAdaptsPolynomialSurfaceCenterScaleBasisToTransform(t *testing.T) {
-	script := &schema.StudioScript{
-		Objects: []map[string]interface{}{
-			{
-				"id":        "surface",
-				"shape":     "polynomial surface",
-				"input_dim": 3,
-				"center":    []interface{}{2, 0, 0},
-				"scale":     []interface{}{3, 1, 1},
-				"basis": []interface{}{
-					[]interface{}{0, 0, 1},
-					[]interface{}{0, 1, 0},
-					[]interface{}{-1, 0, 0},
-				},
-				"coefficients": map[string]interface{}{
-					"format": "coo",
-					"terms": []interface{}{
-						map[string]interface{}{"index": []interface{}{0, 0, 1}, "value": 1},
-					},
-				},
-			},
-		},
-	}
-
-	adapted, err := adaptTestScript(script, []string{"scene.json"}, 3)
-	if err != nil {
-		t.Fatalf("adapt polynomial surface: %v", err)
-	}
-	object := adapted.Objects[0]
-	if _, ok := object["center"]; ok {
-		t.Fatal("polynomial surface intermediate object should not keep center")
-	}
-	if _, ok := object["scale"]; ok {
-		t.Fatal("polynomial surface intermediate object should not keep scale")
-	}
-	if _, ok := object["basis"]; ok {
-		t.Fatal("polynomial surface intermediate object should not keep basis")
+		t.Fatal("polynomial intermediate object should not keep basis")
 	}
 
 	transform, ok := object["transform"].([][]float64)
@@ -1735,27 +1650,6 @@ func containsString(values []string, target string) bool {
 		}
 	}
 	return false
-}
-
-func unitCubicCoefficients() []interface{} {
-	coefficients := make([]interface{}, 64)
-	for i := range coefficients {
-		coefficients[i] = 0
-	}
-	coefficients[(1*4+1)*4+1] = 1
-	coefficients[0] = -1
-	return coefficients
-}
-
-func fourOrderCoefficients(values map[[4]int]float64) []interface{} {
-	coefficients := make([]interface{}, 256)
-	for i := range coefficients {
-		coefficients[i] = 0.0
-	}
-	for index, value := range values {
-		coefficients[((index[0]*4+index[1])*4+index[2])*4+index[3]] = value
-	}
-	return coefficients
 }
 
 func assertFloatSlice(t *testing.T, raw interface{}, expected []float64) {
@@ -1813,22 +1707,6 @@ func mustFloatSlice(t *testing.T, raw interface{}) []float64 {
 		t.Fatalf("expected []float64, got %T", raw)
 	}
 	return values
-}
-
-func evaluateHomogeneousPolynomial(coefficients, point []float64, order int) float64 {
-	coordinates := append([]float64{1}, point...)
-	dimension := len(coordinates)
-	value := 0.0
-	for flatIndex, coefficient := range coefficients {
-		term := coefficient
-		index := flatIndex
-		for factor := 0; factor < order; factor++ {
-			term *= coordinates[index%dimension]
-			index /= dimension
-		}
-		value += term
-	}
-	return value
 }
 
 func copyDirectory(source, destination string) error {

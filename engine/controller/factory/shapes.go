@@ -25,13 +25,10 @@ const (
 	ShapeFiniteCylinder     = "finite cylinder"
 	ShapeTriangle           = "triangle"
 	ShapePlane              = "plane"
-	ShapeQuadraticEquation  = "quadratic equation"
-	ShapeCubicEquation      = "cubic equation"
-	ShapeFourOrderEquation  = "four-order equation"
+	ShapePolynomial         = "polynomial"
 	ShapeImplicitEquation   = "implicit equation"
 	ShapeParametricEquation = "parametric equation"
 	ShapeParametricCurve    = "parametric curve"
-	ShapePolynomialSurface  = "polynomial surface"
 	ShapeKleinBottle        = "klein_bottle"
 	ShapeSTL                = "stl"
 )
@@ -53,20 +50,14 @@ func ParseObjectSpecInSpace(spec parser.ObjectSpec, space geometry.SceneSpace) (
 		return parseTriangle(definition, spec.Bounds, dimension)
 	case *parser.PlaneSpec:
 		return nil, fmt.Errorf("shape %q is declared but not implemented", spec.Shape)
-	case *parser.QuadraticEquationSpec:
-		return parseQuadraticEquation(definition, spec.Bounds, dimension)
-	case *parser.CubicEquationSpec:
-		return parsePolynomialEquation(&definition.PolynomialEquationSpec, spec.Bounds, 3, dimension)
-	case *parser.FourOrderEquationSpec:
-		return parsePolynomialEquation(&definition.PolynomialEquationSpec, spec.Bounds, 4, dimension)
+	case *parser.PolynomialSpec:
+		return parsePolynomial(definition, spec.Bounds, dimension)
 	case *parser.ImplicitEquationSpec:
 		return parseImplicitEquation(definition, spec.Bounds, dimension)
 	case *parser.ParametricEquationSpec:
 		return parseParametricEquation(definition, spec.Bounds, dimension)
 	case *parser.ParametricCurveSpec:
 		return parseParametricCurve(definition, spec.Bounds, dimension)
-	case *parser.PolynomialSurfaceSpec:
-		return parsePolynomialSurface(definition, spec.Bounds, dimension)
 	case *parser.KleinBottleSpec:
 		return parseKleinBottle4D(definition, spec.Bounds, dimension)
 	case *parser.STLSpec:
@@ -212,40 +203,6 @@ func parseTriangle(spec *parser.TriangleSpec, bounds *parser.BoundsSpec, dimensi
 
 	triangle := shape.NewTriangle(p1, p2, p3)
 	return wrapSingleShapeWithBounds(triangle, bounds, dimension)
-}
-
-func parseQuadraticEquation(spec *parser.QuadraticEquationSpec, bounds *parser.BoundsSpec, dimension int) ([]shape.Shape, error) {
-	a, err := requiredVector("a", spec.A, 9)
-	if err != nil {
-		return nil, err
-	}
-
-	b, err := requiredVector("b", spec.B, dimension)
-	if err != nil {
-		return nil, err
-	}
-
-	c, err := requiredNumber("c", spec.C)
-	if err != nil {
-		return nil, err
-	}
-
-	equation := shape.NewQuadraticEquation(mat.NewDense(3, 3, a), mat.NewVecDense(len(b), b), c)
-	return wrapSingleShapeWithBounds(equation, bounds, dimension)
-}
-
-func parsePolynomialEquation(spec *parser.PolynomialEquationSpec, bounds *parser.BoundsSpec, order, dimension int) ([]shape.Shape, error) {
-	a, err := requiredPolynomialCoefficientsRaw(spec.A, spec.UpperA, order)
-	if err != nil {
-		return nil, err
-	}
-	var equation shape.Shape
-	if order == 3 {
-		equation = shape.NewCubicEquation(a)
-	} else {
-		equation = shape.NewFourOrderEquation(a)
-	}
-	return wrapSingleShapeWithBounds(equation, bounds, dimension)
 }
 
 func wrapSingleShapeWithBounds(s shape.Shape, bounds *parser.BoundsSpec, dimension int) ([]shape.Shape, error) {

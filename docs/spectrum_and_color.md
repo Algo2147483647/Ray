@@ -492,17 +492,13 @@ This is a renderer compatibility approximation. It does not guarantee exact roun
 
 `RGBParameter.Eval` uses the reflectance uplift whenever a wavelength context is active, regardless of whether the parameter semantically represents reflectance, transmittance, eta, $k$, or emission. The shared schema is convenient, but the author remains responsible for choosing a physically appropriate spectral form for each field.
 
-## Spectral Render Modes
+## Wavelength Sampling
 
-| Public `spectrum_mode` | Path-tracing paths per camera sample | Wavelength selection | Transport representation | Film path |
-| --- | ---: | --- | --- | --- |
-| `rgb` | 1 | None | Three scene-linear sRGB coefficients | RGB is transformed directly into the selected film space |
-| `hero_wavelength` | 1 | One uniform random wavelength | One monochromatic scalar path, with explicit RGB compatibility handling | Spectral bin $\rightarrow$ XYZ $\rightarrow$ film space |
-| `sampled` | `wavelength_samples` | Stratified samples across the wavelength sampler's unit interval | Multiple independent monochromatic paths | All contributions enter spectral bins, then XYZ and the film space |
-
-`ResolveRenderSpec` assigns four wavelength samples when sampled mode omits the
-count. An explicit positive count, including one, is preserved. Runtime handlers
-require the resolved positive value and do not provide another default.
+There is one public spectral transport path. `wavelength_samples` is its positive
+sample count and defaults to one. A count of one is the hero-wavelength case; a
+larger count creates that many stratified, independent monochromatic paths per
+camera sample. All contributions enter spectral bins and are later integrated to
+XYZ and the selected film space.
 
 For $N_c$ camera samples and $m$ wavelength samples, pixel tracing normalizes all spectral contributions by
 
@@ -510,7 +506,7 @@ $$
 \frac{1}{N_c m}.
 $$
 
-Hero mode uses $m=1$. In sampled pixel tracing, stratum $j$ uses
+For $m=1$ this is hero sampling. For any $m$, stratum $j$ uses
 
 $$
 u_j=\frac{j+\xi_j}{m},
@@ -593,8 +589,7 @@ The decoder validates the exact version, rank, dimensions, spectral metadata, an
 ```jsonc
 {
   "render": {
-    "spectrum_mode": "hero_wavelength", // hero_wavelength | sampled
-    "wavelength_samples": 1,             // optional positive integer; sampled defaults to 4 when omitted
+    "wavelength_samples": 1,            // optional positive integer; default 1
     "color_space": "linear_srgb",       // linear_srgb | xyz | acescg
 
     "exposure": 1,                       // positive output multiplier
@@ -604,15 +599,12 @@ The decoder validates the exact version, rank, dimensions, spectral metadata, an
 }
 ```
 
-`ResolveRenderSpec` supplies Engine defaults once: `hero_wavelength` with one
-wavelength sample, or four samples when `sampled` omits the count.
-`wavelength_samples` only controls sampled wavelength mode. `color_space`,
-exposure, tone mapping, and gamma are Studio-only output settings.
+`ResolveRenderSpec` supplies the one-sample default once. `color_space`, exposure,
+tone mapping, and gamma are Studio-only output settings.
 
 Equivalent command-line controls are:
 
 ```text
---spectrum-mode hero_wavelength|sampled
 --wavelength-samples N
 --color-space linear_srgb|xyz|acescg
 --exposure E
@@ -726,9 +718,8 @@ Three distinct failure modes should not be conflated:
 
 ## Authoring Guidance
 
-- Use `rgb` mode for speed when wavelength does not affect path direction or attenuation.
-- Use `hero_wavelength` for spectral effects at the lowest per-camera-sample path count. Expect higher wavelength noise.
-- Use `sampled` with several wavelength samples when dispersion, narrow spectra, or strongly varying absorption needs lower chromatic variance.
+- Use `wavelength_samples: 1` for the lowest per-camera-sample path count. Expect higher wavelength noise.
+- Use several wavelength samples when dispersion, narrow spectra, or strongly varying absorption needs lower chromatic variance.
 - Author measured or deliberately sampled spectra for dispersion-sensitive work. RGB uplift is a compatibility mechanism, not a material-measurement substitute.
 - Use `srgb` only for values read from an sRGB-authored source. Use `linear_srgb` for already linear numerical coefficients.
 - Treat authored `acescg` material parameters cautiously until a real ACEScg-to-render-space input transform and chromatic-adaptation policy exist.

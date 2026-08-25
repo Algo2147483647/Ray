@@ -75,32 +75,14 @@ func (h *Handler) traceSpectral(
 	wavelengthSampler := h.wavelengthSampler()
 	spectralSamples := make([]rendercamera.SpectralSample, 0, h.estimatedSpectralSampleCount(samples))
 
-	switch h.SpectrumMode {
-	case optics.SpectrumModeSampledWavelengths:
-		wavelengthSamples := h.wavelengthSampleCount()
-
-		for s := int64(0); s < samples; s++ {
-			wavelengthBatch := make([]rendercamera.SpectralSample, 0, wavelengthSamples)
-
-			for w := 0; w < wavelengthSamples; w++ {
-				u := (float64(w) + rand.Float64()) / float64(wavelengthSamples)
-
-				wavelengthBatch = append(wavelengthBatch, kernel.sampleSpectral(
-					h, target, objTree, ray, wavelengthSampler.Sample(u), index...,
-				))
-			}
-
-			spectralSamples = append(spectralSamples, wavelengthBatch...)
-		}
-
-	case optics.SpectrumModeHeroWavelength:
-		for s := int64(0); s < samples; s++ {
+	wavelengthSamples := h.wavelengthSampleCount()
+	for s := int64(0); s < samples; s++ {
+		for wavelengthIndex := 0; wavelengthIndex < wavelengthSamples; wavelengthIndex++ {
+			u := (float64(wavelengthIndex) + rand.Float64()) / float64(wavelengthSamples)
 			spectralSamples = append(spectralSamples, kernel.sampleSpectral(
-				h, target, objTree, ray, wavelengthSampler.Sample(rand.Float64()), index...,
+				h, target, objTree, ray, wavelengthSampler.Sample(u), index...,
 			))
 		}
-
-	default:
 	}
 
 	normalizeSpectralSamples(spectralSamples)
@@ -127,10 +109,8 @@ func (h *Handler) wavelengthSampleCount() int {
 func (h *Handler) estimatedSpectralSampleCount(samples int64) int {
 	if samples <= 0 {
 		return 0
-	} else if h.SpectrumMode == optics.SpectrumModeSampledWavelengths {
-		return int(samples) * h.wavelengthSampleCount()
 	}
-	return int(samples)
+	return int(samples) * h.wavelengthSampleCount()
 }
 
 func normalizeSpectralSamples(samples []rendercamera.SpectralSample) {

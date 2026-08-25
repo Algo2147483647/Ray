@@ -73,7 +73,7 @@ func addTestAreaLight(tree *object.ObjectTree, center []float64) *object.Object 
 func newBDPTTestHandler() *Handler {
 	h := NewHandler(geometry.DefaultSceneSpace())
 	h.IntegratorKind = IntegratorBDPT
-	h.SpectrumMode = optics.SpectrumModeRGB
+	h.WavelengthSamples = 1
 	h.ThreadNum = 1
 	h.MaxRayLevel = 3
 	return h

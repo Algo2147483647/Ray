@@ -5,7 +5,7 @@
     {
       "id": "klein-uv",
       "emission": {
-        "type": "uv_klein",
+        "type": "uv_hsl",
         "saturation": 1,
         "lightness": 0.55,
         "v_stripes": 1,
@@ -93,6 +93,6 @@
     "film_id": "klein-film",
     "samples": 16,
     "thread_num": 8,
-    "spectrum_mode": "hero_wavelength"
+    "wavelength_samples": 1
   }
 }

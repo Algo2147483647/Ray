@@ -44,7 +44,6 @@ type studioConfig struct {
 	toneMapping        string
 	tanhOmega          float64
 	gamma              float64
-	spectrumMode       string
 	wavelengthSamples  int
 	colorSpace         string
 	pixelWindows       []schema.PixelWindowScript
@@ -99,8 +98,7 @@ func parseStudioConfig(args []string) (studioConfig, error) {
 	flagSet.StringVar(&config.toneMapping, "tone-mapping", "", "output tone mapping: linear, reinhard, aces, spectral_tanh")
 	flagSet.Float64Var(&config.tanhOmega, "tanh-omega", 0, "spectral_tanh slope coefficient (default 1)")
 	flagSet.Float64Var(&config.gamma, "gamma", 0, "output gamma, for example 2.2")
-	flagSet.StringVar(&config.spectrumMode, "spectrum-mode", "", "spectrum mode: hero_wavelength, sampled")
-	flagSet.IntVar(&config.wavelengthSamples, "wavelength-samples", 0, "wavelength samples per camera sample in sampled mode")
+	flagSet.IntVar(&config.wavelengthSamples, "wavelength-samples", 0, "wavelength samples per camera sample; 1 is a hero wavelength")
 	flagSet.StringVar(&config.colorSpace, "color-space", "", "Studio output color space: linear_srgb, acescg, xyz")
 
 	if err := flagSet.Parse(args); err != nil {
@@ -169,9 +167,6 @@ func parseStudioConfig(args []string) (studioConfig, error) {
 	if config.wavelengthSamples < 0 {
 		return studioConfig{}, fmt.Errorf("wavelength-samples must be >= 0")
 	}
-	if config.spectrumMode != "" && config.spectrumMode != "hero_wavelength" && config.spectrumMode != "sampled" {
-		return studioConfig{}, fmt.Errorf("spectrum-mode must be hero_wavelength or sampled")
-	}
 	if config.toneMapping != "" && config.toneMapping != "linear" && config.toneMapping != "reinhard" && config.toneMapping != "aces" && config.toneMapping != "spectral_tanh" {
 		return studioConfig{}, fmt.Errorf("tone-mapping must be linear, reinhard, aces, or spectral_tanh")
 	}
@@ -203,7 +198,7 @@ func validateFilmConversionConfig(config studioConfig) error {
 	for _, name := range []string{
 		"integrator", "camera-id", "dimension", "threads", "width", "height", "widths",
 		"samples", "output-film", "resume-film", "endless", "checkpoint-interval",
-		"checkpoint-dir", "start-iteration", "spectrum-mode", "wavelength-samples", "pixel-window",
+		"checkpoint-dir", "start-iteration", "wavelength-samples", "pixel-window",
 	} {
 		if config.provided[name] {
 			return fmt.Errorf("input-film cannot be combined with --%s", name)
@@ -246,9 +241,6 @@ func (c studioConfig) applyEngineOverrides(script *schema.IntermediateScript, ou
 		} else if c.provided["samples"] {
 			render["samples"] = c.samples
 		}
-		if c.provided["spectrum-mode"] {
-			render["spectrum_mode"] = c.spectrumMode
-		}
 		if c.provided["wavelength-samples"] {
 			render["wavelength_samples"] = c.wavelengthSamples
 		}
@@ -269,13 +261,6 @@ func (c studioConfig) applyEngineOverrides(script *schema.IntermediateScript, ou
 			film.PixelWindows = cloneStudioPixelWindows(c.pixelWindows)
 		}
 		render["film"] = film
-		normalizeIntermediateRender(render)
-	}
-}
-
-func normalizeIntermediateRender(render map[string]interface{}) {
-	if render["spectrum_mode"] != "sampled" {
-		return
 	}
 }
 

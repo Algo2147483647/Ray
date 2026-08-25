@@ -5,7 +5,6 @@ import (
 
 	"github.com/Algo2147483647/ray/engine/model"
 	"github.com/Algo2147483647/ray/engine/model/object"
-	"github.com/Algo2147483647/ray/engine/model/optics"
 )
 
 const defaultTileSize = 8
@@ -26,7 +25,7 @@ func (h *Handler) TraceScene(
 	if h.ThreadNum <= 0 {
 		return fmt.Errorf("render thread_num must be resolved before tracing")
 	}
-	if h.SpectrumMode != optics.SpectrumModeRGB && h.WavelengthSamples <= 0 {
+	if h.WavelengthSamples <= 0 {
 		return fmt.Errorf("render wavelength_samples must be resolved before tracing")
 	}
 

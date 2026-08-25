@@ -19,13 +19,10 @@ const (
 	ShapeFiniteCylinder     ShapeKind = "finite cylinder"
 	ShapeTriangle           ShapeKind = "triangle"
 	ShapePlane              ShapeKind = "plane"
-	ShapeQuadraticEquation  ShapeKind = "quadratic equation"
-	ShapeCubicEquation      ShapeKind = "cubic equation"
-	ShapeFourOrderEquation  ShapeKind = "four-order equation"
+	ShapePolynomial         ShapeKind = "polynomial"
 	ShapeImplicitEquation   ShapeKind = "implicit equation"
 	ShapeParametricEquation ShapeKind = "parametric equation"
 	ShapeParametricCurve    ShapeKind = "parametric curve"
-	ShapePolynomialSurface  ShapeKind = "polynomial surface"
 	ShapeKleinBottle        ShapeKind = "klein_bottle"
 	ShapeSTL                ShapeKind = "stl"
 )
@@ -34,10 +31,9 @@ var supportedShapeKinds = map[ShapeKind]bool{
 	ShapeCuboid: true, ShapeHypercuboid: true, ShapeSphere: true,
 	ShapeHypersphere: true, ShapeCircle: true, ShapeCylinder: true,
 	ShapeFiniteCylinder: true, ShapeTriangle: true, ShapePlane: true,
-	ShapeQuadraticEquation: true, ShapeCubicEquation: true,
-	ShapeFourOrderEquation: true, ShapeImplicitEquation: true,
+	ShapePolynomial: true, ShapeImplicitEquation: true,
 	ShapeParametricEquation: true, ShapeParametricCurve: true,
-	ShapePolynomialSurface: true, ShapeKleinBottle: true, ShapeSTL: true,
+	ShapeKleinBottle: true, ShapeSTL: true,
 }
 
 type BoundsSpec struct {
@@ -109,20 +105,40 @@ type TriangleSpec struct {
 	P3 []float64 `json:"p3,omitempty"`
 }
 type PlaneSpec struct{}
-type QuadraticEquationSpec struct {
-	A []float64 `json:"a,omitempty"`
-	B []float64 `json:"b,omitempty"`
-	C *float64  `json:"c,omitempty"`
+type PolynomialTermSpec struct {
+	Exponents   []int    `json:"exponents"`
+	Coefficient *float64 `json:"coefficient"`
 }
-type PolynomialEquationSpec struct {
-	A      json.RawMessage `json:"a,omitempty"`
-	UpperA json.RawMessage `json:"A,omitempty"`
-	Center []float64       `json:"center,omitempty"`
-	Scale  json.RawMessage `json:"scale,omitempty"`
-	Basis  json.RawMessage `json:"basis,omitempty"`
+
+func (s *PolynomialTermSpec) UnmarshalJSON(data []byte) error {
+	if err := rejectSpecFields(data, "polynomial term", "exponents", "coefficient"); err != nil {
+		return err
+	}
+	type plain PolynomialTermSpec
+	var decoded plain
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	if len(decoded.Exponents) != 3 {
+		return fmt.Errorf("polynomial term exponents must contain 3 values, got %d", len(decoded.Exponents))
+	}
+	if decoded.Coefficient == nil {
+		return fmt.Errorf("polynomial term missing required field %q", "coefficient")
+	}
+	for axis, exponent := range decoded.Exponents {
+		if exponent < 0 {
+			return fmt.Errorf("polynomial term exponent[%d] must be >= 0", axis)
+		}
+	}
+	*s = PolynomialTermSpec(decoded)
+	return nil
 }
-type CubicEquationSpec struct{ PolynomialEquationSpec }
-type FourOrderEquationSpec struct{ PolynomialEquationSpec }
+
+type PolynomialSpec struct {
+	Degree    *int                 `json:"degree,omitempty"`
+	Terms     []PolynomialTermSpec `json:"terms,omitempty"`
+	Transform json.RawMessage      `json:"transform,omitempty"`
+}
 type ImplicitEquationSpec struct {
 	Field     json.RawMessage `json:"field,omitempty"`
 	Transform json.RawMessage `json:"transform,omitempty"`
@@ -156,16 +172,6 @@ type ParametricCurveSpec struct {
 	Center        []float64       `json:"center,omitempty"`
 	Scale         json.RawMessage `json:"scale,omitempty"`
 }
-type PolynomialSurfaceSpec struct {
-	Mode         string          `json:"mode,omitempty"`
-	ExplicitAxis *int            `json:"explicit_axis,omitempty"`
-	InputDim     *int            `json:"input_dim,omitempty"`
-	Degree       *int            `json:"degree,omitempty"`
-	Coefficients json.RawMessage `json:"coefficients,omitempty"`
-	Transform    json.RawMessage `json:"transform,omitempty"`
-	Scale        json.RawMessage `json:"scale,omitempty"`
-	Center       []float64       `json:"center,omitempty"`
-}
 type KleinBottleSpec struct {
 	Center    []float64 `json:"center,omitempty"`
 	RMajor    *float64  `json:"r_major,omitempty"`
@@ -186,13 +192,10 @@ func (*CircleSpec) objectDefinition()             {}
 func (*FiniteCylinderSpec) objectDefinition()     {}
 func (*TriangleSpec) objectDefinition()           {}
 func (*PlaneSpec) objectDefinition()              {}
-func (*QuadraticEquationSpec) objectDefinition()  {}
-func (*CubicEquationSpec) objectDefinition()      {}
-func (*FourOrderEquationSpec) objectDefinition()  {}
+func (*PolynomialSpec) objectDefinition()         {}
 func (*ImplicitEquationSpec) objectDefinition()   {}
 func (*ParametricEquationSpec) objectDefinition() {}
 func (*ParametricCurveSpec) objectDefinition()    {}
-func (*PolynomialSurfaceSpec) objectDefinition()  {}
 func (*KleinBottleSpec) objectDefinition()        {}
 func (*STLSpec) objectDefinition()                {}
 
@@ -204,7 +207,7 @@ func (s *ObjectSpec) UnmarshalJSON(data []byte) error {
 		"thickness", "c", "a", "A", "scale", "field", "transform",
 		"basis", "surface", "curve", "coefficients", "mode", "file",
 		"u_range", "v_range", "t_range", "explicit_axis", "input_dim",
-		"degree", "samples", "samples_u", "samples_v", "refine_iter",
+		"degree", "terms", "samples", "samples_u", "samples_v", "refine_iter",
 		"newton_max_iter", "step", "value_tol", "newton_tol",
 		"derivative_eps", "bounds_padding", "residual_tol"); err != nil {
 		return err
@@ -245,20 +248,14 @@ func (s *ObjectSpec) UnmarshalJSON(data []byte) error {
 		definition = &TriangleSpec{}
 	case ShapePlane:
 		definition = &PlaneSpec{}
-	case ShapeQuadraticEquation:
-		definition = &QuadraticEquationSpec{}
-	case ShapeCubicEquation:
-		definition = &CubicEquationSpec{}
-	case ShapeFourOrderEquation:
-		definition = &FourOrderEquationSpec{}
+	case ShapePolynomial:
+		definition = &PolynomialSpec{}
 	case ShapeImplicitEquation:
 		definition = &ImplicitEquationSpec{}
 	case ShapeParametricEquation:
 		definition = &ParametricEquationSpec{}
 	case ShapeParametricCurve:
 		definition = &ParametricCurveSpec{}
-	case ShapePolynomialSurface:
-		definition = &PolynomialSurfaceSpec{}
 	case ShapeKleinBottle:
 		definition = &KleinBottleSpec{}
 	case ShapeSTL:
@@ -460,9 +457,9 @@ func (s SurfaceSpec) MarshalJSON() ([]byte, error) {
 type EmissionKind string
 
 const (
-	EmissionConstant    EmissionKind = "constant"
-	EmissionCellPalette EmissionKind = "cell_palette"
-	EmissionUVKlein     EmissionKind = "uv_klein"
+	EmissionConstant      EmissionKind = "constant"
+	EmissionNormalPalette EmissionKind = "normal_palette"
+	EmissionUVHSL         EmissionKind = "uv_hsl"
 )
 
 type EmissionDistributionSpec struct {
@@ -503,31 +500,28 @@ type ConstantEmissionSpec struct {
 	Color    json.RawMessage `json:"color,omitempty"`
 	Exitance json.RawMessage `json:"exitance,omitempty"`
 }
-type CellPaletteEmissionSpec struct {
-	Palette       [][]float64 `json:"palette,omitempty"`
-	GridColor     []float64   `json:"grid_color,omitempty"`
-	Intensity     *float64    `json:"intensity,omitempty"`
-	Shading       string      `json:"shading,omitempty"`
-	GridThickness *float64    `json:"grid_thickness,omitempty"`
+type NormalPaletteEmissionSpec struct {
+	Palette   [][]float64 `json:"palette,omitempty"`
+	Intensity *float64    `json:"intensity,omitempty"`
 }
-type UVKleinEmissionSpec struct {
+type UVHSLEmissionSpec struct {
 	Saturation *float64 `json:"saturation,omitempty"`
 	Lightness  *float64 `json:"lightness,omitempty"`
 	VStripes   *float64 `json:"v_stripes,omitempty"`
 	Intensity  *float64 `json:"intensity,omitempty"`
 }
 
-func (*ConstantEmissionSpec) emissionDefinition()    {}
-func (*CellPaletteEmissionSpec) emissionDefinition() {}
-func (*UVKleinEmissionSpec) emissionDefinition()     {}
+func (*ConstantEmissionSpec) emissionDefinition()      {}
+func (*NormalPaletteEmissionSpec) emissionDefinition() {}
+func (*UVHSLEmissionSpec) emissionDefinition()         {}
 
 func (s *ConstantEmissionSpec) decodeEmissionJSON(data []byte) error {
 	return decodeVariantPayload(data, "emission", s, "type", "distribution", "radiance", "color", "exitance")
 }
-func (s *CellPaletteEmissionSpec) decodeEmissionJSON(data []byte) error {
-	return decodeVariantPayload(data, "emission", s, "type", "distribution", "palette", "intensity", "shading", "grid_color", "grid_thickness")
+func (s *NormalPaletteEmissionSpec) decodeEmissionJSON(data []byte) error {
+	return decodeVariantPayload(data, "emission", s, "type", "distribution", "palette", "intensity")
 }
-func (s *UVKleinEmissionSpec) decodeEmissionJSON(data []byte) error {
+func (s *UVHSLEmissionSpec) decodeEmissionJSON(data []byte) error {
 	return decodeVariantPayload(data, "emission", s, "type", "distribution", "saturation", "lightness", "v_stripes", "intensity")
 }
 
@@ -541,17 +535,17 @@ func (s *EmissionSpec) UnmarshalJSON(data []byte) error {
 	}
 	var definition EmissionDefinition
 	switch header.Type {
-	case EmissionConstant, EmissionCellPalette, EmissionUVKlein:
+	case EmissionConstant, EmissionNormalPalette, EmissionUVHSL:
 	default:
 		return fmt.Errorf("unsupported emission type %q", header.Type)
 	}
 	switch header.Type {
 	case EmissionConstant:
 		definition = &ConstantEmissionSpec{}
-	case EmissionCellPalette:
-		definition = &CellPaletteEmissionSpec{}
-	case EmissionUVKlein:
-		definition = &UVKleinEmissionSpec{}
+	case EmissionNormalPalette:
+		definition = &NormalPaletteEmissionSpec{}
+	case EmissionUVHSL:
+		definition = &UVHSLEmissionSpec{}
 	}
 	if err := definition.decodeEmissionJSON(data); err != nil {
 		return err
@@ -657,18 +651,14 @@ func rejectObjectVariantFields(data []byte, kind ShapeKind) error {
 	case ShapeTriangle:
 		fields = []string{"p1", "p2", "p3"}
 	case ShapePlane:
-	case ShapeQuadraticEquation:
-		fields = []string{"a", "b", "c"}
-	case ShapeCubicEquation, ShapeFourOrderEquation:
-		fields = []string{"a", "A", "center", "scale", "basis"}
+	case ShapePolynomial:
+		fields = []string{"degree", "terms", "transform"}
 	case ShapeImplicitEquation:
 		fields = []string{"field", "transform", "basis", "center", "scale", "step", "value_tol"}
 	case ShapeParametricEquation:
 		fields = []string{"surface", "center", "scale", "u_range", "v_range", "samples_u", "samples_v", "newton_max_iter", "newton_tol", "derivative_eps", "bounds_padding", "residual_tol"}
 	case ShapeParametricCurve:
 		fields = []string{"curve", "center", "scale", "t_range", "samples", "refine_iter", "derivative_eps", "bounds_padding"}
-	case ShapePolynomialSurface:
-		fields = []string{"mode", "explicit_axis", "input_dim", "degree", "coefficients", "transform", "center", "scale"}
 	case ShapeKleinBottle:
 		fields = []string{"center", "r_major", "r_minor", "thickness"}
 	case ShapeSTL:

@@ -354,7 +354,7 @@ func (h *Handler) makeLightEndpoint(
 		return bdptVertex{}, false
 	}
 	ctx := bxdf.ShadingContext{
-		TransportMode: bxdf.TransportImportance, SpectrumMode: h.SpectrumMode,
+		TransportMode: bxdf.TransportImportance, SpectrumMode: optics.SpectrumModeSpectral,
 		WavelengthNM: wavelengthNM, WavelengthPDF: wavelengthPDF,
 		HitPoint:        maths.NewDirectionFromComponents(ss.Point.RawVector().Data),
 		GeometricNormal: maths.NewDirectionFromComponents(ss.Normal.RawVector().Data),

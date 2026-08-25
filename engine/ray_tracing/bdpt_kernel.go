@@ -5,7 +5,6 @@ import (
 	"math/rand/v2"
 
 	"github.com/Algo2147483647/ray/engine/model/camera"
-	"github.com/Algo2147483647/ray/engine/model/optics"
 )
 
 // bdptKernel uses global work scheduling so the t=1 strategy may splat to a
@@ -55,10 +54,7 @@ func (k *bdptKernel) Prepare(context *RenderContext) (PreparedIntegratorState, e
 		activePixels: activePixels,
 		width:        shape[0],
 		height:       shape[1],
-		wavelengths:  1,
-	}
-	if context.Handler.SpectrumMode == optics.SpectrumModeSampledWavelengths {
-		state.wavelengths = int64(context.Handler.wavelengthSampleCount())
+		wavelengths:  int64(context.Handler.wavelengthSampleCount()),
 	}
 	state.totalWork = context.Samples * int64(len(activePixels)) * state.wavelengths
 	return state, nil
@@ -81,11 +77,8 @@ func (k *bdptKernel) TraceSample(context *RenderContext, prepared PreparedIntegr
 	pixel := state.activePixels[int(workIndex%int64(activeCount))]
 	coords := context.Target.Film.SpectralBins[0].GetCoordinates(pixel)
 
-	u := rand.Float64()
-	if context.Handler.SpectrumMode == optics.SpectrumModeSampledWavelengths {
-		stratum := (workIndex / int64(activeCount)) % state.wavelengths
-		u = (float64(stratum) + u) / float64(state.wavelengths)
-	}
+	stratum := (workIndex / int64(activeCount)) % state.wavelengths
+	u := (float64(stratum) + rand.Float64()) / float64(state.wavelengths)
 	wavelength := context.Handler.wavelengthSampler().Sample(u)
 	wavelengthNM, wavelengthPDF := wavelength.LambdaNM, wavelength.PDF
 	local, remoteSplats := context.Handler.traceBidirectionalPrepared(

@@ -48,8 +48,8 @@ The first column is the logical emission-model key. An emission model may be the
 | Emission material type | JSON `emission.type` | Description and mathematical model | Input parameters | Runtime type | Spatial rule | `IsDelta()` |
 | --- | --- | --- | --- | --- | --- | --- |
 | Constant Emission | `constant` | A spatially constant spectral field composed with an optional angular distribution, $L_e(x,\omega_o,\lambda)=R(\lambda)D(\omega_o)$. | Exactly one of spectral `radiance`/legacy `color`, or spectral `exitance`; optional `distribution`. | `emission.SurfaceEmitter` with `emission.Constant` field | Constant over position; uniform or cosine-power over direction | False |
-| Cell Palette Emission | `cell_palette` | Diagnostic emission indexed by the dominant signed normal axis, $i=2\operatorname*{arg\,max}_j\lvert n_j\rvert+\mathbf{1}_{n_i>0}$, with optional boundary-grid replacement. | Non-empty RGB `palette` $C_i\in\mathbb{R}_{\ge0}^3$; intensity $s\ge0$; `shading`; RGB `grid_color`; grid thickness $t\ge0$; optional `distribution`. | `emission.SurfaceEmitter` with `emission.CellPalette` field | Dominant normal axis/sign and optional angular distribution | False |
-| UV Klein Emission | `uv_klein` | Diagnostic Klein-bottle parameter visualization: hue follows wrapped $u$, and $2N$ alternating lightness bands follow wrapped $v$. | Saturation $S\in[0,1]$, default 1; lightness $L\in[0,1]$, default 0.55; positive integer $N=$ `v_stripes`; intensity $s\ge0$, default 1; optional `distribution`. | `emission.SurfaceEmitter` with `emission.UVKlein` field | HSL mapping of Klein-bottle UV coordinates and optional angular distribution | False |
+| Normal Palette Emission | `normal_palette` | Geometry-independent diagnostic emission indexed by the dominant signed normal axis, $i=2\operatorname*{arg\,max}_j\lvert n_j\rvert+\mathbf{1}_{n_i>0}$. | Optional non-empty RGB `palette` $C_i\in\mathbb{R}_{\ge0}^3$; intensity $s\ge0$; optional `distribution`. | `emission.SurfaceEmitter` with `emission.NormalPalette` field | Dominant geometric-normal axis/sign and optional angular distribution | False |
+| UV HSL Emission | `uv_hsl` | Geometry-independent procedural field: wrapped $u$ controls hue and $2N$ alternating lightness bands follow wrapped $v$. | Saturation $S\in[0,1]$, default 1; lightness $L\in[0,1]$, default 0.55; positive integer $N=$ `v_stripes`, default 1; intensity $s\ge0$, default 1; optional `distribution`. | `emission.SurfaceEmitter` with `emission.UVHSL` field | Generic HSL mapping of UV coordinates and optional angular distribution | False |
 
 ### Medium Discriminators
 
@@ -639,11 +639,11 @@ It is non-delta and does not impose one-sided emission at the emitter level.
 }
 ```
 
-### Cell Palette Emission
+### Normal Palette Emission
 
 #### Definition, Properties, and Model
 
-Cell-palette emission is a diagnostic, direction-independent emitter that assigns color from the dominant signed axis of the geometric normal. The default palette contains eight colors for `-X,+X,-Y,+Y,-Z,+Z,-W,+W`. For
+Normal-palette emission is a diagnostic, direction-independent procedural field that assigns color from the dominant signed axis of the geometric normal. The default palette contains eight colors for `-X,+X,-Y,+Y,-Z,+Z,-W,+W`. For
 
 $$
 a=\operatorname*{arg\,max}_j|n_j|,
@@ -664,38 +664,27 @@ wrapping the index modulo the palette length. Missing or zero normal data falls 
 -W [1.00, 0.55, 0.10]   +W [0.92, 0.92, 0.92]
 ```
 
-The model is intended for cell/face orientation visualization rather than physical illumination.
-
-#### Implementation Logic and Mathematical Process
-
-In `boundary_grid` mode, non-dominant coordinates are compared with the object's AABB faces. A point within `grid_thickness` of any such boundary emits `grid_color`; otherwise it emits the cell color. Grid evaluation therefore depends on valid hit position, geometric normal, and Shape AABB data in `ShadingContext`.
-
-Intensity scales palette colors but does not scale `grid_color`. `grid_color` and `grid_thickness` are parsed only in boundary-grid mode.
+The model is intended for orientation visualization rather than physical illumination. It is independent of object type and bounding boxes.
 
 #### Parameters and Schema
 
 - `palette` is an optional non-empty list of non-negative RGB triples.
 - `intensity` is non-negative.
-- `shading` is `solid` or `boundary_grid`, defaulting to `solid`.
-- `grid_color` defaults to white and is not multiplied by `intensity`.
-- `grid_thickness` is a non-negative world-space distance with default $0.02$.
+- `distribution` optionally controls angular emission independently of this spatial field.
 
 ```jsonc
 {
-  "type": "cell_palette",
+  "type": "normal_palette",
   "palette": [[r,g,b], /* one or more non-negative RGB triples */], // optional
-  "intensity": "non-negative number",                              // optional
-  "shading": "solid | boundary_grid",                              // optional, default solid
-  "grid_color": [r,g,b],                                            // optional, default white
-  "grid_thickness": "non-negative world-space number"              // optional, default 0.02
+  "intensity": "non-negative number"                               // optional
 }
 ```
 
-### UV Klein Emission
+### UV HSL Emission
 
 #### Definition, Properties, and Model
 
-UV Klein emission is a diagnostic parameter-space visualization for Klein-bottle geometry. It assumes $(u,v)$ are angular coordinates in radians. Wrapped $u$ controls cyclic hue, while $v$ controls alternating light and dark stripes. It is direction-independent, non-delta, and intentionally non-physical.
+UV HSL emission is a generic diagnostic parameter-space visualization. It assumes $(u,v)$ are angular coordinates in radians. Wrapped $u$ controls cyclic hue, while $v$ controls alternating light and dark stripes. It is direction-independent, non-delta, intentionally non-physical, and contains no knowledge of a particular Shape.
 
 #### Implementation Logic and Mathematical Process
 
@@ -709,21 +698,19 @@ $$
 
 The hue is $H=360\hat{u}$ degrees. The stripe index alternates across $2N$ bands per $v$ cycle, where $N=\mathtt{v\_stripes}$. Even and odd bands use lightness $L$ and $0.45L$, respectively. The HSL result is converted to RGB and multiplied by `intensity`.
 
-Current parser bug: `v_stripes` is intended to default to 1, but when the field is absent the subsequent integer check compares the default against the original zero value and rejects the material. In current code, `v_stripes` is effectively required.
-
 #### Parameters and Schema
 
 - `saturation` lies in $[0,1]$ and defaults to one.
 - `lightness` lies in $[0,1]$ and defaults to $0.55$.
-- `v_stripes` is a positive integer and is effectively required by the current parser bug.
+- `v_stripes` is a positive integer and defaults to one.
 - `intensity` is non-negative and defaults to one.
 
 ```jsonc
 {
-  "type": "uv_klein",
+  "type": "uv_hsl",
   "saturation": "number in [0,1]", // optional, default 1
   "lightness": "number in [0,1]",  // optional, default 0.55
-  "v_stripes": "positive integer",
+  "v_stripes": "positive integer",  // optional, default 1
   "intensity": "non-negative number" // optional, default 1
 }
 ```

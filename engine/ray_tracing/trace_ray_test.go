@@ -348,7 +348,7 @@ func TestApplyMediumAbsorptionUsesSampledPathThroughput(t *testing.T) {
 	ray.MediumStack.Reset(filterID)
 
 	applyMediumAbsorption(registry, ray, 4, bxdf.ShadingContext{
-		SpectrumMode:  renderray.SpectrumModeHeroWavelength,
+		SpectrumMode:  renderray.SpectrumModeSpectral,
 		WavelengthNM:  550,
 		WavelengthsNM: []float64{550},
 	})

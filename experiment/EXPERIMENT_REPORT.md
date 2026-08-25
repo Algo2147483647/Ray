@@ -227,13 +227,13 @@ $$
 The experiment studies how four-dimensional occlusion and illumination appear when
 sampled into a 3D film volume.
 
-### 5.3 Direct cell-palette diagnostic
+### 5.3 Direct normal-palette diagnostic
 
 `4d-hypercube-geometry-focus-direct.json` uses the same basic cuboid and film shape
 but switches to a direct diagnostic presentation:
 
 - 64 samples;
-- `cell_palette` emission for face/cell identification;
+- `normal_palette` emission for signed dominant-normal identification;
 - linear tone mapping with gamma 1.
 
 Its purpose is structural labeling rather than photorealistic shading. Comparing it

@@ -28,6 +28,6 @@
     "film_id": "geometry-benchmark-film",
     "samples": 100,
     "thread_num": 0,
-    "spectrum_mode": "hero_wavelength"
+    "wavelength_samples": 1
   }
 }

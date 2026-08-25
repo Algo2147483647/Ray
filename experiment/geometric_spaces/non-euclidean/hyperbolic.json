@@ -21,7 +21,7 @@
     "film_id": "hyperbolic-film",
     "samples": 320,
     "thread_num": 0,
-    "spectrum_mode": "hero_wavelength"
+    "wavelength_samples": 1
   },
   "geometry": {
     "type": "klein",

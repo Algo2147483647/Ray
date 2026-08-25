@@ -4,8 +4,7 @@
     {
       "id": "cell-palette-debug",
       "emission": {
-        "type": "cell_palette",
-        "shading": "solid",
+        "type": "normal_palette",
         "intensity": 1
       }
     }
@@ -93,6 +92,6 @@
     "film_id": "hypercube-direct-film",
     "samples": 64,
     "thread_num": 8,
-    "spectrum_mode": "hero_wavelength"
+    "wavelength_samples": 1
   }
 }

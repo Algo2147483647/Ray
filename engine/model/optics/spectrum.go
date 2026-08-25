@@ -6,8 +6,7 @@ type SpectrumMode int
 
 const (
 	SpectrumModeRGB SpectrumMode = iota
-	SpectrumModeHeroWavelength
-	SpectrumModeSampledWavelengths
+	SpectrumModeSpectral
 )
 
 type SpectrumKind int

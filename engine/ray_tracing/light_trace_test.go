@@ -46,7 +46,7 @@ func TestSegmentTransmittanceAppliesBeerLambertToRGBAndSampledSpectra(t *testing
 		absorbingID,
 		2,
 		bxdf.ShadingContext{
-			SpectrumMode:  optics.SpectrumModeHeroWavelength,
+			SpectrumMode:  optics.SpectrumModeSpectral,
 			WavelengthNM:  550,
 			WavelengthsNM: []float64{550},
 		},
@@ -91,7 +91,6 @@ func TestBuildLightSubpathAppliesHomogeneousAbsorptionBeforeVertex(t *testing.T)
 	tree.Build()
 
 	handler := NewHandler(geometry.DefaultSceneSpace())
-	handler.SpectrumMode = optics.SpectrumModeRGB
 	handler.MaxRayLevel = 1
 	lights, totalArea := collectAreaLights(tree)
 	if len(lights) != 1 {
@@ -157,7 +156,6 @@ func renderDirectAreaLight(t *testing.T, sigmaA float64, samples int64) float64 
 	}
 	handler := NewHandler(geometry.DefaultSceneSpace())
 	handler.IntegratorKind = IntegratorLightTracing
-	handler.SpectrumMode = optics.SpectrumModeHeroWavelength
 	handler.WavelengthSamples = 1
 	handler.ThreadNum = 1
 	handler.MaxRayLevel = 0
