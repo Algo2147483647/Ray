@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/Algo2147483647/ray/engine/maths"
+	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 )
@@ -25,7 +26,6 @@ type ParametricFunction func(u, v float64) *mat.VecDense
 type ParametricDerivative func(u, v float64, du, dv *mat.VecDense) (*mat.VecDense, *mat.VecDense)
 
 type ParametricEquation struct {
-	BaseShape
 	Function   ParametricFunction
 	Derivative ParametricDerivative
 	URange     [2]float64
@@ -210,6 +210,10 @@ func (p *ParametricEquation) IntersectAffine(raySt, rayDir *mat.VecDense, option
 	return p.interactionAt(best), true
 }
 
+func (p *ParametricEquation) IntersectGeodesic(_, _ *mat.VecDense, _ geometry.Geometry, _ IntersectOptions) (SurfaceInteraction, bool) {
+	return unsupportedGeodesicIntersection()
+}
+
 func (p *ParametricEquation) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {
 	if intersect == nil {
 		return res
@@ -234,7 +238,7 @@ func (p *ParametricEquation) GetNormalVector(intersect, res *mat.VecDense) *mat.
 
 func (p *ParametricEquation) BuildBoundingBox() (pmin, pmax *mat.VecDense) {
 	if p == nil || p.ensureAcceleration() != nil || p.cachedBounds == nil {
-		return (&BaseShape{}).BuildBoundingBox()
+		return unboundedBoundingBox(3)
 	}
 	return p.cachedBounds.BuildBoundingBox()
 }
@@ -471,7 +475,7 @@ func (p *ParametricEquation) sampledBounds() *Cuboid {
 	}
 	bounds, ok := boundsFromParamPoints(p, points, p.boundsPadding())
 	if !ok {
-		pmin, pmax := (&BaseShape{}).BuildBoundingBox()
+		pmin, pmax := unboundedBoundingBox(3)
 		return NewCuboid(pmin, pmax)
 	}
 	return bounds

@@ -66,6 +66,33 @@ func TestPolynomialQuadraticFastPathBuildsDirectRayCoefficients(t *testing.T) {
 	}
 }
 
+func TestPolynomialLinearFastPathBuildsDirectRayCoefficients(t *testing.T) {
+	coefficients, err := maths.NewSparseTensorFromEntries([]int{2, 2, 2}, maths.SparseTensorHash, []maths.SparseTensorEntry[float64]{
+		{Index: []int{1, 0, 0}, Value: 2},
+		{Index: []int{0, 1, 0}, Value: -3},
+		{Index: []int{0, 0, 1}, Value: 4},
+		{Index: []int{0, 0, 0}, Value: -5},
+	})
+	if err != nil {
+		t.Fatalf("create coefficients: %v", err)
+	}
+
+	surface := NewPolynomial(coefficients)
+	got, err := surface.rayPolynomial(
+		mat.NewVecDense(3, []float64{1, 2, 3}),
+		mat.NewVecDense(3, []float64{4, 5, 6}),
+	)
+	if err != nil {
+		t.Fatalf("build ray polynomial: %v", err)
+	}
+	want := []float64{17, 3}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("coefficient %d: expected %v, got %v", i, want[i], got[i])
+		}
+	}
+}
+
 func TestPolynomialParaboloid(t *testing.T) {
 	coefficients, err := maths.NewSparseTensorFromEntries([]int{3, 3, 2}, maths.SparseTensorHash, []maths.SparseTensorEntry[float64]{
 		{Index: []int{2, 0, 0}, Value: 1},

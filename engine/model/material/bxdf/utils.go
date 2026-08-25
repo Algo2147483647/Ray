@@ -52,10 +52,6 @@ func clamp(v, lo, hi float64) float64 {
 	return v
 }
 
-func almostEqualIOR(a, b float64) bool {
-	return math.Abs(a-b) <= 1e-6
-}
-
 func FresnelDielectric(cosThetaI, etaI, etaT float64) float64 {
 	cosThetaI = clamp(cosThetaI, -1, 1)
 	entering := cosThetaI > 0

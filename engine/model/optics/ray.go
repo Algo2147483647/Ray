@@ -10,13 +10,12 @@ import (
 )
 
 type Ray struct {
-	Origin          *mat.VecDense       `json:"origin"`
-	Direction       *mat.VecDense       `json:"direction"`
-	Path            PathState           `json:"path"`
-	RefractionIndex float64             `json:"refraction_index"`
-	MediumStack     medium.Stack        `json:"-"`
-	Space           geometry.SceneSpace `json:"-"`
-	ArcTraveled     float64             `json:"-"` // geodesic arc length traveled so far (S^3 wrap)
+	Origin      *mat.VecDense       `json:"origin"`
+	Direction   *mat.VecDense       `json:"direction"`
+	Path        PathState           `json:"path"`
+	MediumStack medium.Stack        `json:"-"`
+	Space       geometry.SceneSpace `json:"-"`
+	ArcTraveled float64             `json:"-"` // geodesic arc length traveled so far (S^3 wrap)
 }
 
 // PathState is the sole representation of transport state and spectral mode.
@@ -52,7 +51,6 @@ func (r *Ray) Init() {
 	}
 
 	r.Path = PathState{Throughput: ConstantSpectrum(1), Radiance: ConstantSpectrum(0)}
-	r.RefractionIndex = 1
 	r.MediumStack.Reset(0)
 
 	r.ArcTraveled = 0

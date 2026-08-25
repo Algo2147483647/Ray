@@ -512,6 +512,35 @@ shape.
 
 ### Polynomial
 
+Studio also provides two compact authoring forms that compile to `polynomial`.
+A plane uses `normal` and either `point` or `offset`, where `offset` means
+$n\cdot x=\mathtt{offset}$:
+
+```json
+{
+  "shape": "plane",
+  "normal": [0, 0, 1],
+  "point": [0, 0, 2]
+}
+```
+
+A quadratic surface uses the strict symmetric-matrix form
+$x^TQx+l^Tx+c=0$. `shape` may be `quadratic`, `quadric`, or
+`quadratic surface`:
+
+```json
+{
+  "shape": "quadratic",
+  "matrix": [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+  "linear": [0, 0, 0],
+  "constant": -1,
+  "center": [2, 0, 0]
+}
+```
+
+Both forms support Studio group placement and are absent from intermediate
+Engine JSON.
+
 All algebraic surfaces use one sparse authoring form:
 
 ```json
@@ -531,8 +560,9 @@ All algebraic surfaces use one sparse authoring form:
 
 Studio converts `center`, `scale`, and `basis` into the canonical world-to-local
 `transform`, then removes those authoring placement fields. Engine receives only
-`degree`, `terms`, and `transform`. Degrees two through four use specialized
-real-root solvers internally; the public shape does not expose separate variants.
+`degree`, `terms`, and `transform`. Degrees one and two use direct cached
+kernels; degrees three and four use specialized real-root solvers. The public
+Engine shape does not expose separate variants.
 
 Authoring input may use local `center`, `scale`, and `basis` fields. Studio
 combines them into engine-native `transform`, a 4 x 4 world-to-local homogeneous
@@ -589,7 +619,7 @@ The intermediate file should be valid engine JSON:
 no shape: "group"
 adapted ids after group prefixing
 inherited material/media/emission/bounds fields applied
-adapted cuboid/triangle/quadratic/cubic/four-order/polynomial-surface/bounds fields normalized
+adapted cuboid/triangle/plane/quadratic/polynomial/bounds fields normalized
 _studio metadata included for traceability
 ```
 

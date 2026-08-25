@@ -15,7 +15,7 @@ const (
 )
 
 type ImplicitEquation struct {
-	BaseShape
+	Dimension int
 	Function  func(*mat.VecDense) float64 // Local implicit scalar field F(p), whose surface is F(p)=0.
 	Gradient  func(point, res *mat.VecDense) *mat.VecDense
 	Range     [2]*mat.VecDense
@@ -36,7 +36,7 @@ func NewImplicitEquation(Function func(*mat.VecDense) float64, Range [2]*mat.Vec
 		dimension = Range[1].Len()
 	}
 	return &ImplicitEquation{
-		BaseShape:   BaseShape{Dimension: dimension},
+		Dimension:   dimension,
 		Function:    Function,
 		Range:       Range,
 		Transform:   identityTransform4(),
@@ -181,12 +181,19 @@ func (f *ImplicitEquation) GetNormalVector(intersect, res *mat.VecDense) *mat.Ve
 
 func (f *ImplicitEquation) BuildBoundingBox() (pmin, pmax *mat.VecDense) {
 	if f == nil {
-		return (&BaseShape{}).BuildBoundingBox()
+		return unboundedBoundingBox(3)
 	}
 	if !f.hasValidRange() {
-		return f.BaseShape.BuildBoundingBox()
+		return unboundedBoundingBox(f.dimension())
 	}
 	return f.Range[0], f.Range[1]
+}
+
+func (f *ImplicitEquation) dimension() int {
+	if f != nil && f.Dimension > 0 {
+		return f.Dimension
+	}
+	return 3
 }
 
 func (f *ImplicitEquation) evaluateRay(raySt, rayDir *mat.VecDense, t float64) float64 {

@@ -67,6 +67,9 @@ produces no work rather than changing algorithms.
 All Integrators support homogeneous absorption (`sigma_a`) and IOR boundary
 changes. Participating-medium scattering is not implemented, so `sigma_s` is
 rejected by the Engine protocol and does not exist in the runtime Medium model.
+Each Ray owns only a `MediumStack`; it does not cache a second refraction-index
+value. Boundary interaction derives incident and transmitted eta from the stack,
+the medium registry, and the active wavelength.
 
 ## Render Input
 

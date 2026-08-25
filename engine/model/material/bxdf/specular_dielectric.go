@@ -145,14 +145,6 @@ func (s SpecularDielectric) resolveEta(ctx ShadingContext, etaInside float64) (f
 
 	etaI := s.EtaOutside
 	etaT := etaInside
-	if ctx.CurrentIOR > 0 {
-		etaI = ctx.CurrentIOR
-		if almostEqualIOR(ctx.CurrentIOR, etaInside) {
-			etaT = s.EtaOutside
-		} else {
-			etaT = etaInside
-		}
-	}
 	return etaI, etaT
 }
 

@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/Algo2147483647/ray/engine/maths"
+	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 )
@@ -23,7 +24,6 @@ type ParametricCurveDerivative func(t float64, res *mat.VecDense) *mat.VecDense
 type ParametricCurveRadius func(t float64) float64
 
 type ParametricCurve struct {
-	BaseShape
 	Function   ParametricCurveFunction
 	Derivative ParametricCurveDerivative
 	Radius     ParametricCurveRadius
@@ -127,6 +127,10 @@ func (c *ParametricCurve) IntersectAffine(raySt, rayDir *mat.VecDense, options I
 	return c.interactionAt(raySt, rayDir, hit), true
 }
 
+func (c *ParametricCurve) IntersectGeodesic(_, _ *mat.VecDense, _ geometry.Geometry, _ IntersectOptions) (SurfaceInteraction, bool) {
+	return unsupportedGeodesicIntersection()
+}
+
 func (c *ParametricCurve) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {
 	if intersect == nil {
 		return res
@@ -161,7 +165,7 @@ func (c *ParametricCurve) GetNormalVector(intersect, res *mat.VecDense) *mat.Vec
 
 func (c *ParametricCurve) BuildBoundingBox() (pmin, pmax *mat.VecDense) {
 	if c == nil || c.ensureAcceleration() != nil || c.cachedBounds == nil {
-		return (&BaseShape{}).BuildBoundingBox()
+		return unboundedBoundingBox(3)
 	}
 	return c.cachedBounds.BuildBoundingBox()
 }
@@ -477,7 +481,7 @@ func (c *ParametricCurve) closestParameter(point *mat.VecDense) (float64, bool) 
 
 func (c *ParametricCurve) sampledBounds() *Cuboid {
 	if c == nil || c.ensureAcceleration() != nil || c.cachedBounds == nil {
-		pmin, pmax := (&BaseShape{}).BuildBoundingBox()
+		pmin, pmax := unboundedBoundingBox(3)
 		return NewCuboid(pmin, pmax)
 	}
 	return c.cachedBounds

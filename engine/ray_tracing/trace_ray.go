@@ -171,7 +171,6 @@ func (h *Handler) prepareSurfaceInteraction(
 
 	ctx := h.newShadingContext(ray)
 	ctx.TransportMode = bxdf.TransportRadiance
-	ctx.CurrentIOR = ray.RefractionIndex
 
 	if hit.GeometricNormal != nil {
 		ctx.GeometricNormal = maths.NewDirectionFromComponents(hit.GeometricNormal.RawVector().Data)
@@ -280,7 +279,7 @@ func applySurfaceSample(
 	applySpectrum(ray, sample.F.MulScalar(weight))
 
 	if sample.Flags&bxdf.TransmissionEvent != 0 {
-		applyMediumTransmission(media, ray, ctx, obj.MediumBoundary, sample)
+		applyMediumTransmission(ray, ctx, obj.MediumBoundary, sample)
 	}
 }
 

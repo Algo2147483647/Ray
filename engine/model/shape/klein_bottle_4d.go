@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"github.com/Algo2147483647/ray/engine/maths"
+	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -23,8 +24,6 @@ import (
 // directly. The ray tracer intersects the codimension-1 tube boundary defined
 // by dist(p, S) == Thickness.
 type KleinBottle4D struct {
-	BaseShape
-
 	Center    *mat.VecDense
 	R         float64
 	Minor     float64
@@ -96,6 +95,10 @@ func NewKleinBottle4D(center *mat.VecDense, majorR, minorR, thickness float64) *
 }
 
 func (k *KleinBottle4D) Name() string { return "Klein Bottle 4D" }
+
+func (k *KleinBottle4D) IntersectGeodesic(_, _ *mat.VecDense, _ geometry.Geometry, _ IntersectOptions) (SurfaceInteraction, bool) {
+	return unsupportedGeodesicIntersection()
+}
 
 func (k *KleinBottle4D) rebuildSeeds() {
 	k.seeds = make([]kleinSeed, 0, k.uSeeds*k.vSeeds)

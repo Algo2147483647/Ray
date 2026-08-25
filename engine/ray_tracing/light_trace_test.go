@@ -71,17 +71,11 @@ func TestBuildLightSubpathAppliesHomogeneousAbsorptionBeforeVertex(t *testing.T)
 		},
 	}
 	upperReceiver := &object.Object{
-		Shape: &shape.Plane{
-			A: mat.NewVecDense(3, []float64{0, 0, 1}),
-			B: -1,
-		},
+		Shape:    testLinearPolynomial(t, [3]float64{0, 0, 1}, -1),
 		Material: &material.Material{},
 	}
 	lowerReceiver := &object.Object{
-		Shape: &shape.Plane{
-			A: mat.NewVecDense(3, []float64{0, 0, 1}),
-			B: 1,
-		},
+		Shape:    testLinearPolynomial(t, [3]float64{0, 0, 1}, 1),
 		Material: &material.Material{},
 	}
 	tree := &object.ObjectTree{Media: registry}

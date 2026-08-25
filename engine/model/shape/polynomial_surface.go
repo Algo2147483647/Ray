@@ -10,7 +10,6 @@ import (
 )
 
 type Polynomial struct {
-	BaseShape
 	InputDim     int                          // Number of local input coordinates used by the implicit polynomial.
 	Coefficients *maths.SparseTensor[float64] // Sparse polynomial coefficients indexed by exponents.
 	Transform    [4][4]float64                // World-to-local homogeneous transform matrix.
@@ -20,12 +19,18 @@ type Polynomial struct {
 type PolynomialCalculateStorage struct {
 	Degree    int
 	Terms     []polynomialTerm
+	Linear    linearPolynomialKernel
 	Quadratic quadraticPolynomialKernel
 }
 
 type polynomialTerm struct {
 	Exponents []int
 	Value     float64
+}
+
+type linearPolynomialKernel struct {
+	Constant float64
+	Linear   [3]float64
 }
 
 type quadraticPolynomialKernel struct {
@@ -111,7 +116,10 @@ func (p *Polynomial) Evaluate(input []float64) float64 {
 	}
 
 	mem := p.calculateStorage()
-	if mem.Degree <= 2 {
+	if mem.Degree <= 1 {
+		return mem.Linear.evaluate(input)
+	}
+	if mem.Degree == 2 {
 		return mem.Quadratic.evaluate(input)
 	}
 	powers := precomputePowers(input, mem.Degree)
@@ -134,7 +142,10 @@ func (p *Polynomial) Gradient(input []float64) []float64 {
 	}
 
 	mem := p.calculateStorage()
-	if mem.Degree <= 2 {
+	if mem.Degree <= 1 {
+		return mem.Linear.gradient()
+	}
+	if mem.Degree == 2 {
 		return mem.Quadratic.gradient(input)
 	}
 	powers := precomputePowers(input, mem.Degree)
@@ -181,7 +192,7 @@ func (p *Polynomial) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense
 }
 
 func (p *Polynomial) BuildBoundingBox() (pmin, pmax *mat.VecDense) {
-	return p.BaseShape.BuildBoundingBox()
+	return unboundedBoundingBox(p.InputDim)
 }
 
 func (p *Polynomial) rayPolynomial(raySt, rayDir *mat.VecDense) ([]float64, error) {
@@ -191,7 +202,10 @@ func (p *Polynomial) rayPolynomial(raySt, rayDir *mat.VecDense) ([]float64, erro
 		return nil, fmt.Errorf("%w: polynomial dimension mismatch", maths.ErrInvalidInput)
 	}
 	mem := p.calculateStorage()
-	if mem.Degree <= 2 {
+	if mem.Degree <= 1 {
+		return mem.Linear.rayPolynomial(localSt[:p.InputDim], localDir[:p.InputDim]), nil
+	}
+	if mem.Degree == 2 {
 		return mem.Quadratic.rayPolynomial(localSt[:p.InputDim], localDir[:p.InputDim]), nil
 	}
 	ascending := make([]float64, mem.Degree+1)
@@ -251,11 +265,42 @@ func buildPolynomialCalculateStorage(inputDim int, coefficients *maths.SparseTen
 			Exponents: exponents,
 			Value:     value,
 		})
+		if totalDegree <= 1 {
+			mem.Linear.add(exponents, value)
+		}
 		if totalDegree <= 2 {
 			mem.Quadratic.add(exponents, value)
 		}
 	})
 	return mem
+}
+
+func (l *linearPolynomialKernel) add(exponents []int, value float64) {
+	total := exponents[0] + exponents[1] + exponents[2]
+	if total == 0 {
+		l.Constant += value
+		return
+	}
+	for axis, exponent := range exponents {
+		if exponent == 1 {
+			l.Linear[axis] += value
+			return
+		}
+	}
+}
+
+func (l linearPolynomialKernel) evaluate(point []float64) float64 {
+	return l.Constant + l.Linear[0]*point[0] + l.Linear[1]*point[1] + l.Linear[2]*point[2]
+}
+
+func (l linearPolynomialKernel) gradient() []float64 {
+	return []float64{l.Linear[0], l.Linear[1], l.Linear[2]}
+}
+
+func (l linearPolynomialKernel) rayPolynomial(start, direction []float64) []float64 {
+	constant := l.evaluate(start)
+	slope := l.Linear[0]*direction[0] + l.Linear[1]*direction[1] + l.Linear[2]*direction[2]
+	return []float64{slope, constant}
 }
 
 func (q *quadraticPolynomialKernel) add(exponents []int, value float64) {

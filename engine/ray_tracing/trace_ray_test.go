@@ -45,15 +45,15 @@ func TestTraceRayAccumulatesEmissionAndContinuesSurface(t *testing.T) {
 	}
 }
 
-func TestPrepareMediumContextKeepsLegacyIORWithoutBoundary(t *testing.T) {
-	ray := &renderray.Ray{RefractionIndex: 1.5}
+func TestPrepareMediumContextUsesStackWithoutBoundary(t *testing.T) {
+	ray := &renderray.Ray{}
 	ray.MediumStack.Reset(medium.MediumAir)
-	ctx := bxdf.ShadingContext{CurrentIOR: ray.RefractionIndex}
+	ctx := bxdf.ShadingContext{}
 
 	prepareMediumContext(&ctx, medium.NewRegistry(), ray, medium.Boundary{}, true)
 
-	if ctx.CurrentIOR != 1.5 {
-		t.Fatalf("legacy current IOR changed: got %f want 1.5", ctx.CurrentIOR)
+	if ctx.IncidentMedium != medium.MediumAir || ctx.TransmitMedium != medium.MediumAir {
+		t.Fatalf("inactive boundary did not derive the current medium from the stack: %d -> %d", ctx.IncidentMedium, ctx.TransmitMedium)
 	}
 	if ctx.EtaIncident != 0 || ctx.EtaTransmit != 0 {
 		t.Fatalf("expected inactive boundary eta fields to stay empty, got %f -> %f", ctx.EtaIncident, ctx.EtaTransmit)
@@ -120,16 +120,13 @@ func TestApplyMediumTransmissionThinBoundaryDoesNotMutateStack(t *testing.T) {
 	boundary := medium.Boundary{Outside: medium.MediumAir, Inside: glassID, Thin: true, Priority: 4}
 	ctx := bxdf.ShadingContext{Entering: true, TransmitMedium: glassID}
 
-	applyMediumTransmission(registry, ray, ctx, boundary, bxdf.BxDFSample{
+	applyMediumTransmission(ray, ctx, boundary, bxdf.BxDFSample{
 		Flags:          bxdf.DeltaTransmission,
 		TransmitMedium: glassID,
 	})
 
 	if got := ray.MediumStack.Current(); got != medium.MediumAir {
 		t.Fatalf("thin boundary should not push stack medium, got %d", got)
-	}
-	if got := ray.RefractionIndex; got != 1 {
-		t.Fatalf("thin boundary should leave current ray IOR at air, got %f", got)
 	}
 }
 
@@ -162,8 +159,8 @@ func TestApplySurfaceSampleUpdatesMediumForNonDeltaTransmission(t *testing.T) {
 	if got := ray.MediumStack.Current(); got != glassID {
 		t.Fatalf("expected non-delta transmission to enter glass, got medium %d", got)
 	}
-	if got := ray.RefractionIndex; got != 1.5 {
-		t.Fatalf("expected ray IOR to update to glass, got %f", got)
+	if got := registry.IOR(ray.MediumStack.Current(), ctx); got != 1.5 {
+		t.Fatalf("expected current IOR to derive from the stack as 1.5, got %f", got)
 	}
 }
 
@@ -261,10 +258,7 @@ func TestSurfaceHitInGeometryHonorsKleinBoundary(t *testing.T) {
 func TestKleinSurfaceInteractionNormalizesIncidentDirectionAndReflectsMetricAngle(t *testing.T) {
 	g := geometry.Klein()
 	obj := &object.Object{
-		Shape: &shape.Plane{
-			A: mat.NewVecDense(3, []float64{1, 2, 0}),
-			B: -1,
-		},
+		Shape: testLinearPolynomial(t, [3]float64{1, 2, 0}, -1),
 		Material: &material.Material{
 			Surface: bxdf.NewSpecularReflection(renderray.NewSpectrum(1, 1, 1)),
 		},

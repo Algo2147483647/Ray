@@ -13,11 +13,7 @@
 | Circle | $D(c,n,r)=\{x\mid n\cdot(x-c)=0,\ \|x-c\|\le r\}$ | $c,n\in\mathbb{R}^D$, $\|n\|>0$, $r>0$ | Supporting-plane intersection followed by a radial containment test; analytic great-circle plane candidates |
 | Sphere, Hypersphere | $S^{D-1}=\{x\in\mathbb{R}^D\mid\|x-c\|^2=r^2\}$ | $c\in\mathbb{R}^D$, $r\in\mathbb{R}_{>0}$ | Quadratic substitution along an affine ray; sampled and bisected scalar roots along a great circle |
 | Axis-aligned Cuboid, Hyper-Cuboid | $C=\{x\in\mathbb{R}^D\mid p_{\min,i}\le x_i\le p_{\max,i}\}$ | $p_{\min},p_{\max}\in\mathbb{R}^D$ with $p_{\min,i}<p_{\max,i}$ | Per-axis slab intervals for affine rays; analytic face candidates for spherical great circles |
-| Plane, hyperplane | $H=\{x\in\mathbb{R}^D\mid A^Tx+b=0\}$ | $A\in\mathbb{R}^D\setminus\{0\}$, $b\in\mathbb{R}$ | One linear affine root; scalar root search along a great circle; JSON factory currently rejects it |
-| Quadratic Surface | $F(x)=x^TAx+b^Tx+c=0$ | $A\in\mathbb{R}^{3\times3}$, $b\in\mathbb{R}^3$, $c\in\mathbb{R}$; symmetric $A$ recommended | Ray substitution produces a polynomial of degree at most two; real-root selection |
-| Cubic Algebraic Surface | $F(x,y,z)=\sum\limits_{i,j,k=0}^3A_{ijk}f_if_jf_k=0$, $f=(1,x,y,z)$ | $A\in\mathbb{R}^{4\times4\times4}$, dense or sparse | Tensor entries are merged into monomials; ray substitution produces a cubic polynomial |
-| Four-order Surface | $F(x,y,z)=\sum\limits_{i,j,k,l=0}^3A_{ijkl}f_if_jf_kf_l=0$ | $A\in\mathbb{R}^{4\times4\times4\times4}$, dense or sparse | Monomial merging followed by quartic ray-polynomial solution |
-| Polynomial Surface | $F(q)=\sum\limits_e c_e\prod\limits_iq_i^{e_i}=0$ | $1\le d\le3$, $e\in\mathbb{N}_0^d$, $c_e\in\mathbb{R}$, optional transform | Exact expansion into a univariate ray polynomial, real-root solution, and transformed gradient |
+| Polynomial | $F(x,y,z)=\sum_e c_e x^{e_x}y^{e_y}z^{e_z}=0$ | Three non-negative exponents, finite non-zero sparse coefficients, declared degree, optional transform | Direct cached linear/quadratic kernels; sparse ray expansion plus specialized cubic/quartic or general higher-degree real-root solution |
 | Implicit Equation | $S=\{x\in\mathbb{R}^3\mid F(Tx)=0\}$ | Scalar field $F:\mathbb{R}^3\to\mathbb{R}$, world-to-local transform $T$, optional bounds and numerical tolerances | Bounded interval scan, near-zero/sign-change detection, bisection, and gradient normal evaluation |
 | Parametric Surface | $S=\{P(u,v)\in\mathbb{R}^3\mid(u,v)\in U\times V\}$ | $P:U\times V\to\mathbb{R}^3$, parameter intervals, derivatives, sampling and Newton tolerances | Patch BVH followed by a three-variable Newton solve of $o+td=P(u,v)$ |
 | Parametric Curve | $S=\partial\bigcup\limits_{t\in I}B(C(t),r(t))$ | $C:I\to\mathbb{R}^3$, $r:I\to\mathbb{R}_{>0}$, derivative and sampling controls | Segment BVH, capsule overlap, and golden-section refinement of the earliest swept-sphere entry |
@@ -28,9 +24,9 @@
 
 The table lists mathematical geometry, not only factory strings. The word "Shape" has three distinct meanings in the Engine:
 
-1. **JSON discriminator values** are accepted by an object's `shape` field. The factory declares 18 values, including aliases and the rejected `plane` branch.
+1. **JSON discriminator values** are accepted by an object's `shape` field. Algebraic surfaces have only the canonical `polynomial` discriminator.
 2. **Runtime Shape types** are the Go types that implement `shape.Shape`. Several JSON aliases map to one Go type, while STL expands into many `Triangle` instances.
-3. **Internal adapter types** include `BaseShape`, which supplies default behavior, and `BoundedShape`, which clips another Shape. Neither is a JSON geometry category.
+3. **Internal adapters** include `BoundedShape`, which clips another Shape. It is not a JSON geometry category.
 
 ### 1.2 Capability Matrix
 
@@ -40,11 +36,7 @@ The table lists mathematical geometry, not only factory strings. The word "Shape
 | Circle | `Circle` | Plane root plus radial test | Analytic plane-coordinate candidates | Exact projected box | $A=\pi r^2$ in 3D | Polar square-root sampling, $p_A=1/A$ | Constant normal and local orthonormal frame | Linear plane root; analytic trigonometric candidates |
 | Sphere, Hypersphere | `Sphere` | Quadratic | Shared scalar great-circle scan | Exact | $A=4\pi r^2$ in 3D | Uniform sphere sampling, $p_A=1/A$ | Radial unit normal | Real quadratic roots; great-circle scan and bisection |
 | Axis-aligned Cuboid, Hyper-Cuboid | `Cuboid` | Yes | Analytic face-coordinate candidates | Exact | $A=2(d_xd_y+d_xd_z+d_yd_z)$ in 3D | Face-area sampling, $p_A=1/A$ | Piecewise-constant face normal | Slab clipping; generic-$D$ and optimized 3D paths |
-| Plane, hyperplane | `Plane` | Linear | Shared scalar great-circle scan | Approximately infinite | Not exposed | No | Constant normal $A/\|A\|$ | Linear affine root; great-circle scan despite analytic trigonometric form |
-| Quadratic Surface | `QuadraticEquation` | Degree-at-most-two ray polynomial | Shared scalar great-circle scan | Approximately infinite | Not exposed | No | Implemented normal $\operatorname{normalize}(2Ax+b)$ | Quadratic real roots; great-circle scan and bisection |
-| Cubic Algebraic Surface | `CubicEquation` | Cubic ray polynomial | No | Approximately infinite | Not exposed | No | Analytic merged-monomial gradient | Tensor-to-monomial reduction and general real-polynomial roots |
-| Four-order Surface | `FourOrderEquation` | Quartic ray polynomial | No | Approximately infinite | Not exposed | No | Analytic merged-monomial gradient | Tensor-to-monomial reduction and general real-polynomial roots |
-| Polynomial Surface | `PolynomialSurface` | Exact univariate ray-polynomial expansion | Shared scalar great-circle scan | Approximately infinite | Not exposed | No | Sparse analytic gradient transformed by $L^T$ | Binomial expansion, polynomial convolution, and general real roots |
+| Polynomial | `Polynomial` | Direct for degree 1/2; exact sparse univariate expansion otherwise | Shared scalar great-circle scan | Approximately infinite | Not exposed | No | Cached linear/quadratic or sparse analytic gradient transformed by $L^T$ | Direct linear/quadratic kernels, specialized cubic/quartic roots, general higher-degree roots |
 | Implicit Equation | `ImplicitEquation` | Deterministic field scan | Shared scalar great-circle scan | Exact with range; otherwise approximately infinite | Not exposed | No surface sampler; deterministic ray-field samples | Explicit, symbolic, or centered finite-difference gradient | AABB clipping, adaptive default step, sign-change detection, and bisection |
 | Parametric Surface | `ParametricEquation` | Patch candidates plus Newton solve | No | Estimated from sampled patches | Not exposed | No area sampler; nine deterministic samples per patch | $P_u$, $P_v$, UV, and $P_u\times P_v$ normal | Patch BVH, three-variable Newton iteration, and backtracking |
 | Parametric Curve | `ParametricCurve` | Swept-sphere envelope search | No | Estimated from sampled segments | Not exposed | No area sampler; `samples + 1` spine samples | Spine tangent and selected-sphere radial normal | Segment BVH, capsule rejection, and golden-section refinement |
@@ -57,9 +49,8 @@ The table lists mathematical geometry, not only factory strings. The word "Shape
 | Adapter | Affine intersection | Spherical great-circle intersection | AABB | Surface measure and sampling | Differential geometry | Numerical behavior |
 | --- | --- | --- | --- | --- | --- | --- |
 | `BoundedShape` | Delegates after slab clipping | Delegates, then checks containment | Uses external bounds | Forwards only when bounds contain the complete inner Shape | Delegates | Interval clipping and post-hit containment |
-| `BaseShape` | Always misses | Always misses | $[-\mathtt{MaxFloat64}/2,+\mathtt{MaxFloat64}/2]^D$ | Zero area; no sampling | None | Default no-op behavior |
 
-"Spherical" means explicit great-circle intersection support. Euclidean and Klein geometry both use `IntersectAffine`; Klein compatibility still requires a valid 3D Shape inside the unit-ball model. Consequently, `triangle`, finite cylinders, cubic and quartic equations, parametric surfaces, parametric curves, and `klein_bottle` cannot currently produce hits in a Spherical scene. The 4D `klein_bottle` works only through a 4D **affine/Euclidean** render path. Its name does not make it usable in 3D Klein geometry or on Spherical great-circle paths.
+"Spherical" means explicit great-circle intersection support. Euclidean and Klein geometry both use `IntersectAffine`; Klein compatibility still requires a valid 3D Shape inside the unit-ball model. Consequently, triangles, finite cylinders, parametric surfaces, parametric curves, and `klein_bottle` cannot currently produce hits in a Spherical scene. The 4D `klein_bottle` works only through a 4D **affine/Euclidean** render path. Its name does not make it usable in 3D Klein geometry or on Spherical great-circle paths.
 
 ## Triangle
 
@@ -425,57 +416,6 @@ $$
 p_A(x)=\frac{1}{A}.
 $$
 
-## Plane, hyperplane
-
-### Mathematical Definition
-
-For a non-zero covector $A\in\mathbb{R}^D$ and scalar $b\in\mathbb{R}$, an affine hyperplane is
-
-$$
-H=\left\{x\in\mathbb{R}^D\mid F(x)=A^Tx+b=0\right\}.
-$$
-
-It is an unbounded, flat, codimension-one affine subspace with constant unit normal $A/\|A\|$. It has no finite intrinsic AABB.
-
-### Ray Intersection
-
-Its affine intersection is
-
-$$
-t=-\frac{A\cdot o+b}{A\cdot d}.
-$$
-
-The normal is $A/\|A\|$. Its Spherical implementation scans the same scalar function along a great circle.
-
-### Parameters and Schema
-
-- $A\in\mathbb{R}^D\setminus\{0\}$ determines orientation.
-- $b\in\mathbb{R}$ determines offset.
-- The Go type exists, but the JSON factory returns an error immediately after matching `plane` and reads neither parameter.
-
-The Go fields correspond conceptually to the following structure:
-
-```jsonc
-{
-  "shape": "plane",
-  "A": [/* D; callers should ensure non-zero */],
-  "b": "number"
-}
-```
-
-This is source-structure documentation, **not a currently valid input schema**. The factory returns an error immediately after matching `plane`; it never reads A or b and never constructs the type.
-
-### Spherical Great-Circle Geometry
-
-The source type evaluates the hyperplane equation along a great circle:
-
-$$
-G(s)=A\cdot\gamma(s)+b
-=(A\cdot o)\cos s+(A\cdot v)\sin s+b.
-$$
-
-Although this equation admits an analytic trigonometric solution, the current code delegates to the shared scalar scan-and-bisection routine. This capability is reachable only through direct Go construction because scene JSON cannot construct `shape.Plane`.
-
 ## Polynomial
 
 ### Mathematical Definition
@@ -500,7 +440,8 @@ The transform is world-to-local. The local ray origin includes translation, whil
 
 The external model is unified, but the numerical kernels remain degree-aware:
 
-- degree 1 and 2 use a cached direct kernel for evaluation, gradient, and the ray coefficients $a t^2+b t+c$;
+- degree 1 uses a cached direct affine kernel and emits only $b t+c$;
+- degree 2 uses a cached direct quadratic kernel and emits $a t^2+b t+c$;
 - degree 3 and 4 use the shared sparse expansion followed by dedicated cubic and quartic real-root solvers;
 - higher degrees use the general numerical real-root solver.
 

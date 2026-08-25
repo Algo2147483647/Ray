@@ -7,7 +7,6 @@ import (
 )
 
 type BoundedShape struct {
-	BaseShape
 	Shape  Shape
 	Bounds *Cuboid
 }

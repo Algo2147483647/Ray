@@ -137,7 +137,7 @@ func TestBDPTPreflightAcceptsFiniteCylinderAreaLight(t *testing.T) {
 func TestBDPTUnsupportedSceneFailsWithoutChangingIntegrator(t *testing.T) {
 	tree := (&object.ObjectTree{}).Build()
 	tree.AddObject(&object.Object{
-		Shape:    &shape.Plane{A: mat.NewVecDense(3, []float64{0, 0, 1}), B: -1},
+		Shape:    testLinearPolynomial(t, [3]float64{0, 0, 1}, -1),
 		Material: &material.Material{Emission: emission.NewConstant(optics.ConstantSpectrum(2))},
 	})
 	tree.Build()

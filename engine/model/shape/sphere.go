@@ -8,7 +8,6 @@ import (
 )
 
 type Sphere struct {
-	BaseShape
 	center *mat.VecDense
 	R      float64 `json:"r"`
 }

@@ -41,7 +41,6 @@ type RoughnessInfo struct {
 type ShadingContext struct {
 	TransportMode   TransportMode       // Light transport evaluation mode.
 	SpectrumMode    optics.SpectrumMode // Spectral evaluation mode.
-	CurrentIOR      float64             // Index of refraction at the current point.
 	WavelengthNM    float64             // Selected wavelength in nanometers.
 	WavelengthsNM   []float64           // Sampled wavelengths in nanometers.
 	WavelengthPDF   float64             // Probability density of wavelength sampling.

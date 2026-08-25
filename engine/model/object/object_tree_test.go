@@ -153,10 +153,7 @@ func TestSurfaceHitRangeHonorsTMax(t *testing.T) {
 
 func TestKleinSurfaceHitUsesIntrinsicMetricNormal(t *testing.T) {
 	tree := &ObjectTree{}
-	tree.AddObject(&Object{Shape: &shape.Plane{
-		A: mat.NewVecDense(3, []float64{1, 2, 0}),
-		B: -1,
-	}})
+	tree.AddObject(&Object{Shape: testLinearPolynomial(t, [3]float64{1, 2, 0}, -1)})
 	tree.Build()
 
 	g := geometry.Klein()

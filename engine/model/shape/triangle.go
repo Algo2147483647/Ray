@@ -2,13 +2,13 @@ package shape
 
 import (
 	"github.com/Algo2147483647/ray/engine/maths"
+	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 	"math"
 )
 
 type Triangle struct {
-	BaseShape
 	P1  *mat.VecDense `json:"p1"`
 	P2  *mat.VecDense `json:"p2"`
 	P3  *mat.VecDense `json:"p3"`
@@ -90,6 +90,10 @@ func (f *Triangle) IntersectAffine(raySt, rayDir *mat.VecDense, options Intersec
 	}
 
 	return f.interactionAt(raySt, rayDir, distance, u, v), true
+}
+
+func (f *Triangle) IntersectGeodesic(_, _ *mat.VecDense, _ geometry.Geometry, _ IntersectOptions) (SurfaceInteraction, bool) {
+	return unsupportedGeodesicIntersection()
 }
 
 func (f *Triangle) intersect3D(raySt, rayDir *mat.VecDense, interval Interval) (SurfaceInteraction, bool) {

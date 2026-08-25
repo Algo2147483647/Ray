@@ -9,8 +9,6 @@ import (
 )
 
 type Cuboid struct {
-	BaseShape
-
 	Pmin *mat.VecDense `json:"pmin"`
 	Pmax *mat.VecDense `json:"pmax"`
 }

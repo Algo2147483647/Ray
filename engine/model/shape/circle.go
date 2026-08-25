@@ -10,7 +10,6 @@ import (
 )
 
 type Circle struct {
-	BaseShape
 	Center *mat.VecDense `json:"center"`
 	Normal *mat.VecDense `json:"normal"`
 	R      float64       `json:"r"`

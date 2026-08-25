@@ -1,10 +1,11 @@
 package shape
 
 import (
+	"math"
+
 	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"gonum.org/v1/gonum/mat"
-	"math"
 )
 
 // Shape exposes distinct affine-ray and geometry-aware geodesic intersection
@@ -16,6 +17,20 @@ type Shape interface {
 	GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense
 	BuildBoundingBox() (pmin, pmax *mat.VecDense)
 }
+
+var (
+	_ Shape = (*BoundedShape)(nil)
+	_ Shape = (*Circle)(nil)
+	_ Shape = (*Cuboid)(nil)
+	_ Shape = (*FiniteCylinder)(nil)
+	_ Shape = (*ImplicitEquation)(nil)
+	_ Shape = (*KleinBottle4D)(nil)
+	_ Shape = (*ParametricCurve)(nil)
+	_ Shape = (*ParametricEquation)(nil)
+	_ Shape = (*Polynomial)(nil)
+	_ Shape = (*Sphere)(nil)
+	_ Shape = (*Triangle)(nil)
+)
 
 // SurfaceSample is a point sampled with respect to surface area.
 type SurfaceSample struct {
@@ -32,43 +47,14 @@ type SurfaceSampler interface {
 	SurfaceArea() float64
 }
 
-// BaseShape provides the basic shape implementation.
-type BaseShape struct {
-	Dimension int
+func unsupportedGeodesicIntersection() (SurfaceInteraction, bool) {
+	return SurfaceInteraction{}, false
 }
 
-func (bs *BaseShape) dimension() int {
-	if bs != nil && bs.Dimension > 0 {
-		return bs.Dimension
+func unboundedBoundingBox(dimension int) (pmin, pmax *mat.VecDense) {
+	if dimension <= 0 {
+		dimension = 3
 	}
-	return 3
-}
-
-func (bs *BaseShape) Name() string {
-	return "Base Shape"
-}
-
-func (bs *BaseShape) IntersectAffine(
-	_, _ *mat.VecDense,
-	_ IntersectOptions,
-) (SurfaceInteraction, bool) {
-	return SurfaceInteraction{}, false
-}
-
-func (bs *BaseShape) IntersectGeodesic(
-	_, _ *mat.VecDense,
-	_ geometry.Geometry,
-	_ IntersectOptions,
-) (SurfaceInteraction, bool) {
-	return SurfaceInteraction{}, false
-}
-
-func (bs *BaseShape) GetNormalVector(intersect, res *mat.VecDense) *mat.VecDense {
-	return res
-}
-
-func (bs *BaseShape) BuildBoundingBox() (pmin, pmax *mat.VecDense) {
-	dimension := bs.dimension()
 	pmin = mat.NewVecDense(dimension, nil)
 	pmax = mat.NewVecDense(dimension, nil)
 	for i := 0; i < dimension; i++ {

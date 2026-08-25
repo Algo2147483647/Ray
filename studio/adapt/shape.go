@@ -39,6 +39,12 @@ func adaptObject(object map[string]interface{}, ctx groupContext, index, dimensi
 	case strings.EqualFold(shapeName, "cylinder"),
 		strings.EqualFold(shapeName, "finite cylinder"):
 		return adaptFiniteCylinder(adapted, ctx, dimension)
+	case strings.EqualFold(shapeName, "plane"):
+		return adaptPlane(adapted, ctx, dimension)
+	case strings.EqualFold(shapeName, "quadratic"),
+		strings.EqualFold(shapeName, "quadric"),
+		strings.EqualFold(shapeName, "quadratic surface"):
+		return adaptQuadraticSurface(adapted, ctx, dimension)
 	case strings.EqualFold(shapeName, "quadratic equation"),
 		strings.EqualFold(shapeName, "cubic equation"),
 		strings.EqualFold(shapeName, "four-order equation"),
@@ -59,12 +65,168 @@ func adaptObject(object map[string]interface{}, ctx groupContext, index, dimensi
 }
 
 func rotationAwareShape(shapeName string) bool {
-	for _, supported := range []string{"triangle", "sphere", "hypersphere", "circle", "cylinder", "finite cylinder", "cuboid", "hypercuboid", "hypercube"} {
+	for _, supported := range []string{"triangle", "sphere", "hypersphere", "circle", "cylinder", "finite cylinder", "cuboid", "hypercuboid", "hypercube", "plane", "quadratic", "quadric", "quadratic surface"} {
 		if strings.EqualFold(shapeName, supported) {
 			return true
 		}
 	}
 	return false
+}
+
+func adaptPlane(object map[string]interface{}, ctx groupContext, dimension int) (map[string]interface{}, error) {
+	if dimension != 3 {
+		return nil, fmt.Errorf("plane adapter requires dimension 3, got %d", dimension)
+	}
+	normal, err := vectorField(object, "normal", dimension)
+	if err != nil {
+		return nil, err
+	}
+	lengthSquared := 0.0
+	for _, value := range normal {
+		lengthSquared += value * value
+	}
+	if lengthSquared <= 0 || math.IsNaN(lengthSquared) || math.IsInf(lengthSquared, 0) {
+		return nil, fmt.Errorf("field %q must be a finite non-zero vector", "normal")
+	}
+
+	_, hasPoint := object["point"]
+	_, hasOffset := object["offset"]
+	if hasPoint && hasOffset {
+		return nil, fmt.Errorf("plane fields %q and %q cannot both be provided", "point", "offset")
+	}
+	constant := 0.0
+	if hasPoint {
+		point, err := vectorField(object, "point", dimension)
+		if err != nil {
+			return nil, err
+		}
+		for axis := range normal {
+			constant -= normal[axis] * point[axis]
+		}
+	} else if hasOffset {
+		offset, err := floatField(object, "offset")
+		if err != nil {
+			return nil, err
+		}
+		constant = -offset
+	}
+
+	terms := make([]map[string]interface{}, 0, 4)
+	for axis, coefficient := range normal {
+		if coefficient == 0 {
+			continue
+		}
+		exponents := []int{0, 0, 0}
+		exponents[axis] = 1
+		terms = append(terms, map[string]interface{}{"exponents": exponents, "coefficient": coefficient})
+	}
+	if constant != 0 {
+		terms = append(terms, map[string]interface{}{"exponents": []int{0, 0, 0}, "coefficient": constant})
+	}
+
+	adapted := cloneMap(object)
+	adapted["shape"] = "polynomial"
+	adapted["degree"] = 1
+	adapted["terms"] = terms
+	delete(adapted, "normal")
+	delete(adapted, "point")
+	delete(adapted, "offset")
+	return adaptPolynomial(adapted, ctx, dimension)
+}
+
+func adaptQuadraticSurface(object map[string]interface{}, ctx groupContext, dimension int) (map[string]interface{}, error) {
+	if dimension != 3 {
+		return nil, fmt.Errorf("quadratic surface adapter requires dimension 3, got %d", dimension)
+	}
+	matrix, err := quadraticMatrix(object, "matrix", dimension)
+	if err != nil {
+		return nil, err
+	}
+	linear, err := optionalVector(object, "linear", dimension, zeroVector(dimension))
+	if err != nil {
+		return nil, err
+	}
+	constant := 0.0
+	if _, ok := object["constant"]; ok {
+		constant, err = floatField(object, "constant")
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	terms := make([]map[string]interface{}, 0, 10)
+	hasQuadratic := false
+	for first := 0; first < dimension; first++ {
+		for second := first; second < dimension; second++ {
+			coefficient := matrix[first][second]
+			if first != second {
+				coefficient *= 2
+			}
+			if coefficient == 0 {
+				continue
+			}
+			hasQuadratic = true
+			exponents := []int{0, 0, 0}
+			exponents[first]++
+			exponents[second]++
+			terms = append(terms, map[string]interface{}{"exponents": exponents, "coefficient": coefficient})
+		}
+	}
+	if !hasQuadratic {
+		return nil, fmt.Errorf("field %q must contain a non-zero quadratic coefficient", "matrix")
+	}
+	for axis, coefficient := range linear {
+		if coefficient == 0 {
+			continue
+		}
+		exponents := []int{0, 0, 0}
+		exponents[axis] = 1
+		terms = append(terms, map[string]interface{}{"exponents": exponents, "coefficient": coefficient})
+	}
+	if constant != 0 {
+		terms = append(terms, map[string]interface{}{"exponents": []int{0, 0, 0}, "coefficient": constant})
+	}
+
+	adapted := cloneMap(object)
+	adapted["shape"] = "polynomial"
+	adapted["degree"] = 2
+	adapted["terms"] = terms
+	delete(adapted, "matrix")
+	delete(adapted, "linear")
+	delete(adapted, "constant")
+	return adaptPolynomial(adapted, ctx, dimension)
+}
+
+func quadraticMatrix(object map[string]interface{}, key string, dimension int) ([][]float64, error) {
+	raw, ok := object[key]
+	if !ok {
+		return nil, fmt.Errorf("missing required field %q", key)
+	}
+	rows, ok := raw.([]interface{})
+	if !ok || len(rows) != dimension {
+		return nil, fmt.Errorf("field %q must be a %dx%d matrix", key, dimension, dimension)
+	}
+	matrix := make([][]float64, dimension)
+	for row, rawRow := range rows {
+		values, err := toFloat64Slice(rawRow)
+		if err != nil || len(values) != dimension {
+			return nil, fmt.Errorf("field %q row %d must contain %d numbers", key, row, dimension)
+		}
+		for col, value := range values {
+			if math.IsNaN(value) || math.IsInf(value, 0) {
+				return nil, fmt.Errorf("field %q[%d][%d] must be finite", key, row, col)
+			}
+		}
+		matrix[row] = values
+	}
+	for row := 0; row < dimension; row++ {
+		for col := row + 1; col < dimension; col++ {
+			if !nearlyEqual(matrix[row][col], matrix[col][row]) {
+				return nil, fmt.Errorf("field %q must be symmetric", key)
+			}
+		}
+	}
+	return matrix, nil
 }
 
 func adaptBounds(object map[string]interface{}, ctx groupContext, dimension int) error {

@@ -24,7 +24,6 @@ const (
 	ShapeCylinder           = "cylinder"
 	ShapeFiniteCylinder     = "finite cylinder"
 	ShapeTriangle           = "triangle"
-	ShapePlane              = "plane"
 	ShapePolynomial         = "polynomial"
 	ShapeImplicitEquation   = "implicit equation"
 	ShapeParametricEquation = "parametric equation"
@@ -48,8 +47,6 @@ func ParseObjectSpecInSpace(spec parser.ObjectSpec, space geometry.SceneSpace) (
 		return parseFiniteCylinder(definition, spec.Bounds, dimension)
 	case *parser.TriangleSpec:
 		return parseTriangle(definition, spec.Bounds, dimension)
-	case *parser.PlaneSpec:
-		return nil, fmt.Errorf("shape %q is declared but not implemented", spec.Shape)
 	case *parser.PolynomialSpec:
 		return parsePolynomial(definition, spec.Bounds, dimension)
 	case *parser.ImplicitEquationSpec:

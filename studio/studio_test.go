@@ -1598,6 +1598,66 @@ func TestStudioRejectsLegacyPolynomialShapeKinds(t *testing.T) {
 	}
 }
 
+func TestStudioCompilesFriendlyPlaneToLinearPolynomial(t *testing.T) {
+	script := &schema.StudioScript{Objects: []map[string]interface{}{
+		{
+			"id":     "floor",
+			"shape":  "plane",
+			"normal": []interface{}{0, 0, 2},
+			"point":  []interface{}{0, 0, 3},
+		},
+	}}
+	adapted, err := adaptTestScript(script, []string{"scene.json"}, 3)
+	if err != nil {
+		t.Fatalf("adapt plane: %v", err)
+	}
+	object := adapted.Objects[0]
+	if object["shape"] != "polynomial" || object["degree"] != 1 {
+		t.Fatalf("unexpected plane compilation: %+v", object)
+	}
+	terms, ok := object["terms"].([]map[string]interface{})
+	if !ok || len(terms) != 2 {
+		t.Fatalf("unexpected plane terms: %#v", object["terms"])
+	}
+	if terms[0]["coefficient"] != 2.0 || terms[1]["coefficient"] != -6.0 {
+		t.Fatalf("unexpected plane coefficients: %#v", terms)
+	}
+	if _, exists := object["normal"]; exists {
+		t.Fatal("Engine object must not retain Studio plane fields")
+	}
+}
+
+func TestStudioCompilesFriendlyQuadraticSurfaceToPolynomial(t *testing.T) {
+	script := &schema.StudioScript{Objects: []map[string]interface{}{
+		{
+			"id":    "quadric",
+			"shape": "quadratic",
+			"matrix": []interface{}{
+				[]interface{}{1, 0.5, 0},
+				[]interface{}{0.5, 2, 0},
+				[]interface{}{0, 0, 3},
+			},
+			"linear":   []interface{}{4, 0, 0},
+			"constant": -5,
+		},
+	}}
+	adapted, err := adaptTestScript(script, []string{"scene.json"}, 3)
+	if err != nil {
+		t.Fatalf("adapt quadratic surface: %v", err)
+	}
+	object := adapted.Objects[0]
+	if object["shape"] != "polynomial" || object["degree"] != 2 {
+		t.Fatalf("unexpected quadratic compilation: %+v", object)
+	}
+	terms, ok := object["terms"].([]map[string]interface{})
+	if !ok || len(terms) != 6 {
+		t.Fatalf("unexpected quadratic terms: %#v", object["terms"])
+	}
+	if _, exists := object["matrix"]; exists {
+		t.Fatal("Engine object must not retain Studio quadratic fields")
+	}
+}
+
 func TestStudioAdaptsPolynomialCenterScaleBasisToTransform(t *testing.T) {
 	script := &schema.StudioScript{
 		Objects: []map[string]interface{}{

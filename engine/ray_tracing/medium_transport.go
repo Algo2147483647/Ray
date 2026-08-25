@@ -114,11 +114,9 @@ func prepareMediumContext(ctx *bxdf.ShadingContext, media *medium.Registry, ray 
 	}
 	ctx.EtaIncident = media.IOR(incident, *ctx)
 	ctx.EtaTransmit = media.IOR(transmit, *ctx)
-	ctx.CurrentIOR = ctx.EtaIncident
-	ray.RefractionIndex = ctx.EtaIncident
 }
 
-func applyMediumTransmission(media *medium.Registry, ray *renderray.Ray, ctx bxdf.ShadingContext, boundary medium.Boundary, sample bxdf.BxDFSample) {
+func applyMediumTransmission(ray *renderray.Ray, ctx bxdf.ShadingContext, boundary medium.Boundary, sample bxdf.BxDFSample) {
 	if boundary.Active() && sample.TransmitMedium != medium.MediumNone {
 		if !boundary.Thin {
 			if ctx.Entering {
@@ -127,12 +125,6 @@ func applyMediumTransmission(media *medium.Registry, ray *renderray.Ray, ctx bxd
 				ray.MediumStack.ExitBoundary(boundary)
 			}
 		}
-		ray.RefractionIndex = media.IOR(ray.MediumStack.Current(), ctx)
-		return
-	}
-
-	if sample.Eta > 0 {
-		ray.RefractionIndex = sample.Eta
 	}
 }
 

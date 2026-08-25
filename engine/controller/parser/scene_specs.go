@@ -18,7 +18,6 @@ const (
 	ShapeCylinder           ShapeKind = "cylinder"
 	ShapeFiniteCylinder     ShapeKind = "finite cylinder"
 	ShapeTriangle           ShapeKind = "triangle"
-	ShapePlane              ShapeKind = "plane"
 	ShapePolynomial         ShapeKind = "polynomial"
 	ShapeImplicitEquation   ShapeKind = "implicit equation"
 	ShapeParametricEquation ShapeKind = "parametric equation"
@@ -30,7 +29,7 @@ const (
 var supportedShapeKinds = map[ShapeKind]bool{
 	ShapeCuboid: true, ShapeHypercuboid: true, ShapeSphere: true,
 	ShapeHypersphere: true, ShapeCircle: true, ShapeCylinder: true,
-	ShapeFiniteCylinder: true, ShapeTriangle: true, ShapePlane: true,
+	ShapeFiniteCylinder: true, ShapeTriangle: true,
 	ShapePolynomial: true, ShapeImplicitEquation: true,
 	ShapeParametricEquation: true, ShapeParametricCurve: true,
 	ShapeKleinBottle: true, ShapeSTL: true,
@@ -104,7 +103,6 @@ type TriangleSpec struct {
 	P2 []float64 `json:"p2,omitempty"`
 	P3 []float64 `json:"p3,omitempty"`
 }
-type PlaneSpec struct{}
 type PolynomialTermSpec struct {
 	Exponents   []int    `json:"exponents"`
 	Coefficient *float64 `json:"coefficient"`
@@ -191,7 +189,6 @@ func (*SphereSpec) objectDefinition()             {}
 func (*CircleSpec) objectDefinition()             {}
 func (*FiniteCylinderSpec) objectDefinition()     {}
 func (*TriangleSpec) objectDefinition()           {}
-func (*PlaneSpec) objectDefinition()              {}
 func (*PolynomialSpec) objectDefinition()         {}
 func (*ImplicitEquationSpec) objectDefinition()   {}
 func (*ParametricEquationSpec) objectDefinition() {}
@@ -246,8 +243,6 @@ func (s *ObjectSpec) UnmarshalJSON(data []byte) error {
 		definition = &FiniteCylinderSpec{}
 	case ShapeTriangle:
 		definition = &TriangleSpec{}
-	case ShapePlane:
-		definition = &PlaneSpec{}
 	case ShapePolynomial:
 		definition = &PolynomialSpec{}
 	case ShapeImplicitEquation:
@@ -650,7 +645,6 @@ func rejectObjectVariantFields(data []byte, kind ShapeKind) error {
 		fields = []string{"center", "position", "axis", "r", "height"}
 	case ShapeTriangle:
 		fields = []string{"p1", "p2", "p3"}
-	case ShapePlane:
 	case ShapePolynomial:
 		fields = []string{"degree", "terms", "transform"}
 	case ShapeImplicitEquation:

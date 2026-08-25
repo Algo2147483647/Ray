@@ -99,8 +99,8 @@ Canonical shape fields for normalized engine JSON:
 | `parametric curve` | `curve`, `t_range`, optional `samples` |
 | `stl` | `file`, `center`, `z_dir`, `x_dir`, `scale` |
 
-`plane` is recognized but intentionally returns an error because it is declared
-but not implemented.
+`plane`, `quadratic`, and `quadric` are Studio authoring conveniences, not Engine
+shape discriminators. Studio compiles them into canonical `polynomial` objects.
 
 `hypercube` is a studio authoring shape, not an engine shape. Studio validates
 equal local side lengths and emits a canonical `cuboid`.
@@ -131,6 +131,10 @@ Engine JSON must use `bounds.pmin` + `bounds.pmax`.
 uses three non-negative exponents and one finite coefficient. `degree` must
 equal the highest total degree present in `terms`; duplicate exponent tuples
 are rejected. `transform` is the world-to-local homogeneous transform.
+
+Degree one uses a direct linear evaluation, gradient, and ray-root kernel.
+Degree two similarly uses a cached quadratic kernel. Higher degrees use sparse
+ray expansion, with dedicated cubic and quartic real-root solvers where applicable.
 
 ```json
 {

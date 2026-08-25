@@ -307,6 +307,12 @@ func TestParseShapeRejectsLegacyPolynomialKinds(t *testing.T) {
 	}
 }
 
+func TestParseShapeRejectsStudioOnlyPlane(t *testing.T) {
+	if _, err := ParseShape(map[string]interface{}{"shape": "plane", "normal": []interface{}{0, 0, 1}}); err == nil {
+		t.Fatal("expected Engine to reject Studio-only plane authoring")
+	}
+}
+
 func TestParseShapeImplicitEquationRejectsBuiltInField(t *testing.T) {
 	_, err := ParseShape(map[string]interface{}{
 		"shape": "implicit equation",

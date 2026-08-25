@@ -358,7 +358,7 @@ func (h *Handler) makeLightEndpoint(
 		WavelengthNM: wavelengthNM, WavelengthPDF: wavelengthPDF,
 		HitPoint:        maths.NewDirectionFromComponents(ss.Point.RawVector().Data),
 		GeometricNormal: maths.NewDirectionFromComponents(ss.Normal.RawVector().Data),
-		UV:              ss.UV, CurrentIOR: 1,
+		UV:              ss.UV,
 	}
 	if wavelengthNM > 0 {
 		ctx.WavelengthsNM = []float64{wavelengthNM}
@@ -491,7 +491,7 @@ func (h *Handler) randomWalk(
 			break
 		}
 		if sample.Flags&bxdf.TransmissionEvent != 0 {
-			applyMediumTransmission(getMediumRegistry(tree), ray, si.Context, si.Object.MediumBoundary, sample)
+			applyMediumTransmission(ray, si.Context, si.Object.MediumBoundary, sample)
 		}
 		si.Frame.LocalToWorldInto(ray.Direction, sample.Wi)
 		ray.Origin.CopyVec(hit.Point)

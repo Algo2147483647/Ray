@@ -4,6 +4,7 @@ import (
 	"math"
 	"testing"
 
+	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"gonum.org/v1/gonum/mat"
 )
@@ -28,23 +29,30 @@ func TestSphereIntersectGreatCircle(t *testing.T) {
 	}
 }
 
-func TestPlaneIntersectGreatCircle(t *testing.T) {
-	plane := &Plane{A: mat.NewVecDense(4, []float64{0, 1, 0, 0}), B: -0.5}
+func TestLinearPolynomialIntersectGreatCircle(t *testing.T) {
+	coefficients, err := maths.NewSparseTensorFromEntries([]int{2, 2, 2}, maths.SparseTensorHash, []maths.SparseTensorEntry[float64]{
+		{Index: []int{0, 1, 0}, Value: 1},
+		{Index: []int{0, 0, 0}, Value: -0.5},
+	})
+	if err != nil {
+		t.Fatalf("create linear polynomial: %v", err)
+	}
+	linear := NewPolynomial(coefficients)
 
-	interaction, ok := plane.IntersectGeodesic(
-		mat.NewVecDense(4, []float64{1, 0, 0, 0}),
-		mat.NewVecDense(4, []float64{0, 1, 0, 0}),
+	interaction, ok := linear.IntersectGeodesic(
+		mat.NewVecDense(3, []float64{1, 0, 0}),
+		mat.NewVecDense(3, []float64{0, 1, 0}),
 		geometry.Spherical(),
 		NewIntersectOptions(1e-6, math.Pi),
 	)
 	if !ok {
-		t.Fatal("expected S^3 plane hit")
+		t.Fatal("expected spherical linear-polynomial hit")
 	}
 	if math.Abs(interaction.ArcLength-math.Pi/6) > 1e-6 {
-		t.Fatalf("S^3 plane arc length = %.15f, want pi/6", interaction.ArcLength)
+		t.Fatalf("linear-polynomial arc length = %.15f, want pi/6", interaction.ArcLength)
 	}
 	if math.Abs(interaction.Point.AtVec(1)-0.5) > 1e-6 {
-		t.Fatalf("S^3 plane hit y = %.15f, want 0.5", interaction.Point.AtVec(1))
+		t.Fatalf("linear-polynomial hit y = %.15f, want 0.5", interaction.Point.AtVec(1))
 	}
 }
 

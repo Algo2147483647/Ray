@@ -4,12 +4,12 @@ import (
 	"math"
 
 	"github.com/Algo2147483647/ray/engine/maths"
+	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
 )
 
 type FiniteCylinder struct {
-	BaseShape
 	Center *mat.VecDense `json:"center"`
 	Axis   *mat.VecDense `json:"axis"`
 	R      float64       `json:"r"`
@@ -46,6 +46,10 @@ func (c *FiniteCylinder) IntersectAffine(raySt, rayDir *mat.VecDense, options In
 	point := affinePointAt(raySt, rayDir, best)
 	normal := c.GetNormalVector(point, mat.NewVecDense(point.Len(), nil))
 	return newSurfaceInteractionAt(point, best, normal), true
+}
+
+func (c *FiniteCylinder) IntersectGeodesic(_, _ *mat.VecDense, _ geometry.Geometry, _ IntersectOptions) (SurfaceInteraction, bool) {
+	return unsupportedGeodesicIntersection()
 }
 
 func (c *FiniteCylinder) intersectSide(raySt, rayDir *mat.VecDense, tMin, tMax float64) float64 {
