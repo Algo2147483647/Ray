@@ -39,19 +39,18 @@ type RoughnessInfo struct {
 }
 
 type ShadingContext struct {
-	TransportMode   TransportMode       // Light transport evaluation mode.
-	SpectrumMode    optics.SpectrumMode // Spectral evaluation mode.
-	WavelengthNM    float64             // Selected wavelength in nanometers.
-	WavelengthsNM   []float64           // Sampled wavelengths in nanometers.
-	WavelengthPDF   float64             // Probability density of wavelength sampling.
-	EtaIncident     float64             // Incident-side index of refraction.
-	EtaTransmit     float64             // Transmitted-side index of refraction.
-	IncidentMedium  medium.MediumID     // Medium on the incident side.
-	TransmitMedium  medium.MediumID     // Medium on the transmitted side.
-	Entering        bool                // True when crossing into the surface.
-	GeometricNormal maths.Direction     // World-space geometric normal at the hit point (length-N components).
-	HitPoint        maths.Direction     // World-space hit point coordinates (length-N components).
-	UV              [2]float64          // Surface-local UV coordinates when provided by the shape.
+	TransportMode   TransportMode   // Light transport evaluation mode.
+	WavelengthNM    float64         // Selected wavelength in nanometers.
+	WavelengthsNM   []float64       // Sampled wavelengths in nanometers.
+	WavelengthPDF   float64         // Probability density of wavelength sampling.
+	EtaIncident     float64         // Incident-side index of refraction.
+	EtaTransmit     float64         // Transmitted-side index of refraction.
+	IncidentMedium  medium.MediumID // Medium on the incident side.
+	TransmitMedium  medium.MediumID // Medium on the transmitted side.
+	Entering        bool            // True when crossing into the surface.
+	GeometricNormal maths.Direction // World-space geometric normal at the hit point (length-N components).
+	HitPoint        maths.Direction // World-space hit point coordinates (length-N components).
+	UV              [2]float64      // Surface-local UV coordinates when provided by the shape.
 }
 
 func (ctx ShadingContext) SpectralWavelengthNM() float64 {

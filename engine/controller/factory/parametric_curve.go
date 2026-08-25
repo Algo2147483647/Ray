@@ -11,7 +11,7 @@ import (
 
 func parseParametricCurve(spec *parser.ParametricCurveSpec, bounds *parser.BoundsSpec, dimension int) ([]shape.Shape, error) {
 	if dimension != 3 {
-		return nil, fmt.Errorf("shape %q requires scene dimension 3, got %d", ShapeParametricCurve, dimension)
+		return nil, fmt.Errorf("shape %q requires scene dimension 3, got %d", parser.ShapeParametricCurve, dimension)
 	}
 
 	curveDef, err := decodeRawObject(spec.Curve, "curve")

@@ -1,66 +1,73 @@
 package ray_tracing
 
 import (
-	"github.com/Algo2147483647/ray/engine/model/optics"
-	renderray "github.com/Algo2147483647/ray/engine/model/optics"
 	"math"
+
+	"github.com/Algo2147483647/ray/engine/model/optics"
 )
 
 const minRussianRouletteSurvival = 0.05
 
-func applySpectrum(ray *renderray.Ray, spectrum optics.Spectrum) {
+func applySpectrum(ray *optics.Ray, spectrum optics.Spectrum) {
 	if ray == nil {
 		return
 	}
-	if ray.Path.Wavelength != nil {
-		if !spectrum.HasSamples() {
-			spectrum = spectrum.UpliftRGBToSampled([]float64{ray.Path.Wavelength.LambdaNM})
-		}
-		ray.Path.Throughput = ray.Path.Throughput.Mul(spectrum)
-		return
-	}
-	if spectrum.HasSamples() {
+	power, ok := spectrumPower(ray, spectrum)
+	if !ok {
 		terminateRay(ray)
 		return
 	}
-	ray.Path.Throughput = ray.Path.Throughput.Mul(spectrum)
+	ray.Path.Throughput *= power
 }
 
 // accumulateEmission adds beta * Le to the path result without changing beta.
-func accumulateEmission(ray *renderray.Ray, emitted optics.Spectrum) {
+func accumulateEmission(ray *optics.Ray, emitted optics.Spectrum) {
 	if ray == nil || emitted.IsZero() {
 		return
 	}
-	if ray.Path.Wavelength != nil {
-		if !emitted.HasSamples() {
-			emitted = emitted.UpliftRGBToSampled([]float64{ray.Path.Wavelength.LambdaNM})
-		}
-	} else if emitted.HasSamples() {
+	power, ok := spectrumPower(ray, emitted)
+	if !ok {
 		return
 	}
-	ray.Path.Radiance = ray.Path.Radiance.Add(ray.Path.Throughput.Mul(emitted))
+	ray.Path.Radiance += ray.Path.Throughput * power
 }
 
-func terminateRay(ray *renderray.Ray) {
+func terminateRay(ray *optics.Ray) {
 	if ray == nil {
 		return
 	}
-	ray.Path.Throughput = ray.Path.Throughput.MulScalar(0)
+	ray.Path.Throughput = 0
 	return
 }
 
-func russianRouletteSurvivalProbability(ray *renderray.Ray) float64 {
+func russianRouletteSurvivalProbability(ray *optics.Ray) float64 {
 	if ray == nil {
 		return 0
 	}
-	return clampSurvival(finiteNonNegative(ray.Path.Throughput.MaxComponent()))
+	return clampSurvival(finiteNonNegative(ray.Path.Throughput))
 }
 
-func scaleRayThroughput(ray *renderray.Ray, scale float64) {
+func scaleRayThroughput(ray *optics.Ray, scale float64) {
 	if ray == nil || scale == 1 {
 		return
 	}
-	ray.Path.Throughput = ray.Path.Throughput.MulScalar(scale)
+	ray.Path.Throughput *= scale
+}
+
+func spectrumPower(ray *optics.Ray, spectrum optics.Spectrum) (float64, bool) {
+	if ray == nil || ray.Path.Wavelength == nil {
+		return 0, false
+	}
+	return powerAtWavelength(spectrum, ray.Path.Wavelength.LambdaNM)
+}
+
+func powerAtWavelength(spectrum optics.Spectrum, wavelengthNM float64) (float64, bool) {
+	power, ok := spectrum.PowerAt(wavelengthNM)
+	return power, ok && mathsFiniteNonNegative(power)
+}
+
+func mathsFiniteNonNegative(power float64) bool {
+	return !math.IsNaN(power) && !math.IsInf(power, 0) && power >= 0
 }
 
 func finiteNonNegative(v float64) float64 {

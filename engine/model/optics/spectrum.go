@@ -6,17 +6,11 @@ import (
 	"github.com/Algo2147483647/ray/engine/maths"
 )
 
-type SpectrumMode int
-
-const (
-	SpectrumModeRGB SpectrumMode = iota
-	SpectrumModeSpectral
-)
-
 type SpectrumKind int
 
 const (
 	SpectrumKindRGB SpectrumKind = iota
+	SpectrumKindScalar
 	SpectrumKindSampled
 )
 
@@ -26,6 +20,7 @@ const (
 type Spectrum struct {
 	Kind    SpectrumKind
 	RGB     RGB
+	Power   float64
 	Samples []float64
 }
 
@@ -45,6 +40,12 @@ func ConstantSpectrum(v float64) Spectrum {
 }
 
 func NewSampledSpectrum(samples []float64) Spectrum {
+	if len(samples) == 0 {
+		return Spectrum{}
+	}
+	if len(samples) == 1 {
+		return Spectrum{Kind: SpectrumKindScalar, Power: samples[0]}
+	}
 	return Spectrum{
 		Kind:    SpectrumKindSampled,
 		Samples: append([]float64(nil), samples...),
@@ -52,6 +53,9 @@ func NewSampledSpectrum(samples []float64) Spectrum {
 }
 
 func (s Spectrum) Clone() Spectrum {
+	if s.Kind == SpectrumKindScalar {
+		return Spectrum{Kind: SpectrumKindScalar, Power: s.Power}
+	}
 	if s.HasSamples() {
 		return NewSampledSpectrum(s.Samples)
 	}
@@ -59,10 +63,13 @@ func (s Spectrum) Clone() Spectrum {
 }
 
 func (s Spectrum) HasSamples() bool {
-	return s.Kind == SpectrumKindSampled && len(s.Samples) > 0
+	return s.Kind == SpectrumKindScalar || (s.Kind == SpectrumKindSampled && len(s.Samples) > 0)
 }
 
 func (s Spectrum) SampleCount() int {
+	if s.Kind == SpectrumKindScalar {
+		return 1
+	}
 	return len(s.Samples)
 }
 
@@ -74,13 +81,38 @@ func (s Spectrum) RGBChannel(i int) float64 {
 }
 
 func (s Spectrum) Sample(i int) float64 {
+	if s.Kind == SpectrumKindScalar {
+		if i == 0 {
+			return s.Power
+		}
+		return 0
+	}
 	if i < 0 || i >= len(s.Samples) {
 		return 0
 	}
 	return s.Samples[i]
 }
 
+// PowerAt resolves a renderer value to one scalar spectral power sample.
+// Authored RGB is uplifted only at this boundary; multi-sample values cannot
+// be collapsed without an explicit wavelength-to-index association.
+func (s Spectrum) PowerAt(wavelengthNM float64) (float64, bool) {
+	if s.HasSamples() {
+		if s.SampleCount() != 1 {
+			return 0, false
+		}
+		return s.Sample(0), true
+	}
+	if wavelengthNM <= 0 {
+		return 0, false
+	}
+	return s.RGBPowerAtWavelength(wavelengthNM), true
+}
+
 func (s Spectrum) Average() float64 {
+	if s.Kind == SpectrumKindScalar {
+		return s.Power
+	}
 	if s.HasSamples() {
 		sum := 0.0
 		for _, sample := range s.Samples {
@@ -93,7 +125,7 @@ func (s Spectrum) Average() float64 {
 
 func (s Spectrum) Add(other Spectrum) Spectrum {
 	if s.HasSamples() && other.HasSamples() {
-		return NewSampledSpectrum(combineSampled(s.Samples, other.Samples, func(a, b float64) float64 { return a + b }))
+		return combineSampled(s, other, func(a, b float64) float64 { return a + b })
 	}
 	if s.HasSamples() || other.HasSamples() {
 		if s.IsZero() {
@@ -112,7 +144,7 @@ func (s Spectrum) Add(other Spectrum) Spectrum {
 
 func (s Spectrum) MulScalar(v float64) Spectrum {
 	if s.HasSamples() {
-		return NewSampledSpectrum(mapSamples(s.Samples, func(a float64) float64 { return a * v }))
+		return mapSampled(s, func(a float64) float64 { return a * v })
 	}
 	return Spectrum{
 		Kind: SpectrumKindRGB,
@@ -122,7 +154,7 @@ func (s Spectrum) MulScalar(v float64) Spectrum {
 
 func (s Spectrum) Mul(other Spectrum) Spectrum {
 	if s.HasSamples() && other.HasSamples() {
-		return NewSampledSpectrum(combineSampled(s.Samples, other.Samples, func(a, b float64) float64 { return a * b }))
+		return combineSampled(s, other, func(a, b float64) float64 { return a * b })
 	}
 	if s.HasSamples() || other.HasSamples() {
 		if s.IsZero() || other.IsZero() {
@@ -138,8 +170,8 @@ func (s Spectrum) Mul(other Spectrum) Spectrum {
 
 func (s Spectrum) IsZero() bool {
 	if s.HasSamples() {
-		for _, sample := range s.Samples {
-			if sample != 0 {
+		for i := 0; i < s.SampleCount(); i++ {
+			if s.Sample(i) != 0 {
 				return false
 			}
 		}
@@ -191,7 +223,7 @@ func (s Spectrum) DivScalar(v float64) Spectrum {
 		return Spectrum{}
 	}
 	if s.HasSamples() {
-		return NewSampledSpectrum(mapSamples(s.Samples, func(a float64) float64 { return a / v }))
+		return mapSampled(s, func(a float64) float64 { return a / v })
 	}
 	return Spectrum{
 		Kind: SpectrumKindRGB,
@@ -201,9 +233,9 @@ func (s Spectrum) DivScalar(v float64) Spectrum {
 
 func (s Spectrum) MaxComponent() float64 {
 	if s.HasSamples() {
-		maxValue := s.Samples[0]
-		for _, sample := range s.Samples[1:] {
-			maxValue = math.Max(maxValue, sample)
+		maxValue := s.Sample(0)
+		for i := 1; i < s.SampleCount(); i++ {
+			maxValue = math.Max(maxValue, s.Sample(i))
 		}
 		return maxValue
 	}
@@ -212,8 +244,8 @@ func (s Spectrum) MaxComponent() float64 {
 
 func (s Spectrum) IsFinite() bool {
 	if s.HasSamples() {
-		for _, sample := range s.Samples {
-			if !maths.IsFinite(sample) {
+		for i := 0; i < s.SampleCount(); i++ {
+			if !maths.IsFinite(s.Sample(i)) {
 				return false
 			}
 		}
@@ -224,8 +256,8 @@ func (s Spectrum) IsFinite() bool {
 
 func (s Spectrum) IsNonNegative() bool {
 	if s.HasSamples() {
-		for _, sample := range s.Samples {
-			if sample < 0 {
+		for i := 0; i < s.SampleCount(); i++ {
+			if s.Sample(i) < 0 {
 				return false
 			}
 		}
@@ -252,37 +284,30 @@ func (s Spectrum) AlmostEqual(other Spectrum, eps float64) bool {
 		math.Abs(s.RGB[2]-other.RGB[2]) <= eps
 }
 
-func combineSampled(a, b []float64, fn func(float64, float64) float64) []float64 {
-	if len(a) == 0 && len(b) == 0 {
-		return nil
+func combineSampled(a, b Spectrum, fn func(float64, float64) float64) Spectrum {
+	count := a.SampleCount()
+	if b.SampleCount() > count {
+		count = b.SampleCount()
 	}
-	count := len(a)
-	if len(b) > count {
-		count = len(b)
+	if count == 1 {
+		return Spectrum{Kind: SpectrumKindScalar, Power: fn(a.Sample(0), b.Sample(0))}
 	}
 	result := make([]float64, count)
 	for i := 0; i < count; i++ {
-		result[i] = fn(sampleFromSlice(a, i), sampleFromSlice(b, i))
+		result[i] = fn(a.Sample(i), b.Sample(i))
 	}
-	return result
+	return NewSampledSpectrum(result)
 }
 
-func mapSamples(samples []float64, fn func(float64) float64) []float64 {
-	if len(samples) == 0 {
-		return nil
+func mapSampled(spectrum Spectrum, fn func(float64) float64) Spectrum {
+	if spectrum.Kind == SpectrumKindScalar {
+		return Spectrum{Kind: SpectrumKindScalar, Power: fn(spectrum.Power)}
 	}
-	result := make([]float64, len(samples))
-	for i, sample := range samples {
-		result[i] = fn(sample)
+	result := make([]float64, spectrum.SampleCount())
+	for i := range result {
+		result[i] = fn(spectrum.Sample(i))
 	}
-	return result
-}
-
-func sampleFromSlice(samples []float64, i int) float64 {
-	if i < len(samples) {
-		return samples[i]
-	}
-	return 0
+	return NewSampledSpectrum(result)
 }
 
 func zeroLikeSampled(a, b Spectrum) Spectrum {

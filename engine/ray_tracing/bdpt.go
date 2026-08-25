@@ -39,7 +39,7 @@ type bdptVertex struct {
 	WoLocal         maths.Direction
 	Context         bxdf.ShadingContext
 	Object          *object.Object
-	Beta            optics.Spectrum
+	Beta            float64
 	PDFFwdArea      float64
 	PDFRevArea      float64
 	SampledPDF      float64
@@ -209,14 +209,14 @@ func (h *Handler) traceBidirectionalPrepared(
 	objTree *object.ObjectTree,
 	wavelengthNM, wavelengthPDF float64,
 	index ...int,
-) (optics.Spectrum, []FilmSplat) {
+) (float64, []FilmSplat) {
 	bdCamera, ok := renderCamera.(camera.BidirectionalCamera)
 	if state == nil || !ok {
-		return zeroSpectrum(wavelengthNM), nil
+		return 0, nil
 	}
 	cameraPath := h.buildCameraSubpath(renderCamera, filmShape, objTree, wavelengthNM, wavelengthPDF, index...)
 	lightPath := h.buildLightSubpath(objTree, state.Lights, state.TotalLightWeight, wavelengthNM, wavelengthPDF)
-	result := zeroSpectrum(wavelengthNM)
+	result := 0.0
 	splats := make([]FilmSplat, 0, len(lightPath))
 
 	for t := 1; t <= len(cameraPath); t++ {
@@ -235,14 +235,14 @@ func (h *Handler) traceBidirectionalPrepared(
 			if weight <= 0 {
 				continue
 			}
-			value = value.MulScalar(weight)
+			value *= weight
 			if isSplat {
 				splats = append(splats, FilmSplat{
 					WavelengthNM: wavelengthNM, WavelengthPDF: wavelengthPDF,
 					Value: value, projection: projection,
 				})
 			} else {
-				result = result.Add(value)
+				result += value
 			}
 		}
 	}
@@ -268,7 +268,6 @@ func collectAreaLights(tree *object.ObjectTree) ([]areaLight, float64) {
 			continue
 		}
 		exitance := obj.Material.Emission.ExitanceEstimate(bxdf.ShadingContext{
-			SpectrumMode:    optics.SpectrumModeRGB,
 			GeometricNormal: maths.NewDirection(0, 0, 1),
 		})
 		powerEstimate := exitance.MaxComponent()
@@ -301,12 +300,12 @@ func (h *Handler) buildCameraSubpath(
 		return nil
 	}
 	path := []bdptVertex{{
-		Kind: bdptVertexCamera, Point: bdCamera.Endpoint(), Beta: unitSpectrum(wavelengthNM),
+		Kind: bdptVertexCamera, Point: bdCamera.Endpoint(), Beta: 1,
 		PDFFwdArea: 1, Connectible: true, Camera: bdCamera,
 		MediumStack: medium.NewStack(medium.MediumAir),
 	}}
 	return h.randomWalk(
-		tree, ray, unitSpectrum(wavelengthNM), directionPDF,
+		tree, ray, 1, directionPDF,
 		bxdf.TransportRadiance, int(h.MaxRayLevel)+2, path,
 	)
 }
@@ -354,8 +353,8 @@ func (h *Handler) makeLightEndpoint(
 		return bdptVertex{}, false
 	}
 	ctx := bxdf.ShadingContext{
-		TransportMode: bxdf.TransportImportance, SpectrumMode: optics.SpectrumModeSpectral,
-		WavelengthNM: wavelengthNM, WavelengthPDF: wavelengthPDF,
+		TransportMode: bxdf.TransportImportance,
+		WavelengthNM:  wavelengthNM, WavelengthPDF: wavelengthPDF,
 		HitPoint:        maths.NewDirectionFromComponents(ss.Point.RawVector().Data),
 		GeometricNormal: maths.NewDirectionFromComponents(ss.Normal.RawVector().Data),
 		UV:              ss.UV,
@@ -371,7 +370,7 @@ func (h *Handler) makeLightEndpoint(
 		Kind: bdptVertexLight, Point: ss.Point, GeometricNormal: ss.Normal,
 		Frame: frame, EmissionFrame: frame,
 		Context: ctx, Object: selected.Object,
-		Beta:        unitSpectrum(wavelengthNM).MulScalar(1 / pdfLightArea),
+		Beta:        1 / pdfLightArea,
 		PDFFwdArea:  pdfLightArea,
 		Connectible: selected.Object.Material.Emission.DirectionFlags()&emission.DirectionDelta == 0,
 		MediumStack: medium.NewStack(medium.MediumAir),
@@ -394,10 +393,12 @@ func (h *Handler) buildLightSubpath(
 		!directionSample.Le.IsFinite() || !directionSample.Le.IsNonNegative() {
 		return nil
 	}
+	le, ok := powerAtWavelength(directionSample.Le, wavelengthNM)
+	if !ok {
+		return nil
+	}
 	worldDirection := root.EmissionFrame.LocalToWorld(directionSample.Wo)
-	beta := root.Beta.Mul(directionSample.Le).MulScalar(
-		maths.AbsCosTheta(directionSample.Wo) / directionSample.PDF,
-	)
+	beta := root.Beta * le * maths.AbsCosTheta(directionSample.Wo) / directionSample.PDF
 	root.SampledPDF = directionSample.PDF
 	root.SampledDelta = directionSample.Flags&emission.DirectionDelta != 0
 	path := []bdptVertex{root}
@@ -421,7 +422,7 @@ func (h *Handler) buildLightSubpath(
 func (h *Handler) randomWalk(
 	tree *object.ObjectTree,
 	ray *optics.Ray,
-	beta optics.Spectrum,
+	beta float64,
 	pendingDirectionPDF float64,
 	mode bxdf.TransportMode,
 	maxVertices int,
@@ -440,8 +441,8 @@ func (h *Handler) randomWalk(
 		}
 		beta = evaluateSegmentTransmittance(
 			getMediumRegistry(tree), ray.MediumStack.Current(), segmentLength, h.newShadingContext(ray),
-		).ApplyToSpectrum(beta)
-		if !validSpectrum(beta) {
+		).ApplyToPower(beta)
+		if !validPower(beta) {
 			break
 		}
 		distance2 := maths.SquaredDistance(origin, hit.Point)
@@ -486,8 +487,12 @@ func (h *Handler) randomWalk(
 		}
 		path[currentIndex-1].PDFRevArea = convertBDPTDensity(reversePDF, &path[currentIndex], &path[currentIndex-1])
 
-		beta = beta.Mul(sample.F).MulScalar(maths.AbsCosTheta(sample.Wi) / sample.PDF)
-		if !validSpectrum(beta) {
+		f, ok := powerAtWavelength(sample.F, si.Context.WavelengthNM)
+		if !ok {
+			break
+		}
+		beta *= f * maths.AbsCosTheta(sample.Wi) / sample.PDF
+		if !validPower(beta) {
 			break
 		}
 		if sample.Flags&bxdf.TransmissionEvent != 0 {

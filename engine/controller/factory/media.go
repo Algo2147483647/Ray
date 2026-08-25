@@ -93,7 +93,11 @@ func (c spectralCoefficient) Eval(ctx medium.WavelengthContext) medium.Coefficie
 	}
 	evaluated := c.parameter.Eval(ctx)
 	if evaluated.HasSamples() {
-		return medium.NewSampledCoefficientSpectrum(evaluated.Samples)
+		samples := make([]float64, evaluated.SampleCount())
+		for i := range samples {
+			samples[i] = evaluated.Sample(i)
+		}
+		return medium.NewSampledCoefficientSpectrum(samples)
 	}
 	return medium.NewRGBCoefficientSpectrum(
 		evaluated.RGBChannel(0),

@@ -30,7 +30,7 @@ func ParseMaterials(script *parser.Script) (map[string]*material.Material, error
 			parseErrors = append(parseErrors, fmt.Errorf("%s: duplicate material id", context))
 			continue
 		}
-		result := &material.Material{Metadata: material.MaterialMetadata{Name: spec.ID, SpectrumMode: optics.SpectrumModeRGB}}
+		result := &material.Material{Metadata: material.MaterialMetadata{Name: spec.ID}}
 		if spec.Surface != nil {
 			surface, err := parseSurface(spec.Surface)
 			if err != nil {

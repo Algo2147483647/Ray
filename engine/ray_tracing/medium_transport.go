@@ -10,11 +10,9 @@ import (
 	"github.com/Algo2147483647/ray/engine/model/optics"
 )
 
-// SegmentTransmittance is the attenuation accumulated while travelling through
-// one homogeneous medium segment. Keeping it as a spectrum lets camera paths,
-// light paths, and shadow connections share the same Beer-Lambert evaluation.
+// SegmentTransmittance is scalar attenuation at the path's sampled wavelength.
 type SegmentTransmittance struct {
-	Value    optics.Spectrum
+	Power    float64
 	Identity bool
 }
 
@@ -30,45 +28,22 @@ func evaluateSegmentTransmittance(
 
 	sigmaA := media.SigmaA(mediumID, ctx)
 	if sigmaA.HasSamples() {
-		allZero := true
-		values := make([]float64, len(sigmaA.Samples))
-		for i, coefficient := range sigmaA.Samples {
-			allZero = allZero && coefficient == 0
-			values[i] = math.Exp(-coefficient * distance)
+		if len(sigmaA.Samples) != 1 {
+			return SegmentTransmittance{}
 		}
-		if allZero {
+		if sigmaA.Sample(0) == 0 {
 			return SegmentTransmittance{Identity: true}
 		}
-		return SegmentTransmittance{Value: optics.NewSampledSpectrum(values)}
+		return SegmentTransmittance{Power: math.Exp(-sigmaA.Sample(0) * distance)}
 	}
 	if sigmaA.RGBChannel(0) == 0 && sigmaA.RGBChannel(1) == 0 && sigmaA.RGBChannel(2) == 0 {
 		return SegmentTransmittance{Identity: true}
 	}
-	if wavelengths := segmentWavelengths(ctx); len(wavelengths) > 0 {
-		values := make([]float64, len(wavelengths))
-		for i, wavelength := range wavelengths {
-			coefficient := rgbCoefficientAtWavelength(sigmaA, wavelength)
-			values[i] = math.Exp(-coefficient * distance)
-		}
-		return SegmentTransmittance{Value: optics.NewSampledSpectrum(values)}
-	}
-
-	value := optics.NewRGBSpectrum(
-		math.Exp(-sigmaA.RGBChannel(0)*distance),
-		math.Exp(-sigmaA.RGBChannel(1)*distance),
-		math.Exp(-sigmaA.RGBChannel(2)*distance),
-	)
-	return SegmentTransmittance{Value: value}
-}
-
-func segmentWavelengths(ctx bxdf.ShadingContext) []float64 {
-	if wavelengths := ctx.SpectralWavelengthsNM(); len(wavelengths) > 0 {
-		return wavelengths
-	}
 	if wavelength := ctx.SpectralWavelengthNM(); wavelength > 0 {
-		return []float64{wavelength}
+		coefficient := rgbCoefficientAtWavelength(sigmaA, wavelength)
+		return SegmentTransmittance{Power: math.Exp(-coefficient * distance)}
 	}
-	return nil
+	return SegmentTransmittance{}
 }
 
 // rgbCoefficientAtWavelength treats RGB sigma_a as three non-negative basis
@@ -85,18 +60,18 @@ func rgbCoefficientAtWavelength(sigmaA medium.CoefficientSpectrum, wavelength fl
 		sigmaA.RGBChannel(2)*weights[2]) / weightSum
 }
 
-func (t SegmentTransmittance) ApplyToSpectrum(value optics.Spectrum) optics.Spectrum {
+func (t SegmentTransmittance) ApplyToPower(value float64) float64 {
 	if t.Identity {
 		return value
 	}
-	return value.Mul(t.Value)
+	return value * t.Power
 }
 
 func (t SegmentTransmittance) ApplyToRay(ray *renderray.Ray) {
 	if ray == nil || t.Identity {
 		return
 	}
-	applySpectrum(ray, t.Value)
+	ray.Path.Throughput *= t.Power
 }
 
 func prepareMediumContext(ctx *bxdf.ShadingContext, media *medium.Registry, ray *renderray.Ray, boundary medium.Boundary, frontFace bool) {

@@ -1,10 +1,10 @@
 package optics
 
 func SpectralRayToScalar(ray *Ray) float64 {
-	if ray == nil || ray.Path.Wavelength == nil || !ray.Path.Radiance.HasSamples() {
+	if ray == nil || ray.Path.Wavelength == nil {
 		return 0
 	}
-	return ray.Path.Radiance.Sample(0)
+	return ray.Path.Radiance
 }
 
 func XYZToLinearSRGB(x, y, z float64) (float64, float64, float64) {

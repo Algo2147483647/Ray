@@ -50,10 +50,7 @@ func FresnelConductor(cosThetaI float64, eta, k optics.Spectrum) optics.Spectrum
 }
 
 func spectrumSampleAt(s optics.Spectrum, i int) float64 {
-	if i < len(s.Samples) {
-		return s.Samples[i]
-	}
-	return 0
+	return s.Sample(i)
 }
 
 func fresnelConductorChannel(cosThetaI, eta, k float64) float64 {

@@ -15,23 +15,6 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-const (
-	ShapeCuboid             = "cuboid"
-	ShapeHypercuboid        = "hypercuboid"
-	ShapeSphere             = "sphere"
-	ShapeHypersphere        = "hypersphere"
-	ShapeCircle             = "circle"
-	ShapeCylinder           = "cylinder"
-	ShapeFiniteCylinder     = "finite cylinder"
-	ShapeTriangle           = "triangle"
-	ShapePolynomial         = "polynomial"
-	ShapeImplicitEquation   = "implicit equation"
-	ShapeParametricEquation = "parametric equation"
-	ShapeParametricCurve    = "parametric curve"
-	ShapeKleinBottle        = "klein_bottle"
-	ShapeSTL                = "stl"
-)
-
 // ParseObjectSpecInSpace dispatches the already-decoded discriminated union.
 // Each numerical builder receives its concrete spec, never a string-keyed map.
 func ParseObjectSpecInSpace(spec parser.ObjectSpec, space geometry.SceneSpace) ([]shape.Shape, error) {
@@ -151,7 +134,7 @@ func parseFiniteCylinder(spec *parser.FiniteCylinderSpec, bounds *parser.BoundsS
 
 func parseKleinBottle4D(spec *parser.KleinBottleSpec, bounds *parser.BoundsSpec, dimension int) ([]shape.Shape, error) {
 	if dimension != 4 {
-		return nil, fmt.Errorf("shape %q requires scene dimension 4, got %d", ShapeKleinBottle, dimension)
+		return nil, fmt.Errorf("shape %q requires scene dimension 4, got %d", parser.ShapeKleinBottle, dimension)
 	}
 
 	center, err := requiredVec("center", spec.Center, dimension)
@@ -175,7 +158,7 @@ func parseKleinBottle4D(spec *parser.KleinBottleSpec, bounds *parser.BoundsSpec,
 	}
 
 	if majorR <= minorR {
-		return nil, fmt.Errorf("shape %q requires r_major > r_minor", ShapeKleinBottle)
+		return nil, fmt.Errorf("shape %q requires r_major > r_minor", parser.ShapeKleinBottle)
 	}
 
 	klein := shape.NewKleinBottle4D(center, majorR, minorR, thickness)

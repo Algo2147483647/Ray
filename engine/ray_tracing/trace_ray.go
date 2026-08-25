@@ -217,10 +217,9 @@ func getMediumRegistry(objTree *object.ObjectTree) *medium.Registry {
 }
 
 func (h *Handler) newShadingContext(ray *optics.Ray) bxdf.ShadingContext {
-	ctx := bxdf.ShadingContext{SpectrumMode: optics.SpectrumModeRGB}
+	ctx := bxdf.ShadingContext{}
 
 	if ray.Path.Wavelength != nil {
-		ctx.SpectrumMode = optics.SpectrumModeSpectral
 		ctx.WavelengthNM = ray.Path.Wavelength.LambdaNM
 		ctx.WavelengthPDF = ray.Path.Wavelength.PDF
 		ctx.WavelengthsNM = []float64{ray.Path.Wavelength.LambdaNM}
