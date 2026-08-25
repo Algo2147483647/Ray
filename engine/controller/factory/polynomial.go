@@ -74,7 +74,7 @@ func parsePolynomial(spec *parser.PolynomialSpec, bounds *parser.BoundsSpec, dim
 
 func parsePolynomialTransform(raw json.RawMessage) ([4][4]float64, error) {
 	if len(raw) == 0 {
-		return identityTransform4(), nil
+		return maths.IdentityTransform4(), nil
 	}
 	var value interface{}
 	if err := json.Unmarshal(raw, &value); err != nil {
@@ -127,12 +127,4 @@ func transformRows(raw interface{}) ([][]float64, error) {
 		result[row] = append([]float64(nil), values[row*4:(row+1)*4]...)
 	}
 	return result, nil
-}
-
-func identityTransform4() [4][4]float64 {
-	transform := [4][4]float64{}
-	for i := 0; i < 4; i++ {
-		transform[i][i] = 1
-	}
-	return transform
 }

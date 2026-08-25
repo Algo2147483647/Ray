@@ -254,18 +254,13 @@ The next checkpoint in that example is `iteration-000000000400.*`. Endless mode
 currently supports one render job; scenes with `renders` should be split and run
 separately.
 
-The intermediate file contains the canonical top-level dimension and repeats it
-in `_studio` as generation metadata:
+The intermediate file contains only canonical Engine protocol fields. Studio
+keeps source and generation metadata in its own process state; it does not add
+Studio-only keys to the Engine input:
 
 ```json
 {
-	"dimension": 3,
-  "_studio": {
-    "version": "0.1",
-    "source": ["scene.json"],
-    "generated_at": "2026-07-21T00:00:00Z",
-    "dimension": 3
-  }
+	"dimension": 3
 }
 ```
 
@@ -620,7 +615,7 @@ no shape: "group"
 adapted ids after group prefixing
 inherited material/media/emission/bounds fields applied
 adapted cuboid/triangle/plane/quadratic/polynomial/bounds fields normalized
-_studio metadata included for traceability
+no Studio-only metadata keys
 ```
 
 Studio keeps the intermediate file on disk so the generated engine input can be

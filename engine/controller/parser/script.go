@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
+
+	"github.com/Algo2147483647/ray/engine/utils"
 )
 
 func ReadScriptFile(path string) (*Script, error) {
-	absolute, err := filepathAbs(path)
+	absolute, err := utils.AbsCleanPath(path)
 	if err != nil {
 		return nil, err
 	}
@@ -34,12 +35,4 @@ func readScriptFileRaw(path string) (*Script, error) {
 	}
 
 	return &script, nil
-}
-
-func filepathAbs(path string) (string, error) {
-	absolute, err := filepath.Abs(path)
-	if err != nil {
-		return "", fmt.Errorf("resolve script path %q: %w", path, err)
-	}
-	return filepath.Clean(absolute), nil
 }

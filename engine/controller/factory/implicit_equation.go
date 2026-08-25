@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/Algo2147483647/ray/engine/controller/parser"
+	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/model/shape"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
@@ -104,7 +105,7 @@ func parseImplicitTransform(spec *parser.ImplicitEquationSpec, dimension int) ([
 		return [4][4]float64{}, err
 	}
 
-	transform := identityTransform4()
+	transform := maths.IdentityTransform4()
 	for localAxis := 0; localAxis < 3; localAxis++ {
 		transform[localAxis+1][0] = 0
 		for worldAxis := 0; worldAxis < 3; worldAxis++ {

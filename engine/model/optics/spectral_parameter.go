@@ -31,13 +31,3 @@ func SrgbChannelToLinear(v float64) float64 {
 	}
 	return math.Pow((v+0.055)/1.055, 2.4)
 }
-
-func Clamp(v, minValue, maxValue float64) float64 {
-	if v < minValue {
-		return minValue
-	}
-	if v > maxValue {
-		return maxValue
-	}
-	return v
-}

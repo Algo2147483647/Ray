@@ -28,8 +28,8 @@ func NewUVHSL(saturation, lightness float64, vStripes int, intensity float64) UV
 
 func (u UVHSL) EvaluateRadiance(ctx bxdf.ShadingContext) optics.Spectrum {
 	const twoPi = 2 * math.Pi
-	hue := positiveMod(ctx.UV[0], twoPi) / twoPi
-	v := positiveMod(ctx.UV[1], twoPi) / twoPi
+	hue := maths.PositiveMod(ctx.UV[0], twoPi) / twoPi
+	v := maths.PositiveMod(ctx.UV[1], twoPi) / twoPi
 	lightness := u.Lightness
 	if int(math.Floor(v*float64(u.VStripes)*2))%2 == 1 {
 		lightness *= 0.45
@@ -57,14 +57,6 @@ func (u UVHSL) Emit(ctx bxdf.ShadingContext, wo maths.Direction) optics.Spectrum
 func (UVHSL) IsDelta() bool { return false }
 func (u UVHSL) defaultEmitter() SurfaceEmitter {
 	return NewSurfaceEmitter(u, NewUniform(TwoSided), PeakRadiance)
-}
-
-func positiveMod(value, period float64) float64 {
-	value = math.Mod(value, period)
-	if value < 0 {
-		value += period
-	}
-	return value
 }
 
 func hslToRGB(h, s, l float64) (float64, float64, float64) {

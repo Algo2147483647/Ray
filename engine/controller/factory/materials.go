@@ -496,19 +496,6 @@ func parseSpectralParameterValue(key string, value interface{}) (optics.Spectral
 	return spectrum_parameter.NewRGBParameter(optics.NewSpectrum(values[0], values[1], values[2])), nil
 }
 
-// Media is still a map-based protocol and shares the polymorphic spectral leaf parser.
-func optionalSpectralParameterField(data map[string]interface{}, key string, fallback optics.SpectralParameter) (optics.SpectralParameter, bool, error) {
-	value, ok := data[key]
-	if !ok {
-		return fallback, false, nil
-	}
-	parameter, err := parseSpectralParameterValue(key, value)
-	if err != nil {
-		return nil, true, fmt.Errorf("field %q: %w", key, err)
-	}
-	return parameter, true, nil
-}
-
 func parseSpectralParameterObject(def map[string]interface{}) (optics.SpectralParameter, error) {
 	parameterType, err := utils.RequiredStringField(def, "type")
 	if err != nil {
@@ -516,6 +503,9 @@ func parseSpectralParameterObject(def map[string]interface{}) (optics.SpectralPa
 	}
 	switch parameterType {
 	case "rgb":
+		if err := utils.RejectUnknownMapFields(def, "rgb spectral parameter", "type", "value", "space"); err != nil {
+			return nil, err
+		}
 		values, err := utils.RequiredFloat64SliceField(def, "value", 3)
 		if err != nil {
 			return nil, err
@@ -542,6 +532,9 @@ func parseSpectralParameterObject(def map[string]interface{}) (optics.SpectralPa
 			return nil, fmt.Errorf("unsupported rgb color space %q", space)
 		}
 	case "constant":
+		if err := utils.RejectUnknownMapFields(def, "constant spectral parameter", "type", "value"); err != nil {
+			return nil, err
+		}
 		value, err := utils.RequiredFloat64Field(def, "value")
 		if err != nil {
 			return nil, err
@@ -551,6 +544,9 @@ func parseSpectralParameterObject(def map[string]interface{}) (optics.SpectralPa
 		}
 		return spectrum_parameter.NewConstantParameter(value), nil
 	case "sampled":
+		if err := utils.RejectUnknownMapFields(def, "sampled spectral parameter", "type", "wavelengths_nm", "values", "interpolation"); err != nil {
+			return nil, err
+		}
 		wavelengths, err := utils.RequiredFloat64SliceField(def, "wavelengths_nm")
 		if err != nil {
 			return nil, err
@@ -580,6 +576,9 @@ func parseSpectralParameterObject(def map[string]interface{}) (optics.SpectralPa
 		}
 		return spectrum_parameter.NewSampledParameter(wavelengths, values), nil
 	case "blackbody":
+		if err := utils.RejectUnknownMapFields(def, "blackbody spectral parameter", "type", "temperature", "scale"); err != nil {
+			return nil, err
+		}
 		temperature, err := utils.RequiredFloat64Field(def, "temperature")
 		if err != nil {
 			return nil, err

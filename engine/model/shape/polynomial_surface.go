@@ -44,7 +44,7 @@ func NewPolynomial(coefficients *maths.SparseTensor[float64]) *Polynomial {
 	surface := &Polynomial{
 		InputDim:     3,
 		Coefficients: coefficients,
-		Transform:    identityTransform4(),
+		Transform:    maths.IdentityTransform4(),
 	}
 	surface.RebuildCalculateStorage()
 	return surface
@@ -378,7 +378,7 @@ func (q quadraticPolynomialKernel) rayPolynomial(start, direction []float64) []f
 }
 
 func (p *Polynomial) localPoint(point *mat.VecDense) []float64 {
-	local := make([]float64, minInt(point.Len(), 3))
+	local := make([]float64, maths.MinInt(point.Len(), 3))
 	for localAxis := range local {
 		local[localAxis] = p.Transform[localAxis+1][0]
 		for worldAxis := 0; worldAxis < point.Len() && worldAxis < 3; worldAxis++ {
@@ -389,7 +389,7 @@ func (p *Polynomial) localPoint(point *mat.VecDense) []float64 {
 }
 
 func (p *Polynomial) localDirection(direction *mat.VecDense) []float64 {
-	local := make([]float64, minInt(direction.Len(), 3))
+	local := make([]float64, maths.MinInt(direction.Len(), 3))
 	for localAxis := range local {
 		for worldAxis := 0; worldAxis < direction.Len() && worldAxis < 3; worldAxis++ {
 			local[localAxis] += p.Transform[localAxis+1][worldAxis+1] * direction.AtVec(worldAxis)
@@ -420,7 +420,7 @@ func linearPowerPolynomial(start, direction float64, exponent int) []float64 {
 }
 
 func multiplyPolynomialsAscending(a, b []float64, maxDegree int) []float64 {
-	result := make([]float64, minInt(len(a)+len(b)-1, maxDegree+1))
+	result := make([]float64, maths.MinInt(len(a)+len(b)-1, maxDegree+1))
 	for i, av := range a {
 		for j, bv := range b {
 			degree := i + j
@@ -439,19 +439,4 @@ func descendingPolynomial(ascending []float64) []float64 {
 		descending[len(ascending)-1-i] = coefficient
 	}
 	return descending
-}
-
-func identityTransform4() [4][4]float64 {
-	transform := [4][4]float64{}
-	for i := 0; i < 4; i++ {
-		transform[i][i] = 1
-	}
-	return transform
-}
-
-func minInt(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }

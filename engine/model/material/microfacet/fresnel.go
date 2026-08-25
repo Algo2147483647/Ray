@@ -1,12 +1,14 @@
 package microfacet
 
 import (
-	"github.com/Algo2147483647/ray/engine/model/optics"
 	"math"
+
+	"github.com/Algo2147483647/ray/engine/maths"
+	"github.com/Algo2147483647/ray/engine/model/optics"
 )
 
 func FresnelDielectric(cosThetaI, etaI, etaT float64) float64 {
-	cosThetaI = clamp(cosThetaI, -1, 1)
+	cosThetaI = maths.Clamp(cosThetaI, -1, 1)
 	entering := cosThetaI > 0
 	if !entering {
 		etaI, etaT = etaT, etaI
@@ -55,7 +57,7 @@ func spectrumSampleAt(s optics.Spectrum, i int) float64 {
 }
 
 func fresnelConductorChannel(cosThetaI, eta, k float64) float64 {
-	cosThetaI = math.Abs(clamp(cosThetaI, -1, 1))
+	cosThetaI = math.Abs(maths.Clamp(cosThetaI, -1, 1))
 	cos2 := cosThetaI * cosThetaI
 	sin2 := 1 - cos2
 	eta2 := eta * eta
@@ -72,15 +74,5 @@ func fresnelConductorChannel(cosThetaI, eta, k float64) float64 {
 	t4 := t2 * sin2
 	rp := rs * (t3 - t4) / (t3 + t4)
 
-	return clamp((rp+rs)*0.5, 0, 1)
-}
-
-func clamp(v, lo, hi float64) float64 {
-	if v < lo {
-		return lo
-	}
-	if v > hi {
-		return hi
-	}
-	return v
+	return maths.Clamp((rp+rs)*0.5, 0, 1)
 }

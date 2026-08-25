@@ -170,7 +170,7 @@ func SolveCubicEquationReal(a, b, c, d float64) ([]float64, error) {
 			return []float64{}, nil
 		}
 
-		arg := clamp(-q/denom, -1, 1)
+		arg := Clamp(-q/denom, -1, 1)
 		phi := math.Acos(arg)
 
 		for k := 0; k < 3; k++ {
@@ -523,10 +523,6 @@ func uniqueSortedRoots(roots []float64) []float64 {
 
 func sameSign(a, b float64) bool {
 	return a*b > 0
-}
-
-func clamp(value, minValue, maxValue float64) float64 {
-	return math.Max(minValue, math.Min(maxValue, value))
 }
 
 func max4(a, b, c, d float64) float64 {

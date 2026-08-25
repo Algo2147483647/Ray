@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"os"
 	"os/exec"
@@ -77,6 +78,9 @@ func TestStudioIntermediateContractRunsInEngineProcess(t *testing.T) {
 	data, err := json.Marshal(adapted)
 	if err != nil {
 		t.Fatalf("marshal Studio contract script: %v", err)
+	}
+	if bytes.Contains(data, []byte(`"_studio"`)) {
+		t.Fatalf("intermediate Engine JSON contains Studio-only metadata: %s", data)
 	}
 	scriptPath := filepath.Join(dir, "intermediate.json")
 	if err := os.WriteFile(scriptPath, data, 0o600); err != nil {

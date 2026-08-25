@@ -1,8 +1,10 @@
 package spectrum_parameter
 
 import (
-	"github.com/Algo2147483647/ray/engine/model/optics"
 	"math"
+
+	"github.com/Algo2147483647/ray/engine/maths"
+	"github.com/Algo2147483647/ray/engine/model/optics"
 )
 
 type BlackbodyParameter struct {
@@ -68,7 +70,7 @@ func blackbodyPower(wavelengthNM, temperature float64) float64 {
 }
 
 func ApproximateBlackbodyRGB(temperature float64) optics.Spectrum {
-	temp := optics.Clamp(temperature/100, 10, 400)
+	temp := maths.Clamp(temperature/100, 10, 400)
 	var r, g, b float64
 
 	if temp <= 66 {
@@ -86,8 +88,8 @@ func ApproximateBlackbodyRGB(temperature float64) optics.Spectrum {
 	}
 
 	return optics.NewSpectrum(
-		optics.SrgbChannelToLinear(optics.Clamp(r/255, 0, 1)),
-		optics.SrgbChannelToLinear(optics.Clamp(g/255, 0, 1)),
-		optics.SrgbChannelToLinear(optics.Clamp(b/255, 0, 1)),
+		optics.SrgbChannelToLinear(maths.Clamp(r/255, 0, 1)),
+		optics.SrgbChannelToLinear(maths.Clamp(g/255, 0, 1)),
+		optics.SrgbChannelToLinear(maths.Clamp(b/255, 0, 1)),
 	)
 }

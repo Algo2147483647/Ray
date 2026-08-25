@@ -444,7 +444,7 @@ func (h *Handler) randomWalk(
 		if !validSpectrum(beta) {
 			break
 		}
-		distance2 := squaredDistance(origin, hit.Point)
+		distance2 := maths.SquaredDistance(origin, hit.Point)
 		pdfArea := pendingDirectionPDF * absDot(hit.GeometricNormal, negated(direction)) / math.Max(distance2, utils.EPS)
 		si, ok := h.prepareSurfaceInteraction(getMediumRegistry(tree), ray, hit)
 		if !ok {
@@ -548,7 +548,7 @@ func (h *Handler) connectBDPTVertices(tree *object.ObjectTree, lv, cv *bdptVerte
 	if toCamera == nil {
 		return optics.Spectrum{}, false
 	}
-	distance2 := squaredDistance(lv.Point, cv.Point)
+	distance2 := maths.SquaredDistance(lv.Point, cv.Point)
 	distance := math.Sqrt(distance2)
 	if !visibleSegment(tree, lv.Point, cv.Point, toCamera, distance) {
 		return optics.Spectrum{}, false
@@ -792,7 +792,7 @@ func convertBDPTDensity(pdfDirection float64, source, destination *bdptVertex) f
 	if direction == nil {
 		return 0
 	}
-	distance2 := squaredDistance(source.Point, destination.Point)
+	distance2 := maths.SquaredDistance(source.Point, destination.Point)
 	if distance2 <= utils.EPS*utils.EPS {
 		return 0
 	}
@@ -806,7 +806,7 @@ func convertBDPTDensity(pdfDirection float64, source, destination *bdptVertex) f
 }
 
 func isFinitePDF(value float64) bool {
-	return !math.IsNaN(value) && !math.IsInf(value, 0)
+	return maths.IsFinite(value)
 }
 
 func visibleSegment(tree *object.ObjectTree, from, to, direction *mat.VecDense, distance float64) bool {
@@ -849,15 +849,6 @@ func zeroSpectrum(wavelengthNM float64) optics.Spectrum {
 
 func validSpectrum(s optics.Spectrum) bool {
 	return s.IsFinite() && s.IsNonNegative() && !s.IsZero()
-}
-
-func squaredDistance(a, b *mat.VecDense) float64 {
-	if a == nil || b == nil || a.Len() != b.Len() {
-		return 0
-	}
-	d := mat.NewVecDense(a.Len(), nil)
-	d.SubVec(a, b)
-	return mat.Dot(d, d)
 }
 
 func directionBetween(from, to *mat.VecDense) *mat.VecDense {

@@ -4,6 +4,7 @@ import (
 	"math"
 	"testing"
 
+	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"github.com/Algo2147483647/ray/engine/model"
 	"github.com/Algo2147483647/ray/engine/model/camera"
@@ -96,7 +97,7 @@ func TestBuildLightSubpathAppliesHomogeneousAbsorptionBeforeVertex(t *testing.T)
 		if len(path) != 2 {
 			t.Fatalf("light path vertex count = %d, want 2", len(path))
 		}
-		distance := math.Sqrt(squaredDistance(path[0].Point, path[1].Point))
+		distance := math.Sqrt(maths.SquaredDistance(path[0].Point, path[1].Point))
 		want := 2 * math.Pi * emitterShape.SurfaceArea() * math.Exp(-sigmaA*distance)
 		for channel := range 3 {
 			if got := path[1].Beta.RGBChannel(channel); math.Abs(got-want) > 1e-10 {

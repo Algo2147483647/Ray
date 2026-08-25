@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/maths/exprdiff"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"github.com/expr-lang/expr"
@@ -160,7 +161,7 @@ func (f *implicitExprField) gradient(point, res *mat.VecDense) *mat.VecDense {
 	gy := runImplicitExprProgram(f.gradientY, env)
 	gz := runImplicitExprProgram(f.gradientZ, env)
 	f.Mem.put(env)
-	if !implicitExprIsFinite(gx) || !implicitExprIsFinite(gy) || !implicitExprIsFinite(gz) {
+	if !maths.IsFinite(gx) || !maths.IsFinite(gy) || !maths.IsFinite(gz) {
 		return nil
 	}
 
@@ -176,7 +177,7 @@ func runImplicitExprProgram(program *vm.Program, env map[string]interface{}) flo
 		return math.NaN()
 	}
 	value, ok := output.(float64)
-	if !ok || !implicitExprIsFinite(value) {
+	if !ok || !maths.IsFinite(value) {
 		return math.NaN()
 	}
 	return value
@@ -227,13 +228,9 @@ func implicitExprBaseEnv() map[string]interface{} {
 		"pow":   math.Pow,
 		"min":   math.Min,
 		"max":   math.Max,
-		"clamp": clampFloat64,
+		"clamp": maths.Clamp,
 		"sign":  signFloat64,
 	}
-}
-
-func clampFloat64(value, minValue, maxValue float64) float64 {
-	return math.Max(minValue, math.Min(maxValue, value))
 }
 
 func signFloat64(value float64) float64 {
@@ -245,8 +242,4 @@ func signFloat64(value float64) float64 {
 	default:
 		return 0
 	}
-}
-
-func implicitExprIsFinite(value float64) bool {
-	return !math.IsNaN(value) && !math.IsInf(value, 0)
 }

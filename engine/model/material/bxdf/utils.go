@@ -42,18 +42,8 @@ func refractLocal(wo maths.Direction, eta float64) (maths.Direction, bool) {
 	return maths.NewDirectionFromComponents(components).Normalize(), true
 }
 
-func clamp(v, lo, hi float64) float64 {
-	if v < lo {
-		return lo
-	}
-	if v > hi {
-		return hi
-	}
-	return v
-}
-
 func FresnelDielectric(cosThetaI, etaI, etaT float64) float64 {
-	cosThetaI = clamp(cosThetaI, -1, 1)
+	cosThetaI = maths.Clamp(cosThetaI, -1, 1)
 	entering := cosThetaI > 0
 	if !entering {
 		etaI, etaT = etaT, etaI

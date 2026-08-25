@@ -43,13 +43,15 @@ engine execution.
 resumed, merged, converted through CIE XYZ to a color image, tone-mapped, or
 checkpointed over multiple runs.
 
-Unknown top-level, Material, Surface, Emission, Object, Camera, Film, and Render
-fields are rejected. A field must also belong to the selected discriminator
-variant: for example, `center` is valid for `shape: "sphere"` but not for
-`shape: "cuboid"`. Canonical Engine JSON must omit authoring-only fields such
-as `includes` and `films`.
+Unknown top-level, Geometry, Media, Material, Surface, Emission, Object, Camera,
+Film, and Render fields are rejected. A field must also belong to the selected
+discriminator variant: for example, `center` is valid for `shape: "sphere"`
+but not for `shape: "cuboid"`, and `eta` is valid for a constant IOR but not a
+Cauchy IOR. Canonical Engine JSON must omit authoring-only fields such as
+`includes`, `films`, and Studio metadata.
 
-The Go protocol model uses typed `MaterialSpec` and `ObjectSpec` values.
+The Go protocol model uses typed `MaterialSpec`, `MediumSpec`, and `ObjectSpec`
+values.
 Discriminators are typed and validated for shapes, surfaces, emission models,
 emission distributions, and IOR models. `json.RawMessage` is reserved for
 leaves whose representation is intentionally polymorphic: spectral parameters,

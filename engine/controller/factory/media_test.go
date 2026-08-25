@@ -1,6 +1,7 @@
 package factory
 
 import (
+	"encoding/json"
 	"math"
 	"testing"
 
@@ -24,14 +25,11 @@ func (c mediaTestWavelengthContext) SpectralWavelengthsNM() []float64 {
 
 func TestParseMediaRegistryKeepsAbsorption(t *testing.T) {
 	script := &parser.Script{
-		Media: map[string]map[string]interface{}{
+		Media: map[string]parser.MediumSpec{
 			"tinted-water": {
-				"type": "homogeneous",
-				"ior": map[string]interface{}{
-					"type": "constant",
-					"eta":  1.33,
-				},
-				"sigma_a": []interface{}{0.2, 0.4, 0.8},
+				Type:   "homogeneous",
+				IOR:    &parser.IORSpec{Type: "constant", Eta: float64Pointer(1.33)},
+				SigmaA: json.RawMessage(`[0.2, 0.4, 0.8]`),
 			},
 		},
 	}
@@ -55,8 +53,8 @@ func TestParseMediaRegistryKeepsAbsorption(t *testing.T) {
 }
 
 func TestParseMediaRegistryRejectsSigmaS(t *testing.T) {
-	script := &parser.Script{Media: map[string]map[string]interface{}{
-		"fog": {"sigma_s": []interface{}{0.01, 0.02, 0.03}},
+	script := &parser.Script{Media: map[string]parser.MediumSpec{
+		"fog": {SigmaS: json.RawMessage(`[0.01, 0.02, 0.03]`)},
 	}}
 	if _, err := ParseMediaRegistry(script); err == nil {
 		t.Fatal("sigma_s must be rejected until volume scattering is implemented")
@@ -65,13 +63,13 @@ func TestParseMediaRegistryRejectsSigmaS(t *testing.T) {
 
 func TestParseMediaRegistryEvaluatesSampledAbsorptionAtWavelength(t *testing.T) {
 	script := &parser.Script{
-		Media: map[string]map[string]interface{}{
+		Media: map[string]parser.MediumSpec{
 			"filter": {
-				"sigma_a": map[string]interface{}{
-					"type":           "sampled",
-					"wavelengths_nm": []interface{}{500.0, 600.0},
-					"values":         []interface{}{0.1, 0.5},
-				},
+				SigmaA: json.RawMessage(`{
+					"type": "sampled",
+					"wavelengths_nm": [500.0, 600.0],
+					"values": [0.1, 0.5]
+				}`),
 			},
 		},
 	}
@@ -89,5 +87,16 @@ func TestParseMediaRegistryEvaluatesSampledAbsorptionAtWavelength(t *testing.T) 
 
 	if !sigmaA.HasSamples() || math.Abs(sigmaA.Sample(0)-0.3) > 1e-12 {
 		t.Fatalf("expected interpolated sampled sigma_a of 0.3, got %+v", sigmaA)
+	}
+}
+
+func TestParseMediaRegistryRejectsUnknownSpectralVariantField(t *testing.T) {
+	script := &parser.Script{Media: map[string]parser.MediumSpec{
+		"filter": {
+			SigmaA: json.RawMessage(`{"type":"constant","value":0.1,"mystery":true}`),
+		},
+	}}
+	if _, err := ParseMediaRegistry(script); err == nil {
+		t.Fatal("unknown spectral parameter field must be rejected")
 	}
 }

@@ -106,7 +106,7 @@ func (c *ParametricCurve) Validate() error {
 		return fmt.Errorf("parametric curve function must return a finite 3D point")
 	}
 	radius := c.Radius(probeT)
-	if radius <= 0 || !isFinite(radius) {
+	if radius <= 0 || !maths.IsFinite(radius) {
 		return fmt.Errorf("parametric curve radius must be finite and > 0")
 	}
 	return nil
@@ -265,25 +265,25 @@ func (c *ParametricCurve) intersectSegmentBVH(
 	if node == nil || node.Bounds == nil {
 		return best, found
 	}
-	clipped, ok := node.Bounds.ClipAffine(raySt, rayDir, NewIntersectOptions(tMin, minFloat(tMax, best.Distance)))
+	clipped, ok := node.Bounds.ClipAffine(raySt, rayDir, NewIntersectOptions(tMin, min(tMax, best.Distance)))
 	if !ok {
 		return best, found
 	}
 	near := clipped.Min
 	if node.Segment != nil {
-		if !node.Segment.overlapsCapsule(raySt, rayDir, tMin, minFloat(tMax, best.Distance)) {
+		if !node.Segment.overlapsCapsule(raySt, rayDir, tMin, min(tMax, best.Distance)) {
 			return best, found
 		}
-		hit, ok := c.refineHitInterval(raySt, rayDir, node.Segment.T0, node.Segment.T1, tMin, minFloat(tMax, best.Distance))
+		hit, ok := c.refineHitInterval(raySt, rayDir, node.Segment.T0, node.Segment.T1, tMin, min(tMax, best.Distance))
 		if ok && hit.Distance < best.Distance {
-			hit.T = clampFloat(hit.T, node.Segment.T0, node.Segment.T1)
+			hit.T = maths.Clamp(hit.T, node.Segment.T0, node.Segment.T1)
 			return hit, true
 		}
 		return best, found
 	}
 
-	leftNear, leftOK := curveNodeChildNear(raySt, rayDir, node.Left, tMin, minFloat(tMax, best.Distance))
-	rightNear, rightOK := curveNodeChildNear(raySt, rayDir, node.Right, tMin, minFloat(tMax, best.Distance))
+	leftNear, leftOK := curveNodeChildNear(raySt, rayDir, node.Left, tMin, min(tMax, best.Distance))
+	rightNear, rightOK := curveNodeChildNear(raySt, rayDir, node.Right, tMin, min(tMax, best.Distance))
 	if near > best.Distance {
 		return best, found
 	}
@@ -356,7 +356,7 @@ func (c *ParametricCurve) raySphereDistanceAt(raySt, rayDir *mat.VecDense, curve
 		return 0, false
 	}
 	radius := c.Radius(curveT)
-	if radius <= 0 || !isFinite(radius) {
+	if radius <= 0 || !maths.IsFinite(radius) {
 		return 0, false
 	}
 
@@ -437,8 +437,8 @@ func (c *ParametricCurve) derivative(t float64) *mat.VecDense {
 		return c.Derivative(t, mat.NewVecDense(3, nil))
 	}
 	eps := c.derivativeEps()
-	left := maxFloat(c.TRange[0], t-eps)
-	right := minFloat(c.TRange[1], t+eps)
+	left := max(c.TRange[0], t-eps)
+	right := min(c.TRange[1], t+eps)
 	if right <= left {
 		return nil
 	}
@@ -461,7 +461,7 @@ func (c *ParametricCurve) closestParameter(point *mat.VecDense) (float64, bool) 
 	bestDistance := math.MaxFloat64
 	bestT := c.TRange[0]
 	for i := 0; i <= c.samples(); i++ {
-		t := lerp(c.TRange, float64(i)/float64(c.samples()))
+		t := maths.Lerp(c.TRange[0], c.TRange[1], float64(i)/float64(c.samples()))
 		center := c.Function(t)
 		if center == nil || center.Len() < 3 || !finiteVec(center, 3) {
 			continue
@@ -491,13 +491,13 @@ func (c *ParametricCurve) sampleCurve() ([]parametricCurveSample, error) {
 	sampleCount := c.samples()
 	samples := make([]parametricCurveSample, 0, sampleCount+1)
 	for i := 0; i <= sampleCount; i++ {
-		t := lerp(c.TRange, float64(i)/float64(sampleCount))
+		t := maths.Lerp(c.TRange[0], c.TRange[1], float64(i)/float64(sampleCount))
 		point := c.Function(t)
 		if point == nil || point.Len() < 3 || !finiteVec(point, 3) {
 			return nil, fmt.Errorf("parametric curve sample %d produced a non-finite 3D point", i)
 		}
 		radius := c.Radius(t)
-		if radius <= 0 || !isFinite(radius) {
+		if radius <= 0 || !maths.IsFinite(radius) {
 			return nil, fmt.Errorf("parametric curve sample %d produced invalid radius", i)
 		}
 		samples = append(samples, parametricCurveSample{
@@ -513,7 +513,7 @@ func (c *ParametricCurve) segmentBounds(a, b parametricCurveSample) (*Cuboid, fl
 	midT := 0.5 * (a.T + b.T)
 	midPoint := c.Function(midT)
 	midRadius := c.Radius(midT)
-	if midPoint == nil || midPoint.Len() < 3 || !finiteVec(midPoint, 3) || midRadius <= 0 || !isFinite(midRadius) {
+	if midPoint == nil || midPoint.Len() < 3 || !finiteVec(midPoint, 3) || midRadius <= 0 || !maths.IsFinite(midRadius) {
 		return nil, 0, false
 	}
 
@@ -617,7 +617,7 @@ func (s *parametricCurveSegment) overlapsCapsule(raySt, rayDir *mat.VecDense, tM
 func constrainedRaySegmentDistanceSquared(raySt, rayDir, a, b *mat.VecDense, tMin, tMax float64) float64 {
 	best := math.Inf(1)
 	addCandidate := func(rayT, segmentU float64) {
-		if !isFinite(rayT) || rayT < tMin || rayT > tMax || segmentU < 0 || segmentU > 1 {
+		if !maths.IsFinite(rayT) || rayT < tMin || rayT > tMax || segmentU < 0 || segmentU > 1 {
 			return
 		}
 		d2 := raySegmentParamsDistanceSquared(raySt, rayDir, a, b, rayT, segmentU)
@@ -635,7 +635,7 @@ func constrainedRaySegmentDistanceSquared(raySt, rayDir, a, b *mat.VecDense, tMi
 	edge.SubVec(b, a)
 	ee := mat.Dot(edge, edge)
 	if ee <= utils.EPS {
-		rayT := clampFloat(pointRayProjection(a, raySt, rayDir, dd), tMin, tMax)
+		rayT := maths.Clamp(pointRayProjection(a, raySt, rayDir, dd), tMin, tMax)
 		addCandidate(rayT, 0)
 		return best
 	}
@@ -650,23 +650,23 @@ func constrainedRaySegmentDistanceSquared(raySt, rayDir, a, b *mat.VecDense, tMi
 		rayT := (de*ew - ee*dw) / denominator
 		segmentU := (dd*ew - de*dw) / denominator
 		addCandidate(rayT, segmentU)
-		addCandidate(clampFloat(rayT, tMin, tMax), clampFloat(segmentU, 0, 1))
+		addCandidate(maths.Clamp(rayT, tMin, tMax), maths.Clamp(segmentU, 0, 1))
 	}
 
 	for _, segmentU := range []float64{0, 1} {
 		point := pointOnSegment(a, b, segmentU)
-		rayT := clampFloat(pointRayProjection(point, raySt, rayDir, dd), tMin, tMax)
+		rayT := maths.Clamp(pointRayProjection(point, raySt, rayDir, dd), tMin, tMax)
 		addCandidate(rayT, segmentU)
 	}
 
-	if isFinite(tMin) {
+	if maths.IsFinite(tMin) {
 		point := affinePointAt(raySt, rayDir, tMin)
-		segmentU := clampFloat(pointSegmentProjection(point, a, b, ee), 0, 1)
+		segmentU := maths.Clamp(pointSegmentProjection(point, a, b, ee), 0, 1)
 		addCandidate(tMin, segmentU)
 	}
-	if isFinite(tMax) && tMax < math.MaxFloat64/4 {
+	if maths.IsFinite(tMax) && tMax < math.MaxFloat64/4 {
 		point := affinePointAt(raySt, rayDir, tMax)
-		segmentU := clampFloat(pointSegmentProjection(point, a, b, ee), 0, 1)
+		segmentU := maths.Clamp(pointSegmentProjection(point, a, b, ee), 0, 1)
 		addCandidate(tMax, segmentU)
 	}
 
@@ -707,7 +707,7 @@ func pointSegmentDistance(point, a, b *mat.VecDense) float64 {
 	if ee <= utils.EPS {
 		return math.Sqrt(raySegmentParamsDistanceSquared(a, edge, point, point, 0, 0))
 	}
-	u := clampFloat(pointSegmentProjection(point, a, b, ee), 0, 1)
+	u := maths.Clamp(pointSegmentProjection(point, a, b, ee), 0, 1)
 	return math.Sqrt(raySegmentParamsDistanceSquared(point, edge, a, b, 0, u))
 }
 

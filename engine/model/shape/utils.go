@@ -1,10 +1,12 @@
 package shape
 
 import (
+	"math"
+
+	"github.com/Algo2147483647/ray/engine/maths"
 	"github.com/Algo2147483647/ray/engine/maths/geometry"
 	"github.com/Algo2147483647/ray/engine/utils"
 	"gonum.org/v1/gonum/mat"
-	"math"
 )
 
 const (
@@ -137,21 +139,21 @@ func findFirstSphericalRoot(
 
 	prevS := sMin
 	prevValue := evaluate(sphericalPointAtUnit(rayStart, unitTangent, prevS))
-	if isFinite(prevValue) && math.Abs(prevValue) <= sphericalValueTol {
+	if maths.IsFinite(prevValue) && math.Abs(prevValue) <= sphericalValueTol {
 		return prevS, true
 	}
 
 	for i := 1; i <= steps; i++ {
 		currS := sMin + (sMax-sMin)*float64(i)/float64(steps)
 		currValue := evaluate(sphericalPointAtUnit(rayStart, unitTangent, currS))
-		if !isFinite(currValue) {
+		if !maths.IsFinite(currValue) {
 			prevS, prevValue = currS, currValue
 			continue
 		}
 		if math.Abs(currValue) <= sphericalValueTol {
 			return currS, true
 		}
-		if isFinite(prevValue) && hasSignChange(prevValue, currValue) {
+		if maths.IsFinite(prevValue) && maths.SignChanged(prevValue, currValue) {
 			return refineSphericalRoot(rayStart, unitTangent, prevS, currS, prevValue, evaluate), true
 		}
 		prevS, prevValue = currS, currValue
@@ -168,10 +170,10 @@ func refineSphericalRoot(
 	for i := 0; i < 80; i++ {
 		mid := 0.5 * (left + right)
 		fMid := evaluate(sphericalPointAtUnit(rayStart, unitTangent, mid))
-		if !isFinite(fMid) || math.Abs(fMid) <= sphericalValueTol || math.Abs(right-left) <= sphericalRootTol {
+		if !maths.IsFinite(fMid) || math.Abs(fMid) <= sphericalValueTol || math.Abs(right-left) <= sphericalRootTol {
 			return mid
 		}
-		if hasSignChange(fLeft, fMid) {
+		if maths.SignChanged(fLeft, fMid) {
 			right = mid
 		} else {
 			left = mid

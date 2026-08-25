@@ -397,7 +397,7 @@ func (k *KleinBottle4D) IntersectAffine(raySt, rayDir *mat.VecDense, options Int
 			return k.makeInteraction(t, point), true
 		}
 
-		if hasPrev && signChanged(prevSDF, sdf) {
+		if hasPrev && maths.SignChanged(prevSDF, sdf) {
 			tHit, ok := k.refineCrossing(raySt, rayDir, prevT, t)
 			if ok {
 				point.AddScaledVec(raySt, tHit, rayDir)
@@ -429,7 +429,7 @@ func (k *KleinBottle4D) refineCrossing(raySt, rayDir *mat.VecDense, lo, hi float
 	point.AddScaledVec(raySt, hi, rayDir)
 	sdfHi := k.SDF(point)
 
-	if !signChanged(sdfLo, sdfHi) {
+	if !maths.SignChanged(sdfLo, sdfHi) {
 		return 0, false
 	}
 
@@ -443,7 +443,7 @@ func (k *KleinBottle4D) refineCrossing(raySt, rayDir *mat.VecDense, lo, hi float
 			return mid, true
 		}
 
-		if signChanged(sdfLo, sdfMid) {
+		if maths.SignChanged(sdfLo, sdfMid) {
 			hi = mid
 			sdfHi = sdfMid
 		} else {
@@ -573,10 +573,6 @@ func localPoint(p, center *mat.VecDense) [4]float64 {
 	}
 
 	return out
-}
-
-func signChanged(a, b float64) bool {
-	return (a < 0 && b > 0) || (a > 0 && b < 0)
 }
 
 func rayBoxRange(raySt, rayDir, pmin, pmax *mat.VecDense, tMin, tMax float64) (float64, float64, bool) {

@@ -63,15 +63,11 @@ func (d Direction) Normalize() Direction {
 
 func (d Direction) IsFinite() bool {
 	for i := 0; i < d.Len(); i++ {
-		if !isFinite(d.Component(i)) {
+		if !IsFinite(d.Component(i)) {
 			return false
 		}
 	}
 	return true
-}
-
-func isFinite(v float64) bool {
-	return !math.IsNaN(v) && !math.IsInf(v, 0)
 }
 
 func CosTheta(d Direction) float64 {

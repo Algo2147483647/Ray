@@ -160,7 +160,7 @@ type PixelWindowScript struct {
 }
 
 type IntermediateScript struct {
-	Studio    StudioMetadata                    `json:"_studio"`
+	Studio    StudioMetadata                    `json:"-"`
 	Dimension int                               `json:"dimension"`
 	Materials []map[string]interface{}          `json:"materials,omitempty"`
 	Media     map[string]map[string]interface{} `json:"media,omitempty"`

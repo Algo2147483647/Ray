@@ -79,8 +79,8 @@ func (g GGX) SampleVisibleNormal(wo maths.Direction, u maths.Sample2D) maths.Dir
 	}
 	t2 := cross(vh, t1)
 
-	r := math.Sqrt(clamp01(u.U))
-	phi := 2 * math.Pi * clamp01(u.V)
+	r := math.Sqrt(maths.ClampUnit(u.U))
+	phi := 2 * math.Pi * maths.ClampUnit(u.V)
 	t1v := r * math.Cos(phi)
 	t2v := r * math.Sin(phi)
 	s := 0.5 * (1 + maths.CosTheta(vh))
@@ -110,14 +110,4 @@ func cross(a, b maths.Direction) maths.Direction {
 		a.Component(2)*b.Component(0)-a.Component(0)*b.Component(2),
 		a.Component(0)*b.Component(1)-a.Component(1)*b.Component(0),
 	)
-}
-
-func clamp01(v float64) float64 {
-	if v < 0 {
-		return 0
-	}
-	if v > 1 {
-		return 1
-	}
-	return v
 }

@@ -1,6 +1,10 @@
 package optics
 
-import "math"
+import (
+	"math"
+
+	"github.com/Algo2147483647/ray/engine/maths"
+)
 
 type SpectrumMode int
 
@@ -209,7 +213,7 @@ func (s Spectrum) MaxComponent() float64 {
 func (s Spectrum) IsFinite() bool {
 	if s.HasSamples() {
 		for _, sample := range s.Samples {
-			if !isFinite(sample) {
+			if !maths.IsFinite(sample) {
 				return false
 			}
 		}
@@ -246,10 +250,6 @@ func (s Spectrum) AlmostEqual(other Spectrum, eps float64) bool {
 	return math.Abs(s.RGB[0]-other.RGB[0]) <= eps &&
 		math.Abs(s.RGB[1]-other.RGB[1]) <= eps &&
 		math.Abs(s.RGB[2]-other.RGB[2]) <= eps
-}
-
-func isFinite(v float64) bool {
-	return !math.IsNaN(v) && !math.IsInf(v, 0)
 }
 
 func combineSampled(a, b []float64, fn func(float64, float64) float64) []float64 {

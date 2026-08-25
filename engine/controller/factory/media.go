@@ -2,11 +2,10 @@ package factory
 
 import (
 	"fmt"
-	"github.com/Algo2147483647/ray/engine/controller/parser"
-	"github.com/Algo2147483647/ray/engine/model/optics"
-	"github.com/Algo2147483647/ray/engine/utils"
 
+	"github.com/Algo2147483647/ray/engine/controller/parser"
 	"github.com/Algo2147483647/ray/engine/model/material/medium"
+	"github.com/Algo2147483647/ray/engine/model/optics"
 )
 
 func ParseMediaRegistry(script *parser.Script) (*medium.Registry, error) {
@@ -15,27 +14,25 @@ func ParseMediaRegistry(script *parser.Script) (*medium.Registry, error) {
 		return registry, nil
 	}
 
-	for name, def := range script.Media {
+	for name, spec := range script.Media {
 		context := fmt.Sprintf("medium %q", name)
-		mediumType, ok, err := utils.OptionalStringField(def, "type")
-		if err != nil {
-			return nil, fmt.Errorf("%s: %w", context, err)
-		}
-		if !ok {
+		mediumType := spec.Type
+		if mediumType == "" {
 			mediumType = "homogeneous"
 		}
 		if mediumType != "homogeneous" {
 			return nil, fmt.Errorf("%s: unsupported medium type %q", context, mediumType)
 		}
-		if _, exists := def["sigma_s"]; exists {
+		if len(spec.SigmaS) != 0 {
 			return nil, fmt.Errorf("%s: sigma_s is unsupported until volume scattering is implemented", context)
 		}
 
-		etaModel, err := parseMediumIORModel(def)
+		defaultEta := 1.0
+		etaModel, err := parseIORModel(spec.IOR, &defaultEta)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", context, err)
 		}
-		sigmaA, _, err := optionalSpectralParameterField(def, "sigma_a", nil)
+		sigmaA, err := optionalSpectralParameterRaw(spec.SigmaA, "sigma_a", nil)
 		if err != nil {
 			return nil, fmt.Errorf("%s sigma_a: %w", context, err)
 		}
@@ -84,57 +81,6 @@ func parseMediumBoundary(spec *parser.MediumBoundarySpec, registry *medium.Regis
 		Priority: priority,
 		Thin:     spec.Thin,
 	}, nil
-}
-
-func parseMediumIORModel(def map[string]interface{}) (medium.Model, error) {
-	iorDef, ok, err := utils.OptionalMapField(def, "ior")
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return medium.NewConstant(1), nil
-	}
-
-	iorType, err := utils.RequiredStringField(iorDef, "type")
-	if err != nil {
-		return nil, fmt.Errorf("ior: %w", err)
-	}
-	switch iorType {
-	case "constant":
-		eta, err := utils.RequiredFloat64Field(iorDef, "eta")
-		if err != nil {
-			return nil, fmt.Errorf("ior: %w", err)
-		}
-		if !medium.IsValidEta(eta) {
-			return nil, fmt.Errorf("ior eta must be > 0")
-		}
-		return medium.NewConstant(eta), nil
-	case "cauchy":
-		a, err := utils.RequiredFloat64Field(iorDef, "a")
-		if err != nil {
-			return nil, fmt.Errorf("ior: %w", err)
-		}
-		b, err := utils.RequiredFloat64Field(iorDef, "b")
-		if err != nil {
-			return nil, fmt.Errorf("ior: %w", err)
-		}
-		c, ok, err := utils.OptionalFloat64Field(iorDef, "c")
-		if err != nil {
-			return nil, fmt.Errorf("ior: %w", err)
-		}
-		if !ok {
-			c = 0
-		}
-		model := medium.NewCauchy(a, b, c)
-		if !medium.IsValidEta(model.Evaluate(medium.WavelengthMinNM)) ||
-			!medium.IsValidEta(model.Evaluate(medium.DefaultWavelengthNM)) ||
-			!medium.IsValidEta(model.Evaluate(medium.WavelengthMaxNM)) {
-			return nil, fmt.Errorf("ior cauchy coefficients produce invalid eta")
-		}
-		return model, nil
-	default:
-		return nil, fmt.Errorf("unsupported ior type %q", iorType)
-	}
 }
 
 type spectralCoefficient struct {

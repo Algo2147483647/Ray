@@ -253,27 +253,27 @@ func (p *ParametricEquation) intersectPatchBVH(
 	if node == nil || node.Bounds == nil {
 		return best, found
 	}
-	clipped, ok := node.Bounds.ClipAffine(raySt, rayDir, NewIntersectOptions(tMin, minFloat(tMax, best.T)))
+	clipped, ok := node.Bounds.ClipAffine(raySt, rayDir, NewIntersectOptions(tMin, min(tMax, best.T)))
 	if !ok {
 		return best, found
 	}
 	near := clipped.Min
 	if node.Patch != nil {
 		seed := parametricSeed{
-			T:       maxFloat(near, tMin),
+			T:       max(near, tMin),
 			U:       node.Patch.CenterU,
 			V:       node.Patch.CenterV,
 			PatchID: node.Patch.PatchID,
 		}
-		hit, ok := p.refineIntersection(raySt, rayDir, seed, tMin, minFloat(tMax, best.T))
+		hit, ok := p.refineIntersection(raySt, rayDir, seed, tMin, min(tMax, best.T))
 		if ok && hit.T < best.T {
 			return hit, true
 		}
 		return best, found
 	}
 
-	leftNear, leftOK := nodeChildNear(raySt, rayDir, node.Left, tMin, minFloat(tMax, best.T))
-	rightNear, rightOK := nodeChildNear(raySt, rayDir, node.Right, tMin, minFloat(tMax, best.T))
+	leftNear, leftOK := nodeChildNear(raySt, rayDir, node.Left, tMin, min(tMax, best.T))
+	rightNear, rightOK := nodeChildNear(raySt, rayDir, node.Right, tMin, min(tMax, best.T))
 	if rightOK && (!leftOK || rightNear < leftNear) {
 		best, found = p.intersectPatchBVH(raySt, rayDir, node.Right, tMin, tMax, best, found)
 		best, found = p.intersectPatchBVH(raySt, rayDir, node.Left, tMin, tMax, best, found)
@@ -325,7 +325,7 @@ func (p *ParametricEquation) refineIntersection(raySt, rayDir *mat.VecDense, see
 				x[2] + alpha*delta[2],
 			}
 			candidateResidual := p.residualNorm(raySt, rayDir, candidate)
-			if isFinite(candidateResidual) && candidateResidual < residual {
+			if maths.IsFinite(candidateResidual) && candidateResidual < residual {
 				x = candidate
 				accepted = true
 				break
@@ -375,16 +375,16 @@ func (p *ParametricEquation) derivatives(u, v float64) (*mat.VecDense, *mat.VecD
 	}
 
 	eps := p.derivativeEps()
-	uPlus := p.Function(minFloat(u+eps, p.URange[1]), v)
-	uMinus := p.Function(maxFloat(u-eps, p.URange[0]), v)
-	vPlus := p.Function(u, minFloat(v+eps, p.VRange[1]))
-	vMinus := p.Function(u, maxFloat(v-eps, p.VRange[0]))
+	uPlus := p.Function(min(u+eps, p.URange[1]), v)
+	uMinus := p.Function(max(u-eps, p.URange[0]), v)
+	vPlus := p.Function(u, min(v+eps, p.VRange[1]))
+	vMinus := p.Function(u, max(v-eps, p.VRange[0]))
 	if uPlus == nil || uMinus == nil || vPlus == nil || vMinus == nil {
 		return nil, nil
 	}
 
-	uDenom := minFloat(u+eps, p.URange[1]) - maxFloat(u-eps, p.URange[0])
-	vDenom := minFloat(v+eps, p.VRange[1]) - maxFloat(v-eps, p.VRange[0])
+	uDenom := min(u+eps, p.URange[1]) - max(u-eps, p.URange[0])
+	vDenom := min(v+eps, p.VRange[1]) - max(v-eps, p.VRange[0])
 	if uDenom <= 0 || vDenom <= 0 {
 		return nil, nil
 	}
@@ -408,8 +408,8 @@ func (p *ParametricEquation) acceptHit(x []float64, residual float64, patchID in
 	}
 	return parametricHit{
 		T:        t,
-		U:        clampFloat(u, p.URange[0], p.URange[1]),
-		V:        clampFloat(v, p.VRange[0], p.VRange[1]),
+		U:        maths.Clamp(u, p.URange[0], p.URange[1]),
+		V:        maths.Clamp(v, p.VRange[0], p.VRange[1]),
 		Residual: residual,
 		PatchID:  patchID,
 	}, true
@@ -467,9 +467,9 @@ func (p *ParametricEquation) patchBounds(u0, u1, v0, v1 float64) (*Cuboid, bool)
 func (p *ParametricEquation) sampledBounds() *Cuboid {
 	points := make([][2]float64, 0, (p.samplesU()+1)*(p.samplesV()+1))
 	for iv := 0; iv <= p.samplesV(); iv++ {
-		v := lerp(p.VRange, float64(iv)/float64(p.samplesV()))
+		v := maths.Lerp(p.VRange[0], p.VRange[1], float64(iv)/float64(p.samplesV()))
 		for iu := 0; iu <= p.samplesU(); iu++ {
-			u := lerp(p.URange, float64(iu)/float64(p.samplesU()))
+			u := maths.Lerp(p.URange[0], p.URange[1], float64(iu)/float64(p.samplesU()))
 			points = append(points, [2]float64{u, v})
 		}
 	}
@@ -488,9 +488,9 @@ func (p *ParametricEquation) closestParameters(point *mat.VecDense) (float64, fl
 	bestDistance := math.MaxFloat64
 	bestU, bestV := 0.0, 0.0
 	for iv := 0; iv <= p.samplesV(); iv++ {
-		v := lerp(p.VRange, float64(iv)/float64(p.samplesV()))
+		v := maths.Lerp(p.VRange[0], p.VRange[1], float64(iv)/float64(p.samplesV()))
 		for iu := 0; iu <= p.samplesU(); iu++ {
-			u := lerp(p.URange, float64(iu)/float64(p.samplesU()))
+			u := maths.Lerp(p.URange[0], p.URange[1], float64(iu)/float64(p.samplesU()))
 			candidate := p.Function(u, v)
 			if candidate == nil || candidate.Len() < 3 {
 				continue
@@ -713,15 +713,11 @@ func finiteVec(v *mat.VecDense, dim int) bool {
 }
 
 func validRange(r [2]float64) bool {
-	return isFinite(r[0]) && isFinite(r[1]) && r[0] < r[1]
+	return maths.IsFinite(r[0]) && maths.IsFinite(r[1]) && r[0] < r[1]
 }
 
 func midpoint(r [2]float64) float64 {
 	return 0.5 * (r[0] + r[1])
-}
-
-func lerp(r [2]float64, t float64) float64 {
-	return r[0] + t*(r[1]-r[0])
 }
 
 func normalizeRange(value float64, r [2]float64) float64 {
@@ -736,22 +732,4 @@ func infNormLocal(values []float64) float64 {
 		}
 	}
 	return result
-}
-
-func clampFloat(value, lo, hi float64) float64 {
-	return minFloat(maxFloat(value, lo), hi)
-}
-
-func minFloat(a, b float64) float64 {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func maxFloat(a, b float64) float64 {
-	if a > b {
-		return a
-	}
-	return b
 }

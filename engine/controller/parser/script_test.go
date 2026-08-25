@@ -3,6 +3,7 @@ package parser
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -87,6 +88,55 @@ func TestReadScriptFileRejectsRemovedSpectrumMode(t *testing.T) {
 	writeTestScript(t, path, `{"renders":[{"spectrum_mode":"hero_wavelength"}]}`)
 	if _, err := ReadScriptFile(path); err == nil {
 		t.Fatal("expected removed spectrum_mode to be rejected")
+	}
+}
+
+func TestReadScriptFileRejectsUnknownFieldsAtEverySceneBoundary(t *testing.T) {
+	tests := []struct {
+		name    string
+		script  string
+		message string
+	}{
+		{
+			name:    "script",
+			script:  `{"dimension":3,"mystery":true}`,
+			message: `unsupported script field "mystery"`,
+		},
+		{
+			name:    "geometry",
+			script:  `{"geometry":{"type":"euclidean","warp":1}}`,
+			message: `unsupported geometry field "warp"`,
+		},
+		{
+			name:    "medium",
+			script:  `{"media":{"water":{"type":"homogeneous","density":1}}}`,
+			message: `unsupported medium field "density"`,
+		},
+		{
+			name:    "medium discriminator",
+			script:  `{"media":{"fog":{"type":"heterogeneous"}}}`,
+			message: `unsupported medium type "heterogeneous"`,
+		},
+		{
+			name:    "ior variant",
+			script:  `{"media":{"glass":{"ior":{"type":"constant","eta":1.5,"a":1}}}}`,
+			message: `unsupported ior field "a"`,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			dir := t.TempDir()
+			path := filepath.Join(dir, "main.json")
+			writeTestScript(t, path, test.script)
+			_, err := ReadScriptFile(path)
+			if err == nil {
+				t.Fatalf("expected %s field to be rejected", test.name)
+			}
+			if !strings.Contains(err.Error(), test.message) {
+				t.Fatalf("expected error containing %q, got %v", test.message, err)
+			}
+		})
 	}
 }
 

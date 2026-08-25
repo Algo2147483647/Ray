@@ -51,6 +51,15 @@ func Distance(a, b *mat.VecDense) float64 {
 	return mat.Norm(SubVec(mat.NewVecDense(a.Len(), nil), a, b), 2)
 }
 
+func SquaredDistance(a, b *mat.VecDense) float64 {
+	if a == nil || b == nil || a.Len() != b.Len() {
+		return 0
+	}
+	difference := mat.NewVecDense(a.Len(), nil)
+	difference.SubVec(a, b)
+	return mat.Dot(difference, difference)
+}
+
 func MulVec(res *mat.VecDense, a *mat.Dense, b *mat.VecDense) *mat.VecDense {
 	res.MulVec(a, b)
 	return res

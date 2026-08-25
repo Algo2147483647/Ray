@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+
+	"github.com/Algo2147483647/ray/engine/utils"
 )
 
 // ShapeKind is the discriminator for an Engine object definition.
@@ -41,7 +43,7 @@ type BoundsSpec struct {
 }
 
 func (s *BoundsSpec) UnmarshalJSON(data []byte) error {
-	if err := rejectSpecFields(data, "bounds", "pmin", "pmax"); err != nil {
+	if err := utils.RejectUnknownJSONFields(data, "bounds", "pmin", "pmax"); err != nil {
 		return err
 	}
 	type plain BoundsSpec
@@ -56,7 +58,7 @@ type MediumBoundarySpec struct {
 }
 
 func (s *MediumBoundarySpec) UnmarshalJSON(data []byte) error {
-	if err := rejectSpecFields(data, "medium_boundary", "inside", "outside", "priority", "thin"); err != nil {
+	if err := utils.RejectUnknownJSONFields(data, "medium_boundary", "inside", "outside", "priority", "thin"); err != nil {
 		return err
 	}
 	type plain MediumBoundarySpec
@@ -109,7 +111,7 @@ type PolynomialTermSpec struct {
 }
 
 func (s *PolynomialTermSpec) UnmarshalJSON(data []byte) error {
-	if err := rejectSpecFields(data, "polynomial term", "exponents", "coefficient"); err != nil {
+	if err := utils.RejectUnknownJSONFields(data, "polynomial term", "exponents", "coefficient"); err != nil {
 		return err
 	}
 	type plain PolynomialTermSpec
@@ -197,7 +199,7 @@ func (*KleinBottleSpec) objectDefinition()        {}
 func (*STLSpec) objectDefinition()                {}
 
 func (s *ObjectSpec) UnmarshalJSON(data []byte) error {
-	if err := rejectSpecFields(data, "object",
+	if err := utils.RejectUnknownJSONFields(data, "object",
 		"id", "material_id", "shape", "medium_boundary", "bounds",
 		"pmin", "pmax", "center", "position", "normal", "axis", "p1", "p2", "p3",
 		"b", "z_dir", "x_dir", "r", "height", "r_major", "r_minor",
@@ -303,16 +305,25 @@ type IORSpec struct {
 }
 
 func (s *IORSpec) UnmarshalJSON(data []byte) error {
-	if err := rejectSpecFields(data, "ior", "type", "eta", "a", "b", "c"); err != nil {
-		return err
-	}
 	type plain IORSpec
 	var decoded plain
-	if err := json.Unmarshal(data, &decoded); err != nil {
+	var header struct {
+		Type string `json:"type"`
+	}
+	if err := json.Unmarshal(data, &header); err != nil {
 		return err
 	}
-	if decoded.Type != "constant" && decoded.Type != "cauchy" {
-		return fmt.Errorf("unsupported ior type %q", decoded.Type)
+	var allowed []string
+	switch header.Type {
+	case "constant":
+		allowed = []string{"type", "eta"}
+	case "cauchy":
+		allowed = []string{"type", "a", "b", "c"}
+	default:
+		return fmt.Errorf("unsupported ior type %q", header.Type)
+	}
+	if err := utils.DecodeStrictJSON(data, "ior", &decoded, allowed...); err != nil {
+		return err
 	}
 	*s = IORSpec(decoded)
 	return nil
@@ -465,7 +476,7 @@ type EmissionDistributionSpec struct {
 }
 
 func (s *EmissionDistributionSpec) UnmarshalJSON(data []byte) error {
-	if err := rejectSpecFields(data, "emission distribution", "type", "sidedness", "exponent", "half_angle_degrees"); err != nil {
+	if err := utils.RejectUnknownJSONFields(data, "emission distribution", "type", "sidedness", "exponent", "half_angle_degrees"); err != nil {
 		return err
 	}
 	type plain EmissionDistributionSpec
@@ -589,7 +600,7 @@ type MaterialSpec struct {
 }
 
 func (s *MaterialSpec) UnmarshalJSON(data []byte) error {
-	if err := rejectSpecFields(data, "material", "id", "surface", "emission"); err != nil {
+	if err := utils.RejectUnknownJSONFields(data, "material", "id", "surface", "emission"); err != nil {
 		return err
 	}
 	type plain MaterialSpec
@@ -607,28 +618,8 @@ func (s *MaterialSpec) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func rejectSpecFields(data []byte, kind string, allowed ...string) error {
-	var fields map[string]json.RawMessage
-	if err := json.Unmarshal(data, &fields); err != nil {
-		return err
-	}
-	known := make(map[string]bool, len(allowed))
-	for _, field := range allowed {
-		known[field] = true
-	}
-	for field := range fields {
-		if !known[field] {
-			return fmt.Errorf("unsupported %s field %q", kind, field)
-		}
-	}
-	return nil
-}
-
 func decodeVariantPayload(data []byte, kind string, target interface{}, allowed ...string) error {
-	if err := rejectSpecFields(data, kind, allowed...); err != nil {
-		return err
-	}
-	return json.Unmarshal(data, target)
+	return utils.DecodeStrictJSON(data, kind, target, allowed...)
 }
 
 func rejectObjectVariantFields(data []byte, kind ShapeKind) error {
@@ -658,5 +649,5 @@ func rejectObjectVariantFields(data []byte, kind ShapeKind) error {
 	case ShapeSTL:
 		fields = []string{"file", "center", "z_dir", "x_dir", "scale"}
 	}
-	return rejectSpecFields(data, fmt.Sprintf("object shape %q", kind), append(base, fields...)...)
+	return utils.RejectUnknownJSONFields(data, fmt.Sprintf("object shape %q", kind), append(base, fields...)...)
 }

@@ -31,7 +31,7 @@ func CheckNonNegative(scattering bxdf.Scattering, ctx bxdf.ShadingContext, opts 
 		if !f.IsFinite() || !f.IsNonNegative() {
 			return fmt.Errorf("eval must be finite and non-negative for sample %d: %+v", i, f)
 		}
-		if !isFinite(pdf) || pdf < 0 {
+		if !maths.IsFinite(pdf) || pdf < 0 {
 			return fmt.Errorf("pdf must be finite and non-negative for sample %d: %f", i, pdf)
 		}
 	}
@@ -87,7 +87,7 @@ func CheckSamplePDFConsistency(scattering bxdf.Scattering, ctx bxdf.ShadingConte
 			V: math.Mod(float64(i)*0.6180339887498949, 1),
 		}
 		sample := scattering.Sample(ctx, wo, u)
-		if !sample.Wi.IsFinite() || !sample.F.IsFinite() || !isFinite(sample.PDF) {
+		if !sample.Wi.IsFinite() || !sample.F.IsFinite() || !maths.IsFinite(sample.PDF) {
 			return fmt.Errorf("sample must be finite for sample %d: %+v", i, sample)
 		}
 		if sample.PDF < 0 {
@@ -135,8 +135,4 @@ func normalizeOptions(opts Options) Options {
 		opts.Tolerance = DefaultOptions().Tolerance
 	}
 	return opts
-}
-
-func isFinite(v float64) bool {
-	return !math.IsNaN(v) && !math.IsInf(v, 0)
 }

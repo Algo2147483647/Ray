@@ -39,7 +39,7 @@ func NewImplicitEquation(Function func(*mat.VecDense) float64, Range [2]*mat.Vec
 		Dimension:   dimension,
 		Function:    Function,
 		Range:       Range,
-		Transform:   identityTransform4(),
+		Transform:   maths.IdentityTransform4(),
 		MaxSteps:    defaultImplicitMaxSteps,
 		RootTol:     defaultImplicitRootTol,
 		ValueTol:    defaultImplicitValueTol,
@@ -86,7 +86,7 @@ func (f *ImplicitEquation) IntersectAffine(raySt, rayDir *mat.VecDense, options 
 	if step <= 0 {
 		return SurfaceInteraction{}, false
 	}
-	if !isFinite(scanEnd) || scanEnd > tMin+step*float64(f.maxSteps()) {
+	if !maths.IsFinite(scanEnd) || scanEnd > tMin+step*float64(f.maxSteps()) {
 		scanEnd = tMin + step*float64(f.maxSteps())
 	}
 	if scanEnd < tMin {
@@ -95,7 +95,7 @@ func (f *ImplicitEquation) IntersectAffine(raySt, rayDir *mat.VecDense, options 
 
 	prevT := tMin
 	prevValue := f.evaluateRay(raySt, rayDir, prevT)
-	if isFinite(prevValue) && math.Abs(prevValue) <= f.valueTol() {
+	if maths.IsFinite(prevValue) && math.Abs(prevValue) <= f.valueTol() {
 		return f.interactionAt(raySt, rayDir, prevT), true
 	}
 
@@ -113,7 +113,7 @@ func (f *ImplicitEquation) IntersectAffine(raySt, rayDir *mat.VecDense, options 
 			currT = scanEnd
 		}
 		currValue := f.evaluateRay(raySt, rayDir, currT)
-		if !isFinite(currValue) {
+		if !maths.IsFinite(currValue) {
 			continue
 		}
 
@@ -121,7 +121,7 @@ func (f *ImplicitEquation) IntersectAffine(raySt, rayDir *mat.VecDense, options 
 			return f.interactionAt(raySt, rayDir, currT), true
 		}
 
-		if isFinite(prevValue) && hasSignChange(prevValue, currValue) {
+		if maths.IsFinite(prevValue) && maths.SignChanged(prevValue, currValue) {
 			root, ok := f.findRootBisection(raySt, rayDir, prevT, currT, prevValue, currValue)
 			if ok && distanceInRange(root, tMin, tMax) {
 				return f.interactionAt(raySt, rayDir, root), true
@@ -217,21 +217,21 @@ func (f *ImplicitEquation) findRootBisection(
 	if math.Abs(fRight) <= f.valueTol() {
 		return right, true
 	}
-	if !hasSignChange(fLeft, fRight) {
+	if !maths.SignChanged(fLeft, fRight) {
 		return 0, false
 	}
 
 	for i := 0; i < f.maxSteps(); i++ {
 		mid := 0.5 * (left + right)
 		fMid := f.evaluateRay(raySt, rayDir, mid)
-		if !isFinite(fMid) {
+		if !maths.IsFinite(fMid) {
 			return 0, false
 		}
 		if math.Abs(fMid) <= f.valueTol() || math.Abs(right-left) <= f.rootTol() {
 			return mid, true
 		}
 
-		if hasSignChange(fLeft, fMid) {
+		if maths.SignChanged(fLeft, fMid) {
 			right = mid
 			fRight = fMid
 		} else {
@@ -250,7 +250,7 @@ func (f *ImplicitEquation) numericalGradient(point, res *mat.VecDense) {
 
 	eps := f.gradientEps()
 	work := mat.VecDenseCopyOf(point)
-	dim := minInt(point.Len(), f.dimension())
+	dim := maths.MinInt(point.Len(), f.dimension())
 	for axis := 0; axis < dim; axis++ {
 		original := point.AtVec(axis)
 
@@ -261,7 +261,7 @@ func (f *ImplicitEquation) numericalGradient(point, res *mat.VecDense) {
 		minus := f.evaluateWorld(work)
 
 		work.SetVec(axis, original)
-		if isFinite(plus) && isFinite(minus) {
+		if maths.IsFinite(plus) && maths.IsFinite(minus) {
 			res.SetVec(axis, (plus-minus)/(2*eps))
 		}
 	}
@@ -278,7 +278,7 @@ func (f *ImplicitEquation) localPoint(point, res *mat.VecDense) *mat.VecDense {
 	if point == nil {
 		return res
 	}
-	dim := minInt(point.Len(), f.dimension())
+	dim := maths.MinInt(point.Len(), f.dimension())
 	if res == nil || res.Len() != dim {
 		res = mat.NewVecDense(dim, nil)
 	} else {
@@ -299,8 +299,8 @@ func (f *ImplicitEquation) localGradientToWorld(localGradient, res *mat.VecDense
 		return res
 	}
 	res.Zero()
-	localDim := minInt(localGradient.Len(), f.dimension())
-	worldDim := minInt(res.Len(), f.dimension())
+	localDim := maths.MinInt(localGradient.Len(), f.dimension())
+	worldDim := maths.MinInt(res.Len(), f.dimension())
 	for localAxis := 0; localAxis < localDim; localAxis++ {
 		value := localGradient.AtVec(localAxis)
 		for worldAxis := 0; worldAxis < worldDim; worldAxis++ {
@@ -344,7 +344,7 @@ func (f *ImplicitEquation) searchStep(tMin, tMax float64) float64 {
 			return math.Sqrt(diagonalSquared) / float64(samples)
 		}
 	}
-	if isFinite(tMax) && tMax > tMin {
+	if maths.IsFinite(tMax) && tMax > tMin {
 		return (tMax - tMin) / float64(f.maxSteps())
 	}
 	return 0.02
@@ -376,12 +376,4 @@ func (f *ImplicitEquation) gradientEps() float64 {
 		return f.GradientEps
 	}
 	return defaultImplicitGradientEps
-}
-
-func hasSignChange(a, b float64) bool {
-	return (a < 0 && b > 0) || (a > 0 && b < 0)
-}
-
-func isFinite(value float64) bool {
-	return !math.IsNaN(value) && !math.IsInf(value, 0)
 }
