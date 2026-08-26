@@ -339,7 +339,9 @@ func adaptCuboid(object map[string]interface{}, ctx groupContext, dimension int)
 
 	if _, hasPmin := object["pmin"]; hasPmin {
 		if _, hasPmax := object["pmax"]; hasPmax && !isHypercube && groupPlacementIsIdentity(ctx) {
-			return object, nil
+			adapted := cloneMap(object)
+			adapted["shape"] = "cuboid"
+			return adapted, nil
 		}
 	}
 
@@ -388,9 +390,7 @@ func adaptCuboid(object map[string]interface{}, ctx groupContext, dimension int)
 	worldPmin, worldPmax := placedMinMax(ctx, pmin, pmax)
 
 	adapted := cloneMap(object)
-	if isHypercube {
-		adapted["shape"] = "cuboid"
-	}
+	adapted["shape"] = "cuboid"
 	adapted["pmin"] = worldPmin
 	adapted["pmax"] = worldPmax
 	delete(adapted, "center")
@@ -457,6 +457,7 @@ func adaptSphere(object map[string]interface{}, ctx groupContext, dimension int)
 	}
 
 	adapted := cloneMap(object)
+	adapted["shape"] = "sphere"
 	worldCenter := applyPlacement(ctx, center)
 	if scale, ok := uniformPlacementScale(ctx); ok || dimension != 3 {
 		if !ok {
@@ -529,6 +530,7 @@ func adaptFiniteCylinder(object map[string]interface{}, ctx groupContext, dimens
 	}
 
 	adapted := cloneMap(object)
+	adapted["shape"] = "cylinder"
 	adapted["center"] = applyPlacement(ctx, center)
 	adapted["axis"] = applyDirection(ctx, axis)
 	adapted["r"] = radius * scale

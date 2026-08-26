@@ -3,9 +3,10 @@ package controller
 import (
 	"flag"
 	"fmt"
+	"io"
+
 	"github.com/Algo2147483647/ray/engine/controller/factory"
 	"github.com/Algo2147483647/ray/engine/controller/parser"
-	"io"
 )
 
 func (h *Handler) ParseArgs(args []string) *Handler {
@@ -13,27 +14,34 @@ func (h *Handler) ParseArgs(args []string) *Handler {
 		return h
 	}
 
-	scriptPaths := stringListFlag{}
+	var scriptPath string
+	scriptSet := false
 
 	flagSet := flag.NewFlagSet("ray", flag.ContinueOnError)
 	flagSet.SetOutput(io.Discard)
-	flagSet.Var(&scriptPaths, "script", "path to a canonical scene script")
+	flagSet.Func("script", "path to a canonical scene script", func(value string) error {
+		if scriptSet {
+			return fmt.Errorf("--script may be specified only once")
+		}
+		scriptSet = true
+		scriptPath = value
+		return nil
+	})
 
 	if err := flagSet.Parse(args); err != nil {
 		h.err = err
 		return h
 	}
 
-	scriptPaths = append(scriptPaths, flagSet.Args()...)
-	if len(scriptPaths) == 0 {
-		h.err = fmt.Errorf("engine requires exactly one --script")
+	if len(flagSet.Args()) != 0 {
+		h.err = fmt.Errorf("engine does not accept positional arguments; use --script PATH")
 		return h
 	}
-	if len(scriptPaths) != 1 {
-		h.err = fmt.Errorf("engine accepts exactly one --script; use studio to merge multiple scripts")
+	if !scriptSet || scriptPath == "" {
+		h.err = fmt.Errorf("engine requires --script PATH")
 		return h
 	}
-	h.ScriptPath = scriptPaths[0]
+	h.ScriptPath = scriptPath
 	return h
 }
 
@@ -57,15 +65,4 @@ func (h *Handler) LoadScript() *Handler {
 	}
 
 	return h
-}
-
-type stringListFlag []string
-
-func (s *stringListFlag) String() string {
-	return fmt.Sprint([]string(*s))
-}
-
-func (s *stringListFlag) Set(value string) error {
-	*s = append(*s, value)
-	return nil
 }

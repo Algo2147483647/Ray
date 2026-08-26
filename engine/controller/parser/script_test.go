@@ -159,6 +159,21 @@ func TestReadScriptFileRejectsUnknownFieldsAtEverySceneBoundary(t *testing.T) {
 	}
 }
 
+func TestGeometryProtocolRejectsAliasesAndMissingDiscriminator(t *testing.T) {
+	for _, geometryJSON := range []string{
+		`{"type":"hyperbolic"}`,
+		`{"type":"sphere"}`,
+		`{}`,
+	} {
+		dir := t.TempDir()
+		path := filepath.Join(dir, "main.json")
+		writeTestScript(t, path, `{"geometry":`+geometryJSON+`}`)
+		if _, err := ReadScriptFile(path); err == nil {
+			t.Fatalf("expected geometry %s to be rejected", geometryJSON)
+		}
+	}
+}
+
 func writeTestScript(t *testing.T, path, data string) {
 	t.Helper()
 	if err := os.WriteFile(path, []byte(data), 0o644); err != nil {

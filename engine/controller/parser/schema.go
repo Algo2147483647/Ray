@@ -26,7 +26,6 @@ func (s *Script) UnmarshalJSON(data []byte) error {
 		data,
 		"script",
 		&decoded,
-		"dimension", "materials", "media", "objects", "cameras", "geometry", "renders",
 	); err != nil {
 		return err
 	}
@@ -49,7 +48,6 @@ func (c *CameraScript) UnmarshalJSON(data []byte) error {
 		data,
 		"camera",
 		(*plain)(c),
-		"id", "type", "position", "field_of_views", "coordinates", "ortho",
 	)
 }
 
@@ -70,7 +68,6 @@ func (r *RenderScript) UnmarshalJSON(data []byte) error {
 		data,
 		"render",
 		&decoded,
-		"integrator", "samples", "thread_num", "camera_id", "wavelength_samples", "film", "output",
 	); err != nil {
 		return err
 	}
@@ -94,7 +91,17 @@ type GeometryScript struct {
 
 func (g *GeometryScript) UnmarshalJSON(data []byte) error {
 	type plain GeometryScript
-	return utils.DecodeStrictJSON(data, "geometry", (*plain)(g), "type", "max_arc")
+	var decoded plain
+	if err := utils.DecodeStrictJSON(data, "geometry", &decoded); err != nil {
+		return err
+	}
+	switch decoded.Type {
+	case "euclidean", "klein", "spherical":
+	default:
+		return fmt.Errorf("unsupported geometry type %q", decoded.Type)
+	}
+	*g = GeometryScript(decoded)
+	return nil
 }
 
 type MediumKind string
@@ -114,7 +121,6 @@ func (s *MediumSpec) UnmarshalJSON(data []byte) error {
 		data,
 		"medium",
 		(*plain)(s),
-		"type", "ior", "sigma_a", "sigma_s",
 	); err != nil {
 		return err
 	}

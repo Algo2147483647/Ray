@@ -10,7 +10,7 @@ import (
 
 func parseParametricEquation(spec *parser.ParametricEquationSpec, bounds *parser.BoundsSpec, dimension int) ([]shape.Shape, error) {
 	if dimension != 3 {
-		return nil, fmt.Errorf("shape %q requires scene dimension 3, got %d", parser.ShapeParametricEquation, dimension)
+		return nil, fmt.Errorf("shape %q requires scene dimension 3, got %d", parser.ShapeParametricEquation.Kind, dimension)
 	}
 
 	surfaceDef, err := decodeRawObject(spec.Surface, "surface")

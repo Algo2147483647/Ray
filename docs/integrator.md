@@ -2,7 +2,8 @@
 
 This document describes the Integrator implementation that exists in the
 current Engine. The serialized values are `path`, `bdpt`, and `light_tracing`;
-`light_trace` remains a parser alias for `light_tracing`.
+Engine rejects other spellings. Studio may read `light_trace` and emits the
+canonical `light_tracing` value before launching Engine.
 
 The selected Integrator is never changed at runtime. Preparation or capability
 failure returns an error before samples are committed.

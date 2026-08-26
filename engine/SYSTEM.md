@@ -9,7 +9,8 @@ The Engine accepts exactly one command-line option:
 --script <canonical-engine-scene.json>
 ```
 
-Omitting `--script` is an error. Authoring composition, defaults, image output,
+Omitting or repeating `--script` is an error, and positional script paths are
+not accepted. Authoring composition, defaults, image output,
 resume, and CLI render overrides belong to Studio.
 
 ## Spec

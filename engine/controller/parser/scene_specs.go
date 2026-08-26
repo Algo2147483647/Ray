@@ -5,44 +5,91 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/Algo2147483647/ray/engine/maths/geometry"
+	"github.com/Algo2147483647/ray/engine/model/material/bxdf"
+	"github.com/Algo2147483647/ray/engine/model/material/emission"
+	"github.com/Algo2147483647/ray/engine/model/shape"
 	"github.com/Algo2147483647/ray/engine/utils"
 )
 
 // ShapeKind is the discriminator for an Engine object definition.
 type ShapeKind string
 
-const (
-	ShapeCuboid             ShapeKind = "cuboid"
-	ShapeHypercuboid        ShapeKind = "hypercuboid"
-	ShapeSphere             ShapeKind = "sphere"
-	ShapeHypersphere        ShapeKind = "hypersphere"
-	ShapeCircle             ShapeKind = "circle"
-	ShapeCylinder           ShapeKind = "cylinder"
-	ShapeFiniteCylinder     ShapeKind = "finite cylinder"
-	ShapeTriangle           ShapeKind = "triangle"
-	ShapePolynomial         ShapeKind = "polynomial"
-	ShapeImplicitEquation   ShapeKind = "implicit equation"
-	ShapeParametricEquation ShapeKind = "parametric equation"
-	ShapeParametricCurve    ShapeKind = "parametric curve"
-	ShapeKleinBottle        ShapeKind = "klein_bottle"
-	ShapeSTL                ShapeKind = "stl"
+type ObjectCompiler interface {
+	CompileCuboid(*CuboidSpec, *BoundsSpec, geometry.SceneSpace) ([]shape.Shape, error)
+	CompileSphere(*SphereSpec, *BoundsSpec, geometry.SceneSpace) ([]shape.Shape, error)
+	CompileCircle(*CircleSpec, *BoundsSpec, geometry.SceneSpace) ([]shape.Shape, error)
+	CompileCylinder(*FiniteCylinderSpec, *BoundsSpec, geometry.SceneSpace) ([]shape.Shape, error)
+	CompileTriangle(*TriangleSpec, *BoundsSpec, geometry.SceneSpace) ([]shape.Shape, error)
+	CompilePolynomial(*PolynomialSpec, *BoundsSpec, geometry.SceneSpace) ([]shape.Shape, error)
+	CompileImplicitEquation(*ImplicitEquationSpec, *BoundsSpec, geometry.SceneSpace) ([]shape.Shape, error)
+	CompileParametricEquation(*ParametricEquationSpec, *BoundsSpec, geometry.SceneSpace) ([]shape.Shape, error)
+	CompileParametricCurve(*ParametricCurveSpec, *BoundsSpec, geometry.SceneSpace) ([]shape.Shape, error)
+	CompileKleinBottle(*KleinBottleSpec, *BoundsSpec, geometry.SceneSpace) ([]shape.Shape, error)
+	CompileSTL(*STLSpec, *BoundsSpec, geometry.SceneSpace) ([]shape.Shape, error)
+}
+
+type ObjectVariantDescriptor struct {
+	Kind    ShapeKind
+	NewSpec func() ObjectDefinition
+	Compile func(ObjectCompiler, ObjectDefinition, *BoundsSpec, geometry.SceneSpace) ([]shape.Shape, error)
+}
+
+var objectVariants = make(map[ShapeKind]ObjectVariantDescriptor)
+
+func registerObjectVariant(descriptor ObjectVariantDescriptor) ObjectVariantDescriptor {
+	if descriptor.Kind == "" || descriptor.NewSpec == nil || descriptor.Compile == nil {
+		panic("invalid object variant descriptor")
+	}
+	if _, exists := objectVariants[descriptor.Kind]; exists {
+		panic(fmt.Sprintf("duplicate object variant %q", descriptor.Kind))
+	}
+	objectVariants[descriptor.Kind] = descriptor
+	return descriptor
+}
+
+var (
+	ShapeCuboid = registerObjectVariant(ObjectVariantDescriptor{Kind: "cuboid", NewSpec: func() ObjectDefinition { return &CuboidSpec{} }, Compile: func(c ObjectCompiler, d ObjectDefinition, b *BoundsSpec, s geometry.SceneSpace) ([]shape.Shape, error) {
+		return c.CompileCuboid(d.(*CuboidSpec), b, s)
+	}})
+	ShapeSphere = registerObjectVariant(ObjectVariantDescriptor{Kind: "sphere", NewSpec: func() ObjectDefinition { return &SphereSpec{} }, Compile: func(c ObjectCompiler, d ObjectDefinition, b *BoundsSpec, s geometry.SceneSpace) ([]shape.Shape, error) {
+		return c.CompileSphere(d.(*SphereSpec), b, s)
+	}})
+	ShapeCircle = registerObjectVariant(ObjectVariantDescriptor{Kind: "circle", NewSpec: func() ObjectDefinition { return &CircleSpec{} }, Compile: func(c ObjectCompiler, d ObjectDefinition, b *BoundsSpec, s geometry.SceneSpace) ([]shape.Shape, error) {
+		return c.CompileCircle(d.(*CircleSpec), b, s)
+	}})
+	ShapeCylinder = registerObjectVariant(ObjectVariantDescriptor{Kind: "cylinder", NewSpec: func() ObjectDefinition { return &FiniteCylinderSpec{} }, Compile: func(c ObjectCompiler, d ObjectDefinition, b *BoundsSpec, s geometry.SceneSpace) ([]shape.Shape, error) {
+		return c.CompileCylinder(d.(*FiniteCylinderSpec), b, s)
+	}})
+	ShapeTriangle = registerObjectVariant(ObjectVariantDescriptor{Kind: "triangle", NewSpec: func() ObjectDefinition { return &TriangleSpec{} }, Compile: func(c ObjectCompiler, d ObjectDefinition, b *BoundsSpec, s geometry.SceneSpace) ([]shape.Shape, error) {
+		return c.CompileTriangle(d.(*TriangleSpec), b, s)
+	}})
+	ShapePolynomial = registerObjectVariant(ObjectVariantDescriptor{Kind: "polynomial", NewSpec: func() ObjectDefinition { return &PolynomialSpec{} }, Compile: func(c ObjectCompiler, d ObjectDefinition, b *BoundsSpec, s geometry.SceneSpace) ([]shape.Shape, error) {
+		return c.CompilePolynomial(d.(*PolynomialSpec), b, s)
+	}})
+	ShapeImplicitEquation = registerObjectVariant(ObjectVariantDescriptor{Kind: "implicit equation", NewSpec: func() ObjectDefinition { return &ImplicitEquationSpec{} }, Compile: func(c ObjectCompiler, d ObjectDefinition, b *BoundsSpec, s geometry.SceneSpace) ([]shape.Shape, error) {
+		return c.CompileImplicitEquation(d.(*ImplicitEquationSpec), b, s)
+	}})
+	ShapeParametricEquation = registerObjectVariant(ObjectVariantDescriptor{Kind: "parametric equation", NewSpec: func() ObjectDefinition { return &ParametricEquationSpec{} }, Compile: func(c ObjectCompiler, d ObjectDefinition, b *BoundsSpec, s geometry.SceneSpace) ([]shape.Shape, error) {
+		return c.CompileParametricEquation(d.(*ParametricEquationSpec), b, s)
+	}})
+	ShapeParametricCurve = registerObjectVariant(ObjectVariantDescriptor{Kind: "parametric curve", NewSpec: func() ObjectDefinition { return &ParametricCurveSpec{} }, Compile: func(c ObjectCompiler, d ObjectDefinition, b *BoundsSpec, s geometry.SceneSpace) ([]shape.Shape, error) {
+		return c.CompileParametricCurve(d.(*ParametricCurveSpec), b, s)
+	}})
+	ShapeKleinBottle = registerObjectVariant(ObjectVariantDescriptor{Kind: "klein_bottle", NewSpec: func() ObjectDefinition { return &KleinBottleSpec{} }, Compile: func(c ObjectCompiler, d ObjectDefinition, b *BoundsSpec, s geometry.SceneSpace) ([]shape.Shape, error) {
+		return c.CompileKleinBottle(d.(*KleinBottleSpec), b, s)
+	}})
+	ShapeSTL = registerObjectVariant(ObjectVariantDescriptor{Kind: "stl", NewSpec: func() ObjectDefinition { return &STLSpec{} }, Compile: func(c ObjectCompiler, d ObjectDefinition, b *BoundsSpec, s geometry.SceneSpace) ([]shape.Shape, error) {
+		return c.CompileSTL(d.(*STLSpec), b, s)
+	}})
 )
 
-var objectDefinitionFactories = map[ShapeKind]func() ObjectDefinition{
-	ShapeCuboid:             func() ObjectDefinition { return &CuboidSpec{} },
-	ShapeHypercuboid:        func() ObjectDefinition { return &CuboidSpec{} },
-	ShapeSphere:             func() ObjectDefinition { return &SphereSpec{} },
-	ShapeHypersphere:        func() ObjectDefinition { return &SphereSpec{} },
-	ShapeCircle:             func() ObjectDefinition { return &CircleSpec{} },
-	ShapeCylinder:           func() ObjectDefinition { return &FiniteCylinderSpec{} },
-	ShapeFiniteCylinder:     func() ObjectDefinition { return &FiniteCylinderSpec{} },
-	ShapeTriangle:           func() ObjectDefinition { return &TriangleSpec{} },
-	ShapePolynomial:         func() ObjectDefinition { return &PolynomialSpec{} },
-	ShapeImplicitEquation:   func() ObjectDefinition { return &ImplicitEquationSpec{} },
-	ShapeParametricEquation: func() ObjectDefinition { return &ParametricEquationSpec{} },
-	ShapeParametricCurve:    func() ObjectDefinition { return &ParametricCurveSpec{} },
-	ShapeKleinBottle:        func() ObjectDefinition { return &KleinBottleSpec{} },
-	ShapeSTL:                func() ObjectDefinition { return &STLSpec{} },
+func CompileObjectSpec(compiler ObjectCompiler, spec ObjectSpec, space geometry.SceneSpace) ([]shape.Shape, error) {
+	descriptor, ok := objectVariants[spec.Shape]
+	if !ok {
+		return nil, fmt.Errorf("unsupported shape %q", spec.Shape)
+	}
+	return descriptor.Compile(compiler, spec.Definition, spec.Bounds, space)
 }
 
 type BoundsSpec struct {
@@ -51,11 +98,8 @@ type BoundsSpec struct {
 }
 
 func (s *BoundsSpec) UnmarshalJSON(data []byte) error {
-	if err := utils.RejectUnknownJSONFields(data, "bounds", "pmin", "pmax"); err != nil {
-		return err
-	}
 	type plain BoundsSpec
-	return json.Unmarshal(data, (*plain)(s))
+	return utils.DecodeStrictJSON(data, "bounds", (*plain)(s))
 }
 
 type MediumBoundarySpec struct {
@@ -66,16 +110,12 @@ type MediumBoundarySpec struct {
 }
 
 func (s *MediumBoundarySpec) UnmarshalJSON(data []byte) error {
-	if err := utils.RejectUnknownJSONFields(data, "medium_boundary", "inside", "outside", "priority", "thin"); err != nil {
-		return err
-	}
 	type plain MediumBoundarySpec
-	return json.Unmarshal(data, (*plain)(s))
+	return utils.DecodeStrictJSON(data, "medium_boundary", (*plain)(s))
 }
 
-// ObjectSpec is a discriminated union. Definition always contains one of the
-// concrete shape specs below; builders must switch on that concrete type rather
-// than converting the protocol back to a string-keyed map.
+// ObjectSpec is a discriminated union. Definition always contains the concrete
+// spec selected by the variant descriptor above.
 type ObjectSpec struct {
 	ID             string              `json:"id,omitempty"`
 	MaterialID     string              `json:"material_id"`
@@ -119,12 +159,9 @@ type PolynomialTermSpec struct {
 }
 
 func (s *PolynomialTermSpec) UnmarshalJSON(data []byte) error {
-	if err := utils.RejectUnknownJSONFields(data, "polynomial term", "exponents", "coefficient"); err != nil {
-		return err
-	}
 	type plain PolynomialTermSpec
 	var decoded plain
-	if err := json.Unmarshal(data, &decoded); err != nil {
+	if err := utils.DecodeStrictJSON(data, "polynomial term", &decoded); err != nil {
 		return err
 	}
 	if len(decoded.Exponents) != 3 {
@@ -207,18 +244,6 @@ func (*KleinBottleSpec) objectDefinition()        {}
 func (*STLSpec) objectDefinition()                {}
 
 func (s *ObjectSpec) UnmarshalJSON(data []byte) error {
-	if err := utils.RejectUnknownJSONFields(data, "object",
-		"id", "material_id", "shape", "medium_boundary", "bounds",
-		"pmin", "pmax", "center", "position", "normal", "axis", "p1", "p2", "p3",
-		"b", "z_dir", "x_dir", "r", "height", "r_major", "r_minor",
-		"thickness", "c", "a", "A", "scale", "field", "transform",
-		"basis", "surface", "curve", "coefficients", "mode", "file",
-		"u_range", "v_range", "t_range", "explicit_axis", "input_dim",
-		"degree", "terms", "samples", "samples_u", "samples_v", "refine_iter",
-		"newton_max_iter", "step", "value_tol", "newton_tol",
-		"derivative_eps", "bounds_padding", "residual_tol"); err != nil {
-		return err
-	}
 	var header struct {
 		ID             string              `json:"id"`
 		MaterialID     string              `json:"material_id"`
@@ -232,17 +257,17 @@ func (s *ObjectSpec) UnmarshalJSON(data []byte) error {
 	if header.Shape == "" {
 		return fmt.Errorf("object: missing required field %q", "shape")
 	}
-	newDefinition, supported := objectDefinitionFactories[header.Shape]
+	descriptor, supported := objectVariants[header.Shape]
 	if !supported {
 		return fmt.Errorf("object: unsupported shape %q", header.Shape)
-	}
-	if err := rejectObjectVariantFields(data, header.Shape); err != nil {
-		return err
 	}
 	if header.MaterialID == "" {
 		return fmt.Errorf("object: missing required field %q", "material_id")
 	}
-	definition := newDefinition()
+	definition := descriptor.NewSpec()
+	if err := utils.RejectUnknownJSONFieldsFor(data, "object", &header, definition); err != nil {
+		return err
+	}
 	if err := json.Unmarshal(data, definition); err != nil {
 		return err
 	}
@@ -263,18 +288,6 @@ func (s ObjectSpec) MarshalJSON() ([]byte, error) {
 }
 
 type SurfaceKind string
-
-const (
-	SurfaceWeightedMixture             SurfaceKind = "weighted_mixture"
-	SurfaceLambert                     SurfaceKind = "lambert"
-	SurfaceSpecularReflection          SurfaceKind = "specular_reflection"
-	SurfaceSpecularDielectric          SurfaceKind = "specular_dielectric"
-	SurfaceRoughConductor              SurfaceKind = "rough_conductor"
-	SurfaceRoughDielectricReflection   SurfaceKind = "rough_dielectric_reflection"
-	SurfaceCylindricalGridCutout       SurfaceKind = "cylindrical_grid_cutout"
-	SurfaceWireMesh                    SurfaceKind = "wire_mesh"
-	SurfaceRoughDielectricTransmission SurfaceKind = "rough_dielectric_transmission"
-)
 
 type WeightedSurfaceSpec struct {
 	Weight  float64     `json:"weight"`
@@ -307,7 +320,10 @@ func (s *IORSpec) UnmarshalJSON(data []byte) error {
 	default:
 		return fmt.Errorf("unsupported ior type %q", header.Type)
 	}
-	if err := utils.DecodeStrictJSON(data, "ior", &decoded, allowed...); err != nil {
+	if err := utils.RejectUnknownJSONFields(data, "ior", allowed...); err != nil {
+		return err
+	}
+	if err := json.Unmarshal(data, &decoded); err != nil {
 		return err
 	}
 	*s = IORSpec(decoded)
@@ -321,7 +337,6 @@ type SurfaceSpec struct {
 
 type SurfaceDefinition interface {
 	surfaceDefinition()
-	decodeSurfaceJSON([]byte) error
 }
 type WeightedMixtureSurfaceSpec struct {
 	Components []WeightedSurfaceSpec `json:"components,omitempty"`
@@ -379,29 +394,72 @@ func (*RoughDielectricReflectionSurfaceSpec) surfaceDefinition()   {}
 func (*RoughDielectricTransmissionSurfaceSpec) surfaceDefinition() {}
 func (*CylindricalGridSurfaceSpec) surfaceDefinition()             {}
 
-func (s *WeightedMixtureSurfaceSpec) decodeSurfaceJSON(data []byte) error {
-	return decodeVariantPayload(data, "surface", s, "type", "components")
+type SurfaceCompiler interface {
+	CompileWeightedMixture(*WeightedMixtureSurfaceSpec) (bxdf.Scattering, error)
+	CompileLambert(*LambertSurfaceSpec) (bxdf.Scattering, error)
+	CompileSpecularReflection(*SpecularReflectionSurfaceSpec) (bxdf.Scattering, error)
+	CompileSpecularDielectric(*SpecularDielectricSurfaceSpec) (bxdf.Scattering, error)
+	CompileRoughConductor(*RoughConductorSurfaceSpec) (bxdf.Scattering, error)
+	CompileRoughDielectricReflection(*RoughDielectricReflectionSurfaceSpec) (bxdf.Scattering, error)
+	CompileRoughDielectricTransmission(*RoughDielectricTransmissionSurfaceSpec) (bxdf.Scattering, error)
+	CompileCylindricalGrid(*CylindricalGridSurfaceSpec) (bxdf.Scattering, error)
 }
-func (s *LambertSurfaceSpec) decodeSurfaceJSON(data []byte) error {
-	return decodeVariantPayload(data, "surface", s, "type", "albedo")
+
+type SurfaceVariantDescriptor struct {
+	Kind    SurfaceKind
+	NewSpec func() SurfaceDefinition
+	Compile func(SurfaceCompiler, SurfaceDefinition) (bxdf.Scattering, error)
 }
-func (s *SpecularReflectionSurfaceSpec) decodeSurfaceJSON(data []byte) error {
-	return decodeVariantPayload(data, "surface", s, "type", "reflectance")
+
+var surfaceVariants = map[SurfaceKind]SurfaceVariantDescriptor{}
+
+func registerSurfaceVariant(descriptor SurfaceVariantDescriptor) SurfaceVariantDescriptor {
+	if descriptor.Kind == "" || descriptor.NewSpec == nil || descriptor.Compile == nil {
+		panic("invalid surface variant descriptor")
+	}
+	if _, exists := surfaceVariants[descriptor.Kind]; exists {
+		panic(fmt.Sprintf("duplicate surface variant %q", descriptor.Kind))
+	}
+	surfaceVariants[descriptor.Kind] = descriptor
+	return descriptor
 }
-func (s *SpecularDielectricSurfaceSpec) decodeSurfaceJSON(data []byte) error {
-	return decodeVariantPayload(data, "surface", s, "type", "reflectance", "transmittance", "eta_inside", "eta_outside", "ior")
-}
-func (s *RoughConductorSurfaceSpec) decodeSurfaceJSON(data []byte) error {
-	return decodeVariantPayload(data, "surface", s, "type", "eta", "k", "roughness", "weight")
-}
-func (s *RoughDielectricReflectionSurfaceSpec) decodeSurfaceJSON(data []byte) error {
-	return decodeVariantPayload(data, "surface", s, "type", "reflectance", "eta_inside", "eta_outside", "ior", "roughness")
-}
-func (s *RoughDielectricTransmissionSurfaceSpec) decodeSurfaceJSON(data []byte) error {
-	return decodeVariantPayload(data, "surface", s, "type", "transmittance", "eta_inside", "eta_outside", "ior", "roughness")
-}
-func (s *CylindricalGridSurfaceSpec) decodeSurfaceJSON(data []byte) error {
-	return decodeVariantPayload(data, "surface", s, "type", "line_surface", "origin", "axis", "reference_axis", "line_width", "gap_width", "gap_height", "reference_radius")
+
+var (
+	SurfaceWeightedMixture = registerSurfaceVariant(SurfaceVariantDescriptor{Kind: "weighted_mixture", NewSpec: func() SurfaceDefinition { return &WeightedMixtureSurfaceSpec{} }, Compile: func(c SurfaceCompiler, d SurfaceDefinition) (bxdf.Scattering, error) {
+		return c.CompileWeightedMixture(d.(*WeightedMixtureSurfaceSpec))
+	}})
+	SurfaceLambert = registerSurfaceVariant(SurfaceVariantDescriptor{Kind: "lambert", NewSpec: func() SurfaceDefinition { return &LambertSurfaceSpec{} }, Compile: func(c SurfaceCompiler, d SurfaceDefinition) (bxdf.Scattering, error) {
+		return c.CompileLambert(d.(*LambertSurfaceSpec))
+	}})
+	SurfaceSpecularReflection = registerSurfaceVariant(SurfaceVariantDescriptor{Kind: "specular_reflection", NewSpec: func() SurfaceDefinition { return &SpecularReflectionSurfaceSpec{} }, Compile: func(c SurfaceCompiler, d SurfaceDefinition) (bxdf.Scattering, error) {
+		return c.CompileSpecularReflection(d.(*SpecularReflectionSurfaceSpec))
+	}})
+	SurfaceSpecularDielectric = registerSurfaceVariant(SurfaceVariantDescriptor{Kind: "specular_dielectric", NewSpec: func() SurfaceDefinition { return &SpecularDielectricSurfaceSpec{} }, Compile: func(c SurfaceCompiler, d SurfaceDefinition) (bxdf.Scattering, error) {
+		return c.CompileSpecularDielectric(d.(*SpecularDielectricSurfaceSpec))
+	}})
+	SurfaceRoughConductor = registerSurfaceVariant(SurfaceVariantDescriptor{Kind: "rough_conductor", NewSpec: func() SurfaceDefinition { return &RoughConductorSurfaceSpec{} }, Compile: func(c SurfaceCompiler, d SurfaceDefinition) (bxdf.Scattering, error) {
+		return c.CompileRoughConductor(d.(*RoughConductorSurfaceSpec))
+	}})
+	SurfaceRoughDielectricReflection = registerSurfaceVariant(SurfaceVariantDescriptor{Kind: "rough_dielectric_reflection", NewSpec: func() SurfaceDefinition { return &RoughDielectricReflectionSurfaceSpec{} }, Compile: func(c SurfaceCompiler, d SurfaceDefinition) (bxdf.Scattering, error) {
+		return c.CompileRoughDielectricReflection(d.(*RoughDielectricReflectionSurfaceSpec))
+	}})
+	SurfaceRoughDielectricTransmission = registerSurfaceVariant(SurfaceVariantDescriptor{Kind: "rough_dielectric_transmission", NewSpec: func() SurfaceDefinition { return &RoughDielectricTransmissionSurfaceSpec{} }, Compile: func(c SurfaceCompiler, d SurfaceDefinition) (bxdf.Scattering, error) {
+		return c.CompileRoughDielectricTransmission(d.(*RoughDielectricTransmissionSurfaceSpec))
+	}})
+	SurfaceCylindricalGridCutout = registerSurfaceVariant(SurfaceVariantDescriptor{Kind: "cylindrical_grid_cutout", NewSpec: func() SurfaceDefinition { return &CylindricalGridSurfaceSpec{} }, Compile: func(c SurfaceCompiler, d SurfaceDefinition) (bxdf.Scattering, error) {
+		return c.CompileCylindricalGrid(d.(*CylindricalGridSurfaceSpec))
+	}})
+)
+
+func CompileSurfaceSpec(compiler SurfaceCompiler, spec *SurfaceSpec) (bxdf.Scattering, error) {
+	if spec == nil {
+		return nil, fmt.Errorf("surface spec is nil")
+	}
+	descriptor, ok := surfaceVariants[spec.Type]
+	if !ok {
+		return nil, fmt.Errorf("unsupported surface type %q", spec.Type)
+	}
+	return descriptor.Compile(compiler, spec.Definition)
 }
 
 func (s *SurfaceSpec) UnmarshalJSON(data []byte) error {
@@ -411,28 +469,15 @@ func (s *SurfaceSpec) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &header); err != nil {
 		return err
 	}
-	var definition SurfaceDefinition
-	switch header.Type {
-	case SurfaceWeightedMixture:
-		definition = &WeightedMixtureSurfaceSpec{}
-	case SurfaceLambert:
-		definition = &LambertSurfaceSpec{}
-	case SurfaceSpecularReflection:
-		definition = &SpecularReflectionSurfaceSpec{}
-	case SurfaceSpecularDielectric:
-		definition = &SpecularDielectricSurfaceSpec{}
-	case SurfaceRoughConductor:
-		definition = &RoughConductorSurfaceSpec{}
-	case SurfaceRoughDielectricReflection:
-		definition = &RoughDielectricReflectionSurfaceSpec{}
-	case SurfaceRoughDielectricTransmission:
-		definition = &RoughDielectricTransmissionSurfaceSpec{}
-	case SurfaceCylindricalGridCutout, SurfaceWireMesh:
-		definition = &CylindricalGridSurfaceSpec{}
-	default:
+	descriptor, ok := surfaceVariants[header.Type]
+	if !ok {
 		return fmt.Errorf("unsupported surface type %q", header.Type)
 	}
-	if err := definition.decodeSurfaceJSON(data); err != nil {
+	definition := descriptor.NewSpec()
+	if err := utils.RejectUnknownJSONFieldsFor(data, "surface", &header, definition); err != nil {
+		return err
+	}
+	if err := json.Unmarshal(data, definition); err != nil {
 		return err
 	}
 	*s = SurfaceSpec{Type: header.Type, Definition: definition}
@@ -447,12 +492,6 @@ func (s SurfaceSpec) MarshalJSON() ([]byte, error) {
 
 type EmissionKind string
 
-const (
-	EmissionConstant      EmissionKind = "constant"
-	EmissionNormalPalette EmissionKind = "normal_palette"
-	EmissionUVHSL         EmissionKind = "uv_hsl"
-)
-
 type EmissionDistributionSpec struct {
 	Type             string   `json:"type"`
 	Sidedness        string   `json:"sidedness,omitempty"`
@@ -461,12 +500,9 @@ type EmissionDistributionSpec struct {
 }
 
 func (s *EmissionDistributionSpec) UnmarshalJSON(data []byte) error {
-	if err := utils.RejectUnknownJSONFields(data, "emission distribution", "type", "sidedness", "exponent", "half_angle_degrees"); err != nil {
-		return err
-	}
 	type plain EmissionDistributionSpec
 	var decoded plain
-	if err := json.Unmarshal(data, &decoded); err != nil {
+	if err := utils.DecodeStrictJSON(data, "emission distribution", &decoded); err != nil {
 		return err
 	}
 	if decoded.Type != "uniform" && decoded.Type != "cosine_power" {
@@ -484,7 +520,6 @@ type EmissionSpec struct {
 
 type EmissionDefinition interface {
 	emissionDefinition()
-	decodeEmissionJSON([]byte) error
 }
 type ConstantEmissionSpec struct {
 	Radiance json.RawMessage `json:"radiance,omitempty"`
@@ -506,14 +541,52 @@ func (*ConstantEmissionSpec) emissionDefinition()      {}
 func (*NormalPaletteEmissionSpec) emissionDefinition() {}
 func (*UVHSLEmissionSpec) emissionDefinition()         {}
 
-func (s *ConstantEmissionSpec) decodeEmissionJSON(data []byte) error {
-	return decodeVariantPayload(data, "emission", s, "type", "distribution", "radiance", "color", "exitance")
+type EmissionCompiler interface {
+	CompileConstantEmission(*ConstantEmissionSpec, *EmissionDistributionSpec) (emission.Emitter, error)
+	CompileNormalPaletteEmission(*NormalPaletteEmissionSpec, *EmissionDistributionSpec) (emission.Emitter, error)
+	CompileUVHSLEmission(*UVHSLEmissionSpec, *EmissionDistributionSpec) (emission.Emitter, error)
 }
-func (s *NormalPaletteEmissionSpec) decodeEmissionJSON(data []byte) error {
-	return decodeVariantPayload(data, "emission", s, "type", "distribution", "palette", "intensity")
+
+type EmissionVariantDescriptor struct {
+	Kind    EmissionKind
+	NewSpec func() EmissionDefinition
+	Compile func(EmissionCompiler, EmissionDefinition, *EmissionDistributionSpec) (emission.Emitter, error)
 }
-func (s *UVHSLEmissionSpec) decodeEmissionJSON(data []byte) error {
-	return decodeVariantPayload(data, "emission", s, "type", "distribution", "saturation", "lightness", "v_stripes", "intensity")
+
+var emissionVariants = map[EmissionKind]EmissionVariantDescriptor{}
+
+func registerEmissionVariant(descriptor EmissionVariantDescriptor) EmissionVariantDescriptor {
+	if descriptor.Kind == "" || descriptor.NewSpec == nil || descriptor.Compile == nil {
+		panic("invalid emission variant descriptor")
+	}
+	if _, exists := emissionVariants[descriptor.Kind]; exists {
+		panic(fmt.Sprintf("duplicate emission variant %q", descriptor.Kind))
+	}
+	emissionVariants[descriptor.Kind] = descriptor
+	return descriptor
+}
+
+var (
+	EmissionConstant = registerEmissionVariant(EmissionVariantDescriptor{Kind: "constant", NewSpec: func() EmissionDefinition { return &ConstantEmissionSpec{} }, Compile: func(c EmissionCompiler, d EmissionDefinition, distribution *EmissionDistributionSpec) (emission.Emitter, error) {
+		return c.CompileConstantEmission(d.(*ConstantEmissionSpec), distribution)
+	}})
+	EmissionNormalPalette = registerEmissionVariant(EmissionVariantDescriptor{Kind: "normal_palette", NewSpec: func() EmissionDefinition { return &NormalPaletteEmissionSpec{} }, Compile: func(c EmissionCompiler, d EmissionDefinition, distribution *EmissionDistributionSpec) (emission.Emitter, error) {
+		return c.CompileNormalPaletteEmission(d.(*NormalPaletteEmissionSpec), distribution)
+	}})
+	EmissionUVHSL = registerEmissionVariant(EmissionVariantDescriptor{Kind: "uv_hsl", NewSpec: func() EmissionDefinition { return &UVHSLEmissionSpec{} }, Compile: func(c EmissionCompiler, d EmissionDefinition, distribution *EmissionDistributionSpec) (emission.Emitter, error) {
+		return c.CompileUVHSLEmission(d.(*UVHSLEmissionSpec), distribution)
+	}})
+)
+
+func CompileEmissionSpec(compiler EmissionCompiler, spec *EmissionSpec) (emission.Emitter, error) {
+	if spec == nil {
+		return nil, fmt.Errorf("emission spec is nil")
+	}
+	descriptor, ok := emissionVariants[spec.Type]
+	if !ok {
+		return nil, fmt.Errorf("unsupported emission type %q", spec.Type)
+	}
+	return descriptor.Compile(compiler, spec.Definition, spec.Distribution)
 }
 
 func (s *EmissionSpec) UnmarshalJSON(data []byte) error {
@@ -524,21 +597,15 @@ func (s *EmissionSpec) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &header); err != nil {
 		return err
 	}
-	var definition EmissionDefinition
-	switch header.Type {
-	case EmissionConstant, EmissionNormalPalette, EmissionUVHSL:
-	default:
+	descriptor, ok := emissionVariants[header.Type]
+	if !ok {
 		return fmt.Errorf("unsupported emission type %q", header.Type)
 	}
-	switch header.Type {
-	case EmissionConstant:
-		definition = &ConstantEmissionSpec{}
-	case EmissionNormalPalette:
-		definition = &NormalPaletteEmissionSpec{}
-	case EmissionUVHSL:
-		definition = &UVHSLEmissionSpec{}
+	definition := descriptor.NewSpec()
+	if err := utils.RejectUnknownJSONFieldsFor(data, "emission", &header, definition); err != nil {
+		return err
 	}
-	if err := definition.decodeEmissionJSON(data); err != nil {
+	if err := json.Unmarshal(data, definition); err != nil {
 		return err
 	}
 	*s = EmissionSpec{Type: header.Type, Distribution: header.Distribution, Definition: definition}
@@ -585,12 +652,9 @@ type MaterialSpec struct {
 }
 
 func (s *MaterialSpec) UnmarshalJSON(data []byte) error {
-	if err := utils.RejectUnknownJSONFields(data, "material", "id", "surface", "emission"); err != nil {
-		return err
-	}
 	type plain MaterialSpec
 	var decoded plain
-	if err := json.Unmarshal(data, &decoded); err != nil {
+	if err := utils.DecodeStrictJSON(data, "material", &decoded); err != nil {
 		return err
 	}
 	if decoded.ID == "" {
@@ -601,38 +665,4 @@ func (s *MaterialSpec) UnmarshalJSON(data []byte) error {
 	}
 	*s = MaterialSpec(decoded)
 	return nil
-}
-
-func decodeVariantPayload(data []byte, kind string, target interface{}, allowed ...string) error {
-	return utils.DecodeStrictJSON(data, kind, target, allowed...)
-}
-
-func rejectObjectVariantFields(data []byte, kind ShapeKind) error {
-	base := []string{"id", "material_id", "shape", "medium_boundary", "bounds"}
-	var fields []string
-	switch kind {
-	case ShapeCuboid, ShapeHypercuboid:
-		fields = []string{"pmin", "pmax"}
-	case ShapeSphere, ShapeHypersphere:
-		fields = []string{"center", "r"}
-	case ShapeCircle:
-		fields = []string{"center", "position", "normal", "r"}
-	case ShapeCylinder, ShapeFiniteCylinder:
-		fields = []string{"center", "position", "axis", "r", "height"}
-	case ShapeTriangle:
-		fields = []string{"p1", "p2", "p3"}
-	case ShapePolynomial:
-		fields = []string{"degree", "terms", "transform"}
-	case ShapeImplicitEquation:
-		fields = []string{"field", "transform", "basis", "center", "scale", "step", "value_tol"}
-	case ShapeParametricEquation:
-		fields = []string{"surface", "center", "scale", "u_range", "v_range", "samples_u", "samples_v", "newton_max_iter", "newton_tol", "derivative_eps", "bounds_padding", "residual_tol"}
-	case ShapeParametricCurve:
-		fields = []string{"curve", "center", "scale", "t_range", "samples", "refine_iter", "derivative_eps", "bounds_padding"}
-	case ShapeKleinBottle:
-		fields = []string{"center", "r_major", "r_minor", "thickness"}
-	case ShapeSTL:
-		fields = []string{"file", "center", "z_dir", "x_dir", "scale"}
-	}
-	return utils.RejectUnknownJSONFields(data, fmt.Sprintf("object shape %q", kind), append(base, fields...)...)
 }

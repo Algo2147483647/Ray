@@ -17,14 +17,14 @@ const (
 	IntegratorLightTracing IntegratorKind = "light_tracing"
 )
 
-// ParseIntegratorKind accepts canonical names and compatibility aliases at the
+// ParseIntegratorKind accepts only canonical Engine protocol names.
 func ParseIntegratorKind(value string) (IntegratorKind, error) {
 	switch value {
 	case "", string(IntegratorPathTracing):
 		return IntegratorPathTracing, nil
 	case string(IntegratorBDPT):
 		return IntegratorBDPT, nil
-	case string(IntegratorLightTracing), "light_trace":
+	case string(IntegratorLightTracing):
 		return IntegratorLightTracing, nil
 	default:
 		return "", fmt.Errorf("unsupported integrator %q", value)

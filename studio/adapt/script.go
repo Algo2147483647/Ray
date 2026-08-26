@@ -3,6 +3,7 @@ package adapt
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/Algo2147483647/ray/studio/schema"
@@ -25,6 +26,10 @@ func AdaptScript(script *schema.StudioScript, source []string, dimension int) (*
 	if err != nil {
 		return nil, err
 	}
+	geometry, err := adaptGeometry(script.Geometry)
+	if err != nil {
+		return nil, err
+	}
 
 	return &schema.IntermediateScript{
 		Studio: schema.StudioMetadata{
@@ -34,11 +39,11 @@ func AdaptScript(script *schema.StudioScript, source []string, dimension int) (*
 			Dimension:   dimension,
 		},
 		Dimension: dimension,
-		Materials: cloneMapSlice(script.Materials),
+		Materials: adaptMaterials(script.Materials),
 		Media:     cloneNestedStringMap(script.Media),
 		Objects:   objects,
 		Cameras:   baseCameras,
-		Geometry:  cloneMap(script.Geometry),
+		Geometry:  geometry,
 		Renders:   renders,
 	}, nil
 }
@@ -50,7 +55,11 @@ func renderToMap(script *schema.StudioScript, render schema.StudioRenderScript, 
 		return nil, err
 	}
 	if render.Integrator != "" {
-		result["integrator"] = render.Integrator
+		integrator := render.Integrator
+		if integrator == "light_trace" {
+			integrator = "light_tracing"
+		}
+		result["integrator"] = integrator
 	}
 	if render.Samples > 0 {
 		result["samples"] = render.Samples
@@ -83,6 +92,56 @@ func renderToMap(script *schema.StudioScript, render schema.StudioRenderScript, 
 		result["wavelength_samples"] = render.WavelengthSamples
 	}
 	return result, nil
+}
+
+func adaptGeometry(source map[string]interface{}) (map[string]interface{}, error) {
+	if len(source) == 0 {
+		return nil, nil
+	}
+	result := cloneMap(source)
+	kind, _ := stringField(result, "type")
+	switch strings.ToLower(kind) {
+	case "", "euclidean":
+		result["type"] = "euclidean"
+	case "klein", "hyperbolic":
+		result["type"] = "klein"
+	case "spherical", "sphere":
+		result["type"] = "spherical"
+	default:
+		return nil, fmt.Errorf("unsupported geometry type %q", kind)
+	}
+	return result, nil
+}
+
+func adaptMaterials(source []map[string]interface{}) []map[string]interface{} {
+	result := cloneMapSlice(source)
+	for _, material := range result {
+		if surface, ok := material["surface"].(map[string]interface{}); ok {
+			canonicalizeSurface(surface)
+		}
+	}
+	return result
+}
+
+func canonicalizeSurface(surface map[string]interface{}) {
+	kind, _ := stringField(surface, "type")
+	if strings.EqualFold(kind, "wire_mesh") {
+		surface["type"] = "cylindrical_grid_cutout"
+	}
+	if line, ok := surface["line_surface"].(map[string]interface{}); ok {
+		canonicalizeSurface(line)
+	}
+	if components, ok := surface["components"].([]interface{}); ok {
+		for _, raw := range components {
+			component, ok := raw.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			if nested, ok := component["surface"].(map[string]interface{}); ok {
+				canonicalizeSurface(nested)
+			}
+		}
+	}
 }
 
 func rendersToMaps(script *schema.StudioScript, cameras []schema.EngineCameraScript) ([]map[string]interface{}, error) {

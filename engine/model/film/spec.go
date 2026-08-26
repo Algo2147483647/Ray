@@ -14,6 +14,5 @@ func (s *Spec) UnmarshalJSON(data []byte) error {
 	type plain Spec
 	return utils.DecodeStrictJSON(
 		data, "film", (*plain)(s),
-		"shape", "pixel_windows", "spectral_bin_count",
 	)
 }

@@ -589,16 +589,16 @@ Studio emits engine-native bounds:
 }
 ```
 
-## Pass-Through Shapes
+## Native Shapes
 
-Shapes without a studio adapter are passed through after id inheritance and
-group field inheritance and bounds normalization. This includes:
+Studio applies placement and emits canonical Engine discriminators for native
+shapes. Authoring aliases `hypersphere`, `hypercuboid`, and `finite cylinder`
+become `sphere`, `cuboid`, and `cylinder` respectively. Native shapes include:
 
 ```text
 sphere
 circle
 cylinder
-finite cylinder
 implicit equation
 stl
 klein_bottle
@@ -612,6 +612,7 @@ The intermediate file should be valid engine JSON:
 
 ```text
 no shape: "group"
+only canonical Engine shape, surface, geometry, and integrator names
 adapted ids after group prefixing
 inherited material/media/emission/bounds fields applied
 adapted cuboid/triangle/plane/quadratic/polynomial/bounds fields normalized

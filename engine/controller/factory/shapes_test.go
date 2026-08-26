@@ -89,7 +89,7 @@ func TestParseShapeRejectsHypercube(t *testing.T) {
 
 func TestParseShapeFiniteCylinder(t *testing.T) {
 	shapes, err := ParseShape(map[string]interface{}{
-		"shape":    "finite cylinder",
+		"shape":    "cylinder",
 		"position": []interface{}{0, 1, 2},
 		"axis":     []interface{}{0, 0, 2},
 		"r":        3,
@@ -115,7 +115,7 @@ func TestParseShapeFiniteCylinder(t *testing.T) {
 
 func TestParseShapeFiniteCylinderRejectsInvalidAxis(t *testing.T) {
 	_, err := ParseShape(map[string]interface{}{
-		"shape":    "finite cylinder",
+		"shape":    "cylinder",
 		"position": []interface{}{0, 0, 0},
 		"axis":     []interface{}{0, 0, 0},
 		"r":        1,

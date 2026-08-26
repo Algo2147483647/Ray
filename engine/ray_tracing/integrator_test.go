@@ -38,3 +38,12 @@ func TestSplatIntegratorConsumesSinglePreparedState(t *testing.T) {
 		t.Fatalf("Prepare called %d times, want once", kernel.prepareCalls)
 	}
 }
+
+func TestParseIntegratorKindRejectsAlias(t *testing.T) {
+	if _, err := ParseIntegratorKind("light_trace"); err == nil {
+		t.Fatal("expected Engine to reject light_trace alias")
+	}
+	if got, err := ParseIntegratorKind("light_tracing"); err != nil || got != IntegratorLightTracing {
+		t.Fatalf("canonical light_tracing = %q, %v", got, err)
+	}
+}

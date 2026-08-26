@@ -14,8 +14,9 @@ npm run ray -- --script path/to/scene.json
 go -C engine run . --script ../path/to/scene.json
 ```
 
-Engine accepts exactly one `--script` and no render override flags. Use Studio
-for authoring composition and command-line overrides.
+Engine requires exactly one `--script PATH`. Positional script paths, repeated
+`--script` flags, and render override flags are rejected. Use Studio for
+authoring composition and command-line overrides.
 
 ## Top Level
 
@@ -57,6 +58,13 @@ emission distributions, and IOR models. `json.RawMessage` is reserved for
 leaves whose representation is intentionally polymorphic: spectral parameters,
 expression programs, parametric functions, and dense/sparse coefficient data.
 
+## Geometry
+
+When present, `geometry.type` must be exactly `euclidean`, `klein`, or
+`spherical`. Omitting the entire `geometry` object selects Euclidean geometry;
+an object with a missing or empty `type` is invalid. Studio normalizes legacy
+authoring spellings such as `hyperbolic` and `sphere` before starting Engine.
+
 ## Objects
 
 Each object is a renderable geometry instance:
@@ -90,10 +98,10 @@ Canonical shape fields for normalized engine JSON:
 
 | Shape | Canonical fields |
 | --- | --- |
-| `cuboid`, `hypercuboid` | `pmin`, `pmax` |
-| `sphere`, `hypersphere` | `center`, `r` |
+| `cuboid` | `pmin`, `pmax` |
+| `sphere` | `center`, `r` |
 | `circle` | `center`, `normal`, `r` |
-| `cylinder`, `finite cylinder` | `center`, `axis`, `r`, `height` |
+| `cylinder` | `center`, `axis`, `r`, `height` |
 | `triangle` | `p1`, `p2`, `p3` |
 | `polynomial` | `degree`, sparse `terms`, optional `transform` |
 | `implicit equation` | `field`, `bounds` |
@@ -106,6 +114,10 @@ shape discriminators. Studio compiles them into canonical `polynomial` objects.
 
 `hypercube` is a studio authoring shape, not an engine shape. Studio validates
 equal local side lengths and emits a canonical `cuboid`.
+
+Engine accepts only the names in this table. Studio may read authoring aliases
+such as `hypercuboid`, `hypersphere`, and `finite cylinder`, but normalizes them
+before launching Engine.
 
 ### Bounds
 

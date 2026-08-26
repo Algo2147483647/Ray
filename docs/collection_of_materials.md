@@ -37,9 +37,7 @@ The first column is the logical surface-model key. JSON aliases are grouped into
 | Rough Conductor | `rough_conductor` | Reciprocal GGX microfacet reflection using complex spectral IOR $\eta(\lambda)+ik(\lambda)$ and $\alpha=\max(r^2,10^{-4})$. | Required spectral $\eta(\lambda),k(\lambda)\ge0$; roughness $r\in[0,1]$, default 0.25; spectral weight $W(\lambda)\ge0$, default 1. | `bxdf.RoughConductor` | GGX conductor reflection | None |
 | Rough Dielectric Reflection | `rough_dielectric_reflection` | Reciprocal GGX dielectric reflection lobe with Fresnel modulation; it contains no transmission lobe. | Spectral $R(\lambda)\ge0$, default 1; $\eta_o>0$, default 1; constant or Cauchy inside `ior`; $r\in[0,1]$, default 0.25. | `bxdf.RoughDielectricReflection` | GGX dielectric reflection only | None |
 | Rough Dielectric Transmission | `rough_dielectric_transmission` | Walter-style GGX dielectric transmission lobe for opposite hemispheres; it contains no reflection fallback. | Spectral $T(\lambda)\ge0$, default 1; $\eta_o>0$, default 1; constant or Cauchy inside `ior`; $r\in[0,1]$, default 0.25. | `bxdf.RoughDielectricTransmission` | GGX dielectric transmission only | `TransmissionEvent`, `NonReciprocal` |
-| Cylindrical Grid Cutout / Wire Mesh | `cylindrical_grid_cutout`, `wire_mesh` | Procedural cylindrical-coordinate mask: grid lines delegate to `line_surface`, while gaps are deterministic straight-through delta transmission. | Recursive `line_surface`; 3-vectors $o$, axis $a\ne0$, and reference axis; widths $w_l,w_g,h_g\ge0$; reference radius $r_{ref}>0$. All are optional and have documented defaults. | `bsdf.CylindricalGridCutout` | Spatial line BSDF plus transparent gaps | Always `DeltaTransmission`, plus line-surface flags |
-
-There are nine JSON surface values but only eight distinct runtime surface constructions because `wire_mesh` is an alias.
+| Cylindrical Grid Cutout | `cylindrical_grid_cutout` | Procedural cylindrical-coordinate mask: grid lines delegate to `line_surface`, while gaps are deterministic straight-through delta transmission. | Recursive `line_surface`; 3-vectors $o$, axis $a\ne0$, and reference axis; widths $w_l,w_g,h_g\ge0$; reference radius $r_{ref}>0$. All are optional and have documented defaults. | `bsdf.CylindricalGridCutout` | Spatial line BSDF plus transparent gaps | Always `DeltaTransmission`, plus line-surface flags |
 
 ### Emission Discriminators
 
@@ -542,11 +540,11 @@ The event is marked `TransmissionEvent|NonReciprocal`. Consequently, any scene c
 }
 ```
 
-### Cylindrical Grid Cutout / Wire Mesh
+### Cylindrical Grid Cutout
 
 #### Definition, Properties, and Model
 
-This is a procedural BSDF mask on cylindrical coordinates, not geometric displacement. It alternates a recursively defined `line_surface` with perfectly transparent gaps. `wire_mesh` is an exact parser alias of `cylindrical_grid_cutout`.
+This is a procedural BSDF mask on cylindrical coordinates, not geometric displacement. It alternates a recursively defined `line_surface` with perfectly transparent gaps. Engine accepts only `cylindrical_grid_cutout`; Studio normalizes the legacy authoring name `wire_mesh` at its compilation boundary.
 
 For hit point $p$, the model projects $p-o$ onto the cylinder axis. Let $h$ be axial height, $\theta$ the angle around the orthonormal reference/bitangent frame, and $s=\theta r_{\mathrm{reference}}$. A point lies on a grid line when either:
 
@@ -583,7 +581,7 @@ The factory normalizes `axis`, projects `reference_axis` into its orthogonal pla
 
 ```jsonc
 {
-  "type": "cylindrical_grid_cutout | wire_mesh",
+  "type": "cylindrical_grid_cutout",
   "line_surface": { "type": "any surface type" }, // optional
   "origin": [0, 0, 0],                              // optional 3-vector
   "axis": [0, 0, 1],                                // optional non-zero 3-vector

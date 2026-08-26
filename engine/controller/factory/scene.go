@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"strings"
 
 	"github.com/Algo2147483647/ray/engine/controller/parser"
 	"github.com/Algo2147483647/ray/engine/maths/geometry"
@@ -38,12 +37,12 @@ func LoadSceneFromScript(script *parser.Script, scene *model.Scene) error {
 	// dimension instead of using nil as a process-wide compatibility sentinel.
 	sceneGeometry := geometry.Euclidean(dimension)
 	if script.Geometry != nil {
-		switch strings.ToLower(script.Geometry.Type) {
-		case "", "euclidean":
+		switch script.Geometry.Type {
+		case "euclidean":
 			sceneGeometry = geometry.Euclidean(dimension)
-		case "klein", "hyperbolic":
+		case "klein":
 			sceneGeometry = geometry.Klein()
-		case "spherical", "sphere":
+		case "spherical":
 			sceneGeometry = geometry.Spherical()
 		default:
 			return fmt.Errorf("unsupported geometry type %q", script.Geometry.Type)

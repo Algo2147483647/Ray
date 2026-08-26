@@ -164,6 +164,40 @@ func TestStudioExpandsLegacyRenderDefaultsIntoEveryEngineJob(t *testing.T) {
 	}
 }
 
+func TestStudioCanonicalizesAliasesBeforeEngineBoundary(t *testing.T) {
+	adapted, err := adaptTestScript(&schema.StudioScript{
+		Geometry: map[string]interface{}{"type": "hyperbolic"},
+		Materials: []map[string]interface{}{{
+			"id":      "grid",
+			"surface": map[string]interface{}{"type": "wire_mesh"},
+		}},
+		Objects: []map[string]interface{}{
+			{"shape": "hypercuboid", "pmin": []interface{}{-1, -1, -1}, "pmax": []interface{}{1, 1, 1}},
+			{"shape": "hypersphere", "center": []interface{}{0, 0, 0}, "r": 1},
+			{"shape": "finite cylinder", "center": []interface{}{0, 0, 0}, "axis": []interface{}{0, 0, 1}, "r": 1, "height": 2},
+		},
+		Render: schema.StudioRenderScript{Integrator: "light_trace"},
+	}, []string{"scene.json"}, 3)
+	if err != nil {
+		t.Fatalf("adapt aliases: %v", err)
+	}
+	if adapted.Geometry["type"] != "klein" {
+		t.Fatalf("geometry type = %v, want klein", adapted.Geometry["type"])
+	}
+	if adapted.Renders[0]["integrator"] != "light_tracing" {
+		t.Fatalf("integrator = %v, want light_tracing", adapted.Renders[0]["integrator"])
+	}
+	for index, want := range []string{"cuboid", "sphere", "cylinder"} {
+		if got := adapted.Objects[index]["shape"]; got != want {
+			t.Fatalf("object[%d] shape = %v, want %s", index, got, want)
+		}
+	}
+	surface := adapted.Materials[0]["surface"].(map[string]interface{})
+	if surface["type"] != "cylindrical_grid_cutout" {
+		t.Fatalf("surface type = %v, want cylindrical_grid_cutout", surface["type"])
+	}
+}
+
 func TestStudioPreservesExplicitWavelengthCount(t *testing.T) {
 	adapted, err := adaptTestScript(&schema.StudioScript{
 		Render: schema.StudioRenderScript{

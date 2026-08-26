@@ -18,37 +18,51 @@ import (
 // ParseObjectSpecInSpace dispatches the already-decoded discriminated union.
 // Each numerical builder receives its concrete spec, never a string-keyed map.
 func ParseObjectSpecInSpace(spec parser.ObjectSpec, space geometry.SceneSpace) ([]shape.Shape, error) {
-	dimension := geometry.NewSceneSpace(space.Geometry, space.Dimension).Dimension
-	switch definition := spec.Definition.(type) {
-	case *parser.CuboidSpec:
-		return parseCuboid(definition, spec.Bounds, dimension)
-	case *parser.SphereSpec:
-		return parseSphere(definition, spec.Bounds, dimension)
-	case *parser.CircleSpec:
-		return parseCircle(definition, spec.Bounds, dimension)
-	case *parser.FiniteCylinderSpec:
-		return parseFiniteCylinder(definition, spec.Bounds, dimension)
-	case *parser.TriangleSpec:
-		return parseTriangle(definition, spec.Bounds, dimension)
-	case *parser.PolynomialSpec:
-		return parsePolynomial(definition, spec.Bounds, dimension)
-	case *parser.ImplicitEquationSpec:
-		return parseImplicitEquation(definition, spec.Bounds, dimension)
-	case *parser.ParametricEquationSpec:
-		return parseParametricEquation(definition, spec.Bounds, dimension)
-	case *parser.ParametricCurveSpec:
-		return parseParametricCurve(definition, spec.Bounds, dimension)
-	case *parser.KleinBottleSpec:
-		return parseKleinBottle4D(definition, spec.Bounds, dimension)
-	case *parser.STLSpec:
-		shapes, err := parseShapeForSTLInSpace(definition, space)
-		if err != nil {
-			return nil, err
-		}
-		return wrapShapesWithBounds(shapes, spec.Bounds, dimension)
-	default:
-		return nil, fmt.Errorf("unsupported shape %q", spec.Shape)
+	return parser.CompileObjectSpec(objectCompiler{}, spec, space)
+}
+
+type objectCompiler struct{}
+
+func shapeSceneDimension(space geometry.SceneSpace) int {
+	return geometry.NewSceneSpace(space.Geometry, space.Dimension).Dimension
+}
+
+func (objectCompiler) CompileCuboid(spec *parser.CuboidSpec, bounds *parser.BoundsSpec, space geometry.SceneSpace) ([]shape.Shape, error) {
+	return parseCuboid(spec, bounds, shapeSceneDimension(space))
+}
+func (objectCompiler) CompileSphere(spec *parser.SphereSpec, bounds *parser.BoundsSpec, space geometry.SceneSpace) ([]shape.Shape, error) {
+	return parseSphere(spec, bounds, shapeSceneDimension(space))
+}
+func (objectCompiler) CompileCircle(spec *parser.CircleSpec, bounds *parser.BoundsSpec, space geometry.SceneSpace) ([]shape.Shape, error) {
+	return parseCircle(spec, bounds, shapeSceneDimension(space))
+}
+func (objectCompiler) CompileCylinder(spec *parser.FiniteCylinderSpec, bounds *parser.BoundsSpec, space geometry.SceneSpace) ([]shape.Shape, error) {
+	return parseFiniteCylinder(spec, bounds, shapeSceneDimension(space))
+}
+func (objectCompiler) CompileTriangle(spec *parser.TriangleSpec, bounds *parser.BoundsSpec, space geometry.SceneSpace) ([]shape.Shape, error) {
+	return parseTriangle(spec, bounds, shapeSceneDimension(space))
+}
+func (objectCompiler) CompilePolynomial(spec *parser.PolynomialSpec, bounds *parser.BoundsSpec, space geometry.SceneSpace) ([]shape.Shape, error) {
+	return parsePolynomial(spec, bounds, shapeSceneDimension(space))
+}
+func (objectCompiler) CompileImplicitEquation(spec *parser.ImplicitEquationSpec, bounds *parser.BoundsSpec, space geometry.SceneSpace) ([]shape.Shape, error) {
+	return parseImplicitEquation(spec, bounds, shapeSceneDimension(space))
+}
+func (objectCompiler) CompileParametricEquation(spec *parser.ParametricEquationSpec, bounds *parser.BoundsSpec, space geometry.SceneSpace) ([]shape.Shape, error) {
+	return parseParametricEquation(spec, bounds, shapeSceneDimension(space))
+}
+func (objectCompiler) CompileParametricCurve(spec *parser.ParametricCurveSpec, bounds *parser.BoundsSpec, space geometry.SceneSpace) ([]shape.Shape, error) {
+	return parseParametricCurve(spec, bounds, shapeSceneDimension(space))
+}
+func (objectCompiler) CompileKleinBottle(spec *parser.KleinBottleSpec, bounds *parser.BoundsSpec, space geometry.SceneSpace) ([]shape.Shape, error) {
+	return parseKleinBottle4D(spec, bounds, shapeSceneDimension(space))
+}
+func (objectCompiler) CompileSTL(spec *parser.STLSpec, bounds *parser.BoundsSpec, space geometry.SceneSpace) ([]shape.Shape, error) {
+	shapes, err := parseShapeForSTLInSpace(spec, space)
+	if err != nil {
+		return nil, err
 	}
+	return wrapShapesWithBounds(shapes, bounds, shapeSceneDimension(space))
 }
 
 func parseCuboid(spec *parser.CuboidSpec, bounds *parser.BoundsSpec, dimension int) ([]shape.Shape, error) {
@@ -134,7 +148,7 @@ func parseFiniteCylinder(spec *parser.FiniteCylinderSpec, bounds *parser.BoundsS
 
 func parseKleinBottle4D(spec *parser.KleinBottleSpec, bounds *parser.BoundsSpec, dimension int) ([]shape.Shape, error) {
 	if dimension != 4 {
-		return nil, fmt.Errorf("shape %q requires scene dimension 4, got %d", parser.ShapeKleinBottle, dimension)
+		return nil, fmt.Errorf("shape %q requires scene dimension 4, got %d", parser.ShapeKleinBottle.Kind, dimension)
 	}
 
 	center, err := requiredVec("center", spec.Center, dimension)
@@ -158,7 +172,7 @@ func parseKleinBottle4D(spec *parser.KleinBottleSpec, bounds *parser.BoundsSpec,
 	}
 
 	if majorR <= minorR {
-		return nil, fmt.Errorf("shape %q requires r_major > r_minor", parser.ShapeKleinBottle)
+		return nil, fmt.Errorf("shape %q requires r_major > r_minor", parser.ShapeKleinBottle.Kind)
 	}
 
 	klein := shape.NewKleinBottle4D(center, majorR, minorR, thickness)

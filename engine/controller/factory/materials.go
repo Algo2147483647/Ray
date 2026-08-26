@@ -60,114 +60,129 @@ func ParseMaterials(script *parser.Script) (map[string]*material.Material, error
 }
 
 func parseSurface(spec *parser.SurfaceSpec) (bxdf.Scattering, error) {
-	switch definition := spec.Definition.(type) {
-	case *parser.WeightedMixtureSurfaceSpec:
-		if len(definition.Components) == 0 {
-			return nil, fmt.Errorf("field %q must not be empty", "components")
-		}
-		components := make([]bsdf.WeightedScattering, 0, len(definition.Components))
-		for index, component := range definition.Components {
-			if component.Weight <= 0 || math.IsNaN(component.Weight) || math.IsInf(component.Weight, 0) {
-				return nil, fmt.Errorf("components[%d] weight must be finite and > 0", index)
-			}
-			surface, err := parseSurface(&component.Surface)
-			if err != nil {
-				return nil, fmt.Errorf("components[%d] surface: %w", index, err)
-			}
-			components = append(components, bsdf.WeightedScattering{Weight: component.Weight, Scattering: surface})
-		}
-		return bsdf.NewWeightedMixture(components...), nil
-	case *parser.LambertSurfaceSpec:
-		albedo, err := requiredSpectralParameterRaw(definition.Albedo, "albedo")
-		if err != nil {
-			return nil, err
-		}
-		return bxdf.NewLambertParameter(albedo), nil
-	case *parser.SpecularReflectionSurfaceSpec:
-		reflectance, err := optionalSpectralParameterRaw(definition.Reflectance, "reflectance", spectrum_parameter.NewConstantParameter(1))
-		if err != nil {
-			return nil, err
-		}
-		return bxdf.NewSpecularReflectionParameter(reflectance), nil
-	case *parser.SpecularDielectricSurfaceSpec:
-		reflectance, err := optionalSpectralParameterRaw(definition.Reflectance, "reflectance", spectrum_parameter.NewConstantParameter(1))
-		if err != nil {
-			return nil, err
-		}
-		transmittance, err := optionalSpectralParameterRaw(definition.Transmittance, "transmittance", spectrum_parameter.NewConstantParameter(1))
-		if err != nil {
-			return nil, err
-		}
-		outside, err := parseEtaOutside(definition.EtaOutside)
-		if err != nil {
-			return nil, err
-		}
-		inside, err := parseIORModel(definition.IOR, definition.EtaInside)
-		if err != nil {
-			return nil, err
-		}
-		return bxdf.NewSpecularDielectricParameter(reflectance, transmittance, outside, inside), nil
-	case *parser.RoughConductorSurfaceSpec:
-		eta, err := requiredSpectralParameterRaw(definition.Eta, "eta")
-		if err != nil {
-			return nil, err
-		}
-		k, err := requiredSpectralParameterRaw(definition.K, "k")
-		if err != nil {
-			return nil, err
-		}
-		rough, err := parseRoughness(definition.Roughness)
-		if err != nil {
-			return nil, err
-		}
-		weight, err := optionalSpectralParameterRaw(definition.Weight, "weight", spectrum_parameter.NewConstantParameter(1))
-		if err != nil {
-			return nil, err
-		}
-		result := bxdf.NewRoughConductorParameter(eta, k, rough*rough)
-		result.Weight = weight
-		return result, nil
-	case *parser.RoughDielectricReflectionSurfaceSpec:
-		reflectance, err := optionalSpectralParameterRaw(definition.Reflectance, "reflectance", spectrum_parameter.NewConstantParameter(1))
-		if err != nil {
-			return nil, err
-		}
-		outside, err := parseEtaOutside(definition.EtaOutside)
-		if err != nil {
-			return nil, err
-		}
-		inside, err := parseIORModel(definition.IOR, definition.EtaInside)
-		if err != nil {
-			return nil, err
-		}
-		rough, err := parseRoughness(definition.Roughness)
-		if err != nil {
-			return nil, err
-		}
-		return bxdf.NewRoughDielectricReflectionParameter(reflectance, outside, inside, rough*rough), nil
-	case *parser.RoughDielectricTransmissionSurfaceSpec:
-		transmittance, err := optionalSpectralParameterRaw(definition.Transmittance, "transmittance", spectrum_parameter.NewConstantParameter(1))
-		if err != nil {
-			return nil, err
-		}
-		outside, err := parseEtaOutside(definition.EtaOutside)
-		if err != nil {
-			return nil, err
-		}
-		inside, err := parseIORModel(definition.IOR, definition.EtaInside)
-		if err != nil {
-			return nil, err
-		}
-		rough, err := parseRoughness(definition.Roughness)
-		if err != nil {
-			return nil, err
-		}
-		return bxdf.NewRoughDielectricTransmissionParameter(transmittance, outside, inside, rough*rough), nil
-	case *parser.CylindricalGridSurfaceSpec:
-		return parseCylindricalGridCutoutSurface(definition)
-	default:
-		return nil, fmt.Errorf("unsupported surface type %q", spec.Type)
+	return parser.CompileSurfaceSpec(materialCompiler{}, spec)
+}
+
+type materialCompiler struct{}
+
+func (materialCompiler) CompileWeightedMixture(spec *parser.WeightedMixtureSurfaceSpec) (bxdf.Scattering, error) {
+	if len(spec.Components) == 0 {
+		return nil, fmt.Errorf("field %q must not be empty", "components")
 	}
+	components := make([]bsdf.WeightedScattering, 0, len(spec.Components))
+	for index, component := range spec.Components {
+		if component.Weight <= 0 || math.IsNaN(component.Weight) || math.IsInf(component.Weight, 0) {
+			return nil, fmt.Errorf("components[%d] weight must be finite and > 0", index)
+		}
+		surface, err := parseSurface(&component.Surface)
+		if err != nil {
+			return nil, fmt.Errorf("components[%d] surface: %w", index, err)
+		}
+		components = append(components, bsdf.WeightedScattering{Weight: component.Weight, Scattering: surface})
+	}
+	return bsdf.NewWeightedMixture(components...), nil
+}
+
+func (materialCompiler) CompileLambert(spec *parser.LambertSurfaceSpec) (bxdf.Scattering, error) {
+	albedo, err := requiredSpectralParameterRaw(spec.Albedo, "albedo")
+	if err != nil {
+		return nil, err
+	}
+	return bxdf.NewLambertParameter(albedo), nil
+}
+
+func (materialCompiler) CompileSpecularReflection(spec *parser.SpecularReflectionSurfaceSpec) (bxdf.Scattering, error) {
+	reflectance, err := optionalSpectralParameterRaw(spec.Reflectance, "reflectance", spectrum_parameter.NewConstantParameter(1))
+	if err != nil {
+		return nil, err
+	}
+	return bxdf.NewSpecularReflectionParameter(reflectance), nil
+}
+
+func (materialCompiler) CompileSpecularDielectric(spec *parser.SpecularDielectricSurfaceSpec) (bxdf.Scattering, error) {
+	reflectance, err := optionalSpectralParameterRaw(spec.Reflectance, "reflectance", spectrum_parameter.NewConstantParameter(1))
+	if err != nil {
+		return nil, err
+	}
+	transmittance, err := optionalSpectralParameterRaw(spec.Transmittance, "transmittance", spectrum_parameter.NewConstantParameter(1))
+	if err != nil {
+		return nil, err
+	}
+	outside, err := parseEtaOutside(spec.EtaOutside)
+	if err != nil {
+		return nil, err
+	}
+	inside, err := parseIORModel(spec.IOR, spec.EtaInside)
+	if err != nil {
+		return nil, err
+	}
+	return bxdf.NewSpecularDielectricParameter(reflectance, transmittance, outside, inside), nil
+}
+
+func (materialCompiler) CompileRoughConductor(spec *parser.RoughConductorSurfaceSpec) (bxdf.Scattering, error) {
+	eta, err := requiredSpectralParameterRaw(spec.Eta, "eta")
+	if err != nil {
+		return nil, err
+	}
+	k, err := requiredSpectralParameterRaw(spec.K, "k")
+	if err != nil {
+		return nil, err
+	}
+	rough, err := parseRoughness(spec.Roughness)
+	if err != nil {
+		return nil, err
+	}
+	weight, err := optionalSpectralParameterRaw(spec.Weight, "weight", spectrum_parameter.NewConstantParameter(1))
+	if err != nil {
+		return nil, err
+	}
+	result := bxdf.NewRoughConductorParameter(eta, k, rough*rough)
+	result.Weight = weight
+	return result, nil
+}
+
+func (materialCompiler) CompileRoughDielectricReflection(spec *parser.RoughDielectricReflectionSurfaceSpec) (bxdf.Scattering, error) {
+	reflectance, err := optionalSpectralParameterRaw(spec.Reflectance, "reflectance", spectrum_parameter.NewConstantParameter(1))
+	if err != nil {
+		return nil, err
+	}
+	outside, err := parseEtaOutside(spec.EtaOutside)
+	if err != nil {
+		return nil, err
+	}
+	inside, err := parseIORModel(spec.IOR, spec.EtaInside)
+	if err != nil {
+		return nil, err
+	}
+	rough, err := parseRoughness(spec.Roughness)
+	if err != nil {
+		return nil, err
+	}
+	return bxdf.NewRoughDielectricReflectionParameter(reflectance, outside, inside, rough*rough), nil
+}
+
+func (materialCompiler) CompileRoughDielectricTransmission(spec *parser.RoughDielectricTransmissionSurfaceSpec) (bxdf.Scattering, error) {
+	transmittance, err := optionalSpectralParameterRaw(spec.Transmittance, "transmittance", spectrum_parameter.NewConstantParameter(1))
+	if err != nil {
+		return nil, err
+	}
+	outside, err := parseEtaOutside(spec.EtaOutside)
+	if err != nil {
+		return nil, err
+	}
+	inside, err := parseIORModel(spec.IOR, spec.EtaInside)
+	if err != nil {
+		return nil, err
+	}
+	rough, err := parseRoughness(spec.Roughness)
+	if err != nil {
+		return nil, err
+	}
+	return bxdf.NewRoughDielectricTransmissionParameter(transmittance, outside, inside, rough*rough), nil
+}
+
+func (materialCompiler) CompileCylindricalGrid(spec *parser.CylindricalGridSurfaceSpec) (bxdf.Scattering, error) {
+	return parseCylindricalGridCutoutSurface(spec)
 }
 
 func parseRoughness(value *float64) (float64, error) {
@@ -237,7 +252,7 @@ func parseGridLineSurface(spec *parser.CylindricalGridSurfaceSpec) (bxdf.Scatter
 	if spec.LineSurface != nil {
 		return parseSurface(spec.LineSurface)
 	}
-	return parseSurface(&parser.SurfaceSpec{Type: parser.SurfaceRoughConductor, Definition: &parser.RoughConductorSurfaceSpec{Eta: json.RawMessage(`[0.15,0.14,0.13]`), K: json.RawMessage(`[4.1,3.5,2.7]`), Weight: json.RawMessage(`[0.88,0.9,0.92]`), Roughness: float64Pointer(0.22)}})
+	return parseSurface(&parser.SurfaceSpec{Type: parser.SurfaceRoughConductor.Kind, Definition: &parser.RoughConductorSurfaceSpec{Eta: json.RawMessage(`[0.15,0.14,0.13]`), K: json.RawMessage(`[4.1,3.5,2.7]`), Weight: json.RawMessage(`[0.88,0.9,0.92]`), Roughness: float64Pointer(0.22)}})
 }
 func float64Pointer(value float64) *float64 { return &value }
 
@@ -267,39 +282,49 @@ func optionalNonNegative(name string, value *float64, fallback float64) (float64
 }
 
 func parseEmission(spec *parser.EmissionSpec) (emission.Emitter, error) {
-	var field emission.RadianceField
+	return parser.CompileEmissionSpec(materialCompiler{}, spec)
+}
+
+func (materialCompiler) CompileConstantEmission(spec *parser.ConstantEmissionSpec, distributionSpec *parser.EmissionDistributionSpec) (emission.Emitter, error) {
 	quantity := emission.PeakRadiance
+	hasRadiance, hasColor, hasExitance := len(spec.Radiance) > 0, len(spec.Color) > 0, len(spec.Exitance) > 0
+	if hasExitance && (hasRadiance || hasColor) {
+		return nil, fmt.Errorf("radiance/color and exitance are mutually exclusive")
+	}
+	var strength optics.SpectralParameter
 	var err error
-	switch definition := spec.Definition.(type) {
-	case *parser.ConstantEmissionSpec:
-		hasRadiance, hasColor, hasExitance := len(definition.Radiance) > 0, len(definition.Color) > 0, len(definition.Exitance) > 0
-		if hasExitance && (hasRadiance || hasColor) {
-			return nil, fmt.Errorf("radiance/color and exitance are mutually exclusive")
-		}
-		var strength optics.SpectralParameter
-		if hasExitance {
-			strength, err = requiredSpectralParameterRaw(definition.Exitance, "exitance")
-			quantity = emission.TotalExitance
-		} else if hasRadiance {
-			strength, err = requiredSpectralParameterRaw(definition.Radiance, "radiance")
-		} else {
-			strength, err = requiredSpectralParameterRaw(definition.Color, "color")
-		}
-		if err != nil {
-			return nil, err
-		}
-		field = emission.Constant{Radiance: strength}
-	case *parser.NormalPaletteEmissionSpec:
-		field, err = parseNormalPaletteEmission(definition)
-	case *parser.UVHSLEmissionSpec:
-		field, err = parseUVHSLEmission(definition)
-	default:
-		return nil, fmt.Errorf("unsupported emission type %q", spec.Type)
+	if hasExitance {
+		strength, err = requiredSpectralParameterRaw(spec.Exitance, "exitance")
+		quantity = emission.TotalExitance
+	} else if hasRadiance {
+		strength, err = requiredSpectralParameterRaw(spec.Radiance, "radiance")
+	} else {
+		strength, err = requiredSpectralParameterRaw(spec.Color, "color")
 	}
 	if err != nil {
 		return nil, err
 	}
-	distribution, err := parseEmissionDistribution(spec.Distribution)
+	return compileEmitter(emission.Constant{Radiance: strength}, quantity, distributionSpec)
+}
+
+func (materialCompiler) CompileNormalPaletteEmission(spec *parser.NormalPaletteEmissionSpec, distributionSpec *parser.EmissionDistributionSpec) (emission.Emitter, error) {
+	field, err := parseNormalPaletteEmission(spec)
+	if err != nil {
+		return nil, err
+	}
+	return compileEmitter(field, emission.PeakRadiance, distributionSpec)
+}
+
+func (materialCompiler) CompileUVHSLEmission(spec *parser.UVHSLEmissionSpec, distributionSpec *parser.EmissionDistributionSpec) (emission.Emitter, error) {
+	field, err := parseUVHSLEmission(spec)
+	if err != nil {
+		return nil, err
+	}
+	return compileEmitter(field, emission.PeakRadiance, distributionSpec)
+}
+
+func compileEmitter(field emission.RadianceField, quantity emission.StrengthQuantity, distributionSpec *parser.EmissionDistributionSpec) (emission.Emitter, error) {
+	distribution, err := parseEmissionDistribution(distributionSpec)
 	if err != nil {
 		return nil, err
 	}

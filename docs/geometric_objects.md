@@ -256,10 +256,12 @@ The Spherical path scans $F(\gamma(s))$ over 2048 fixed segments. It accepts a n
 - $c\in\mathbb{R}^D$ is the center.
 - $r\in\mathbb{R}_{>0}$ is the radius.
 - `position` is accepted as a compatibility alias for `center`.
+- Engine's canonical discriminator is `sphere`; Studio normalizes the authoring
+  name `hypersphere` to it.
 
 ```jsonc
 {
-  "shape": "sphere | hypersphere",
+  "shape": "sphere",
   "center": [/* D finite numbers; position may be used instead */],
   "r": "positive number",
   "bounds": { "pmin": [/* D */], "pmax": [/* D */] } // optional
@@ -355,11 +357,12 @@ The Shape's own `pmin` and `pmax` do **not** pass through the strict ordering va
 
 - $p_{\min},p_{\max}\in\mathbb{R}^D$ are the opposite AABB corners.
 - The intended invariant is $p_{\min,i}<p_{\max,i}$ for every axis.
-- `cuboid` and `hypercuboid` are equivalent factory discriminators.
+- Engine's canonical discriminator is `cuboid`; Studio normalizes the authoring
+  name `hypercuboid` to it.
 
 ```jsonc
 {
-  "shape": "cuboid | hypercuboid",
+  "shape": "cuboid",
   "pmin": [/* D finite numbers */],
   "pmax": [/* D finite numbers */],
   "bounds": { "pmin": [/* D */], "pmax": [/* D */] } // optional outer clip
@@ -1105,12 +1108,13 @@ emitter by BDPT and light tracing.
 
 - $c,a\in\mathbb{R}^D$, with $a\ne0$ before normalization.
 - $r,h\in\mathbb{R}_{>0}$.
-- `cylinder` and `finite cylinder` are equivalent discriminators.
+- Engine's canonical discriminator is `cylinder`; Studio normalizes the
+  authoring name `finite cylinder` to it.
 - `position` is accepted as a compatibility alias for `center`.
 
 ```jsonc
 {
-  "shape": "cylinder | finite cylinder",
+  "shape": "cylinder",
   "center": [/* D; position may be used instead */],
   "axis": [/* D finite numbers, non-zero */],
   "r": "positive number",

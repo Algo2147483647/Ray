@@ -28,14 +28,14 @@ func TestScriptDecodesTypedMaterialAndObjectSpecs(t *testing.T) {
 	if len(script.Materials) != 1 || script.Materials[0].Surface == nil {
 		t.Fatalf("unexpected materials: %+v", script.Materials)
 	}
-	if script.Materials[0].Surface.Type != SurfaceLambert {
+	if script.Materials[0].Surface.Type != SurfaceLambert.Kind {
 		t.Fatalf("surface type = %q", script.Materials[0].Surface.Type)
 	}
 	lambert, ok := script.Materials[0].Surface.Definition.(*LambertSurfaceSpec)
 	if !ok || len(lambert.Albedo) == 0 {
 		t.Fatal("spectral parameter leaf was not preserved")
 	}
-	if len(script.Objects) != 1 || script.Objects[0].Shape != ShapeSphere {
+	if len(script.Objects) != 1 || script.Objects[0].Shape != ShapeSphere.Kind {
 		t.Fatalf("unexpected objects: %+v", script.Objects)
 	}
 	sphere, ok := script.Objects[0].Definition.(*SphereSpec)
@@ -156,5 +156,19 @@ func TestEmissionSpecRejectsGeometrySpecificLegacyTypes(t *testing.T) {
 		if err := json.Unmarshal([]byte(`{"type":"`+kind+`"}`), &spec); err == nil {
 			t.Fatalf("expected legacy emission type %q to fail", kind)
 		}
+	}
+}
+
+func TestEngineVariantProtocolRejectsAliases(t *testing.T) {
+	for _, kind := range []string{"hypercuboid", "hypersphere", "finite cylinder"} {
+		var spec ObjectSpec
+		data := `{"material_id":"m","shape":"` + kind + `"}`
+		if err := json.Unmarshal([]byte(data), &spec); err == nil {
+			t.Fatalf("expected shape alias %q to fail", kind)
+		}
+	}
+	var surface SurfaceSpec
+	if err := json.Unmarshal([]byte(`{"type":"wire_mesh"}`), &surface); err == nil {
+		t.Fatal("expected surface alias wire_mesh to fail")
 	}
 }
